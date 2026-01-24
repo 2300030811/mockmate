@@ -23,17 +23,22 @@ jobs:
         with:
           node-version: "22.x"
 
-      - name: npm install, build, and test
+      - name: npm install and build
         run: |
           rm -rf package-lock.json
           npm install --legacy-peer-deps
-          npm run build --if-present
+          npm run build
+
+      - name: Prepare standalone output
+        run: |
+          cp -r .next/static .next/standalone/.next/static
+          cp -r public .next/standalone/public
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: .
+          path: .next/standalone
 
   deploy:
     runs-on: ubuntu-latest
