@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { Groq } from "groq-sdk";
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+// Initialize lazily to avoid build-time errors when env is missing
+const getGroqClient = () => {
+  const apiKey = process.env.GROQ_API_KEY || "dummy_key_for_build";
+  return new Groq({ apiKey });
+};
 
 export async function POST(req: Request) {
   try {
@@ -16,6 +20,7 @@ export async function POST(req: Request) {
     - If the answer is weak or vague, ask a follow-up question to clarify.
     - Start by introducing yourself briefly and asking the first question.`;
 
+    const groq = getGroqClient();
     const completion = await groq.chat.completions.create({
       messages: [
         { role: "system", content: systemPrompt },
