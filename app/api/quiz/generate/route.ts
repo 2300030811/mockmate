@@ -22,9 +22,16 @@ async function generateBatch(
   count: number,
   batchName: string,
 ) {
+  // Inject explicit randomness into the model execution
+  const randomSeed = Math.random().toString(36).substring(7);
+  
   const prompt = `
     You are an AI Quiz Generator. 
     Analyze the text provided and generate exactly ${count} multiple-choice questions.
+    
+    [RANDOM_SEED: ${randomSeed}] 
+    IMPORTANT: Vary your questions. Do not just pick the first few sentences.
+    Focus on different parts of the text if possible.
     
     CRITICAL: Return ONLY a raw JSON array.
     
@@ -43,10 +50,17 @@ async function generateBatch(
   `;
 
   try {
-    console.log(`⏳ ${batchName} sending request...`);
+    console.log(`⏳ ${batchName} sending request (Seed: ${randomSeed})...`);
+    
+    // Gemini Config
+    const generationConfig = {
+        responseMimeType: "application/json",
+        temperature: 0.8, // High creativity to force variety
+    };
+
     const result = await model.generateContent({
       contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: { responseMimeType: "application/json" },
+      generationConfig: generationConfig,
     });
     const response = await result.response;
     const text = response.text();
@@ -259,9 +273,12 @@ async function generateWithGemini(content: string, customApiKey?: string) {
 // --- HELPER: Generate with Groq (via openai-compatible fetch) ---
 async function generateWithGroq(content: string, customApiKey?: string) {
   console.log(`⚡ [Groq] Processing...`);
+  const randomSeed = Math.random().toString(36).substring(7);
+
   const prompt = `
     You are an AI Quiz Generator. 
     Analyze the text provided and generate exactly 15 multiple-choice questions.
+    [RANDOM_SEED: ${randomSeed}]
     CRITICAL: Return ONLY a raw JSON array.
     JSON Format: [{"question": "...", "options": ["..."], "answer": "...", "explanation": "..."}]
     TEXT CONTENT: ${content.substring(0, 15000)}
@@ -287,7 +304,7 @@ async function generateWithGroq(content: string, customApiKey?: string) {
                 { role: "system", content: "You are a helpful assistant that outputs JSON." },
                 { role: "user", content: prompt }
             ],
-            temperature: 0.5,
+            temperature: 0.8, // Increased for variety
             response_format: { type: "json_object" }
             })
         });
