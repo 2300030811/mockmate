@@ -1,6 +1,6 @@
 <div align="center">
 
-# AI Mock Interviews
+[![Mockmate Banner](public/banner.png)](https://mockmate-delta.vercel.app/)
 
 ### Mockmate - AI-Powered Interview Platform
 
