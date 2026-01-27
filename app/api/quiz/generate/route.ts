@@ -150,28 +150,45 @@ async function generateWithGeminiVision(apiKey: string, base64Pdf: string) {
   throw new Error(lastError?.message || "Vision generation failed on all models");
 }
 
-// --- HELPER: Smart Content Sampling ---
-// Takes chunks from start, middle, and end to ensure questions cover the full syllabus
+// --- HELPER: Smart Randomized Sampling ---
+// Picks random chunks from the text to ensure variety when regenerating quizzes from the same long file.
 function getSmartSample(text: string, limit: number = 25000): string {
   if (!text || text.length <= limit) return text;
 
-  const chunkSize = Math.floor(limit / 3);
-  const midPoint = Math.floor(text.length / 2);
+  // Always include the beginning (usually contains Intro/Table of Contents/Definitions)
+  const introSize = 3000;
+  const intro = text.substring(0, introSize);
   
-  const startChunk = text.substring(0, chunkSize);
-  const middleChunk = text.substring(midPoint, midPoint + chunkSize);
-  const endChunk = text.substring(text.length - chunkSize);
+  const remainingText = text.substring(introSize);
+  const remainingLimit = limit - introSize;
+  
+  // We want to pick `numChunks` random blocks from the rest of the file
+  const numChunks = 3;
+  const chunkSize = Math.floor(remainingLimit / numChunks);
+  
+  let result = `[SECTION 1: INTRO]\n${intro}\n\n`;
 
-  return `
-    [SECTION 1: BEGINNING]
-    ${startChunk}
-    
-    [SECTION 2: MIDDLE]
-    ${middleChunk}
-    
-    [SECTION 3: END]
-    ${endChunk}
-  `;
+  // Helper to get a random integer between min and max
+  const getRandom = (min: number, max: number) => Math.floor(Math.random() * (max - min) + min);
+
+  // Divide the remaining text into 'zones' to ensure we spread sampling across the file
+  // but pick a random window within each zone.
+  const zoneSize = Math.floor(remainingText.length / numChunks);
+
+  for (let i = 0; i < numChunks; i++) {
+     const zoneStart = i * zoneSize;
+     const zoneEnd = zoneStart + zoneSize - chunkSize; // Ensure we have room for a full chunk
+     
+     // Pick a random start point within this zone
+     // (careful not to go out of bounds)
+     const safeZoneEnd = Math.max(zoneStart, zoneEnd); 
+     const randomStart = getRandom(zoneStart, safeZoneEnd);
+     
+     const chunk = remainingText.substring(randomStart, randomStart + chunkSize);
+     result += `[SECTION ${i + 2}: RANDOM PART ${i + 1}]\n${chunk}\n\n`;
+  }
+
+  return result;
 }
 
 // --- HELPER: Generate with Gemini ---
