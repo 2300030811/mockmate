@@ -21,22 +21,33 @@ export interface OpenAIStreamPayload {
   max_tokens: number;
   stream: boolean;
   n: number;
+  baseUrl?: string;
 }
 
-export async function OpenAIStream(payload: OpenAIStreamPayload) {
+export async function OpenAIStream(payload: OpenAIStreamPayload, apiKey: string) {
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
 
   let counter = 0;
 
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+  // Use the provided baseUrl or default to OpenAI
+  const baseUrl = payload.baseUrl || "https://api.openai.com/v1";
+  
+  // Remove baseUrl from payload before sending to API (strict APIs might reject unknown fields)
+  const { baseUrl: _, ...apiPayload } = payload;
+
+  const res = await fetch(`${baseUrl}/chat/completions`, {
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY ?? ""}`,
+      Authorization: `Bearer ${apiKey}`,
     },
     method: "POST",
-    body: JSON.stringify(payload),
+    body: JSON.stringify(apiPayload),
   });
+
+  if (!res.ok) {
+    throw new Error(`OpenAI/Groq API Error: ${res.status} ${res.statusText}`);
+  }
 
   const stream = new ReadableStream({
     async start(controller) {

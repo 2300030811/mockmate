@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 import { Groq } from "groq-sdk";
 
 // Initialize lazily to avoid build-time errors when env is missing
+import { getNextKey } from "@/utils/keyManager";
+
 const getGroqClient = () => {
-  const apiKey = process.env.GROQ_API_KEY || "dummy_key_for_build";
+  const apiKey = getNextKey("GROQ_API_KEY") || "dummy_key_for_build";
   return new Groq({ apiKey });
 };
 

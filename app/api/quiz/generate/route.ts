@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getNextKey, KeyManager } from "@/utils/keyManager";
 
 
 export const dynamic = "force-dynamic";
@@ -174,8 +175,7 @@ function getSmartSample(text: string, limit: number = 25000): string {
 }
 
 // --- HELPER: Generate with Gemini ---
-async function generateWithGemini(apiKey: string, content: string) {
-  const genAI = new GoogleGenerativeAI(apiKey);
+async function generateWithGemini(content: string, customApiKey?: string) {
   console.log(`⚡ [Gemini] Processing ${content.length} chars...`);
 
   const modelsToTry = [
@@ -186,26 +186,61 @@ async function generateWithGemini(apiKey: string, content: string) {
   // Distribute reading across the file
   const combinedContent = getSmartSample(content); 
 
-  for (const modelName of modelsToTry) {
-    try {
-      console.log(`🤖 [Gemini] Attempting model: ${modelName}`);
-      const model = genAI.getGenerativeModel({ model: modelName });
-      const questions = await generateBatch(model, combinedContent, 15, "Gemini Batch");
-      
-      if (questions && questions.length > 0) return questions;
-    } catch (error: any) {
-      console.error(`⚠️ [Gemini] ${modelName} failed:`, error.message);
-      // Propagate 429 quota errors immediately so we can fallback
-      if (error.message.includes("429") || error.message.includes("quota")) {
-        throw new Error("QUOTA_EXCEEDED");
-      }
-    }
+  // Get keys: either the custom one, or all available env keys
+  let keys: string[] = [];
+  if (customApiKey) {
+      keys = [customApiKey];
+  } else {
+      // Use the KeyManager to get all configured keys
+      // Accessing private 'keys' property via 'any' cast or Assuming public if I changed it?
+      // Actually KeyManager members are private. 
+      // Workaround: Instantiate multiple times? No.
+      // Let's just use the loop with getNextKey for now, but to be better we should try to get unique keys.
+      // Since we can't easily change KeyManager visibility in this step without context switch,
+      // We will stick to the "Random Retry" strategy which is statistically sufficient for small N.
+      // OR better: we can split the env var manually here since we know the format.
+      const envVal = process.env.GOOGLE_API_KEY || "";
+      keys = envVal.split(",").map(k => k.trim()).filter(k => k.length > 0);
   }
-  throw new Error("Gemini generation failed on all models");
+
+  if (keys.length === 0) throw new Error("No Google API Keys found");
+
+  let lastError;
+
+  // Double Loop: Iterate Keys -> Iterate Models
+  // This maximizes success chance.
+  for (const apiKey of keys) {
+      const genAI = new GoogleGenerativeAI(apiKey);
+      
+      for (const modelName of modelsToTry) {
+        try {
+          console.log(`🤖 [Gemini] Attempting model: ${modelName} with key ending in ...${apiKey.slice(-4)}`);
+          const model = genAI.getGenerativeModel({ model: modelName });
+          const questions = await generateBatch(model, combinedContent, 15, "Gemini Batch");
+          
+          if (questions && questions.length > 0) return questions;
+        } catch (error: any) {
+          console.warn(`⚠️ [Gemini] ${modelName} failed with key ...${apiKey.slice(-4)}:`, error.message);
+          lastError = error;
+          
+          // If it's NOT a quota error (e.g. model not found, invalid argument), maybe don't switch key?
+          // But usually we just try everything.
+          
+          // If strict 429, we definitely continue to next key/model
+        }
+      }
+  }
+  
+  // Check if we failed due to quota
+  if (lastError?.message?.includes("429") || lastError?.message?.includes("quota")) {
+      throw new Error("QUOTA_EXCEEDED");
+  }
+  
+  throw new Error("Gemini generation failed on all models and keys");
 }
 
 // --- HELPER: Generate with Groq (via openai-compatible fetch) ---
-async function generateWithGroq(apiKey: string, content: string) {
+async function generateWithGroq(content: string, customApiKey?: string) {
   console.log(`⚡ [Groq] Processing...`);
   const prompt = `
     You are an AI Quiz Generator. 
@@ -215,37 +250,61 @@ async function generateWithGroq(apiKey: string, content: string) {
     TEXT CONTENT: ${content.substring(0, 15000)}
   `;
 
-  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model: "llama-3.3-70b-versatile", // Or llama3-70b-8192
-      messages: [
-        { role: "system", content: "You are a helpful assistant that outputs JSON." },
-        { role: "user", content: prompt }
-      ],
-      temperature: 0.5,
-      response_format: { type: "json_object" } // Force JSON mode
-    })
-  });
+  const maxRetries = customApiKey ? 1 : 3;
+  let lastError;
 
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    console.error("Groq Error:", err);
-    throw new Error(err.error?.message || `Groq API failed: ${response.status}`);
+  for (let i = 0; i < maxRetries; i++) {
+      try {
+        const apiKey = customApiKey || getNextKey("GROQ_API_KEY");
+        if (!apiKey) throw new Error("Groq API Key missing");
+
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+            model: "llama-3.3-70b-versatile",
+            messages: [
+                { role: "system", content: "You are a helpful assistant that outputs JSON." },
+                { role: "user", content: prompt }
+            ],
+            temperature: 0.5,
+            response_format: { type: "json_object" }
+            })
+        });
+
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            console.warn(`Attempt ${i+1} Groq Error:`, err);
+            // If it's a 401 (Invalid Key) or 429 (Rate Limit), we should retry with a new key (if not custom)
+            if (response.status === 401 || response.status === 429) {
+                 throw new Error(err.error?.message || `Groq API failed: ${response.status}`);
+            }
+            // Other errors might be fatal, but let's retry anyway to be safe
+            throw new Error(err.error?.message || `Groq API failed: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const rawText = data.choices[0].message.content;
+        const questions = JSON.parse(cleanJson(rawText));
+        
+        if (questions.questions && Array.isArray(questions.questions)) return questions.questions;
+        if (Array.isArray(questions)) return questions;
+        
+        // If parsing didn't result in an array, it's a generation failure
+        throw new Error("Failed to parse questions array from response");
+
+      } catch (e: any) {
+         console.warn(`⚠️ Groq Attempt ${i+1} failed: ${e.message}`);
+         lastError = e;
+         if (customApiKey) break; // Don't retry if user provided a specific key
+         await new Promise(r => setTimeout(r, 1000));
+      }
   }
 
-  const data = await response.json();
-  const rawText = data.choices[0].message.content;
-  const questions = JSON.parse(cleanJson(rawText));
-  
-  // Clean up format if needed
-  if (questions.questions && Array.isArray(questions.questions)) return questions.questions;
-  if (Array.isArray(questions)) return questions;
-  return [];
+  throw new Error(lastError?.message || "Groq generation failed after retries");
 }
 
 // --- HELPER: Generate with OpenAI ---
@@ -297,7 +356,7 @@ export async function POST(req: Request) {
     // --- STRATEGY: VISION (Scanned PDF) ---
     if (base64Pdf) {
        console.log("👁️ Taking Vision Path (Scanned PDF)");
-       const key = customApiKey || process.env.GOOGLE_API_KEY; // Vision requires Gemini
+       const key = customApiKey || getNextKey("GOOGLE_API_KEY"); // Vision requires Gemini
        
        if (!key) return NextResponse.json({ error: "Gemini API Key required for scanned PDFs" }, { status: 500 });
 
@@ -317,13 +376,13 @@ export async function POST(req: Request) {
     // --- STRATEGY: TEXT (Standard) ---
     // ... existing text strategy ...
     if (provider === "auto") {
-      const geminiKey = process.env.GOOGLE_API_KEY;
+      const geminiKey = process.env.GOOGLE_API_KEY; // Just check existence generally
       const groqKey = process.env.GROQ_API_KEY;
 
-      // 1. Try Gemini First
+      // 1. Try Gemini First (Rotates internally)
       if (geminiKey) {
         try {
-          questions = await generateWithGemini(geminiKey, content);
+          questions = await generateWithGemini(content);
         } catch (e: any) {
           console.warn("⚠️ Gemini Auto-Attempt Failed:", e.message);
           lastError = e.message;
@@ -331,10 +390,11 @@ export async function POST(req: Request) {
       }
 
       // 2. Fallback to Groq if Gemini failed or missing
-      if (questions.length === 0 && groqKey) {
+      if (questions.length === 0) {
         console.log("🔄 Falling back to Groq...");
         try {
-          questions = await generateWithGroq(groqKey, content);
+          // No key passed here, internally rotates keys
+          questions = await generateWithGroq(content);
         } catch (e: any) {
           console.warn("⚠️ Groq Auto-Attempt Failed:", e.message);
           lastError = e.message;
@@ -350,16 +410,23 @@ export async function POST(req: Request) {
     
     // --- STRATEGY: MANUAL ---
     else {
-      const key = customApiKey || 
-                 (provider === "gemini" ? process.env.GOOGLE_API_KEY : 
-                  provider === "groq" ? process.env.GROQ_API_KEY : "");
-
-      if (!key) return NextResponse.json({ error: `${provider} API Key missing` }, { status: 500 });
+      // If prompt specifically asks for one provider:
       
       try {
-        if (provider === "gemini") questions = await generateWithGemini(key, content);
-        else if (provider === "groq") questions = await generateWithGroq(key, content);
-        else if (provider === "openai") questions = await generateWithOpenAI(key, content);
+        if (provider === "gemini") {
+             const key = customApiKey || getNextKey("GOOGLE_API_KEY");
+             if (!key) throw new Error("Google API Key missing");
+             questions = await generateWithGemini(key, content);
+        }
+        else if (provider === "groq") {
+             // Pass custom key if exists, otherwise it will use pool
+             questions = await generateWithGroq(content, customApiKey);
+        }
+        else if (provider === "openai") {
+             const key = customApiKey || getNextKey("OPENAI_API_KEY"); // Might be empty if removed
+             if (!key) throw new Error("OpenAI API Key missing");
+             questions = await generateWithOpenAI(key, content);
+        }
       } catch (e: any) {
          return NextResponse.json({ error: e.message }, { status: 500 });
       }
