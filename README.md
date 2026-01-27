@@ -1,245 +1,106 @@
-# Mockmate - AI-Powered Interview Platform
+<div align="center">
+
+# AI Mock Interviews
+
+### Mockmate - AI-Powered Interview Platform
 
 <p align="center">
   <img src="https://img.shields.io/badge/Next.js-13.4-black" alt="Next.js" />
   <img src="https://img.shields.io/badge/TypeScript-5.0-blue" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Tailwind-3.3-38bdf8" alt="Tailwind" />
+  <img src="https://img.shields.io/badge/Gemini-AI-orange" alt="Gemini AI" />
+  <img src="https://img.shields.io/badge/Groq-Fast_Inference-red" alt="Groq" />
 </p>
 
-## 🎯 Overview
+[**Live Demo 1**](https://mockmate-delta.vercel.app/) • [**Live Demo 2**](https://mockmate-fcn3errhj-2300030811s-projects.vercel.app/) • [**Report Bug**](https://github.com/2300030811/mockmate/issues)
 
-Mockmate is a comprehensive AI-powered platform for interview preparation, featuring:
+</div>
 
-- **AI Quiz Generator** - Upload PDFs and generate intelligent quizzes
-- **Mock Interviews** - Practice with AI-powered interview sessions
-- **AWS Certification Prep** - Specialized quizzes for AWS exams
-- **Real-time Transcription** - Voice-to-text with Gemini AI
-- **Dark Mode** - Beautiful dark/light theme support
+<br />
 
-## ✨ Features
+## 🚀 Introduction
 
-### 🤖 AI-Powered
+**Mockmate** is a cutting-edge platform designed to revolutionize technical interview preparation. By leveraging the power of **Google Gemini** and **Groq**, it transforms static study materials into interactive quizzes and conducts real-time voice-based mock interviews.
 
-- Google Gemini integration for quiz generation
-- Real-time audio transcription
-- Intelligent question generation from documents
+Whether you are preparing for an AWS certification or a software engineering role, Mockmate provides instant, intelligent feedback to help you elevate your skills.
 
-### 🎨 Modern UI
+## ✨ Key Features
 
-- Gradient-based design system
-- Smooth animations with Framer Motion
-- Fully responsive across all devices
-- Dark mode support
+### 🤖 AI Quiz Generator
 
-### 🚀 Performance
+- **Upload & Generate**: Simply upload a PDF or paste text.
+- **Intelligent Processing**: Extracts key concepts to create relevant multiple-choice questions.
+- **Smart Fallback**: Automatically switches between Gemini and Groq models to ensure high availability and bypass rate limits.
+- **Instant Feedback**: Detailed explanations for every answer.
 
-- Optimized Next.js 13 App Router
-- Edge-ready API routes
-- Efficient state management
+### 🎙️ Mock Interview Simulator
+
+- **Voice Interaction**: Speak your answers and get real-time transcriptions (powered by Groq Whisper).
+- **AI Interviewer**: Simulates a real hiring manager, providing constructive criticism on your answers.
+- **Behavioral & Technical**: Supports various interview modes.
+
+### ☁️ AWS Certification Prep
+
+- Curated question banks for AWS Cloud Practitioner and Solutions Architect exams.
+- Progress tracking to monitor your readiness.
 
 ## 🛠️ Tech Stack
 
-### Frameworks
+- **Framework**: [Next.js 13](https://nextjs.org/) (App Router)
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/) + [Framer Motion](https://www.framer.com/motion/)
+- **AI Models**:
+  - Google Gemini (Flash 1.5 & 2.0)
+  - Groq (Llama 3 & Distil-Whisper)
+- **Deployment**: [Vercel](https://vercel.com/)
 
-- **Next.js 13** - React framework with App Router
-- **TypeScript** - Type-safe development
-- **Tailwind CSS** - Utility-first styling
+## 🌐 Live Deployments
 
-### AI & APIs
+Check out the live application running on Vercel:
 
-- **Google Gemini** - Quiz generation & transcription
-- **Groq (Optional)** - Alternative transcription service
+| Environment    | URL                                                                                                                        |
+| :------------- | :------------------------------------------------------------------------------------------------------------------------- |
+| **Production** | [https://mockmate-delta.vercel.app/](https://mockmate-delta.vercel.app/)                                                   |
+| **Preview**    | [https://mockmate-fcn3errhj-2300030811s-projects.vercel.app/](https://mockmate-fcn3errhj-2300030811s-projects.vercel.app/) |
 
-### UI Libraries
+## 📦 Installation & Setup
 
-- **Framer Motion** - Smooth animations
-- **HeadlessUI** - Accessible components
-- **Tailwind Merge** - Class name utilities
+1.  **Clone the repository**
 
-### File Processing
+    ```bash
+    git clone https://github.com/2300030811/mockmate.git
+    cd mockmate
+    ```
 
-- **PDF Parse** - Extract text from PDFs
-- **Formidable** - File upload handling
+2.  **Install dependencies**
 
-## 📦 Installation
+    ```bash
+    npm install
+    ```
 
-```bash
-# Clone the repository
-git clone <your-repo-url>
-cd mockmate
+3.  **Configure Environment Variables**
+    Create a `.env.local` file:
 
-# Install dependencies
-npm install
+    ```env
+    # AI Keys (Required for Quiz & Interview)
+    GROQ_API_KEY=gsk_...
+    GOOGLE_API_KEY=...
 
-# Set up environment variables
-cp .env.example .env.local
+    # App Config
+    NEXT_PUBLIC_BASE_URL=http://localhost:3000
+    ```
 
-# Run development server
-npm run dev
-```
-
-## 🔑 Environment Variables
-
-Create a `.env.local` file:
-
-```env
-# Google Gemini API Key (Required)
-GOOGLE_API_KEY=your_gemini_api_key_here
-
-# Optional: Groq API for transcription
-GROQ_API_KEY=your_groq_api_key_here
-
-# Base URL
-NEXT_PUBLIC_BASE_URL=http://localhost:3000
-```
-
-Get your API keys:
-
-- **Gemini**: [Google AI Studio](https://aistudio.google.com/app/apikey)
-- **Groq**: [Groq Console](https://console.groq.com)
-
-## 🚀 Usage
-
-### Development
-
-```bash
-npm run dev
-```
-
-Visit `http://localhost:3000`
-
-### Production Build
-
-```bash
-npm run build
-npm start
-```
-
-### Linting
-
-```bash
-npm run lint
-```
-
-## 📁 Project Structure
-
-```
-mockmate/
-├── app/                    # Next.js App Router
-│   ├── api/               # API routes
-│   │   ├── convert/       # PDF conversion
-│   │   ├── quiz/          # Quiz generation
-│   │   └── interview/     # Interview APIs
-│   ├── demo/              # Interview demo pages
-│   ├── upload/            # Quiz upload page
-│   └── page.tsx           # Homepage
-├── components/            # Reusable components
-├── styles/                # Global styles
-├── public/                # Static assets
-└── utils/                 # Utility functions
-```
-
-## 🎨 Design System
-
-### Color Palette
-
-- **Primary**: Blue (#3B82F6) to Purple (#A855F7)
-- **Secondary**: Cyan (#06B6D4) to Pink (#EC4899)
-- **Background (Dark)**: Gray-950 → Blue-950
-- **Background (Light)**: Gray-50 → Blue-50
-
-### Components
-
-- Gradient buttons with hover effects
-- Glass morphism cards
-- Animated backgrounds
-- Consistent spacing (4px, 8px, 16px, 24px)
-
-## 📊 Features Breakdown
-
-### Quiz Generator (`/upload`)
-
-1. Upload PDF or TXT files
-2. AI extracts and analyzes content
-3. Generates multiple-choice questions
-4. Interactive quiz interface with progress tracking
-5. Instant feedback and explanations
-
-### Mock Interview (`/demo`)
-
-1. Choose interview type (Behavioral/Technical)
-2. Real-time AI conversation
-3. Voice or text input
-4. Live transcription
-5. Professional interview simulation
-
-### AWS Quiz (`/aws-quiz`)
-
-- Curated AWS certification questions
-- Multiple quiz modes
-- Progress tracking
-- Detailed explanations
-
-## 🔧 Optimization
-
-### Size Reduction
-
-The project has been optimized from 1200MB to ~500MB:
-
-- Removed `.next` build cache
-- Cleaned unnecessary files
-- Optimized dependencies
-
-### Performance
-
-- Lazy loading for heavy components
-- GPU-accelerated animations
-- Efficient API routes
-- Optimized bundle size
-
-## 🌐 Deployment
-
-### Vercel (Recommended)
-
-```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy
-vercel
-```
-
-### Other Platforms
-
-- **Netlify**: Compatible with Next.js
-- **Azure**: See `AZURE_DEPLOYMENT.md`
-- **Custom Server**: Use `npm run build && npm start`
-
-## 📝 License
-
-MIT License - Feel free to use this project for personal or commercial purposes.
+4.  **Run Locally**
+    ```bash
+    npm run dev
+    ```
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 🐛 Known Issues
-
-- Gemini API has rate limits on free tier
-- Large PDFs may take longer to process
-- Audio transcription requires microphone permissions
-
-## 💡 Tips
-
-- Use smaller PDF files for faster processing
-- Gemini API quota resets daily
-- Dark mode preference persists across sessions
-- All API keys should be kept in `.env.local`
-
-## 📞 Support
-
-For issues or questions, please open an issue in the repository.
+Contributions are welcome! If you'd like to improve the AI prompts, add new features, or fix bugs, please fork the repository and submit a pull request.
 
 ---
 
-**Built with ❤️ using Next.js and Google Gemini AI**
+<div align="center">
+  <sub>Built with ❤️ by Bhima</sub>
+</div>
