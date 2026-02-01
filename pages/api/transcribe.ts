@@ -10,6 +10,8 @@ export const config = {
 
 import { getNextKey } from "@/utils/keyManager";
 
+import { BlobServiceClient } from "@azure/storage-blob";
+
 export default async function handler(req: any, res: any) {
   // We initialize configuration inside the retry loop now.
 
@@ -32,6 +34,31 @@ export default async function handler(req: any, res: any) {
   const videoFile = fData.files.file;
   const videoFilePath = videoFile?.filepath;
   console.log("Transcribing file:", videoFilePath);
+
+    // -----------------------------------------------------------------------
+    // ☁️ AZURE BLOB STORAGE BACKUP
+    // -----------------------------------------------------------------------
+    const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
+    let audioUrl = "";
+
+    if (connectionString && videoFilePath) {
+        try {
+            // We await this to ensure we capture the URL (optional: make async if speed is critical)
+            const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
+            const containerClient = blobServiceClient.getContainerClient("recordings");
+            await containerClient.createIfNotExists({ access: 'blob' }); // Public access for playback if needed
+
+            const blobName = `rec-${Date.now()}-${videoFile.originalFilename || "audio.mp4"}`;
+            const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+            
+            console.log("🔹 Backing up audio to Azure Blob...");
+            await blockBlobClient.uploadFile(videoFilePath);
+            audioUrl = blockBlobClient.url;
+            console.log(`✅ Upload success: ${audioUrl}`);
+        } catch (uploadError: any) {
+            console.error("⚠️ Azure Blob upload failed:", uploadError.message);
+        }
+    }
 
   // Retry logic for Groq
   const maxRetries = 3;

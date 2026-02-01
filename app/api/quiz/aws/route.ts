@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const mode = searchParams.get("mode") || "practice";
+  const countParam = searchParams.get("count");
 
   const url = process.env.AZURE_QUESTIONS_URL;
 
@@ -33,22 +34,35 @@ export async function GET(request: Request) {
 
     if (allQuestions.length === 0) throw new Error("Question array is empty.");
 
-    // 3. Shuffle
+    // 3. Shuffle (always shuffle for randomness)
     const shuffled = [...allQuestions];
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
 
-    // 4. Slice based on Mode
+    // 4. Slice based on Count Parameter
     let finalQuestions;
-    if (mode === "exam") {
-      // Real Exam: Strictly 65 random questions
-      finalQuestions = shuffled.slice(0, 65);
+    
+    if (countParam === "all" || !countParam) {
+      // Return all questions if "all" is specified or no count provided in practice mode
+      if (mode === "practice" && !countParam) {
+        finalQuestions = shuffled;
+      } else if (countParam === "all") {
+        finalQuestions = shuffled;
+      } else {
+        // Default exam mode behavior
+        finalQuestions = shuffled.slice(0, 65);
+      }
     } else {
-      // Practice / Mock: ALL questions (1500+)
-      // We don't slice, we return everything.
-      finalQuestions = shuffled; 
+      // Use the specified count
+      const count = parseInt(countParam);
+      if (!isNaN(count) && count > 0) {
+        finalQuestions = shuffled.slice(0, Math.min(count, shuffled.length));
+      } else {
+        // Fallback to default
+        finalQuestions = mode === "exam" ? shuffled.slice(0, 65) : shuffled;
+      }
     }
 
     return NextResponse.json(finalQuestions);

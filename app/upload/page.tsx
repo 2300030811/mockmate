@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { useTheme } from "../providers";
 
 // --- Utility for cleaner classes ---
 function cn(...inputs: (string | undefined | null | false)[]) {
@@ -42,7 +43,10 @@ export default function UploadPage() {
   const [current, setCurrent] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [showResults, setShowResults] = useState(false);
-  const [isDark, setIsDark] = useState(true);
+  
+  const { theme, toggleTheme } = useTheme();
+  const isDark = theme === "dark";
+
   const [customApiKey, setCustomApiKey] = useState("");
   const [provider, setProvider] = useState<"gemini" | "openai" | "groq" | "auto">("groq");
 
@@ -268,7 +272,7 @@ export default function UploadPage() {
               Finish Now
             </button>
             <button 
-              onClick={() => setIsDark(!isDark)} 
+              onClick={toggleTheme} 
               className={`p-2 rounded-lg transition ${
                 isDark ? 'hover:bg-gray-800' : 'hover:bg-gray-100'
               }`}
@@ -332,8 +336,10 @@ export default function UploadPage() {
 
                 <div className="space-y-4">
                   {q.options.map((opt: string, i: number) => {
+                    const normalizeStr = (s: string) => s.replace(/\s+/g, "").toLowerCase();
                     const isSelected = answers[q.id] === opt;
-                    const isCorrect = q.answer === opt;
+                    // Loose comparison to prevent "Red Correct Answer" bugs
+                    const isCorrect = q.answer === opt || normalizeStr(q.answer) === normalizeStr(opt);
                     const isWrong = isSelected && !isCorrect;
                     const showFeedback = !!answers[q.id];
 
@@ -455,30 +461,9 @@ export default function UploadPage() {
         : 'bg-gradient-to-br from-gray-50 via-white to-blue-50'
     }`}>
       
-      {/* Theme Toggle */}
-      <button
-        onClick={() => setIsDark(!isDark)}
-        className={`fixed top-6 right-6 z-50 p-3 rounded-full transition-all ${
-          isDark 
-            ? 'bg-gray-800 hover:bg-gray-700 text-yellow-400' 
-            : 'bg-white hover:bg-gray-100 text-gray-900 shadow-lg'
-        }`}
-      >
-        {isDark ? '☀️' : '🌙'}
-      </button>
 
-      {/* Home Button */}
-      <button
-        onClick={() => router.push('/')}
-        className={`fixed top-6 left-6 z-50 p-3 rounded-full transition-all flex items-center gap-2 ${
-          isDark 
-            ? 'bg-gray-800 hover:bg-gray-700 text-white' 
-            : 'bg-white hover:bg-gray-100 text-gray-900 shadow-lg'
-        }`}
-      >
-        <HomeIcon />
-        <span className="hidden sm:inline text-sm font-semibold">Home</span>
-      </button>
+
+
 
       {/* Animated Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">

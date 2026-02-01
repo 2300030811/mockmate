@@ -3,10 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { useTheme } from "../providers";
 
 export default function DemoSelection() {
   const router = useRouter();
   const [selectedType, setSelectedType] = useState<"behavioral" | "technical" | null>(null);
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   const handleStart = () => {
     if (selectedType) {
@@ -36,7 +39,7 @@ export default function DemoSelection() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-blue-950 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen transition-colors duration-500 bg-gradient-to-br from-gray-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950 flex flex-col items-center justify-center p-4 pt-24 relative overflow-hidden">
       
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -55,14 +58,14 @@ export default function DemoSelection() {
         >
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-full mb-6">
             <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-            <span className="text-sm text-blue-400 font-medium">AI-Powered Mock Interview</span>
+            <span className="text-sm text-blue-600 dark:text-blue-400 font-medium">AI-Powered Mock Interview</span>
           </div>
           
-          <h1 className="text-5xl md:text-6xl font-extrabold mb-6 bg-gradient-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent">
+          <h1 className="text-5xl md:text-6xl font-extrabold mb-6 bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 dark:from-white dark:via-blue-100 dark:to-purple-100 bg-clip-text text-transparent">
             Choose Your Interview Track
           </h1>
           
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
             Practice with our advanced AI interviewer. Get real-time feedback and improve your skills.
           </p>
         </motion.div>
@@ -78,26 +81,20 @@ export default function DemoSelection() {
               onClick={() => setSelectedType(type.id as "behavioral" | "technical")}
               className={`group relative p-8 rounded-3xl text-left transition-all duration-300 overflow-hidden ${
                 selectedType === type.id
-                  ? "scale-105 shadow-2xl"
-                  : "hover:scale-102 shadow-xl"
-              }`}
+                  ? "scale-105 shadow-2xl ring-2 ring-blue-500 dark:ring-white/50"
+                  : "hover:scale-102 shadow-xl hover:shadow-2xl"
+              } bg-white dark:bg-transparent`}
             >
               {/* Background Gradient */}
               <div className={`absolute inset-0 bg-gradient-to-br ${
                 selectedType === type.id ? type.hoverGradient : type.gradient
-              } opacity-90 transition-all duration-300`}></div>
+              } opacity-0 dark:opacity-90 transition-all duration-300 ${selectedType === type.id ? 'opacity-10' : ''}`}></div>
               
-              {/* Glass Effect Overlay */}
-              <div className="absolute inset-0 bg-white/5 backdrop-blur-sm"></div>
-              
-              {/* Selection Ring */}
-              {selectedType === type.id && (
-                <motion.div
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  className="absolute inset-0 border-4 border-white/30 rounded-3xl"
-                ></motion.div>
-              )}
+              {/* Light Mode Specific Background */}
+               <div className={`absolute inset-0 bg-gradient-to-br ${type.gradient} opacity-5 group-hover:opacity-10 dark:opacity-0 transition-all duration-300`}></div>
+
+              {/* Glass Effect Overlay (Dark Mode) */}
+              <div className="absolute inset-0 dark:bg-white/5 dark:backdrop-blur-sm hidden dark:block"></div>
               
               {/* Content */}
               <div className="relative z-10">
@@ -105,11 +102,11 @@ export default function DemoSelection() {
                   {type.icon}
                 </div>
                 
-                <h3 className="text-2xl font-bold text-white mb-2">
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                   {type.title}
                 </h3>
                 
-                <p className="text-white/80 mb-4 leading-relaxed">
+                <p className="text-gray-600 dark:text-white/80 mb-4 leading-relaxed">
                   {type.description}
                 </p>
                 
@@ -118,7 +115,7 @@ export default function DemoSelection() {
                   {type.features.map((feature, i) => (
                     <span 
                       key={i}
-                      className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-medium text-white border border-white/30"
+                      className="px-3 py-1 bg-gray-100 dark:bg-white/20 backdrop-blur-sm rounded-full text-xs font-medium text-gray-700 dark:text-white border border-gray-200 dark:border-white/30"
                     >
                       {feature}
                     </span>
@@ -130,9 +127,9 @@ export default function DemoSelection() {
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="absolute top-6 right-6 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg"
+                    className="absolute top-6 right-6 w-8 h-8 bg-blue-600 dark:bg-white rounded-full flex items-center justify-center shadow-lg"
                   >
-                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 text-white dark:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                     </svg>
                   </motion.div>
