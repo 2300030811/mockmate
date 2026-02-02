@@ -1,90 +1,128 @@
-# Mockmate - AI-Powered Interview Platform
+# 🚀 Mockmate - AI-Powered Interview Excellence
 
-Next.js TypeScript Tailwind Gemini AI Groq
+<div align="center">
 
-[Live Demo 1](https://mockmate-delta.vercel.app/) • [Live Demo 2](https://mockmate-fcn3errhj-2300030811s-projects.vercel.app/) • [Report Bug](https://github.com/2300030811/mockmate/issues)
+![Mockmate Banner](https://img.shields.io/badge/AI-Powered-purple?style=for-the-badge)
+![Next.js](https://img.shields.io/badge/Next.js-13-black?style=for-the-badge&logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=for-the-badge&logo=typescript)
+![Tailwind](https://img.shields.io/badge/Tailwind-CSS-38B2AC?style=for-the-badge&logo=tailwind-css)
+![Google Gemini](https://img.shields.io/badge/Google-Gemini-8E75B2?style=for-the-badge)
+![Groq](https://img.shields.io/badge/Groq-Fast_Inference-orange?style=for-the-badge)
 
-## 🚀 Introduction
+**Your Intelligent Partner for Technical Interview Prep & Cloud Certification**
 
-Mockmate is a cutting-edge platform designed to revolutionize technical interview preparation. By leveraging the power of Google Gemini and Groq, it transforms static study materials into interactive quizzes and conducts real-time voice-based mock interviews.
+[View Live Demo](https://mockmate-delta.vercel.app/) • [Report Bug](https://github.com/2300030811/mockmate/issues) • [Request Feature](https://github.com/2300030811/mockmate/issues)
 
-Whether you are preparing for an AWS certification or a software engineering role, Mockmate provides instant, intelligent feedback to help you elevate your skills.
+</div>
+
+---
+
+## 🌟 Introduction
+
+**Mockmate** is a state-of-the-art platform designed to supercharge your technical preparation. Whether you're aiming for a top-tier software engineering role or chasing cloud certifications, Mockmate bridges the gap between study and practice.
+
+Powered by a dual-engine AI core (**Google Gemini Pro** & **Groq Llama 3**), it delivers:
+
+- **Instant Quizzes** generated from your own study materials.
+- **Real-time Voice Interviews** that feel natural and authentic.
+- **Dedicated Cloud Prep** for both **AWS** and **Azure** certifications.
 
 ## ✨ Key Features
 
-### 🤖 AI Quiz Generator
+### ☁️ Cloud Certification Hub (New!)
 
-- **Upload & Generate**: Simply upload a PDF or paste text.
-- **Intelligent Processing**: Extracts key concepts to create relevant multiple-choice questions.
-- **Smart Fallback**: Automatically switches between Gemini and Groq models to ensure high availability and bypass rate limits.
-- **Instant Feedback**: Detailed explanations for every answer.
+Detailed preparation tracks for major cloud providers:
 
-### 🎙️ Mock Interview Simulator
+- **AWS Quiz**: Targeted practice for Cloud Practitioner & Solutions Architect.
+- **Azure Quiz**: Comprehensive questions for Azure Fundamentals (AZ-900) and beyond.
+- **Customizable Modes**: Choose strictly timed exams or relaxed study modes.
 
-- **Voice Interaction**: Speak your answers and get real-time transcriptions (powered by Groq Whisper).
-- **AI Interviewer**: Simulates a real hiring manager, providing constructive criticism on your answers.
-- **Behavioral & Technical**: Supports various interview modes.
+### 🤖 Intelligent Quiz Generator
 
-### ☁️ AWS Certification Prep
+Turn any document into a test:
 
-- Curated question banks for AWS Cloud Practitioner and Solutions Architect exams.
-- Progress tracking to monitor your readiness.
+- **Upload & Generate**: Support for PDFs and raw text.
+- **Smart Context**: Extracts high-yield concepts, not just random keywords.
+- **Resilient Architecture**: Uses a robust **Strategy Pattern** to automatically switch between AI providers (Gemini -> Groq) if one is busy or rate-limited.
+
+### 🎙️ AI Interview Simulator
+
+Experience the pressure of a real interview from home:
+
+- **Voice-First Experience**: Utilizes **Web Speech API** for zero-latency transcription, falling back to **Groq Whisper** for complex audio.
+- **Human-Like TTS**: Browser-native text-to-speech for natural conversational flow.
+- **Adaptive Feedback**: The AI analyzes your answers for technical accuracy and behavioral cues, providing constructive critique.
 
 ## 🛠️ Tech Stack
 
-- **Framework**: Next.js 13 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS + Framer Motion
-- **AI Models**:
-  - Google Gemini (Flash 1.5 & 2.0)
-  - Groq (Llama 3 & Distil-Whisper)
-- **Deployment**: Vercel
+### Framework & Core
 
-## 🌐 Live Deployments
+- **Next.js 13** (App Router)
+- **TypeScript** (Strict Mode)
+- **Tailwind CSS** (Responsive & Dark Mode optimized)
+- **Framer Motion** (Smooth animations)
 
-Check out the live application running on Vercel:
+### AI & Data
 
-| Environment | URL |
-|Data|Data|
-| Production | https://mockmate-delta.vercel.app/ |
-| Preview | https://mockmate-fcn3errhj-2300030811s-projects.vercel.app/ |
+- **Google Gemini**: Primary reasoning engine (Flash 1.5 & 2.0).
+- **Groq**: Uber-fast inference for real-time chat (Llama 3, Mixtral).
+- **Zod**: Type-safe schema validation.
+- **Redis (Upstash)**: Rate limiting and caching.
 
-## 📦 Installation & Setup
+### Deployment
 
-Clone the repository
+- **Vercel**: Edge-ready deployment.
+
+## 🚀 Getting Started
+
+Follow these steps to set up Mockmate locally:
+
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/2300030811/mockmate.git
 cd mockmate
 ```
 
-Install dependencies
+### 2. Install Dependencies
 
 ```bash
 npm install
 ```
 
-Configure Environment Variables. Create a `.env.local` file:
+### 3. Configure Environment
+
+Create a `.env.local` file in the root directory:
 
 ```env
-# AI Keys (Required for Quiz & Interview)
-GROQ_API_KEY=gsk_...
-GOOGLE_API_KEY=...
+# AI API Keys
+GOOGLE_API_KEY=your_gemini_key
+GROQ_API_KEY=your_groq_key
 
-# App Config
+# App Configuration
 NEXT_PUBLIC_BASE_URL=http://localhost:3000
 ```
 
-Run Locally
+### 4. Run the Dev Server
 
 ```bash
 npm run dev
 ```
 
+Visit `http://localhost:3000` to start your prep!
+
 ## 🤝 Contributing
 
-Contributions are welcome! If you'd like to improve the AI prompts, add new features, or fix bugs, please fork the repository and submit a pull request.
+We love contributions! Whether it's adding a new quiz mode, improving AI prompts, or fixing a typo, your help is welcome.
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ---
 
-Built with ❤️ by Bhima
+<div align="center">
+  Built with ❤️ by Bhima
+</div>
