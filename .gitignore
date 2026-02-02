@@ -34,3 +34,16 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Secrets and backups
+*.key
+*.secret
+*.pfx
+*.cer
+*.crt
+*.bak
+*.swp
+*.tmp
+temp/
+backup/
+
