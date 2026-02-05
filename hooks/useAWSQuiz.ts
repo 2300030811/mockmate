@@ -19,9 +19,19 @@ export function useAWSQuiz({ initialMode = 'practice' }: UseAWSQuizProps = {}) {
   const { data: questions = [], isLoading: loading } = useQuery({
     queryKey: ['aws-quiz', initialMode],
     queryFn: async () => {
-      const res = await fetch(`/api/quiz/aws?mode=${initialMode}`);
-      const data = await res.json();
-      return Array.isArray(data) ? data : [];
+      try {
+        const res = await fetch(`/api/quiz/aws?mode=${initialMode}`);
+        if (!res.ok) {
+           throw new Error(`Failed to fetch questions: ${res.status} ${res.statusText}`);
+        }
+        const data = await res.json();
+        return Array.isArray(data) ? data : [];
+      } catch (error) {
+        console.error("Quiz Fetch Error:", error);
+        // Fallback or re-throw based on preference. For now returning empty array so app doesn't crash.
+        // Queries usually handle errors by state, so re-throwing is better for useQuery's `isError`
+        throw error;
+      }
     },
     staleTime: 1000 * 60 * 30, // 30 mins
     refetchOnWindowFocus: false,

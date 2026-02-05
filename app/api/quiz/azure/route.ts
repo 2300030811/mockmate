@@ -33,7 +33,7 @@ export async function GET(request: Request) {
       // Fallback or explicit check if data is object but has no questions key (unlikely based on user description but good for safety)
       if (typeof data === "object") {
         // Check if it's the root object or needs extracting
-        allQuestions = Object.values(data).find((v) => Array.isArray(v)) || [];
+        allQuestions = (Object.values(data) as any[]).find((v) => Array.isArray(v)) || [];
       }
     }
 

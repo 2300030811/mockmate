@@ -1,13 +1,14 @@
 import { BlobServiceClient } from "@azure/storage-blob";
+import { env } from "@/lib/env";
 
 const getBlobServiceClient = () => {
-    const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
-    // Fallback for build time if env is missing
+    const connectionString = env.AZURE_STORAGE_CONNECTION_STRING;
+    
+    // Fallback/Check
     if (!connectionString) {
-        if (process.env.NODE_ENV === "production" && process.env.NEXT_PHASE !== "phase-production-build") {
+        if (env.NODE_ENV === "production") {
              console.warn("⚠️ AZURE_STORAGE_CONNECTION_STRING is missing in production!");
         }
-        // Return a dummy client or handle error gracefully during build
         return null; 
     }
     return BlobServiceClient.fromConnectionString(connectionString);
@@ -32,10 +33,13 @@ async function streamToString(readableStream: NodeJS.ReadableStream) {
 
 export async function getAWSQuestions() {
   const container = getContainer("quizzes");
-  const blob = container.getBlobClient("aws_questions.json");
-
-  const download = await blob.download();
-  const text = await streamToString(download.readableStreamBody!);
-
-  return JSON.parse(text);
+  try {
+    const blob = container.getBlobClient("aws_questions.json");
+    const download = await blob.download();
+    const text = await streamToString(download.readableStreamBody!);
+    return JSON.parse(text);
+  } catch (error) {
+    console.error("Failed to fetch AWS questions:", error);
+    return []; // Return empty array instead of crashing
+  }
 }
