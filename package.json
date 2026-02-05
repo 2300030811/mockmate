@@ -27,7 +27,6 @@
     "eslint": "8.41.0",
     "eslint-config-next": "13.4.4",
     "eventsource-parser": "^1.0.0",
-    "formidable": "^2.1.1",
     "framer-motion": "^10.18.0",
     "groq-sdk": "^0.37.0",
     "microsoft-cognitiveservices-speech-sdk": "^1.47.0",
@@ -45,7 +44,6 @@
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.9",
     "@types/fluent-ffmpeg": "^2.1.8",
-    "@types/formidable": "^2.0.5",
     "@types/pdf-parse": "^1.1.5",
     "autoprefixer": "^10.4.14",
     "postcss": "^8.4.24",
