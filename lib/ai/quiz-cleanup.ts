@@ -42,7 +42,49 @@ export function findBestMatch(options: string[], answer: string): string | null 
   const normSubstring = options.find(o => normalize(o).includes(normAnswer) || normAnswer.includes(normalize(o)));
   if (normSubstring) return normSubstring;
 
+  // 6. Fuzzy Match (Levenshtein) - Allows for small typos (up to 3 chars diff)
+  // Only use if strings are reasonably long to avoid false positives on short options like "A", "B"
+  if (cleanAnswer.length > 3) {
+      const bestFuzzy = options.reduce((best, current) => {
+          const dist = levenshtein(normalize(cleanAnswer), normalize(current));
+          if (dist < best.dist) return { opt: current, dist };
+          return best;
+      }, { opt: null as string | null, dist: Infinity });
+
+      // Threshold: Allow 20% difference or Max 3 chars
+      const threshold = Math.min(3, Math.ceil(cleanAnswer.length * 0.2));
+      if (bestFuzzy.opt && bestFuzzy.dist <= threshold) {
+          return bestFuzzy.opt;
+      }
+  }
+
   return null;
+}
+
+/**
+ * Calculates Levenshtein distance between two strings.
+ */
+function levenshtein(a: string, b: string): number {
+  const matrix = [];
+  for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+  for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      if (b.charAt(i - 1) === a.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1, // substitution
+          Math.min(
+            matrix[i][j - 1] + 1, // insertion
+            matrix[i - 1][j] + 1 // deletion
+          )
+        );
+      }
+    }
+  }
+  return matrix[b.length][a.length];
 }
 
 /**

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { InteractiveCard } from "@/components/ui/Card";
 
 const features = [
   {
@@ -49,7 +50,7 @@ export function FeatureCards() {
             href={feature.href}
             className="group relative block h-full"
           >
-            <div className="relative p-8 rounded-3xl transition-all duration-300 overflow-hidden transform h-full bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300 shadow-lg hover:shadow-2xl dark:bg-gray-900/50 dark:hover:bg-gray-900/70 dark:border-gray-800 dark:hover:border-gray-700 hover:scale-105 hover:-translate-y-1 active:scale-100 flex flex-col items-center text-center">
+            <InteractiveCard className="h-full flex flex-col items-center text-center p-8">
               
               {/* Gradient Overlay */}
               <div className={`absolute inset-0 bg-gradient-to-br ${feature.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}></div>
@@ -70,7 +71,7 @@ export function FeatureCards() {
                   {feature.description}
                 </p>
               </div>
-            </div>
+            </InteractiveCard>
           </Link>
         </motion.div>
       ))}

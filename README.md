@@ -4,10 +4,10 @@
 
 ![Mockmate Banner](https://img.shields.io/badge/AI-Powered-purple?style=for-the-badge)
 ![Next.js](https://img.shields.io/badge/Next.js-13-black?style=for-the-badge&logo=next.js)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=for-the-badge&logo=typescript)
+![TypeScript](https://img.shields.io/badge/TypeScript-Strict-blue?style=for-the-badge&logo=typescript)
 ![Tailwind](https://img.shields.io/badge/Tailwind-CSS-38B2AC?style=for-the-badge&logo=tailwind-css)
-![Google Gemini](https://img.shields.io/badge/Google-Gemini-8E75B2?style=for-the-badge)
-![Groq](https://img.shields.io/badge/Groq-Fast_Inference-orange?style=for-the-badge)
+![Vitest](https://img.shields.io/badge/Vitest-Tested-green?style=for-the-badge&logo=vitest)
+![Playwright](https://img.shields.io/badge/Playwright-E2E-orange?style=for-the-badge&logo=playwright)
 
 **Your Intelligent Partner for Technical Interview Prep & Cloud Certification**
 
@@ -29,7 +29,7 @@ Powered by a dual-engine AI core (**Google Gemini Pro** & **Groq Llama 3**), it 
 
 ## ✨ Key Features
 
-### ☁️ Cloud Certification Hub (New!)
+### ☁️ Cloud Certification Hub
 
 Detailed preparation tracks for major cloud providers:
 
@@ -49,29 +49,31 @@ Turn any document into a test:
 
 Experience the pressure of a real interview from home:
 
-- **Voice-First Experience**: Utilizes **Web Speech API** for zero-latency transcription, falling back to **Groq Whisper** for complex audio.
-- **Human-Like TTS**: Browser-native text-to-speech for natural conversational flow.
+- **Voice-First Experience**: Utilizes **Native Web Speech API** for zero-latency transcription and browser-native TTS.
+- **Zero Latency**: No server round-trips for speech processing means instant feedback.
 - **Adaptive Feedback**: The AI analyzes your answers for technical accuracy and behavioral cues, providing constructive critique.
 
-## 🛠️ Tech Stack
+## 🛠️ Tech Stack & Quality
 
-### Framework & Core
+### ⚙️ Core Architecture
 
 - **Next.js 13** (App Router)
-- **TypeScript** (Strict Mode)
+- **TypeScript** (Strict Mode enables)
 - **Tailwind CSS** (Responsive & Dark Mode optimized)
-- **Framer Motion** (Smooth animations)
+- **Server Actions**: Clean separation of business logic and UI.
 
-### AI & Data
+### 🧪 Testing & Reliability
+
+- **Vitest**: Comprehensive unit testing for logic (QuizService, Hooks).
+- **Playwright**: End-to-End (E2E) testing for critical user flows.
+- **Zod**: Runtime schema validation for AI responses.
+- **Lucide React**: Standardized, lightweight iconography.
+
+### 🧠 AI & Data
 
 - **Google Gemini**: Primary reasoning engine (Flash 1.5 & 2.0).
-- **Groq**: Uber-fast inference for real-time chat (Llama 3, Mixtral).
-- **Zod**: Type-safe schema validation.
+- **Groq**: Uber-fast inference for real-time chat (Llama 3).
 - **Redis (Upstash)**: Rate limiting and caching.
-
-### Deployment
-
-- **Vercel**: Edge-ready deployment.
 
 ## 🚀 Getting Started
 
@@ -110,6 +112,24 @@ npm run dev
 ```
 
 Visit `http://localhost:3000` to start your prep!
+
+## 🧪 Running Tests
+
+Ensure the reliability of the application with our full test suite.
+
+**Unit Tests (Logic & Components)**
+
+```bash
+npm test
+# or
+npx vitest run
+```
+
+**End-to-End Tests (Browser Flows)**
+
+```bash
+npx playwright test
+```
 
 ## 🤝 Contributing
 

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { buttonVariants } from "@/components/ui/Button";
 import { motion } from "framer-motion";
 
 export function HomeCTA() {
@@ -13,7 +14,7 @@ export function HomeCTA() {
     >
       <Link
         href="/demo"
-        className="group relative px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-2xl font-bold shadow-2xl shadow-blue-500/30 hover:shadow-blue-500/50 transition-all duration-300 hover:scale-105 active:scale-95 overflow-hidden"
+        className={buttonVariants("primary", "lg", "group relative overflow-hidden shadow-2xl")}
       >
         {/* Button Shimmer */}
         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -27,7 +28,7 @@ export function HomeCTA() {
       
       <Link
         href="/upload"
-        className="px-8 py-4 rounded-2xl font-bold transition-all duration-300 hover:scale-105 active:scale-95 bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 hover:border-gray-400 shadow-lg hover:shadow-2xl dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-white dark:border-gray-700 dark:hover:border-gray-600"
+        className={buttonVariants("default", "lg", "bg-white dark:bg-gray-800 dark:border-gray-700 hover:border-gray-400 shadow-lg hover:shadow-2xl")}
       >
         Generate Quiz
       </Link>

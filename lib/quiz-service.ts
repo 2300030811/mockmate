@@ -1,5 +1,7 @@
 import { QuizQuestion, QuizConfig, QuizMode } from "@/types";
 import { parseExplanationForHotspot, shuffleArray } from "@/utils/quiz-helpers";
+import { QuizQuestionSchema } from "./schemas";
+import { AppError, ValidationError } from "@/lib/exceptions";
 
 export class QuizService {
   /**
@@ -15,41 +17,58 @@ export class QuizService {
 
     if (!res.ok) throw new Error(`Fetch Failed: ${res.status}`);
 
-    const data = await res.json();
-    let allQuestions: any[] = [];
+    const rawData = await res.json();
+    let allQuestions: unknown[] = [];
 
     // Robust unwrapping
-    if (Array.isArray(data)) {
-      allQuestions = data;
-    } else if (data.questions && Array.isArray(data.questions)) {
-      allQuestions = data.questions;
-    } else if (typeof data === "object" && data !== null) {
-        // Find the first array property
-        allQuestions = (Object.values(data) as any[]).find((v) => Array.isArray(v)) || [];
+    if (Array.isArray(rawData)) {
+      allQuestions = rawData;
+    } else if (rawData && typeof rawData === "object") {
+        const asObj = rawData as Record<string, unknown>;
+        if (Array.isArray(asObj.questions)) {
+            allQuestions = asObj.questions;
+        } else {
+            // Find the first array property
+            allQuestions = (Object.values(asObj).find((v) => Array.isArray(v)) as unknown[]) || [];
+        }
     }
 
     if (!Array.isArray(allQuestions)) {
         throw new Error("Invalid question format or empty array");
     }
 
-    // Enrich & Type Check
-    return allQuestions.map((q: any) => {
-        // copy of the object to avoid mutation issues if ref is used elsewhere
-        const newQ = { ...q };
+    // Enrich & Type Check with Zod
+    return allQuestions.map((q) => {
+        if (!q || typeof q !== "object") return null;
         
+        const safeQ = q as Record<string, unknown>;
+        const newQ = { ...safeQ };
+
         // Fix Hotspots with empty answers using explanation parsing
+        // We ensure type is treated as string for comparison to avoid "any" pollution
+        const qType = String(newQ.type || "");
+
         if (
-            (newQ.type === "hotspot" || newQ.type === "drag_drop" || newQ.type === "mcq") &&
-            (!newQ.answer || (typeof newQ.answer === "object" && Object.keys(newQ.answer).length === 0))
+            (qType === "hotspot" || qType === "drag_drop" || qType === "mcq") &&
+            (!newQ.answer || (typeof newQ.answer === "object" && Object.keys(newQ.answer as object).length === 0))
           ) {
-            const parsed = parseExplanationForHotspot(newQ.explanation);
+            const explanation = typeof newQ.explanation === 'string' ? newQ.explanation : undefined;
+            const parsed = parseExplanationForHotspot(explanation);
             if (parsed) {
                newQ.type = "hotspot";
                newQ.answer = parsed;
             }
           }
-          return newQ;
-    }) as QuizQuestion[];
+        
+        // Strict Validation
+        const parsedQ = QuizQuestionSchema.safeParse(newQ);
+        if (!parsedQ.success) {
+            // In strict mode, we might want to log this
+            // console.warn(`Skipping invalid question ID ${safeQ.id}`);
+            return null;
+        }
+        return parsedQ.data;
+    }).filter((q): q is QuizQuestion => q !== null);
   }
 
   /**

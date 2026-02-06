@@ -47,3 +47,7 @@ next-env.d.ts
 temp/
 backup/
 
+
+# Playwright
+/playwright-report/
+/test-results/

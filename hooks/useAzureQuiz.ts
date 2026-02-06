@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchAzureQuestions, QuizQuestion } from '@/lib/azure-quiz-service';
+import { QuizQuestion } from "@/lib/azure-quiz-service";
 
 export type QuizMode = 'practice' | 'exam' | 'review';
 
@@ -22,7 +22,10 @@ export function useAzureQuiz({ initialMode = 'practice' }: UseAzureQuizProps = {
   // React Query for caching raw data
   const { data: rawQuestions, isLoading: isFetching } = useQuery({
     queryKey: ['azure-questions-raw'],
-    queryFn: fetchAzureQuestions,
+    queryFn: async () => {
+      const { fetchAzureQuestionsAction } = await import("@/app/actions/quiz");
+      return await fetchAzureQuestionsAction();
+    },
     staleTime: 1000 * 60 * 60, // Cache raw questions for 1 hour
     refetchOnWindowFocus: false,
   });
