@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -6,7 +7,7 @@ import { motion } from "framer-motion";
 import { ModeCard } from "@/components/quiz/ModeCard";
 
 // --- Icons ---
-const CloudIcon = () => <span className="text-5xl">☁️</span>;
+const LeafIcon = () => <span className="text-5xl">🍃</span>;
 const TimerIcon = () => <span className="text-5xl">⏳</span>;
 const CloseIcon = () => (
   <svg
@@ -29,15 +30,15 @@ export default function ModeSelect() {
   const router = useRouter();
   const [modal, setModal] = useState<"none" | "practice" | "exam">("none");
   const [practiceCount, setPracticeCount] = useState<number | "all">("all");
-  const [examCount, setExamCount] = useState<number>(65);
+  const [examCount, setExamCount] = useState<number>(60);
 
   return (
-    <div className="min-h-screen transition-colors duration-500 bg-gradient-to-br from-orange-50 via-white to-yellow-50 dark:from-gray-950 dark:via-gray-900 dark:to-orange-950 pt-20">
+    <div className="min-h-screen transition-colors duration-500 bg-gradient-to-br from-green-50 via-white to-teal-50 dark:from-gray-950 dark:via-gray-900 dark:to-green-950 pt-20">
       
       {/* Animated Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-96 h-96 rounded-full blur-3xl animate-pulse bg-orange-500/20 dark:bg-orange-500/10"></div>
-        <div className="absolute bottom-20 right-10 w-96 h-96 rounded-full blur-3xl animate-pulse bg-yellow-500/20 dark:bg-yellow-500/10" style={{ animationDelay: "1s" }}></div>
+        <div className="absolute top-20 left-10 w-96 h-96 rounded-full blur-3xl animate-pulse bg-green-500/20 dark:bg-green-500/10"></div>
+        <div className="absolute bottom-20 right-10 w-96 h-96 rounded-full blur-3xl animate-pulse bg-teal-500/20 dark:bg-teal-500/10" style={{ animationDelay: "1s" }}></div>
       </div>
 
       {/* Main Content */}
@@ -49,10 +50,10 @@ export default function ModeSelect() {
           transition={{ duration: 0.6 }}
           className="mb-8"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border backdrop-blur-sm transition-all duration-300 hover:scale-105 bg-orange-500/10 border-orange-500/30 text-orange-600 dark:bg-orange-500/10 dark:border-orange-500/20 dark:text-orange-400">
-            <span className="text-2xl">☁️</span>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border backdrop-blur-sm transition-all duration-300 hover:scale-105 bg-green-500/10 border-green-500/30 text-green-600 dark:bg-green-500/10 dark:border-green-500/20 dark:text-green-400">
+            <span className="text-2xl">🍃</span>
             <span className="text-sm font-bold tracking-wider">
-              AWS CERTIFIED CLOUD PRACTITIONER
+              MONGODB CERTIFICATION PREP
             </span>
           </div>
         </motion.div>
@@ -62,9 +63,9 @@ export default function ModeSelect() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.1 }}
-          className="text-5xl md:text-7xl font-extrabold mb-6 pb-4 text-center bg-gradient-to-r from-orange-600 via-yellow-600 to-orange-800 dark:from-orange-400 dark:via-yellow-300 dark:to-orange-200 bg-clip-text text-transparent"
+          className="text-5xl md:text-7xl font-extrabold mb-6 pb-4 text-center bg-gradient-to-r from-green-600 via-teal-600 to-green-800 dark:from-green-400 dark:via-teal-300 dark:to-green-200 bg-clip-text text-transparent"
         >
-          Master the Cloud
+          Master MongoDB
         </motion.h1>
 
         {/* Subtitle */}
@@ -74,7 +75,7 @@ export default function ModeSelect() {
           transition={{ duration: 0.8, delay: 0.2 }}
           className="text-xl md:text-2xl mb-12 max-w-3xl mx-auto text-center text-gray-600 dark:text-gray-400"
         >
-          Prepare for the AWS Certified Cloud Practitioner exam with our comprehensive practice suite.
+          Choose how you want to prepare for MongoDB certification.
         </motion.p>
 
         {/* Mode Cards */}
@@ -86,29 +87,29 @@ export default function ModeSelect() {
         >
           <ModeCard
             title="Practice Labs"
-            description="Access 1500+ questions with immediate feedback and detailed explanations."
-            icon={<CloudIcon />}
+            description="Access questions with immediate feedback and detailed explanations."
+            icon={<LeafIcon />}
             features={["Instant feedback", "Detailed explanations", "No time pressure"]}
             buttonText="Start Practice"
-            gradient="from-orange-400 to-yellow-500"
-            iconBgLight="bg-orange-100"
-            iconBgDark="bg-orange-500"
+            gradient="from-green-400 to-teal-500"
+            iconBgLight="bg-green-100"
+            iconBgDark="bg-green-500"
             onClick={() => setModal("practice")}
-            iconColorClass="text-orange-600"
+            iconColorClass="text-green-600"
           />
 
           <ModeCard
             title="Exam Simulation"
-            description="Simulate the real AWS exam with 65 questions in 90 minutes."
+            description="Simulate the real MongoDB exam."
             icon={<TimerIcon />}
-            features={["90-minute timer", "65 questions", "70% passing score"]}
+            features={["Timed exam", "Exam-like conditions", "Passing score check"]}
             buttonText="Start Exam"
-            gradient="from-red-500 to-orange-600"
-            iconBgLight="bg-red-100"
-            iconBgDark="bg-red-500"
+            gradient="from-teal-500 to-emerald-600"
+            iconBgLight="bg-teal-100"
+            iconBgDark="bg-teal-500"
             onClick={() => setModal("exam")}
-            iconColorClass="text-red-500"
-            buttonColorClass="text-red-700 dark:text-red-900"
+            iconColorClass="text-teal-500"
+            buttonColorClass="text-teal-700 dark:text-teal-900"
           />
         </motion.div>
       </div>
@@ -136,7 +137,7 @@ export default function ModeSelect() {
               </button>
             </div>
 
-            <div className="mb-6 p-4 rounded-lg text-sm bg-blue-50 text-blue-900 dark:bg-blue-500/20 dark:text-blue-200">
+            <div className="mb-6 p-4 rounded-lg text-sm bg-green-50 text-green-900 dark:bg-green-500/20 dark:text-green-200">
               <p>
                 <strong>Note:</strong> This mode is for study purposes. Correct
                 answers and explanations will be shown immediately after
@@ -156,13 +157,13 @@ export default function ModeSelect() {
                 How many questions do you want to practice?
               </label>
               <div className="grid grid-cols-3 gap-2 mb-3">
-                {[30, 50, 65, 100].map((count) => (
+                {[30, 50, 60, 100].map((count) => (
                   <button
                     key={count}
                     onClick={() => setPracticeCount(count)}
                     className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
                       practiceCount === count
-                        ? "bg-blue-600 text-white shadow-lg shadow-blue-500/30"
+                        ? "bg-green-600 text-white shadow-lg shadow-green-500/30"
                         : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-100 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500 dark:border-transparent"
                     }`}
                   >
@@ -173,34 +174,13 @@ export default function ModeSelect() {
                   onClick={() => setPracticeCount("all")}
                   className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
                     practiceCount === "all"
-                      ? "bg-blue-600 text-white shadow-lg shadow-blue-500/30"
+                      ? "bg-green-600 text-white shadow-lg shadow-green-500/30"
                       : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-100 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500 dark:border-transparent"
                   }`}
                 >
                   All
                 </button>
-                <button
-                  onClick={() => setPracticeCount(0)}
-                  className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                    typeof practiceCount === "number" && practiceCount !== 30 && practiceCount !== 50 && practiceCount !== 65 && practiceCount !== 100
-                      ? "bg-blue-600 text-white shadow-lg shadow-blue-500/30"
-                      : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-100 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500 dark:border-transparent"
-                  }`}
-                >
-                  Custom
-                </button>
               </div>
-              {typeof practiceCount === "number" && practiceCount !== 30 && practiceCount !== 50 && practiceCount !== 65 && practiceCount !== 100 && (
-                <input
-                  type="number"
-                  min="1"
-                  max="1500"
-                  value={practiceCount || ""}
-                  onChange={(e) => setPracticeCount(parseInt(e.target.value) || 1)}
-                  placeholder="Enter number of questions"
-                  className="w-full px-4 py-2 rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 border border-gray-300 dark:bg-gray-600 dark:text-white dark:border-gray-500 dark:placeholder-gray-400"
-                />
-              )}
             </div>
 
             <div className="flex justify-end gap-3">
@@ -213,9 +193,9 @@ export default function ModeSelect() {
               <button
                 onClick={() => {
                   const countParam = practiceCount === "all" ? "all" : practiceCount.toString();
-                  router.push(`/aws-quiz?mode=practice&count=${countParam}`);
+                  router.push(`/mongodb-quiz?mode=practice&count=${countParam}`);
                 }}
-                className="px-5 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 font-bold transition shadow-lg shadow-blue-500/30"
+                className="px-5 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 font-bold transition shadow-lg shadow-green-500/30"
               >
                 Start Practice
               </button>
@@ -272,13 +252,13 @@ export default function ModeSelect() {
                 Select number of questions:
               </label>
               <div className="grid grid-cols-3 gap-2">
-                {[30, 50, 65].map((count) => (
+                {[30, 50, 60].map((count) => (
                   <button
                     key={count}
                     onClick={() => setExamCount(count)}
                     className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
                       examCount === count
-                        ? "bg-blue-600 text-white shadow-lg shadow-blue-500/30"
+                        ? "bg-green-600 text-white shadow-lg shadow-green-500/30"
                         : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-100 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500 dark:border-transparent"
                     }`}
                   >
@@ -287,7 +267,7 @@ export default function ModeSelect() {
                 ))}
               </div>
               <p className="text-xs mt-2 text-gray-400 dark:text-gray-500">
-                Default: 65 (Real AWS exam format). Choose 30 or 50 for a quick test.
+                Default: 60 (Standard Exam). Choose 30 or 50 for a quick test.
               </p>
             </div>
 
@@ -295,7 +275,7 @@ export default function ModeSelect() {
             <div className="space-y-3 mb-6 text-gray-700 dark:text-gray-300">
               <ul className="list-disc pl-5 space-y-2">
                 <li>
-                  <strong>Passing Score:</strong> 70% (46/65 correct).
+                  <strong>Passing Score:</strong> 70%.
                 </li>
                 <li>The timer starts immediately.</li>
                 <li>
@@ -325,8 +305,8 @@ export default function ModeSelect() {
                 Decline
               </button>
               <button
-                onClick={() => router.push(`/aws-quiz?mode=exam&count=${examCount}`)}
-                className="flex-[2] py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 font-bold transition shadow-lg shadow-blue-500/30"
+                onClick={() => router.push(`/mongodb-quiz?mode=exam&count=${examCount}`)}
+                className="flex-[2] py-3 rounded-lg bg-green-600 text-white hover:bg-green-700 font-bold transition shadow-lg shadow-green-500/30"
               >
                 Agree & Start Exam
               </button>

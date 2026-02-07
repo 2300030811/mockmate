@@ -18,6 +18,12 @@ const AzureIcon = () => (
     </svg>
 );
 
+const SalesforceIcon = () => (
+    <svg viewBox="0 0 24 24" fill="currentColor" className="w-12 h-12">
+        <path d="M18.9 12.3c0-2.2-1.8-4.2-3.8-4.2-.2 0-.4 0-.6.1-.9-3.2-3.9-5.3-7.2-4.9-2.3.3-4.2 1.9-4.9 4.1C.3 8 .5 10.9 2.8 12.6c-1 .6-1.7 1.6-1.7 2.8 0 1.9 1.7 3.5 3.7 3.5h14.2c2.4 0 4.4-1.9 4.4-4.2 0-1.4-.7-2.7-1.9-3.4-.3-.5-.5-.7-.6-1z" />
+    </svg>
+);
+
 export default function CertificationSelect() {
   const router = useRouter();
   const { theme } = useTheme();
@@ -79,7 +85,7 @@ export default function CertificationSelect() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
-          className="max-w-5xl w-full grid md:grid-cols-2 gap-8 px-4"
+          className="max-w-7xl w-full grid md:grid-cols-2 lg:grid-cols-3 gap-8 px-4"
         >
           {/* AWS Card */}
           <Link
@@ -181,6 +187,184 @@ export default function CertificationSelect() {
 
                 <span className="inline-flex items-center gap-2 text-cyan-500 font-bold group-hover:gap-4 transition-all mt-auto">
                   Start Azure Quiz
+                  <svg
+                    className="w-5 h-5 group-hover:translate-x-1 transition-transform"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 7l5 5m0 0l-5 5m5-5H6"
+                    />
+                  </svg>
+                </span>
+                </div>
+            </div>
+          </Link>
+
+
+          {/* Salesforce Card */}
+          <Link
+            href="/salesforce-quiz/mode"
+            className="group relative"
+            aria-label="Select Salesforce Agentforce Specialist"
+          >
+            <div
+              className={`relative h-full p-8 rounded-3xl transition-all duration-300 overflow-hidden ${
+                isDark
+                  ? "bg-gray-900/50 hover:bg-gray-900/70 border border-gray-800"
+                  : "bg-white hover:bg-gray-50 border border-gray-200 shadow-lg"
+              } hover:scale-105 hover:shadow-2xl`}
+            >
+              {/* Gradient Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+
+              <div className="relative z-10 text-left h-full flex flex-col">
+                <div
+                  className={`mb-6 w-20 h-20 flex items-center justify-center rounded-2xl transform group-hover:scale-110 transition-transform duration-300 ${
+                    isDark ? "bg-blue-500/20 text-blue-400" : "bg-blue-100 text-blue-600"
+                  }`}
+                >
+                  <SalesforceIcon />
+                </div>
+                <h2
+                  className={`text-2xl font-bold mb-3 ${
+                    isDark ? "text-white" : "text-gray-900"
+                  }`}
+                >
+                  Salesforce Agentforce Specialist
+                </h2>
+                <p
+                  className={`mb-6 leading-relaxed flex-grow ${
+                    isDark ? "text-gray-400" : "text-gray-600"
+                  }`}
+                >
+                  Master Salesforce AI agents, prompt building, and Copilot actions.
+                </p>
+
+                <span className="inline-flex items-center gap-2 text-blue-500 font-bold group-hover:gap-4 transition-all mt-auto">
+                  Start Salesforce Quiz
+                  <svg
+                    className="w-5 h-5 group-hover:translate-x-1 transition-transform"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 7l5 5m0 0l-5 5m5-5H6"
+                    />
+                  </svg>
+                </span>
+              </div>
+            </div>
+          </Link>
+
+          {/* MongoDB Card */}
+          <Link
+            href="/mongodb-quiz/mode"
+            className="group relative"
+            aria-label="Select MongoDB Certification"
+          >
+            <div
+              className={`relative h-full p-8 rounded-3xl transition-all duration-300 overflow-hidden ${
+                isDark
+                  ? "bg-gray-900/50 hover:bg-gray-900/70 border border-gray-800"
+                  : "bg-white hover:bg-gray-50 border border-gray-200 shadow-lg"
+              } hover:scale-105 hover:shadow-2xl`}
+            >
+              {/* Gradient Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-br from-green-500 to-teal-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+
+              <div className="relative z-10 text-left h-full flex flex-col">
+                <div
+                  className={`mb-6 w-20 h-20 flex items-center justify-center rounded-2xl transform group-hover:scale-110 transition-transform duration-300 ${
+                    isDark ? "bg-green-500/20 text-green-400" : "bg-green-100 text-green-600"
+                  }`}
+                >
+                  <span className="text-4xl">🍃</span>
+                </div>
+                <h2
+                  className={`text-2xl font-bold mb-3 ${
+                    isDark ? "text-white" : "text-gray-900"
+                  }`}
+                >
+                  MongoDB Certification
+                </h2>
+                <p
+                  className={`mb-6 leading-relaxed flex-grow ${
+                    isDark ? "text-gray-400" : "text-gray-600"
+                  }`}
+                >
+                  Prepare for MongoDB Associate exams with targeted practice questions.
+                </p>
+
+                <span className="inline-flex items-center gap-2 text-green-500 font-bold group-hover:gap-4 transition-all mt-auto">
+                  Start MongoDB Quiz
+                  <svg
+                    className="w-5 h-5 group-hover:translate-x-1 transition-transform"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 7l5 5m0 0l-5 5m5-5H6"
+                    />
+                  </svg>
+                </span>
+              </div>
+            </div>
+          </Link>
+
+          {/* PCAP Card */}
+          <Link
+            href="/pcap-quiz/mode"
+            className="group relative"
+            aria-label="Select PCAP Python Certification"
+          >
+            <div
+              className={`relative h-full p-8 rounded-3xl transition-all duration-300 overflow-hidden ${
+                isDark
+                  ? "bg-gray-900/50 hover:bg-gray-900/70 border border-gray-800"
+                  : "bg-white hover:bg-gray-50 border border-gray-200 shadow-lg"
+              } hover:scale-105 hover:shadow-2xl`}
+            >
+              {/* Gradient Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-yellow-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+
+              <div className="relative z-10 text-left h-full flex flex-col">
+                <div
+                  className={`mb-6 w-20 h-20 flex items-center justify-center rounded-2xl transform group-hover:scale-110 transition-transform duration-300 ${
+                    isDark ? "bg-blue-500/20 text-blue-400" : "bg-blue-100 text-blue-600"
+                  }`}
+                >
+                  <span className="text-4xl">🐍</span>
+                </div>
+                <h2
+                  className={`text-2xl font-bold mb-3 ${
+                    isDark ? "text-white" : "text-gray-900"
+                  }`}
+                >
+                  PCAP Python Certified Associate
+                </h2>
+                <p
+                  className={`mb-6 leading-relaxed flex-grow ${
+                    isDark ? "text-gray-400" : "text-gray-600"
+                  }`}
+                >
+                  Master Python programming with code-centric questions and real-world scenarios.
+                </p>
+
+                <span className="inline-flex items-center gap-2 text-blue-500 font-bold group-hover:gap-4 transition-all mt-auto">
+                  Start Python Quiz
                   <svg
                     className="w-5 h-5 group-hover:translate-x-1 transition-transform"
                     fill="none"

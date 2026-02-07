@@ -5,36 +5,36 @@ import { AppError, ValidationError } from "@/lib/exceptions";
 
 export class QuizService {
   /**
-   * Fetches questions from a URL and normalizes them.
+   * Parses and normalizes raw question data.
    */
-  static async fetchQuestions(url: string): Promise<QuizQuestion[]> {
-    if (!url) throw new Error("Quiz URL is missing.");
-
-    const res = await fetch(url, {
-      cache: "no-store",
-      headers: { "Cache-Control": "no-cache" },
-    });
-
-    if (!res.ok) throw new Error(`Fetch Failed: ${res.status}`);
-
-    const rawData = await res.json();
-    let allQuestions: unknown[] = [];
+  static parseQuestions(rawData: any): QuizQuestion[] {
+    let allQuestions: any[] = [];
 
     // Robust unwrapping
     if (Array.isArray(rawData)) {
-      allQuestions = rawData;
+      // Check if it's an array of batches (MongoDB format)
+      if (rawData.length > 0 && rawData[0].questions && Array.isArray(rawData[0].questions)) {
+          allQuestions = rawData.flatMap((batch: any) => batch.questions);
+      } else {
+          allQuestions = rawData;
+      }
     } else if (rawData && typeof rawData === "object") {
-        const asObj = rawData as Record<string, unknown>;
-        if (Array.isArray(asObj.questions)) {
-            allQuestions = asObj.questions;
+        // Check for "sections" array (Salesforce format)
+        if (Array.isArray(rawData.sections)) {
+            allQuestions = rawData.sections.flatMap((section: any) => 
+                Array.isArray(section.questions) ? section.questions.map((q: any) => ({ ...q, section: section.sectionTitle })) : []
+            );
+        } else if (Array.isArray(rawData.questions)) {
+            allQuestions = rawData.questions;
         } else {
             // Find the first array property
-            allQuestions = (Object.values(asObj).find((v) => Array.isArray(v)) as unknown[]) || [];
+            allQuestions = (Object.values(rawData).find((v) => Array.isArray(v)) as any[]) || [];
         }
     }
 
     if (!Array.isArray(allQuestions)) {
-        throw new Error("Invalid question format or empty array");
+        console.warn("Invalid question format or empty array");
+        return [];
     }
 
     // Enrich & Type Check with Zod
@@ -44,9 +44,48 @@ export class QuizService {
         const safeQ = q as Record<string, unknown>;
         const newQ = { ...safeQ };
 
+        // Handle MongoDB format: correct_answers -> correctAnswer
+        if (newQ.correct_answers && !newQ.correctAnswer) {
+            newQ.correctAnswer = newQ.correct_answers;
+        }
+
+        // Handle Salesforce/MongoDB format: options as object { "A": "...", "B": "..." }
+        if (newQ.options && typeof newQ.options === 'object' && !Array.isArray(newQ.options)) {
+            const optionsObj = newQ.options as Record<string, string>;
+            newQ.options = Object.values(optionsObj);
+            
+            // Map correctAnswer key (e.g. "A" or ["A", "B"]) to full answer string(s)
+            if (newQ.correctAnswer) {
+                if (typeof newQ.correctAnswer === 'string') {
+                    const key = newQ.correctAnswer as string;
+                    if (optionsObj[key]) {
+                        newQ.answer = optionsObj[key];
+                    }
+                } else if (Array.isArray(newQ.correctAnswer)) {
+                    const keys = newQ.correctAnswer as string[];
+                    const mappedAnswers = keys.map(k => optionsObj[k]).filter(Boolean);
+                    if (mappedAnswers.length > 0) {
+                        // If multiple answers, we might want to join them or keep as array
+                        // The AWS/Azure logic often expects a string.
+                        // However, multiple choice (MSQ) might need an array or joined string.
+                        // Existing code for AWS uses a joined string if I recall correctly (or generic logic).
+                        // Let's check QuizQuestion type. answer can be string | string[].
+                        // Let's store as Array for now, or join if needed.
+                        // In line 58 of original code, it was setting newQ.answer = mappedAnswers.
+                        newQ.answer = mappedAnswers; 
+                    }
+                }
+            }
+        }
+
         // Fix Hotspots with empty answers using explanation parsing
         // We ensure type is treated as string for comparison to avoid "any" pollution
         const qType = String(newQ.type || "");
+
+        // Default to mcq if type is missing but options exist
+        if (!newQ.type && Array.isArray(newQ.options)) {
+            newQ.type = "mcq";
+        }
 
         if (
             (qType === "hotspot" || qType === "drag_drop" || qType === "mcq") &&
@@ -69,6 +108,23 @@ export class QuizService {
         }
         return parsedQ.data;
     }).filter((q): q is QuizQuestion => q !== null);
+  }
+
+  /**
+   * Fetches questions from a URL and normalizes them.
+   */
+  static async fetchQuestions(url: string): Promise<QuizQuestion[]> {
+    if (!url) throw new Error("Quiz URL is missing.");
+
+    const res = await fetch(url, {
+      cache: "no-store",
+      headers: { "Cache-Control": "no-cache" },
+    });
+
+    if (!res.ok) throw new Error(`Fetch Failed: ${res.status}`);
+
+    const rawData = await res.json();
+    return this.parseQuestions(rawData);
   }
 
   /**

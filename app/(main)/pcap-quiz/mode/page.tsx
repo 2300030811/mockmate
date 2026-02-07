@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { ModeCard } from "@/components/quiz/ModeCard";
 
 // --- Icons ---
-const CloudIcon = () => <span className="text-5xl">☁️</span>;
+const BookIcon = () => <span className="text-5xl">🐍</span>; // Snake for Python
 const TimerIcon = () => <span className="text-5xl">⏳</span>;
 const CloseIcon = () => (
   <svg
@@ -29,14 +29,14 @@ export default function ModeSelect() {
   const router = useRouter();
   const [modal, setModal] = useState<"none" | "practice" | "exam">("none");
   const [practiceCount, setPracticeCount] = useState<number | "all">("all");
-  const [examCount, setExamCount] = useState<number>(65);
+  const [examCount, setExamCount] = useState<number>(40); // PCAP Standard is 40 questions
 
   return (
-    <div className="min-h-screen transition-colors duration-500 bg-gradient-to-br from-orange-50 via-white to-yellow-50 dark:from-gray-950 dark:via-gray-900 dark:to-orange-950 pt-20">
+    <div className="min-h-screen transition-colors duration-500 bg-gradient-to-br from-blue-50 via-white to-yellow-50 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950 pt-20">
       
       {/* Animated Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-96 h-96 rounded-full blur-3xl animate-pulse bg-orange-500/20 dark:bg-orange-500/10"></div>
+        <div className="absolute top-20 left-10 w-96 h-96 rounded-full blur-3xl animate-pulse bg-blue-500/20 dark:bg-blue-500/10"></div>
         <div className="absolute bottom-20 right-10 w-96 h-96 rounded-full blur-3xl animate-pulse bg-yellow-500/20 dark:bg-yellow-500/10" style={{ animationDelay: "1s" }}></div>
       </div>
 
@@ -49,10 +49,10 @@ export default function ModeSelect() {
           transition={{ duration: 0.6 }}
           className="mb-8"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border backdrop-blur-sm transition-all duration-300 hover:scale-105 bg-orange-500/10 border-orange-500/30 text-orange-600 dark:bg-orange-500/10 dark:border-orange-500/20 dark:text-orange-400">
-            <span className="text-2xl">☁️</span>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border backdrop-blur-sm transition-all duration-300 hover:scale-105 bg-blue-500/10 border-blue-500/30 text-blue-600 dark:bg-blue-500/10 dark:border-blue-500/20 dark:text-blue-400">
+            <span className="text-2xl">🐍</span>
             <span className="text-sm font-bold tracking-wider">
-              AWS CERTIFIED CLOUD PRACTITIONER
+              PCAP PYTHON CERTIFICATION
             </span>
           </div>
         </motion.div>
@@ -62,9 +62,9 @@ export default function ModeSelect() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.1 }}
-          className="text-5xl md:text-7xl font-extrabold mb-6 pb-4 text-center bg-gradient-to-r from-orange-600 via-yellow-600 to-orange-800 dark:from-orange-400 dark:via-yellow-300 dark:to-orange-200 bg-clip-text text-transparent"
+          className="text-5xl md:text-7xl font-extrabold mb-6 pb-4 text-center bg-gradient-to-r from-blue-900 via-sky-800 to-yellow-600 dark:from-blue-100 dark:via-sky-200 dark:to-yellow-200 bg-clip-text text-transparent"
         >
-          Master the Cloud
+          Master Python
         </motion.h1>
 
         {/* Subtitle */}
@@ -74,7 +74,7 @@ export default function ModeSelect() {
           transition={{ duration: 0.8, delay: 0.2 }}
           className="text-xl md:text-2xl mb-12 max-w-3xl mx-auto text-center text-gray-600 dark:text-gray-400"
         >
-          Prepare for the AWS Certified Cloud Practitioner exam with our comprehensive practice suite.
+          Prepare for the Certified Associate in Python Programming exam with real scenarios and code challenges.
         </motion.p>
 
         {/* Mode Cards */}
@@ -86,29 +86,29 @@ export default function ModeSelect() {
         >
           <ModeCard
             title="Practice Labs"
-            description="Access 1500+ questions with immediate feedback and detailed explanations."
-            icon={<CloudIcon />}
-            features={["Instant feedback", "Detailed explanations", "No time pressure"]}
+            description="Access code-heavy questions with immediate feedback."
+            icon={<BookIcon />}
+            features={["Instant feedback", "Code block analysis", "Detailed explanations"]}
             buttonText="Start Practice"
-            gradient="from-orange-400 to-yellow-500"
-            iconBgLight="bg-orange-100"
-            iconBgDark="bg-orange-500"
+            gradient="from-blue-500 to-sky-500"
+            iconBgLight="bg-blue-100"
+            iconBgDark="bg-blue-500"
             onClick={() => setModal("practice")}
-            iconColorClass="text-orange-600"
+            iconColorClass="text-blue-500"
           />
 
           <ModeCard
             title="Exam Simulation"
-            description="Simulate the real AWS exam with 65 questions in 90 minutes."
+            description="Simulate the real PCAP exam environment."
             icon={<TimerIcon />}
-            features={["90-minute timer", "65 questions", "70% passing score"]}
+            features={["Timed exam (90m)", "Standard 40 questions", "70% Passing Score"]}
             buttonText="Start Exam"
-            gradient="from-red-500 to-orange-600"
-            iconBgLight="bg-red-100"
-            iconBgDark="bg-red-500"
+            gradient="from-yellow-400 to-orange-500"
+            iconBgLight="bg-yellow-100"
+            iconBgDark="bg-yellow-500"
             onClick={() => setModal("exam")}
-            iconColorClass="text-red-500"
-            buttonColorClass="text-red-700 dark:text-red-900"
+            iconColorClass="text-yellow-600"
+            buttonColorClass="text-yellow-700 dark:text-yellow-900" 
           />
         </motion.div>
       </div>
@@ -126,7 +126,7 @@ export default function ModeSelect() {
           >
             <div className="flex justify-between items-center mb-4 border-b pb-4 border-gray-200 dark:border-gray-700">
               <h3 className="text-lg font-bold flex items-center gap-2">
-                Practice Mode
+                Python Practice Mode
               </h3>
               <button
                 onClick={() => setModal("none")}
@@ -138,25 +138,17 @@ export default function ModeSelect() {
 
             <div className="mb-6 p-4 rounded-lg text-sm bg-blue-50 text-blue-900 dark:bg-blue-500/20 dark:text-blue-200">
               <p>
-                <strong>Note:</strong> This mode is for study purposes. Correct
-                answers and explanations will be shown immediately after
-                answering.
+                <strong>Note:</strong> Practice mode gives you immediate feedback. Focus on understanding the logic behind code snippets.
               </p>
             </div>
-
-            <ul className="space-y-2 text-sm list-disc pl-5 mb-6 text-gray-600 dark:text-gray-400">
-              <li>Accuracy is not guaranteed. Focus on concepts.</li>
-              <li>Questions are from public sources.</li>
-              <li>No timer attached.</li>
-            </ul>
 
             {/* Question Count Selection */}
             <div className="mb-6 p-4 rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-700/30">
               <label className="block text-sm font-semibold mb-3 text-gray-700 dark:text-gray-200">
-                How many questions do you want to practice?
+                Number of questions:
               </label>
               <div className="grid grid-cols-3 gap-2 mb-3">
-                {[30, 50, 65, 100].map((count) => (
+                {[20, 40, 60].map((count) => (
                   <button
                     key={count}
                     onClick={() => setPracticeCount(count)}
@@ -179,28 +171,7 @@ export default function ModeSelect() {
                 >
                   All
                 </button>
-                <button
-                  onClick={() => setPracticeCount(0)}
-                  className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                    typeof practiceCount === "number" && practiceCount !== 30 && practiceCount !== 50 && practiceCount !== 65 && practiceCount !== 100
-                      ? "bg-blue-600 text-white shadow-lg shadow-blue-500/30"
-                      : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-100 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500 dark:border-transparent"
-                  }`}
-                >
-                  Custom
-                </button>
               </div>
-              {typeof practiceCount === "number" && practiceCount !== 30 && practiceCount !== 50 && practiceCount !== 65 && practiceCount !== 100 && (
-                <input
-                  type="number"
-                  min="1"
-                  max="1500"
-                  value={practiceCount || ""}
-                  onChange={(e) => setPracticeCount(parseInt(e.target.value) || 1)}
-                  placeholder="Enter number of questions"
-                  className="w-full px-4 py-2 rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 border border-gray-300 dark:bg-gray-600 dark:text-white dark:border-gray-500 dark:placeholder-gray-400"
-                />
-              )}
             </div>
 
             <div className="flex justify-end gap-3">
@@ -213,7 +184,7 @@ export default function ModeSelect() {
               <button
                 onClick={() => {
                   const countParam = practiceCount === "all" ? "all" : practiceCount.toString();
-                  router.push(`/aws-quiz?mode=practice&count=${countParam}`);
+                  router.push(`/pcap-quiz?mode=practice&count=${countParam}`);
                 }}
                 className="px-5 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 font-bold transition shadow-lg shadow-blue-500/30"
               >
@@ -269,16 +240,16 @@ export default function ModeSelect() {
             {/* Question Count Selection */}
             <div className="mb-6 p-4 rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-700/30">
               <label className="block text-sm font-semibold mb-3 text-gray-700 dark:text-gray-200">
-                Select number of questions:
+                Wait, customize count? (Standard is 40)
               </label>
               <div className="grid grid-cols-3 gap-2">
-                {[30, 50, 65].map((count) => (
+                {[20, 30, 40].map((count) => (
                   <button
                     key={count}
                     onClick={() => setExamCount(count)}
                     className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
                       examCount === count
-                        ? "bg-blue-600 text-white shadow-lg shadow-blue-500/30"
+                        ? "bg-yellow-500 text-white shadow-lg shadow-yellow-500/30"
                         : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-100 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500 dark:border-transparent"
                     }`}
                   >
@@ -286,34 +257,19 @@ export default function ModeSelect() {
                   </button>
                 ))}
               </div>
-              <p className="text-xs mt-2 text-gray-400 dark:text-gray-500">
-                Default: 65 (Real AWS exam format). Choose 30 or 50 for a quick test.
-              </p>
             </div>
 
             {/* Critical Rules */}
             <div className="space-y-3 mb-6 text-gray-700 dark:text-gray-300">
               <ul className="list-disc pl-5 space-y-2">
                 <li>
-                  <strong>Passing Score:</strong> 70% (46/65 correct).
+                  <strong>Passing Score:</strong> 70%.
                 </li>
-                <li>The timer starts immediately.</li>
+                <li>Timer starts immediately.</li>
                 <li>
                   Results are <strong>hidden</strong> until submission.
                 </li>
-                <li className="font-bold px-2 py-1 rounded inline-block text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20">
-                  ⚠️ DO NOT REFRESH the page during the test.
-                </li>
               </ul>
-            </div>
-
-            {/* Disclaimer */}
-            <div className="mb-6 pt-4 border-t border-gray-100 dark:border-gray-700">
-              <p className="text-xs text-center leading-relaxed text-gray-400 dark:text-gray-500">
-                By starting, you agree that these questions are for practice
-                only. Accuracy is not guaranteed. The app is not responsible for
-                errors or exam outcomes.
-              </p>
             </div>
 
             {/* Actions */}
@@ -325,10 +281,10 @@ export default function ModeSelect() {
                 Decline
               </button>
               <button
-                onClick={() => router.push(`/aws-quiz?mode=exam&count=${examCount}`)}
-                className="flex-[2] py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 font-bold transition shadow-lg shadow-blue-500/30"
+                onClick={() => router.push(`/pcap-quiz?mode=exam&count=${examCount}`)}
+                className="flex-[2] py-3 rounded-lg bg-yellow-500 text-white hover:bg-yellow-600 font-bold transition shadow-lg shadow-yellow-500/30"
               >
-                Agree & Start Exam
+                Start Exam
               </button>
             </div>
           </motion.div>

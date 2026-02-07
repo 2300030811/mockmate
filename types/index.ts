@@ -1,9 +1,10 @@
-export type QuizType = "mcq" | "hotspot" | "drag_drop";
+export type QuizType = "mcq" | "hotspot" | "drag_drop" | "MSQ";
 
 export interface QuizQuestion {
   id: number | string;
   type: QuizType;
   question: string;
+  code?: string;
   options?: string[];
   answer?: string | string[] | Record<string, any>;
   explanation?: string;

@@ -6,8 +6,8 @@ import { motion } from "framer-motion";
 import { ModeCard } from "@/components/quiz/ModeCard";
 
 // --- Icons ---
-const BookIcon = () => <span className="text-5xl">📚</span>;
-const TimerIcon = () => <span className="text-5xl">⏱️</span>;
+const CloudIcon = () => <span className="text-5xl">🔷</span>; // Blue Diamond for Azure
+const TimerIcon = () => <span className="text-5xl">⏳</span>;
 const CloseIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -32,7 +32,7 @@ export default function ModeSelect() {
   const [examCount, setExamCount] = useState<number>(40);
 
   return (
-    <div className="min-h-screen transition-colors duration-500 bg-gradient-to-br from-gray-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950 pt-20">
+    <div className="min-h-screen transition-colors duration-500 bg-gradient-to-br from-cyan-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-cyan-950 pt-20">
       
       {/* Animated Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -50,7 +50,7 @@ export default function ModeSelect() {
           className="mb-8"
         >
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border backdrop-blur-sm transition-all duration-300 hover:scale-105 bg-cyan-500/10 border-cyan-500/30 text-cyan-600 dark:bg-cyan-500/10 dark:border-cyan-500/20 dark:text-cyan-400">
-            <span className="text-2xl">☁️</span>
+            <span className="text-2xl">🔷</span>
             <span className="text-sm font-bold tracking-wider">
               AZ-900 AZURE FUNDAMENTALS
             </span>
@@ -62,9 +62,9 @@ export default function ModeSelect() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.1 }}
-          className="text-5xl md:text-7xl font-extrabold mb-6 pb-4 text-center bg-gradient-to-r from-gray-900 via-cyan-900 to-blue-900 dark:from-white dark:via-cyan-100 dark:to-blue-100 bg-clip-text text-transparent"
+          className="text-5xl md:text-7xl font-extrabold mb-6 pb-4 text-center bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-800 dark:from-blue-400 dark:via-cyan-300 dark:to-blue-200 bg-clip-text text-transparent"
         >
-          Select Your Challenge
+          Master Azure Cloud
         </motion.h1>
 
         {/* Subtitle */}
@@ -74,7 +74,7 @@ export default function ModeSelect() {
           transition={{ duration: 0.8, delay: 0.2 }}
           className="text-xl md:text-2xl mb-12 max-w-3xl mx-auto text-center text-gray-600 dark:text-gray-400"
         >
-          Choose how you want to prepare for Microsoft Azure Fundamentals certification
+          Choose how you want to prepare for Microsoft Azure Fundamentals certification.
         </motion.p>
 
         {/* Mode Cards */}
@@ -85,31 +85,30 @@ export default function ModeSelect() {
           className="max-w-5xl w-full grid md:grid-cols-2 gap-8 px-4"
         >
           <ModeCard
-            title="Practice Question Bank"
-            description="Access comprehensive questions including MCQ, Hotspot, and Drag & Drop"
-            icon={<BookIcon />}
+            title="Practice Labs"
+            description="Access comprehensive questions including MCQ, Hotspot, and Drag & Drop."
+            icon={<CloudIcon />}
             features={["Instant feedback", "Detailed explanations", "No time pressure"]}
             buttonText="Start Practice"
-            gradient="from-cyan-500 to-blue-500"
+            gradient="from-cyan-400 to-blue-500"
             iconBgLight="bg-cyan-100"
             iconBgDark="bg-cyan-500"
             onClick={() => setModal("practice")}
-            iconColorClass="text-green-500"
-            buttonColorClass="text-cyan-600 dark:text-cyan-400"
+            iconColorClass="text-cyan-600"
           />
 
           <ModeCard
-            title="Real Exam Simulation"
-            description="Simulate the real AZ-900 exam with 40 questions in 45 minutes"
+            title="Exam Simulation"
+            description="Simulate the real AZ-900 exam with 40 questions in 45 minutes."
             icon={<TimerIcon />}
             features={["45-minute timer", "40 questions", "70% passing score"]}
             buttonText="Start Exam"
-            gradient="from-blue-500 to-indigo-500"
+            gradient="from-blue-500 to-indigo-600"
             iconBgLight="bg-blue-100"
             iconBgDark="bg-blue-500"
             onClick={() => setModal("exam")}
             iconColorClass="text-blue-500"
-            buttonColorClass="text-blue-600 dark:text-blue-400"
+            buttonColorClass="text-blue-700 dark:text-blue-900"
           />
         </motion.div>
       </div>

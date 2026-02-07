@@ -29,13 +29,16 @@ Powered by a dual-engine AI core (**Google Gemini Pro** & **Groq Llama 3**), it 
 
 ## ✨ Key Features
 
-### ☁️ Cloud Certification Hub
+### ☁️ Certification Hub
 
-Detailed preparation tracks for major cloud providers:
+Detailed preparation tracks for major technical certifications:
 
 - **AWS Quiz**: Targeted practice for Cloud Practitioner & Solutions Architect.
 - **Azure Quiz**: Comprehensive questions for Azure Fundamentals (AZ-900) and beyond.
-- **Customizable Modes**: Choose strictly timed exams or relaxed study modes.
+- **PCAP Quiz**: Python Certified Associate in Programming prep with code-heavy labs.
+- **Salesforce Quiz**: Specialist preparation for the Agentforce certification.
+- **MongoDB Quiz**: Database skills verification and practice scenarios.
+- **Customizable Modes**: Choose strictly timed exams or relaxed practice modes.
 
 ### 🤖 Intelligent Quiz Generator
 
