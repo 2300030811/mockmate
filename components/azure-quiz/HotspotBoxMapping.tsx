@@ -1,19 +1,9 @@
 "use client";
 
-interface BoxItem {
-  label: string;
-  options: string[];
-  answer: string;
-}
+import { HotspotBoxMappingQuestion } from "@/types";
 
 interface HotspotBoxMappingProps {
-  question: {
-    id: number;
-    type: string;
-    question: string;
-    boxes: BoxItem[];
-    explanation?: string;
-  };
+  question: HotspotBoxMappingQuestion;
   userAnswer?: Record<number, string>; // Map box index to selected option
   onAnswer: (answer: Record<number, string>) => void;
   isReviewMode?: boolean;

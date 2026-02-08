@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "@/app/providers";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useState } from "react";
+import { BobAssistant } from "@/components/quiz/BobAssistant";
 
 // --- Icons ---
 const AWSIcon = () => (
@@ -52,7 +54,6 @@ export default function CertificationSelect() {
         ></div>
       </div>
 
-      {/* Main Content */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-20">
         {/* Title */}
         <motion.h1
@@ -383,7 +384,14 @@ export default function CertificationSelect() {
             </div>
           </Link>
         </motion.div>
+
+        <BobAssistant
+          key="career-guide-bob"
+          customContext="You are Bob, a helpful career counselor and certification guide for MockMate. Help the user choose the right certification based on their interests. AWS is great for cloud infrastructure, Azure for Microsoft enterprise, Salesforce for CRM/AI integration, MongoDB for databases, and PCAP for programming. Be encouraging!"
+          initialMessage="Hi there! Need help choosing a certification? I can help you decide which path is right for your career goals! 🚀"
+        />
       </div>
     </div>
   );
 }
+

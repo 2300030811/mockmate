@@ -1,6 +1,6 @@
 "use client";
 
-import { CaseStudyQuestion } from '@/lib/azure-quiz-service';
+import { CaseStudyQuestion } from '@/types';
 
 
 interface CaseStudyEvaluatorProps {

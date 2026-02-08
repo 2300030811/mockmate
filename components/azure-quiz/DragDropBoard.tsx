@@ -11,7 +11,7 @@ import { useState, useEffect } from 'react';
 // The user has `framer-motion` installed. 
 
 
-import { DragDropQuestion } from '@/lib/azure-quiz-service';
+import { DragDropQuestion } from '@/types';
 
 interface DragDropBoardProps {
   question: DragDropQuestion;
@@ -33,6 +33,9 @@ export function DragDropBoard({
   // 2. Matching (Format B): Drag items from a pool to specific "Drop Zones".
 
   const isMatching = !!question.drop_zones && !!question.answer_mapping;
+
+  // Track selected item for Click-to-Drop (Mobile/Accessibility)
+  const [selectedItem, setSelectedItem] = useState<string | null>(null);
 
   // Handlers for HTML5 D&D
   const handleDragStart = (e: React.DragEvent, item: string) => {
@@ -66,21 +69,23 @@ export function DragDropBoard({
                         {question.options.map((opt) => {
                              // Check if placed anywhere (visual cue only, don't disable)
                              const isPlaced = Object.values(currentMapping).includes(opt);
-                             return (
+                            return (
                                 <div 
                                     key={opt}
                                     draggable={true}
                                     onDragStart={(e) => handleDragStart(e, opt)}
-                                    className={`p-3 border rounded-lg text-sm cursor-grab active:cursor-grabbing transition-all
+                                    onClick={() => setSelectedItem(selectedItem === opt ? null : opt)}
+                                    className={`p-3 border rounded-lg text-sm cursor-grab active:cursor-grabbing transition-all select-none
                                         ${isDark 
                                             ? 'bg-indigo-500/20 border-indigo-500/30 text-white hover:bg-indigo-500/30' 
                                             : 'bg-indigo-50 border-indigo-100 text-indigo-900 hover:bg-indigo-100'}
                                         ${isPlaced ? 'opacity-50' : 'opacity-100'}
+                                        ${selectedItem === opt ? 'ring-2 ring-indigo-500 ring-offset-2 ring-offset-black' : ''}
                                     `}
                                 >
                                     {opt}
                                 </div>
-                             );
+                            );
                         })}
                     </div>
                 </div>
@@ -101,7 +106,12 @@ export function DragDropBoard({
                                         onDrop={(e) => handleDrop(e, zone)}
                                         onDragOver={handleDragOver}
                                         onClick={() => {
-                                            if (filledItem) {
+                                            if (selectedItem) {
+                                                // Place selected item
+                                                onAnswer({ ...currentMapping, [zone]: selectedItem });
+                                                setSelectedItem(null);
+                                            } else if (filledItem) {
+                                                // Remove existing item
                                                 const newMapping = { ...currentMapping };
                                                 delete newMapping[zone];
                                                 onAnswer(newMapping);
@@ -113,9 +123,10 @@ export function DragDropBoard({
                                                 : (isDark ? 'border-white/20 bg-black/20' : 'border-gray-300 bg-gray-100')}
                                             ${isReviewMode && isCorrect ? (isDark ? 'border-green-500/50 bg-green-500/10' : 'border-green-500 bg-green-50') : ''}
                                             ${isReviewMode && !isCorrect && filledItem ? (isDark ? 'border-red-500/50 bg-red-500/10' : 'border-red-500 bg-red-50') : ''}
-                                            ${filledItem ? 'hover:border-red-500/50 hover:bg-red-500/10' : ''}
+                                            ${selectedItem ? (isDark ? 'border-indigo-500/50 bg-indigo-500/10 animate-pulse' : 'border-indigo-500 bg-indigo-50 animate-pulse') : ''}
+                                            ${filledItem && !selectedItem ? 'hover:border-red-500/50 hover:bg-red-500/10' : ''}
                                         `}
-                                        title={filledItem ? "Click to remove" : ""}
+                                        title={filledItem ? "Click to remove" : "Click or Drop here"}
                                     >
                                         {filledItem ? (
                                             <span className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{filledItem}</span>
@@ -184,11 +195,13 @@ export function DragDropBoard({
                                     key={opt}
                                     draggable={!isSelected}
                                     onDragStart={(e) => handleDragStart(e, opt)}
-                                    className={`px-4 py-2 border rounded-lg text-sm cursor-grab 
+                                    onClick={() => !isSelected && setSelectedItem(selectedItem === opt ? null : opt)}
+                                    className={`px-4 py-2 border rounded-lg text-sm cursor-grab select-none
                                         ${isDark 
                                             ? 'bg-slate-700/50 border-slate-600 text-white hover:bg-slate-700' 
                                             : 'bg-slate-100 border-slate-200 text-slate-800 hover:bg-slate-200'}
                                         ${isSelected ? 'opacity-40 cursor-not-allowed' : ''}
+                                        ${selectedItem === opt ? 'ring-2 ring-indigo-500 ring-offset-2 ring-offset-black' : ''}
                                     `}
                                 >
                                     {opt}
@@ -202,8 +215,15 @@ export function DragDropBoard({
                 <div 
                     onDrop={handleDropInBox}
                     onDragOver={handleDragOver}
-                    className={`min-h-[150px] border-2 border-dashed rounded-xl p-4 flex flex-wrap gap-2 content-start
+                    onClick={() => {
+                        if (selectedItem && !currentSelection.includes(selectedItem)) {
+                            onAnswer([...currentSelection, selectedItem]);
+                            setSelectedItem(null);
+                        }
+                    }}
+                    className={`min-h-[150px] border-2 border-dashed rounded-xl p-4 flex flex-wrap gap-2 content-start cursor-pointer transition-colors
                         ${isDark ? 'border-white/20 bg-black/20' : 'border-gray-300 bg-gray-50'}
+                        ${selectedItem ? (isDark ? 'border-indigo-500/50 bg-indigo-500/10 animate-pulse' : 'border-indigo-500 bg-indigo-50 animate-pulse') : ''}
                     `}
                 >
                     {currentSelection.length === 0 && (

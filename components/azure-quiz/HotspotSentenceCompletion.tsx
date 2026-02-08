@@ -1,14 +1,9 @@
 "use client";
 
+import { HotspotSentenceQuestion } from "@/types";
+
 interface HotspotSentenceProps {
-  question: {
-    id: number;
-    type: string;
-    question: string;
-    hotspot_options: string[];
-    answer: string;
-    explanation?: string;
-  };
+  question: HotspotSentenceQuestion;
   userAnswer?: string;
   onAnswer: (answer: string) => void;
   isReviewMode?: boolean;

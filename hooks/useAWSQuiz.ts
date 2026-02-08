@@ -1,58 +1,45 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
-
-export type QuizMode = 'practice' | 'exam';
-
-import { AWSQuestion } from "@/types";
+import { QuizMode, AWSQuestion } from "@/types";
+import { fetchAWSQuestions } from "@/app/actions/quiz";
+import { useQuizEngine, UserAnswer } from "./useQuizEngine";
 
 interface UseAWSQuizProps {
   initialMode?: QuizMode;
 }
 
-import { fetchAWSQuestions } from "@/app/actions/quiz";
-
 export function useAWSQuiz({ initialMode = 'practice' }: UseAWSQuizProps = {}) {
-  const { data: questions = [], isLoading: loading } = useQuery({
+  const [mode, setMode] = useState<QuizMode>(initialMode);
+
+  const { data: questions = [], isLoading: loading } = useQuery<AWSQuestion[]>({
     queryKey: ['aws-quiz', initialMode],
     queryFn: async () => {
-      return await fetchAWSQuestions(initialMode, null);
+      // Cast the result to AWSQuestion[] as we know the fetch returns that structure for AWS
+      return (await fetchAWSQuestions(initialMode, null)) as unknown as AWSQuestion[];
     },
     staleTime: 1000 * 60 * 30, // 30 mins
     refetchOnWindowFocus: false,
   });
 
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [userAnswers, setUserAnswers] = useState<Record<number, string[]>>({});
-  const [markedQuestions, setMarkedQuestions] = useState<number[]>([]);
-  const [mode, setMode] = useState<QuizMode>(initialMode);
-  const [timeRemaining, setTimeRemaining] = useState(90 * 60); // 90 minutes
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const engine = useQuizEngine({
+      questions,
+      mode,
+      initialTimeRemaining: 90 * 60,
+      onSubmit: () => {
+          // Optional callback if needed when timer expires
+      }
+  });
 
-  // Timer Logic
-  useEffect(() => {
-    if (mode === 'exam' && !isSubmitted && !loading && timeRemaining > 0) {
-      const timer = setInterval(() => {
-        setTimeRemaining((prev) => {
-          if (prev <= 1) {
-            handleSubmit();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      return () => clearInterval(timer);
-    }
-  }, [mode, isSubmitted, loading, timeRemaining]);
-
-  // Actions
+  // Custom Answer Handler for AWS (Multi-select logic)
   const handleAnswer = useCallback((questionId: number, option: string, isMulti: boolean) => {
-    if (isSubmitted) return;
+    // Prevent answering if submitted
+    if (engine.isSubmitted) return;
 
-    setUserAnswers((prev) => {
-      const currentAnswers = prev[questionId] || [];
+    engine.setUserAnswers((prev) => {
+      const currentAnswers = (prev[questionId] as string[]) || [];
       if (isMulti) {
         if (currentAnswers.includes(option)) {
-          return { ...prev, [questionId]: currentAnswers.filter((a) => a !== option) };
+          return { ...prev, [questionId]: currentAnswers.filter((a: string) => a !== option) };
         } else {
           return { ...prev, [questionId]: [...currentAnswers, option] };
         }
@@ -60,37 +47,19 @@ export function useAWSQuiz({ initialMode = 'practice' }: UseAWSQuizProps = {}) {
         return { ...prev, [questionId]: [option] };
       }
     });
-  }, [isSubmitted]);
+  }, [engine.isSubmitted, engine.setUserAnswers]);
 
-  const toggleMark = useCallback((questionId: number) => {
-    setMarkedQuestions((prev) => 
-      prev.includes(questionId) ? prev.filter((id) => id !== questionId) : [...prev, questionId]
-    );
-  }, []);
-
-  const nextQuestion = useCallback(() => {
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex((prev) => prev + 1);
-    }
-  }, [currentQuestionIndex, questions.length]);
-
-  const prevQuestion = useCallback(() => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex((prev) => prev - 1);
-    }
-  }, [currentQuestionIndex]);
-
-  const handleSubmit = useCallback(() => {
-    setIsSubmitted(true);
-  }, []);
 
   // Scoring Helper
-  const checkAnswer = (q: AWSQuestion, answers: string[] = []) => {
-    if (!answers || answers.length === 0) return false;
+  const checkAnswer = (q: AWSQuestion, answers: UserAnswer = []) => {
+    // Type guard: AWS answers should be string arrays
+    const answerArray = Array.isArray(answers) ? answers as string[] : [];
+    
+    if (!answerArray || answerArray.length === 0) return false;
+    
     // Sort and join to compare with answer string
     // Assuming q.answer is exact string like "OptionAOptionB" or single "OptionA"
-    // We need to match the logic from the original file
-    const sortedUserAnswers = [...answers].sort((a, b) => {
+    const sortedUserAnswers = [...answerArray].sort((a, b) => {
       return q.options.indexOf(a) - q.options.indexOf(b);
     });
     const combinedUserAnswer = sortedUserAnswers.join("");
@@ -101,9 +70,13 @@ export function useAWSQuiz({ initialMode = 'practice' }: UseAWSQuizProps = {}) {
     let correct = 0;
     let attempted = 0;
     
-    questions.forEach(q => {
-        if (userAnswers[q.id]?.length > 0) attempted++;
-        if (checkAnswer(q, userAnswers[q.id])) correct++;
+    questions.forEach((q) => {
+        const answers = engine.userAnswers[q.id];
+        // Check if answers is not undefined and is an array with length > 0
+        if (answers && Array.isArray(answers) && answers.length > 0) {
+            attempted++;
+            if (checkAnswer(q, answers)) correct++;
+        }
     });
 
     return {
@@ -119,19 +92,20 @@ export function useAWSQuiz({ initialMode = 'practice' }: UseAWSQuizProps = {}) {
   return {
     questions,
     loading,
-    currentQuestionIndex,
-    setCurrentQuestionIndex,
-    userAnswers,
-    markedQuestions,
+    currentQuestionIndex: engine.currentQuestionIndex,
+    setCurrentQuestionIndex: engine.setCurrentQuestionIndex,
+    userAnswers: engine.userAnswers as Record<string | number, string[]>, // Cast for consumer convenience
+    markedQuestions: engine.markedQuestions,
     handleAnswer,
-    toggleMark,
-    nextQuestion,
-    prevQuestion,
-    handleSubmit,
-    timeRemaining,
-    isSubmitted,
+    toggleMark: engine.toggleMark,
+    nextQuestion: engine.nextQuestion,
+    prevQuestion: engine.prevQuestion,
+    handleSubmit: engine.handleSubmit,
+    timeRemaining: engine.timeRemaining,
+    isSubmitted: engine.isSubmitted,
     checkAnswer,
     calculateScore,
     mode
   };
 }
+

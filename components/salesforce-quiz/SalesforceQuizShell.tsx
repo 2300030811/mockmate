@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSalesforceQuiz } from "@/hooks/useSalesforceQuiz";
 import { QuizMode } from "@/types";
@@ -15,6 +15,7 @@ import { QuizSkeleton } from "./QuizSkeleton";
 import { QuizNavbar } from "./QuizNavbar";
 import { QuizSidebar } from "./QuizSidebar";
 import { Star } from "lucide-react";
+import { BobAssistant } from "../quiz/BobAssistant";
 
 interface SalesforceQuizShellProps {
   mode: QuizMode;
@@ -46,6 +47,14 @@ export function SalesforceQuizShell({ mode, count }: SalesforceQuizShellProps) {
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+
+  const mainRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (mainRef.current) {
+      mainRef.current.scrollTop = 0;
+    }
+  }, [currentQuestionIndex]);
 
   // --- Format Time Helper ---
   const formatTime = (seconds: number) => {
@@ -128,7 +137,7 @@ export function SalesforceQuizShell({ mode, count }: SalesforceQuizShellProps) {
         />
 
         {/* MAIN QUESTION AREA */}
-        <main className="flex-1 overflow-y-auto h-full p-4 md:p-8 relative scroll-smooth">
+        <main ref={mainRef} className="flex-1 overflow-y-auto h-full p-4 md:p-8 relative scroll-smooth">
           <div className="max-w-3xl mx-auto pb-20">
             
             <div className="flex justify-between items-start mb-6">
@@ -161,7 +170,7 @@ export function SalesforceQuizShell({ mode, count }: SalesforceQuizShellProps) {
             <SalesforceQuestionCard 
                 question={currentQ}
                 selectedAnswers={userAnswers[qId] || []}
-                onAnswer={(option, isMulti) => handleAnswer(qId, option, isMulti)}
+                onAnswer={(option: string, isMulti: boolean) => handleAnswer(qId, option, isMulti)}
                 checkAnswer={checkAnswer}
                 isSubmitted={isSubmitted}
                 mode={mode}
@@ -213,7 +222,7 @@ export function SalesforceQuizShell({ mode, count }: SalesforceQuizShellProps) {
             <p className={`mb-8 text-lg ${
               isDark ? 'text-gray-300' : 'text-gray-600'
             }`}>
-              You have answered <span className="font-bold text-blue-500">{Object.values(userAnswers).filter(a => a && a.length > 0).length}</span> out of <span className="font-bold">{questions.length}</span> questions.
+              You have answered <span className="font-bold text-blue-500">{(Object.values(userAnswers) as any[]).filter(a => a && a.length > 0).length}</span> out of <span className="font-bold">{questions.length}</span> questions.
             </p>
             <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
               <Button 
@@ -231,6 +240,14 @@ export function SalesforceQuizShell({ mode, count }: SalesforceQuizShellProps) {
             </div>
           </motion.div>
         </div>
+      )}
+
+      {/* Bob Assistant Integration */}
+      {mode !== 'exam' && (
+        <BobAssistant 
+            key={currentQ.id}
+            question={currentQ} 
+        />
       )}
     </div>
   );

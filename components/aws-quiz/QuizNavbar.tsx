@@ -40,11 +40,11 @@ export function QuizNavbar({
       <div className="flex items-center gap-4">
         {mode !== "exam" && (
           <Button
-            onClick={() => router.push("/")}
+            onClick={() => router.push("/aws-quiz/mode")}
             variant="ghost"
             size="icon"
             className={isDark ? "text-gray-400 hover:text-white" : "text-gray-600 hover:text-gray-900"}
-            title="Home"
+            title="Back to AWS Menu"
           >
             <Home className="w-5 h-5" />
           </Button>
@@ -57,7 +57,11 @@ export function QuizNavbar({
         >
           <Menu className="w-6 h-6" />
         </Button>
-        <div className="flex items-center gap-2">
+        <div 
+          onClick={() => router.push("/aws-quiz/mode")}
+          className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+          title="Back to AWS Menu"
+        >
           {/* We can use the Cloud icon or keep the emoji. Using Icon for consistency. */}
           <Cloud className="w-6 h-6 text-blue-500" />
           <h1 className={`text-lg font-bold hidden sm:block ${

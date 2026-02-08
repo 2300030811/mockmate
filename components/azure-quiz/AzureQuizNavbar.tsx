@@ -32,11 +32,11 @@ export function AzureQuizNavbar({
         <div className="flex items-center gap-4">
               {mode !== "exam" && (
                 <button
-                  onClick={() => router.push("/")}
+                  onClick={() => router.push("/azure-quiz/mode")}
                   className={`p-2 rounded-lg transition ${
                     isDark ? "hover:bg-white/10 text-white" : "hover:bg-gray-100 text-gray-900"
                   }`}
-                  title="Home"
+                  title="Back to Azure Menu"
                 >
                   <Home className="w-6 h-6" />
                 </button>
@@ -47,7 +47,11 @@ export function AzureQuizNavbar({
               >
                 <Menu className="w-6 h-6" />
               </button>
-              <div className="flex items-center gap-2">
+              <div 
+                onClick={() => router.push("/azure-quiz/mode")}
+                className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+                title="Back to Azure Menu"
+              >
                   <Cloud className="w-6 h-6 text-blue-500" />
                   <h1 className="text-lg font-bold hidden sm:block">
                     {mode === "exam" ? "Azure Exam Simulator" : "Azure Practice"}

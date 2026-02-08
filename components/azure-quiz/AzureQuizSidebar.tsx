@@ -1,8 +1,7 @@
-"use client";
-
+import { Button } from "@/components/ui/Button";
 import { QuizMode } from "@/hooks/useAzureQuiz";
-import { QuizQuestion } from "@/lib/azure-quiz-service";
-import { X } from "lucide-react";
+import { QuizQuestion } from "@/types";
+import { X, Star } from "lucide-react";
 
 interface AzureQuizSidebarProps {
   isOpen: boolean;
@@ -29,75 +28,134 @@ export function AzureQuizSidebar({
   onOpenSubmitModal,
   mode,
 }: AzureQuizSidebarProps) {
+
+  const getQuestionStatus = (q: QuizQuestion, index: number) => {
+    const isAnswered = !!userAnswers[Number(q.id)];
+    const isCurrent = currentQuestionIndex === index;
+    // Azure doesn't seem to pass markedQuestions prop based on interface, skipping marked visual for now or assuming false
+    const isMarked = false; 
+    
+    return { isAnswered, isMarked, isCurrent };
+  };
   
   return (
     <>
-        <aside className={`
-            absolute lg:static inset-y-0 left-0 z-40 w-72 h-full backdrop-blur-md border-r transition-colors duration-300
-            transform transition-transform ease-in-out
-            ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-            ${isDark ? 'bg-slate-900/90 border-white/5' : 'bg-white/90 border-gray-200'}
-        `}>
-            <div className="p-4 flex flex-col h-full">
-                <div className="flex justify-between items-center mb-6 lg:hidden">
-                    <span className={`font-bold ${isDark ? "text-white" : "text-gray-900"}`}>Navigator</span>
-                    <button onClick={() => setIsOpen(false)} className={isDark ? 'text-white/50 hover:text-white' : 'text-gray-500 hover:text-gray-900'}>
-                        <X className="w-6 h-6" />
-                    </button>
-                </div>
-                
-                <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
-                    <div className="grid grid-cols-5 gap-2 pb-4">
-                        {questions.map((q, idx) => {
-                            const isAnswered = !!userAnswers[q.id];
-                            const isCurrent = currentQuestionIndex === idx;
-                            
-                            // Define Classes
-                            let baseClass = "relative w-full aspect-square rounded-lg text-sm font-semibold transition-all flex items-center justify-center border ";
-                            
-                            if (isCurrent) {
-                                baseClass += "border-blue-500 bg-blue-500 text-white shadow-lg shadow-blue-500/20";
-                            } else if (isAnswered) {
-                                baseClass += isDark 
-                                ? "border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20"
-                                : "border-blue-500 bg-blue-50 text-blue-700 hover:bg-blue-100";
-                            } else {
-                                baseClass += isDark
-                                ? "border-white/10 bg-white/5 text-white/50 hover:bg-white/10"
-                                : "border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100";
-                            }
+      {/* Backdrop for mobile */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 lg:hidden z-40 backdrop-blur-sm"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
 
-                            return (
-                                <button
-                                key={q.id}
-                                onClick={() => { setCurrentQuestionIndex(idx); if(window.innerWidth < 1024) setIsOpen(false); }}
-                                className={baseClass}
-                                >
-                                    {idx + 1}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                {/* Submit Button in Sidebar */}
-                <div className={`mt-auto pt-4 border-t ${isDark ? 'border-white/5' : 'border-gray-200'}`}>
-                        {!isSubmitted && (
-                        <button
-                            onClick={onOpenSubmitModal}
-                            className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-xl font-bold transition shadow-lg"
-                        >
-                            {mode === 'exam' ? 'Submit Exam' : 'Finish Practice'}
-                        </button>
-                        )}
-                </div>
-            </div>
-        </aside>
+      <aside className={`fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 lg:translate-x-0 lg:static flex flex-col border-r ${
+        isOpen ? 'translate-x-0' : '-translate-x-full'
+      } ${
+        isDark ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'
+      }`}>
         
-        {/* Overlay for mobile */}
-        {isOpen && (
-            <div className="fixed inset-0 bg-black/60 z-30 lg:hidden" onClick={() => setIsOpen(false)} />
-        )}
+        <div className={`p-4 border-b flex items-center justify-between ${
+          isDark ? 'border-gray-800' : 'border-gray-200'
+        }`}>
+          <h2 className={`font-bold text-lg ${
+            isDark ? 'text-white' : 'text-gray-900'
+          }`}>
+            Question Navigator
+          </h2>
+          <Button 
+            onClick={() => setIsOpen(false)} 
+            variant="ghost" 
+            size="icon"
+            className="lg:hidden"
+          >
+            <X className={`w-5 h-5 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
+          </Button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          {/* Legend */}
+          <div className="flex flex-wrap gap-4 text-xs">
+            <div className="flex items-center gap-1.5">
+              <div className={`w-3 h-3 rounded-full ${
+                isDark ? 'bg-blue-500' : 'bg-blue-600'
+              }`} />
+              <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>Current</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-green-500" />
+              <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>Answered</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-4 gap-2">
+            {questions.map((q, index) => {
+              const { isAnswered, isMarked, isCurrent } = getQuestionStatus(q, index);
+              
+              let bgClass = isDark ? 'bg-gray-800' : 'bg-gray-100';
+              let borderClass = 'border-transparent';
+              let textClass = isDark ? 'text-gray-400' : 'text-gray-600';
+
+              if (isCurrent) {
+                borderClass = 'border-blue-500 ring-2 ring-blue-500/20';
+                bgClass = isDark ? 'bg-blue-900/20' : 'bg-blue-50';
+                textClass = 'text-blue-500 font-bold';
+              } else if (isAnswered) {
+                bgClass = isDark ? 'bg-green-900/20' : 'bg-green-50';
+                textClass = 'text-green-500 font-medium';
+              }
+
+              return (
+                <button
+                  key={q.id}
+                  onClick={() => {
+                    setCurrentQuestionIndex(index);
+                    if (window.innerWidth < 1024) setIsOpen(false);
+                  }}
+                  className={`relative h-10 rounded-lg flex items-center justify-center text-sm transition-all border ${bgClass} ${borderClass} ${textClass} hover:opacity-80`}
+                >
+                  {index + 1}
+                  {isMarked && (
+                    <div className="absolute -top-1 -right-1">
+                       <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className={`p-4 border-t ${
+          isDark ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-white'
+        }`}>
+          <div className="flex justify-between items-center mb-4 text-sm">
+             <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>
+               Progress
+             </span>
+             <span className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+               {Object.keys(userAnswers).length}/{questions.length}
+             </span>
+          </div>
+          <div className={`w-full h-2 rounded-full mb-4 ${
+            isDark ? 'bg-gray-800' : 'bg-gray-200'
+          }`}>
+             <div 
+               className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+               style={{ width: `${(Object.keys(userAnswers).length / questions.length) * 100}%` }}
+             />
+          </div>
+          
+          {!isSubmitted && (
+            <Button 
+                onClick={onOpenSubmitModal}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+            >
+                {mode === 'exam' ? 'Submit Exam' : 'Finish Practice'}
+            </Button>
+            )}
+        </div>
+
+      </aside>
     </>
   );
 }

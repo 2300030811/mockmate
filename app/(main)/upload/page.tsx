@@ -7,6 +7,7 @@ import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { useTheme } from "@/app/providers";
 import { convertFileAction, generateQuizAction } from "@/app/actions/generator";
+import { BobAssistant } from "@/components/quiz/BobAssistant";
 
 // --- Utility for cleaner classes ---
 function cn(...inputs: (string | undefined | null | false)[]) {
@@ -44,6 +45,7 @@ export default function UploadPage() {
   const [current, setCurrent] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [showResults, setShowResults] = useState(false);
+  const [isBobOpen, setIsBobOpen] = useState(false);
   
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === "dark";
@@ -339,8 +341,8 @@ export default function UploadPage() {
                           : "border-red-500 bg-red-50 text-red-700";
                       } else {
                         buttonStyle = isDark
-                          ? "opacity-50 border-gray-800 text-gray-500"
-                          : "opacity-50 border-gray-200 text-gray-400";
+                          ? "opacity-70 border-gray-800 text-gray-400 bg-gray-900/20"
+                          : "opacity-70 border-gray-200 text-gray-500 bg-gray-100/50";
                       }
                     } else if (isSelected) {
                       buttonStyle = isDark
@@ -430,6 +432,23 @@ export default function UploadPage() {
                 </button>
               )}
             </div>
+          
+            <BobAssistant 
+              question={q} 
+              isOpen={isBobOpen} 
+              onClose={() => setIsBobOpen(false)} 
+            />
+
+            <button
+                onClick={() => setIsBobOpen(true)}
+                className="fixed bottom-6 right-6 z-40 bg-orange-500 hover:bg-orange-600 text-white p-4 rounded-full shadow-xl transition-transform hover:scale-110 active:scale-95 group"
+                title="Ask Bob"
+            >
+                <div className="text-2xl leading-none">🦁</div>
+                <span className="absolute right-full mr-2 top-1/2 -translate-y-1/2 bg-black/75 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                    Ask Bob
+                </span>
+            </button>
           </div>
         </div>
       </div>
@@ -726,6 +745,24 @@ export default function UploadPage() {
           </div>
         </motion.div>
       </div>
+      <BobAssistant 
+        isOpen={isBobOpen} 
+        onClose={() => setIsBobOpen(false)}
+        customContext="You are Bob, an AI assistant helping users generate quizzes from their documents. Users can upload PDF or TXT files. You can explain how the generator works, troubleshoot issues, or give tips on good study materials. You are friendly and encouraging."
+        initialMessage="Hi! I'm Bob. I can help you with the Quiz Generator. Need any tips on uploading files?"
+      />
+
+      <button
+        onClick={() => setIsBobOpen(true)}
+        className="fixed bottom-6 right-6 z-40 bg-orange-500 hover:bg-orange-600 text-white p-4 rounded-full shadow-xl transition-transform hover:scale-110 active:scale-95 group"
+        title="Ask Bob"
+      >
+        <div className="text-2xl leading-none">🦁</div>
+        <span className="absolute right-full mr-2 top-1/2 -translate-y-1/2 bg-black/75 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+            Chat with Bob
+        </span>
+      </button>
+
     </div>
   );
 }

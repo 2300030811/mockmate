@@ -11,7 +11,12 @@ const getGroqClient = () => {
     return new Groq({ apiKey });
 };
 
-export async function chatWithAI(messages: any[], type: string, sessionId: string): Promise<{ response: string, error?: string }> {
+type ChatMessage = {
+    role: string;
+    content: string;
+};
+
+export async function chatWithAI(messages: ChatMessage[], type: string, sessionId: string): Promise<{ response: string, error?: string }> {
     try {
         const systemPrompt = `You are a professional technical interviewer conducting a ${type} interview. 
     - Your goal is to assess the candidate's skills.
@@ -31,7 +36,7 @@ export async function chatWithAI(messages: any[], type: string, sessionId: strin
             const completion = await groq.chat.completions.create({
                 messages: [
                     { role: "system", content: systemPrompt },
-                    ...messages
+                    ...messages as any // Groq might expect specific literal types for role, allow cast here but message struct is checked
                 ],
                 model: "llama-3.1-8b-instant",
                 temperature: 0.7,
@@ -39,8 +44,9 @@ export async function chatWithAI(messages: any[], type: string, sessionId: strin
             });
 
             responseText = completion.choices[0]?.message?.content || "";
-        } catch (groqError: any) {
-            console.warn("⚠️ Groq Failed (Server Action), falling back to Gemini:", groqError.message);
+        } catch (groqError: unknown) {
+            const msg = groqError instanceof Error ? groqError.message : String(groqError);
+            console.warn("⚠️ Groq Failed (Server Action), falling back to Gemini:", msg);
 
             // 2. Fallback to Gemini (Free)
             try {
@@ -49,12 +55,15 @@ export async function chatWithAI(messages: any[], type: string, sessionId: strin
 
                 const genAI = new GoogleGenerativeAI(googleKey);
                 const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite-preview-02-05" });
+                
+                // Gemini expects 'user' | 'model' roles
+                const history = messages.slice(0, -1).map((m) => ({
+                    role: m.role === 'assistant' ? 'model' : 'user',
+                    parts: [{ text: m.content }]
+                }));
 
                 const chatObj = model.startChat({
-                    history: messages.slice(0, -1).map((m: any) => ({
-                        role: m.role === 'assistant' ? 'model' : 'user',
-                        parts: [{ text: m.content }]
-                    })),
+                    history: history,
                     systemInstruction: systemPrompt,
                 });
 
@@ -65,8 +74,9 @@ export async function chatWithAI(messages: any[], type: string, sessionId: strin
                 const result = await chatObj.sendMessage(contentToSend);
                 responseText = result.response.text();
 
-            } catch (geminiError: any) {
-                console.error("❌ Both AI Services Failed (Server Action):", geminiError.message);
+            } catch (geminiError: unknown) {
+                const gMsg = geminiError instanceof Error ? geminiError.message : String(geminiError);
+                console.error("❌ Both AI Services Failed (Server Action):", gMsg);
                 return { response: "", error: "AI Service Unavailable" };
             }
         }
@@ -75,8 +85,9 @@ export async function chatWithAI(messages: any[], type: string, sessionId: strin
 
         return { response: responseText };
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Chat Action Error:", error);
         return { response: "", error: "Failed to process AI response" };
     }
 }
+

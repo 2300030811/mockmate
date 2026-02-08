@@ -14,6 +14,7 @@ import { QuizNavbar } from "./QuizNavbar";
 import { QuizSidebar } from "./QuizSidebar";
 import { Star } from "lucide-react";
 import { motion } from "framer-motion";
+import { BobAssistant } from "../quiz/BobAssistant";
 
 interface PCAPQuizShellProps {
   mode: QuizMode;
@@ -250,6 +251,11 @@ export function PCAPQuizShell({ mode }: PCAPQuizShellProps) {
           </motion.div>
         </div>
       )}
+      {/* Bob Assistant Integration */}
+      <BobAssistant 
+        key={currentQ.id}
+        question={currentQ} 
+      />
     </div>
   );
 }

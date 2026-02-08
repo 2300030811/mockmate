@@ -12,9 +12,7 @@ const envSchema = z.object({
   AZURE_SPEECH_REGION: z.string().optional(),
   
   AZURE_STORAGE_CONNECTION_STRING: z.string().optional(),
-  
-  AZURE_COSMOS_ENDPOINT: z.string().optional(),
-  AZURE_COSMOS_KEY: z.string().optional(),
+
 
   // AI
   GOOGLE_API_KEY: z.string().optional(),
@@ -24,6 +22,16 @@ const envSchema = z.object({
   // Upstash (Redis/Ratelimit) - Not in template but used in middleware
   UPSTASH_REDIS_REST_URL: z.string().optional(),
   UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
+
+  // Quiz Data Sources
+  AWS_QUESTIONS_URL: z.string().url().optional(),
+  AZURE_QUESTIONS_URL: z.string().url().optional(),
+  SALESFORCE_QUESTIONS_URL: z.string().url().optional(),
+  MONGODB_QUESTIONS_URL: z.string().url().optional(),
+  PCAP_QUESTIONS_URL: z.string().url().optional(),
+
+  // Legacy/Unsure
+  NEXT_PUBLIC_AZURE_FINAL_JSON_URL: z.string().url().optional(),
 
   // Client-side (Validated but should be accessed via NEXT_PUBLIC_)
   NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),

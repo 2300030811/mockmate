@@ -1,10 +1,11 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { QuizContainer } from "@/components/azure-quiz/QuizContainer";
 import { QuizMode } from "@/hooks/useAzureQuiz";
 
-export default function AzureQuizPage() {
+function AzureQuizContent() {
   const searchParams = useSearchParams();
   const modeParam = searchParams?.get("mode");
   
@@ -23,5 +24,13 @@ export default function AzureQuizPage() {
          <QuizContainer mode={mode} />
       </div>
     </div>
+  );
+}
+
+export default function AzureQuizPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">Loading Quiz...</div>}>
+      <AzureQuizContent />
+    </Suspense>
   );
 }

@@ -1,8 +1,8 @@
-
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { QuizMode, QuizQuestion } from "@/types";
 import { fetchSalesforceQuestions } from "@/app/actions/quiz";
+import { useQuizEngine, UserAnswer } from "./useQuizEngine";
 
 interface UseSalesforceQuizProps {
   initialMode?: QuizMode;
@@ -10,51 +10,38 @@ interface UseSalesforceQuizProps {
 }
 
 export function useSalesforceQuiz({ initialMode = 'practice', count = null }: UseSalesforceQuizProps = {}) {
-  const { data: questions = [], isLoading: loading } = useQuery({
+  const [mode, setMode] = useState<QuizMode>(initialMode);
+
+  const { data: questions = [], isLoading: loading } = useQuery<QuizQuestion[]>({
     queryKey: ['salesforce-quiz', initialMode, count],
     queryFn: async () => {
       // Fetch questions using server action
-      return await fetchSalesforceQuestions(initialMode, count);
+      return await fetchSalesforceQuestions(initialMode, count) as unknown as QuizQuestion[];
     },
     staleTime: 1000 * 60 * 30, // 30 mins
     refetchOnWindowFocus: false,
   });
 
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [userAnswers, setUserAnswers] = useState<Record<number, string[]>>({});
-  const [markedQuestions, setMarkedQuestions] = useState<number[]>([]);
-  const [mode, setMode] = useState<QuizMode>(initialMode);
-  const [timeRemaining, setTimeRemaining] = useState(90 * 60); // 90 minutes
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const engine = useQuizEngine({
+      questions,
+      mode,
+      initialTimeRemaining: 90 * 60,
+      onSubmit: () => {
+          // Optional callback if needed when timer expires
+      }
+  });
 
-  // Timer Logic
-  useEffect(() => {
-    if (mode === 'exam' && !isSubmitted && !loading && timeRemaining > 0) {
-      const timer = setInterval(() => {
-        setTimeRemaining((prev) => {
-          if (prev <= 1) {
-            handleSubmit();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      return () => clearInterval(timer);
-    }
-  }, [mode, isSubmitted, loading, timeRemaining]);
-
-  // Actions
   const handleAnswer = useCallback((questionId: number | string, option: string, isMulti: boolean) => {
-    if (isSubmitted) return;
+    if (engine.isSubmitted) return;
 
     // Ensure ID is number for state key if possible, but keep string compatibility
     const qId = Number(questionId);
 
-    setUserAnswers((prev) => {
-      const currentAnswers = prev[qId] || [];
+    engine.setUserAnswers((prev) => {
+      const currentAnswers = (prev[qId] as string[]) || [];
       if (isMulti) {
         if (currentAnswers.includes(option)) {
-          return { ...prev, [qId]: currentAnswers.filter((a) => a !== option) };
+          return { ...prev, [qId]: currentAnswers.filter((a: string) => a !== option) };
         } else {
           return { ...prev, [qId]: [...currentAnswers, option] };
         }
@@ -63,34 +50,14 @@ export function useSalesforceQuiz({ initialMode = 'practice', count = null }: Us
         return { ...prev, [qId]: [option] };
       }
     });
-  }, [isSubmitted]);
-
-  const toggleMark = useCallback((questionId: number | string) => {
-    const qId = Number(questionId);
-    setMarkedQuestions((prev) => 
-      prev.includes(qId) ? prev.filter((id) => id !== qId) : [...prev, qId]
-    );
-  }, []);
-
-  const nextQuestion = useCallback(() => {
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex((prev) => prev + 1);
-    }
-  }, [currentQuestionIndex, questions.length]);
-
-  const prevQuestion = useCallback(() => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex((prev) => prev - 1);
-    }
-  }, [currentQuestionIndex]);
-
-  const handleSubmit = useCallback(() => {
-    setIsSubmitted(true);
-  }, []);
+  }, [engine.isSubmitted, engine.setUserAnswers]);
 
   // Check Answer Logic
-  const checkAnswer = (q: QuizQuestion, answers: string[] = []) => {
-    if (!answers || answers.length === 0) return false;
+  const checkAnswer = (q: QuizQuestion, answers: UserAnswer = []) => {
+    // Cast to string array as SF quiz uses only strings
+    const answerArray = Array.isArray(answers) ? answers as string[] : [];
+    
+    if (!answerArray || answerArray.length === 0) return false;
     
     // Sort and join to compare with answer string
     // Assuming q.answer is exact string or parsed to be one
@@ -106,12 +73,12 @@ export function useSalesforceQuiz({ initialMode = 'practice', count = null }: Us
     }
     
     // For single choice, simple comparison
-    if (answers.length === 1 && typeof q.answer === 'string') {
-        return answers[0] === correctAnswerStr;
+    if (answerArray.length === 1 && typeof q.answer === 'string') {
+        return answerArray[0] === correctAnswerStr;
     }
 
     // For multi choice
-    const sortedUserAnswers = [...answers].sort().join("");
+    const sortedUserAnswers = [...answerArray].sort().join("");
     return sortedUserAnswers === correctAnswerStr;
   };
 
@@ -119,10 +86,14 @@ export function useSalesforceQuiz({ initialMode = 'practice', count = null }: Us
     let correct = 0;
     let attempted = 0;
     
-    questions.forEach(q => {
+    questions.forEach((q) => {
         const qId = Number(q.id);
-        if (userAnswers[qId]?.length > 0) attempted++;
-        if (checkAnswer(q, userAnswers[qId])) correct++;
+        const answers = engine.userAnswers[qId];
+        // Check if answers is present and is non-empty array
+        if (answers && Array.isArray(answers) && answers.length > 0) {
+            attempted++;
+            if (checkAnswer(q, answers)) correct++;
+        }
     });
 
     return {
@@ -138,19 +109,21 @@ export function useSalesforceQuiz({ initialMode = 'practice', count = null }: Us
   return {
     questions,
     loading,
-    currentQuestionIndex,
-    setCurrentQuestionIndex,
-    userAnswers,
-    markedQuestions,
+    currentQuestionIndex: engine.currentQuestionIndex,
+    setCurrentQuestionIndex: engine.setCurrentQuestionIndex,
+    userAnswers: engine.userAnswers as Record<number, string[]>,
+    markedQuestions: engine.markedQuestions,
     handleAnswer,
-    toggleMark,
-    nextQuestion,
-    prevQuestion,
-    handleSubmit,
-    timeRemaining,
-    isSubmitted,
+    toggleMark: engine.toggleMark,
+    nextQuestion: engine.nextQuestion,
+    prevQuestion: engine.prevQuestion,
+    handleSubmit: engine.handleSubmit,
+    timeRemaining: engine.timeRemaining,
+    isSubmitted: engine.isSubmitted,
     checkAnswer,
     calculateScore,
-    mode
+    mode,
+    clearProgress: engine.clearProgress
   };
 }
+

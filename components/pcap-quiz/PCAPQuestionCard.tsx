@@ -3,6 +3,9 @@ import { QuizQuestion } from "@/types";
 import { Check } from "lucide-react";
 import { useTheme } from "@/app/providers";
 
+import { useState } from "react";
+
+
 interface PCAPQuestionCardProps {
   question: QuizQuestion;
   selectedAnswers: string[];
@@ -34,6 +37,9 @@ export function PCAPQuestionCard({
   
   // Determine if the user is correct (only if we are showing results)
   const isCorrect = showResult ? checkAnswer(question, selectedAnswers) : false;
+  
+  // Handle options properly if they are undefined or not array (though strict checks should prevent this)
+  const options = 'options' in question ? question.options || [] : [];
 
   return (
     <div className={`p-6 md:p-10 rounded-3xl shadow-sm border transition-colors duration-300 ${
@@ -41,28 +47,12 @@ export function PCAPQuestionCard({
         ? 'bg-gray-900/50 border-gray-800' 
         : 'bg-white border-gray-200'
     }`}>
-      <div className="mb-8">
-        <h2 className={`text-xl md:text-2xl font-bold leading-relaxed mb-4 ${
+      <div className="flex justify-between items-start mb-6">
+        <h2 className={`text-xl md:text-2xl font-bold leading-relaxed ${
           isDark ? 'text-white' : 'text-gray-900'
         }`}>
           {question.question}
         </h2>
-
-        {/* --- CODE BLOCK RENDERING --- */}
-        {question.code && (
-            <div className="relative group my-4">
-                <div className={`absolute top-0 right-0 px-3 py-1 text-xs font-mono font-bold rounded-bl-lg rounded-tr-lg pointer-events-none select-none ${
-                    isDark ? 'bg-blue-900/50 text-blue-300' : 'bg-blue-100 text-blue-700'
-                }`}>
-                    PYTHON
-                </div>
-                <pre className={`p-5 rounded-xl overflow-x-auto font-mono text-sm leading-loose border shadow-inner ${
-                    isDark ? 'bg-[#0d1117] border-gray-800 text-gray-300' : 'bg-[#1e1e1e] border-transparent text-gray-100'
-                }`}>
-                    <code className="block min-w-full">{question.code}</code>
-                </pre>
-            </div>
-        )}
 
         {isMulti && (
             <span className={`block text-sm font-semibold mt-2 px-3 py-1 rounded-full w-fit ${
@@ -74,7 +64,7 @@ export function PCAPQuestionCard({
       </div>
 
       <div className="space-y-4">
-        {question.options && question.options.map((option, idx) => {
+        {options.map((option: string, idx: number) => {
           const isSelected = selectedAnswers.includes(option);
           
           let optionClass = `w-full text-left p-5 rounded-xl border-2 transition-all duration-200 flex items-center justify-between group cursor-pointer `;
@@ -146,6 +136,8 @@ export function PCAPQuestionCard({
           )}
         </div>
       )}
+      
+
     </div>
   );
 }

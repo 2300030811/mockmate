@@ -36,7 +36,7 @@ export function SalesforceQuestionCard({
   const isCorrect = showResult ? checkAnswer(question, selectedAnswers) : false;
 
   // Handle options properly if they are undefined or not array (though strict checks should prevent this)
-  const options = question.options || [];
+  const options = 'options' in question ? question.options || [] : [];
 
   return (
     <div className={`p-6 md:p-10 rounded-3xl shadow-sm border transition-colors duration-300 ${

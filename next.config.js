@@ -14,7 +14,6 @@ const nextConfig = {
     // ignoreDuringBuilds: true,
   },
   experimental: {
-    serverActions: true,
     serverComponentsExternalPackages: ['pdf-parse', '@azure/storage-blob', '@azure/ai-form-recognizer', 'groq-sdk'],
   },
   typescript: {

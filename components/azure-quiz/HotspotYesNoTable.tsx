@@ -1,6 +1,6 @@
 "use client";
 
-import { HotspotQuestion } from '@/lib/azure-quiz-service';
+import { HotspotQuestion } from '@/types';
 
 
 interface HotspotYesNoTableProps {
@@ -26,7 +26,8 @@ export function HotspotYesNoTable({
     });
   };
   
-  const rows = Object.keys(question.answer);
+  const questionAnswer = question.answer as Record<string, "Yes" | "No">;
+  const rows = Object.keys(questionAnswer);
 
   return (
     <div className="w-full max-w-3xl mx-auto space-y-6">
@@ -49,7 +50,7 @@ export function HotspotYesNoTable({
             <tbody className={`divide-y ${isDark ? 'divide-white/5' : 'divide-gray-100'}`}>
               {rows.map((rowKey) => {
                 const currentVal = userAnswer[rowKey];
-                const correctVal = question.answer[rowKey];
+                const correctVal = questionAnswer[rowKey];
                 
                 const displayText = question.rows && question.rows[Number(rowKey.replace('Box',''))-1] 
                     ? question.rows[Number(rowKey.replace('Box',''))-1] 

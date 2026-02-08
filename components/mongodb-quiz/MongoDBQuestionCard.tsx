@@ -32,6 +32,9 @@ export function MongoDBQuestionCard({
   // Show results if we are in practice mode and have answered, OR if the exam is submitted
   const showResult = (mode === 'practice' && selectedAnswers.length > 0) || isSubmitted;
   
+  // Handle options properly if they are undefined or not array (though strict checks should prevent this)
+  const options = 'options' in question ? question.options || [] : [];
+  
   // Determine if the user is correct (only if we are showing results)
   const isCorrect = showResult ? checkAnswer(question, selectedAnswers) : false;
 
@@ -55,7 +58,7 @@ export function MongoDBQuestionCard({
       </h2>
 
       <div className="space-y-4">
-        {question.options && question.options.map((option, idx) => {
+        {options.map((option, idx) => {
           const isSelected = selectedAnswers.includes(option);
           
           let optionClass = `w-full text-left p-5 rounded-xl border-2 transition-all duration-200 flex items-center justify-between group cursor-pointer `;
@@ -107,14 +110,7 @@ export function MongoDBQuestionCard({
             }
           </div>
 
-          <p className="mb-2">
-            <strong>Correct Answer:</strong>{" "}
-            {Array.isArray(question.answer) 
-              ? question.answer.join(", ") 
-              : typeof question.answer === 'object' 
-                ? JSON.stringify(question.answer) 
-                : question.answer ?? "N/A"}
-          </p>
+          <p className="mb-2"><strong>Correct Answer:</strong> {typeof question.answer === 'string' ? question.answer : JSON.stringify(question.answer)}</p>
           {question.explanation && (
             <div className={`mt-4 pt-4 border-t ${
               isDark ? 'border-white/10' : 'border-black/10'

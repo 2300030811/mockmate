@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { QuizQuestion, QuizMode } from "@/types";
 import { fetchPCAPQuestions } from "@/app/actions/quiz";
+import { useQuizEngine, UserAnswer } from "./useQuizEngine";
 
 interface UsePCAPQuizProps {
   initialMode?: QuizMode;
@@ -9,47 +10,34 @@ interface UsePCAPQuizProps {
 }
 
 export function usePCAPQuiz({ initialMode = 'practice', countParam = null }: UsePCAPQuizProps = {}) {
-  const { data: questions = [], isLoading: loading } = useQuery({
+  const [mode, setMode] = useState<QuizMode>(initialMode);
+
+  const { data: questions = [], isLoading: loading } = useQuery<QuizQuestion[]>({
     queryKey: ['pcap-quiz', initialMode, countParam],
     queryFn: async () => {
-      return await fetchPCAPQuestions(initialMode, countParam);
+      return await fetchPCAPQuestions(initialMode, countParam) as unknown as QuizQuestion[];
     },
     staleTime: 1000 * 60 * 30, // 30 mins
     refetchOnWindowFocus: false,
   });
 
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [userAnswers, setUserAnswers] = useState<Record<string | number, string[]>>({});
-  const [markedQuestions, setMarkedQuestions] = useState<(string | number)[]>([]);
-  const [mode, setMode] = useState<QuizMode>(initialMode);
-  const [timeRemaining, setTimeRemaining] = useState(90 * 60); // 90 minutes standard
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const engine = useQuizEngine({
+      questions,
+      mode,
+      initialTimeRemaining: 90 * 60,
+      onSubmit: () => {
+          // Optional callback if needed when timer expires
+      }
+  });
 
-  // Timer Logic
-  useEffect(() => {
-    if (mode === 'exam' && !isSubmitted && !loading && timeRemaining > 0) {
-      const timer = setInterval(() => {
-        setTimeRemaining((prev) => {
-          if (prev <= 1) {
-            handleSubmit(); // Auto submit
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      return () => clearInterval(timer);
-    }
-  }, [mode, isSubmitted, loading, timeRemaining]);
-
-  // Actions
   const handleAnswer = useCallback((questionId: string | number, option: string, isMulti: boolean) => {
-    if (isSubmitted) return;
+    if (engine.isSubmitted) return;
 
-    setUserAnswers((prev) => {
-      const currentAnswers = prev[questionId] || [];
+    engine.setUserAnswers((prev) => {
+      const currentAnswers = (prev[questionId] as string[]) || [];
       if (isMulti) {
         if (currentAnswers.includes(option)) {
-          return { ...prev, [questionId]: currentAnswers.filter((a) => a !== option) };
+          return { ...prev, [questionId]: currentAnswers.filter((a: string) => a !== option) };
         } else {
           return { ...prev, [questionId]: [...currentAnswers, option] };
         }
@@ -58,32 +46,12 @@ export function usePCAPQuiz({ initialMode = 'practice', countParam = null }: Use
         return { ...prev, [questionId]: [option] };
       }
     }); 
-  }, [isSubmitted]);
+  }, [engine.isSubmitted, engine.setUserAnswers]);
 
-  const toggleMark = useCallback((questionId: string | number) => {
-    setMarkedQuestions((prev) => 
-      prev.includes(questionId) ? prev.filter((id) => id !== questionId) : [...prev, questionId]
-    );
-  }, []);
+  const checkAnswer = useCallback((q: QuizQuestion, userAns: UserAnswer = []) => {
+      const answerArray = Array.isArray(userAns) ? userAns as string[] : [];
 
-  const nextQuestion = useCallback(() => {
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex((prev) => prev + 1);
-    }
-  }, [currentQuestionIndex, questions.length]);
-
-  const prevQuestion = useCallback(() => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex((prev) => prev - 1);
-    }
-  }, [currentQuestionIndex]);
-
-  const handleSubmit = useCallback(() => {
-    setIsSubmitted(true);
-  }, []);
-
-  const checkAnswer = useCallback((q: QuizQuestion, userAns: string[]) => {
-      if (!userAns || userAns.length === 0) return false;
+      if (!answerArray || answerArray.length === 0) return false;
 
       let correctAnswers: string[] = [];
       if (Array.isArray(q.answer)) {
@@ -94,7 +62,7 @@ export function usePCAPQuiz({ initialMode = 'practice', countParam = null }: Use
           return false;
       }
 
-      const sortedUser = [...userAns].sort();
+      const sortedUser = [...answerArray].sort();
       const sortedCorrect = [...correctAnswers].sort();
 
       if (sortedUser.length !== sortedCorrect.length) return false;
@@ -105,9 +73,10 @@ export function usePCAPQuiz({ initialMode = 'practice', countParam = null }: Use
     let correct = 0;
     let attempted = 0;
     
-    questions.forEach(q => {
-        const uAns = userAnswers[q.id];
-        if (uAns && uAns.length > 0) {
+    questions.forEach((q) => {
+        const uAns = engine.userAnswers[q.id];
+        // Check if answers is present and is non-empty array
+        if (uAns && Array.isArray(uAns) && uAns.length > 0) {
             attempted++;
             if (checkAnswer(q, uAns)) {
                 correct++;
@@ -116,8 +85,11 @@ export function usePCAPQuiz({ initialMode = 'practice', countParam = null }: Use
     });
 
     const total = questions.length;
-    const score = (correct / total) * 1000; // Scaled score (e.g. out of 1000 like some exams)
+    // Avoid division by zero
     const percentage = total > 0 ? (correct / total) * 100 : 0;
+    
+    // Scaled score if needed, but percentages are clearer
+    // const score = (correct / total) * 1000; 
 
     return {
         correct,
@@ -128,24 +100,26 @@ export function usePCAPQuiz({ initialMode = 'practice', countParam = null }: Use
         passed: percentage >= 70, // 70% passing
         totalQuestions: total
     };
-  }, [questions, userAnswers, checkAnswer]);
+  }, [questions, engine.userAnswers, checkAnswer]);
 
   return {
     questions,
     loading,
-    currentQuestionIndex,
-    setCurrentQuestionIndex,
-    userAnswers,
-    markedQuestions,
+    currentQuestionIndex: engine.currentQuestionIndex,
+    setCurrentQuestionIndex: engine.setCurrentQuestionIndex,
+    userAnswers: engine.userAnswers as Record<string | number, string[]>,
+    markedQuestions: engine.markedQuestions,
     handleAnswer,
-    toggleMark,
-    nextQuestion,
-    prevQuestion,
-    handleSubmit,
-    timeRemaining,
-    isSubmitted,
+    toggleMark: engine.toggleMark,
+    nextQuestion: engine.nextQuestion,
+    prevQuestion: engine.prevQuestion,
+    handleSubmit: engine.handleSubmit,
+    timeRemaining: engine.timeRemaining,
+    isSubmitted: engine.isSubmitted,
     checkAnswer,
     calculateScore,
-    mode
+    mode,
+    clearProgress: engine.clearProgress
   };
 }
+

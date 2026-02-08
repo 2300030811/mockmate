@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { chatWithAI } from "@/app/actions/interview";
 
@@ -113,7 +113,7 @@ const ClockIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
   </svg>
 );
 
-export default function InterviewSession() {
+function InterviewSessionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const type = searchParams?.get("type") || "behavioral";
@@ -806,5 +806,13 @@ export default function InterviewSession() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function InterviewSession() {
+  return (
+    <Suspense fallback={<div className="h-screen bg-gray-950 flex items-center justify-center text-white">Initializing Session...</div>}>
+      <InterviewSessionContent />
+    </Suspense>
   );
 }

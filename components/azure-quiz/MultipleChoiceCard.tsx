@@ -1,7 +1,7 @@
 "use client";
 
 
-import { MCQQuestion } from '@/lib/azure-quiz-service';
+import { MCQQuestion } from '@/types';
 
 interface MultipleChoiceCardProps {
   question: MCQQuestion;
@@ -20,16 +20,27 @@ export function MultipleChoiceCard({
 }: MultipleChoiceCardProps) {
   // Handle both letter-based answers (A, B, C) and text-based answers (Yes, No, option text)
   const getCorrectAnswerLetter = () => {
+    const rawAnswer = question.answer;
+    
+    // If it's an array, we might be in MSQ mode but this component seems built for single select.
+    // Let's assume for this card we just take the first if array, or return raw.
+    // Better: check if it's array and handle safely.
+    if (Array.isArray(rawAnswer)) {
+        // If MSQ, we can't easily map to a single letter. Return null or handle differently.
+        // For now, let's treat it as string if possible or just use the first element if it matches.
+        return rawAnswer[0]; // Fallback
+    }
+
     // If answer is already a letter (A, B, C, etc.), return it
-    if (question.answer.length === 1 && /[A-Z]/i.test(question.answer)) {
-      return question.answer.toUpperCase();
+    if (rawAnswer.length === 1 && /[A-Z]/i.test(rawAnswer)) {
+      return rawAnswer.toUpperCase();
     }
     // Otherwise, find the index of the answer text in options
-    const answerIndex = question.options.findIndex(opt => opt === question.answer);
+    const answerIndex = question.options.findIndex(opt => opt === rawAnswer);
     if (answerIndex !== -1) {
       return String.fromCharCode(65 + answerIndex); // Convert to A, B, C, etc.
     }
-    return question.answer; // Fallback
+    return rawAnswer; // Fallback
   };
 
   const correctAnswerLetter = getCorrectAnswerLetter();

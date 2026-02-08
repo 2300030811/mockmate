@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAzureQuiz, QuizMode } from '@/hooks/useAzureQuiz';
 import { MultipleChoiceCard } from './MultipleChoiceCard';
 import { DragDropBoard } from './DragDropBoard';
@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 // --- Icons ---
 import { AzureQuizNavbar } from "./AzureQuizNavbar";
 import { AzureQuizSidebar } from "./AzureQuizSidebar";
+import { BobAssistant } from "../quiz/BobAssistant";
 
 interface QuizContainerProps {
   mode: QuizMode;
@@ -49,6 +50,14 @@ export function QuizContainer({ mode: initialMode }: QuizContainerProps) {
     const [showConfirm, setShowConfirm] = useState(false);
     // Local state to control "Check Answer" visibility for complex types
     const [showPracticeResult, setShowPracticeResult] = useState(false);
+
+    const mainRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (mainRef.current) {
+            mainRef.current.scrollTop = 0;
+        }
+    }, [currentQuestionIndex]);
 
     useEffect(() => {
         if (isSubmitted) {
@@ -197,7 +206,7 @@ export function QuizContainer({ mode: initialMode }: QuizContainerProps) {
                 />
 
                 {/* MAIN CONTENT */}
-                <main className="flex-1 overflow-y-auto h-full p-4 md:p-8 scroll-smooth relative">
+                <main ref={mainRef} className="flex-1 overflow-y-auto h-full p-4 md:p-8 scroll-smooth relative">
                     <div className="max-w-4xl mx-auto pb-24">
                         
                         {/* Question Header */}
@@ -222,8 +231,8 @@ export function QuizContainer({ mode: initialMode }: QuizContainerProps) {
                         <div key={currentQuestion.id} className="transition-opacity duration-300 animate-in fade-in">
                                 {currentQuestion.type === 'mcq' && (
                                     <MultipleChoiceCard 
-                                        question={currentQuestion}
-                                        selectedAnswer={userAnswers[currentQuestion.id]}
+                                        question={currentQuestion as import("@/types").MCQQuestion}
+                                        selectedAnswer={userAnswers[currentQuestion.id] as string | undefined}
                                         onAnswer={(ans) => handleAnswer(currentQuestion.id, ans)}
                                         isReviewMode={showExplanation}
                                         isDark={isDark}
@@ -231,8 +240,8 @@ export function QuizContainer({ mode: initialMode }: QuizContainerProps) {
                                 )}
                                 {currentQuestion.type === 'drag_drop' && (
                                      <DragDropBoard 
-                                        question={currentQuestion}
-                                        userAnswer={userAnswers[currentQuestion.id]}
+                                        question={currentQuestion as import("@/types").DragDropQuestion}
+                                        userAnswer={userAnswers[currentQuestion.id] as Record<string, string> | undefined}
                                         onAnswer={(ans) => handleAnswer(currentQuestion.id, ans)}
                                         isReviewMode={showExplanation}
                                         isDark={isDark}
@@ -240,8 +249,8 @@ export function QuizContainer({ mode: initialMode }: QuizContainerProps) {
                                 )}
                                 {currentQuestion.type === 'hotspot' && (
                                     <HotspotYesNoTable 
-                                        question={currentQuestion}
-                                        userAnswer={userAnswers[currentQuestion.id]}
+                                        question={currentQuestion as import("@/types").HotspotQuestion}
+                                        userAnswer={userAnswers[currentQuestion.id] as Record<string, "Yes" | "No"> | undefined}
                                         onAnswer={(ans) => handleAnswer(currentQuestion.id, ans)}
                                         isReviewMode={showExplanation}
                                         isDark={isDark}
@@ -249,8 +258,8 @@ export function QuizContainer({ mode: initialMode }: QuizContainerProps) {
                                 )}
                                 {currentQuestion.type === 'hotspot_yesno_table' && (
                                     <HotspotYesNoTableNew 
-                                        question={currentQuestion}
-                                        userAnswer={userAnswers[currentQuestion.id]}
+                                        question={currentQuestion as import("@/types").HotspotYesNoTableQuestion}
+                                        userAnswer={userAnswers[currentQuestion.id] as Record<number, "Yes" | "No"> | undefined}
                                         onAnswer={(ans) => handleAnswer(currentQuestion.id, ans)}
                                         isReviewMode={showExplanation}
                                         isDark={isDark}
@@ -258,8 +267,8 @@ export function QuizContainer({ mode: initialMode }: QuizContainerProps) {
                                 )}
                                 {currentQuestion.type === 'hotspot_sentence' && (
                                     <HotspotSentenceCompletion 
-                                        question={currentQuestion}
-                                        userAnswer={userAnswers[currentQuestion.id]}
+                                        question={currentQuestion as import("@/types").HotspotSentenceQuestion}
+                                        userAnswer={userAnswers[currentQuestion.id] as string | undefined}
                                         onAnswer={(ans) => handleAnswer(currentQuestion.id, ans)}
                                         isReviewMode={showExplanation}
                                         isDark={isDark}
@@ -267,8 +276,8 @@ export function QuizContainer({ mode: initialMode }: QuizContainerProps) {
                                 )}
                                 {currentQuestion.type === 'hotspot_box_mapping' && (
                                     <HotspotBoxMapping 
-                                        question={currentQuestion}
-                                        userAnswer={userAnswers[currentQuestion.id]}
+                                        question={currentQuestion as import("@/types").HotspotBoxMappingQuestion}
+                                        userAnswer={userAnswers[currentQuestion.id] as Record<number, string> | undefined}
                                         onAnswer={(ans) => handleAnswer(currentQuestion.id, ans)}
                                         isReviewMode={showExplanation}
                                         isDark={isDark}
@@ -276,8 +285,8 @@ export function QuizContainer({ mode: initialMode }: QuizContainerProps) {
                                 )}
                                 {currentQuestion.type === 'case_table' && (
                                     <CaseStudyEvaluator 
-                                        question={currentQuestion}
-                                        userAnswer={userAnswers[currentQuestion.id]}
+                                        question={currentQuestion as import("@/types").CaseStudyQuestion}
+                                        userAnswer={userAnswers[currentQuestion.id] as Record<number, "Yes" | "No"> | undefined}
                                         onAnswer={(ans) => handleAnswer(currentQuestion.id, ans)}
                                         isReviewMode={showExplanation}
                                         isDark={isDark}
@@ -365,6 +374,14 @@ export function QuizContainer({ mode: initialMode }: QuizContainerProps) {
                         </div>
                      </div>
                 </div>
+            )}
+
+            {/* Bob Assistant Integration */}
+            {mode !== 'exam' && (
+                <BobAssistant 
+                    key={currentQuestion.id}
+                    question={currentQuestion} 
+                />
             )}
         </div>
     );

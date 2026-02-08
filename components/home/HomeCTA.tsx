@@ -14,7 +14,7 @@ export function HomeCTA() {
     >
       <Link
         href="/demo"
-        className={buttonVariants("primary", "lg", "group relative overflow-hidden shadow-2xl")}
+        className={buttonVariants({ variant: "primary", size: "lg", className: "group relative overflow-hidden shadow-2xl" })}
       >
         {/* Button Shimmer */}
         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -28,7 +28,7 @@ export function HomeCTA() {
       
       <Link
         href="/upload"
-        className={buttonVariants("default", "lg", "bg-white dark:bg-gray-800 dark:border-gray-700 hover:border-gray-400 shadow-lg hover:shadow-2xl")}
+        className={buttonVariants({ variant: "default", size: "lg", className: "bg-white dark:bg-gray-800 dark:border-gray-700 hover:border-gray-400 shadow-lg hover:shadow-2xl" })}
       >
         Generate Quiz
       </Link>

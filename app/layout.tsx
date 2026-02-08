@@ -28,6 +28,9 @@ export const metadata: Metadata = {
     images: [`${baseUrl}/opengraph-image`],
   },
   metadataBase: new URL(baseUrl),
+};
+
+export const viewport = {
   themeColor: "#FFF",
 };
 

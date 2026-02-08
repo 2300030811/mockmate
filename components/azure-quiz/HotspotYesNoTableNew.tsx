@@ -1,18 +1,9 @@
 "use client";
 
-interface Statement {
-  text: string;
-  answer: "Yes" | "No";
-}
+import { HotspotYesNoTableQuestion } from "@/types";
 
 interface HotspotYesNoTableNewProps {
-  question: {
-    id: number;
-    type: string;
-    question: string;
-    statements: Statement[];
-    explanation?: string;
-  };
+  question: HotspotYesNoTableQuestion;
   userAnswer?: Record<number, "Yes" | "No">; // Map statement index to answer
   onAnswer: (answer: Record<number, "Yes" | "No">) => void;
   isReviewMode?: boolean;

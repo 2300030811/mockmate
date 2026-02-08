@@ -30,55 +30,97 @@ export function QuizSidebar({
   mode,
 }: QuizSidebarProps) {
   
+  const getQuestionStatus = (q: QuizQuestion) => {
+    // AWS userAnswers is Record<string, string[]>, so we check for length
+    const isAnswered = userAnswers[q.id]?.length > 0;
+    const isMarked = markedQuestions.includes(q.id);
+    const isCurrent = questions[currentQuestionIndex].id === q.id;
+    
+    return { isAnswered, isMarked, isCurrent };
+  };
+
   return (
     <>
-      <aside className={`
-        absolute lg:static inset-y-0 left-0 z-40 w-72 h-full
-        transform transition-transform duration-300 ease-in-out border-r shadow-xl lg:shadow-none
-        overflow-y-auto custom-scrollbar
-        ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-        ${isDark 
-          ? 'bg-gray-900/80 backdrop-blur-sm border-gray-800' 
-          : 'bg-white/80 backdrop-blur-sm border-gray-200'
-        }
-      `}>
-        <div className="p-4 flex flex-col h-full">
-          <div className="flex justify-between items-center mb-4 lg:hidden">
-            <span className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Navigator</span>
-            <Button onClick={() => setIsOpen(false)} variant="ghost" size="icon">
-              <X className="w-6 h-6" />
-            </Button>
+      {/* Backdrop for mobile */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 lg:hidden z-40 backdrop-blur-sm"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+      <aside className={`fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 lg:translate-x-0 lg:static flex flex-col border-r ${
+        isOpen ? 'translate-x-0' : '-translate-x-full'
+      } ${
+        isDark ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'
+      }`}>
+        
+        <div className={`p-4 border-b flex items-center justify-between ${
+          isDark ? 'border-gray-800' : 'border-gray-200'
+        }`}>
+          <h2 className={`font-bold text-lg ${
+            isDark ? 'text-white' : 'text-gray-900'
+          }`}>
+            Question Navigator
+          </h2>
+          <Button 
+            onClick={() => setIsOpen(false)} 
+            variant="ghost" 
+            size="icon"
+            className="lg:hidden"
+          >
+            <X className={`w-5 h-5 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
+          </Button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          {/* Legend */}
+          <div className="flex flex-wrap gap-4 text-xs">
+            <div className="flex items-center gap-1.5">
+              <div className={`w-3 h-3 rounded-full ${
+                isDark ? 'bg-blue-500' : 'bg-blue-600'
+              }`} />
+              <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>Current</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-green-500" />
+              <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>Answered</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-yellow-500" />
+              <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>Marked</span>
+            </div>
           </div>
 
-          <div className="grid grid-cols-5 gap-2 pb-20">
-            {questions.map((q, idx) => {
-              const isAnswered = !!userAnswers[q.id]?.length;
-              const isCurrent = currentQuestionIndex === idx;
-              const isMarked = markedQuestions.includes(q.id);
+          <div className="grid grid-cols-4 gap-2">
+            {questions.map((q, index) => {
+              const { isAnswered, isMarked, isCurrent } = getQuestionStatus(q);
               
-              let bgClass = isDark ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-100 hover:bg-gray-200';
-              let textClass = isDark ? 'text-gray-200' : 'text-gray-700';
+              let bgClass = isDark ? 'bg-gray-800' : 'bg-gray-100';
+              let borderClass = 'border-transparent';
+              let textClass = isDark ? 'text-gray-400' : 'text-gray-600';
 
               if (isCurrent) {
-                bgClass = isDark 
-                  ? 'ring-2 ring-blue-500 bg-blue-900/40' 
-                  : 'ring-2 ring-blue-500 bg-blue-50';
+                borderClass = 'border-blue-500 ring-2 ring-blue-500/20';
+                bgClass = isDark ? 'bg-blue-900/20' : 'bg-blue-50';
+                textClass = 'text-blue-500 font-bold';
               } else if (isAnswered) {
-                bgClass = isDark 
-                  ? 'bg-blue-900/40 border border-blue-500/50' 
-                  : 'bg-blue-100 border border-blue-300';
-                textClass = isDark ? 'text-blue-200' : 'text-blue-800';
+                bgClass = isDark ? 'bg-green-900/20' : 'bg-green-50';
+                textClass = 'text-green-500 font-medium';
               }
 
               return (
                 <button
                   key={q.id}
-                  onClick={() => { setCurrentQuestionIndex(idx); if(window.innerWidth < 1024) setIsOpen(false); }}
-                  className={`relative w-full aspect-square rounded-lg text-sm font-semibold transition-all ${bgClass} ${textClass}`}
+                  onClick={() => {
+                    setCurrentQuestionIndex(index);
+                    if (window.innerWidth < 1024) setIsOpen(false);
+                  }}
+                  className={`relative h-10 rounded-lg flex items-center justify-center text-sm transition-all border ${bgClass} ${borderClass} ${textClass} hover:opacity-80`}
                 >
-                  {idx + 1}
+                  {index + 1}
                   {isMarked && (
-                    <div className="absolute top-0 right-0 p-0.5">
+                    <div className="absolute -top-1 -right-1">
                        <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
                     </div>
                   )}
@@ -86,27 +128,37 @@ export function QuizSidebar({
               );
             })}
           </div>
-          
-          <div className={`mt-auto pt-4 sticky bottom-0 ${
-            isDark ? 'bg-gray-900/80' : 'bg-white/80'
-          } backdrop-blur-sm`}>
-            <Button 
-              onClick={onOpenSubmitModal}
-              variant="primary"
-              className="w-full shadow-lg"
-            >
-              Submit {mode === "exam" ? "Exam" : "Test"}
-            </Button>
-          </div>
         </div>
-      </aside>
 
-      {isOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden" 
-          onClick={() => setIsOpen(false)} 
-        />
-      )}
+        <div className={`p-4 border-t ${
+          isDark ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-white'
+        }`}>
+          <div className="flex justify-between items-center mb-4 text-sm">
+             <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>
+               Progress
+             </span>
+             <span className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+               {Object.keys(userAnswers).length}/{questions.length}
+             </span>
+          </div>
+          <div className={`w-full h-2 rounded-full mb-4 ${
+            isDark ? 'bg-gray-800' : 'bg-gray-200'
+          }`}>
+             <div 
+               className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+               style={{ width: `${(Object.keys(userAnswers).length / questions.length) * 100}%` }}
+             />
+          </div>
+          
+          <Button 
+            onClick={onOpenSubmitModal}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            Submit {mode === 'exam' ? 'Exam' : 'Test'}
+          </Button>
+        </div>
+
+      </aside>
     </>
   );
 }

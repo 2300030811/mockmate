@@ -36,6 +36,7 @@ export default async function middleware(
     res.headers.set("X-RateLimit-Reset", reset.toString());
     return res;
   }
+  return NextResponse.next();
 }
 
 export const config = {

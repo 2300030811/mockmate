@@ -1,114 +1,18 @@
 import { QuizQuestion, QuizConfig, QuizMode } from "@/types";
-import { parseExplanationForHotspot, shuffleArray } from "@/utils/quiz-helpers";
-import { QuizQuestionSchema } from "./schemas";
+import { shuffleArray } from "@/utils/quiz-helpers";
 import { AppError, ValidationError } from "@/lib/exceptions";
+import { detectAndParse } from "./parsers";
 
 export class QuizService {
   /**
-   * Parses and normalizes raw question data.
+   * Parses and normalizes raw question data using the Strategy Pattern.
    */
-  static parseQuestions(rawData: any): QuizQuestion[] {
-    let allQuestions: any[] = [];
-
-    // Robust unwrapping
-    if (Array.isArray(rawData)) {
-      // Check if it's an array of batches (MongoDB format)
-      if (rawData.length > 0 && rawData[0].questions && Array.isArray(rawData[0].questions)) {
-          allQuestions = rawData.flatMap((batch: any) => batch.questions);
-      } else {
-          allQuestions = rawData;
-      }
-    } else if (rawData && typeof rawData === "object") {
-        // Check for "sections" array (Salesforce format)
-        if (Array.isArray(rawData.sections)) {
-            allQuestions = rawData.sections.flatMap((section: any) => 
-                Array.isArray(section.questions) ? section.questions.map((q: any) => ({ ...q, section: section.sectionTitle })) : []
-            );
-        } else if (Array.isArray(rawData.questions)) {
-            allQuestions = rawData.questions;
-        } else {
-            // Find the first array property
-            allQuestions = (Object.values(rawData).find((v) => Array.isArray(v)) as any[]) || [];
-        }
-    }
-
-    if (!Array.isArray(allQuestions)) {
-        console.warn("Invalid question format or empty array");
-        return [];
-    }
-
-    // Enrich & Type Check with Zod
-    return allQuestions.map((q) => {
-        if (!q || typeof q !== "object") return null;
-        
-        const safeQ = q as Record<string, unknown>;
-        const newQ = { ...safeQ };
-
-        // Handle MongoDB format: correct_answers -> correctAnswer
-        if (newQ.correct_answers && !newQ.correctAnswer) {
-            newQ.correctAnswer = newQ.correct_answers;
-        }
-
-        // Handle Salesforce/MongoDB format: options as object { "A": "...", "B": "..." }
-        if (newQ.options && typeof newQ.options === 'object' && !Array.isArray(newQ.options)) {
-            const optionsObj = newQ.options as Record<string, string>;
-            newQ.options = Object.values(optionsObj);
-            
-            // Map correctAnswer key (e.g. "A" or ["A", "B"]) to full answer string(s)
-            if (newQ.correctAnswer) {
-                if (typeof newQ.correctAnswer === 'string') {
-                    const key = newQ.correctAnswer as string;
-                    if (optionsObj[key]) {
-                        newQ.answer = optionsObj[key];
-                    }
-                } else if (Array.isArray(newQ.correctAnswer)) {
-                    const keys = newQ.correctAnswer as string[];
-                    const mappedAnswers = keys.map(k => optionsObj[k]).filter(Boolean);
-                    if (mappedAnswers.length > 0) {
-                        // If multiple answers, we might want to join them or keep as array
-                        // The AWS/Azure logic often expects a string.
-                        // However, multiple choice (MSQ) might need an array or joined string.
-                        // Existing code for AWS uses a joined string if I recall correctly (or generic logic).
-                        // Let's check QuizQuestion type. answer can be string | string[].
-                        // Let's store as Array for now, or join if needed.
-                        // In line 58 of original code, it was setting newQ.answer = mappedAnswers.
-                        newQ.answer = mappedAnswers; 
-                    }
-                }
-            }
-        }
-
-        // Fix Hotspots with empty answers using explanation parsing
-        // We ensure type is treated as string for comparison to avoid "any" pollution
-        const qType = String(newQ.type || "");
-
-        // Default to mcq if type is missing but options exist
-        if (!newQ.type && Array.isArray(newQ.options)) {
-            newQ.type = "mcq";
-        }
-
-        if (
-            (qType === "hotspot" || qType === "drag_drop" || qType === "mcq") &&
-            (!newQ.answer || (typeof newQ.answer === "object" && Object.keys(newQ.answer as object).length === 0))
-          ) {
-            const explanation = typeof newQ.explanation === 'string' ? newQ.explanation : undefined;
-            const parsed = parseExplanationForHotspot(explanation);
-            if (parsed) {
-               newQ.type = "hotspot";
-               newQ.answer = parsed;
-            }
-          }
-        
-        // Strict Validation
-        const parsedQ = QuizQuestionSchema.safeParse(newQ);
-        if (!parsedQ.success) {
-            // In strict mode, we might want to log this
-            // console.warn(`Skipping invalid question ID ${safeQ.id}`);
-            return null;
-        }
-        return parsedQ.data;
-    }).filter((q): q is QuizQuestion => q !== null);
+  static parseQuestions(rawData: unknown): QuizQuestion[] {
+    // Delegate to the unified parser detector
+    // This allows easy extension for new formats without modifying this class
+    return detectAndParse(rawData);
   }
+
 
   /**
    * Fetches questions from a URL and normalizes them.
@@ -126,6 +30,132 @@ export class QuizService {
     const rawData = await res.json();
     return this.parseQuestions(rawData);
   }
+
+  /**
+   * Fetches PCAP questions handling specific malformed JSON issues.
+   */
+  /**
+   * Fetches PCAP questions handling specific malformed JSON issues.
+   */
+  static async fetchPCAPQuestions(url: string): Promise<QuizQuestion[]> {
+      if (!url) throw new Error("PCAP Quiz URL is missing.");
+
+      const response = await fetch(url, { cache: 'no-store' });
+      if (!response.ok) throw new Error(`Failed to fetch PCAP questions: ${response.statusText}`);
+      
+      const text = await response.text();
+      
+      // Remove known invalid markers that break JSON
+      let jsonString = text.replace(/\[cite_start\]/g, '').trim();
+      
+      // Define a type for the raw structure we expect
+      type PCAPRawQuestion = {
+          id: number;
+          type: string;
+          question: string;
+          code?: string;
+          options?: Record<string, string>;
+          correctAnswer?: string[];
+          explanation?: string;
+      };
+      
+      type PCAPBatch = {
+          batchId?: string | number;
+          questions: PCAPRawQuestion[];
+      };
+
+      let data: PCAPBatch[];
+
+      try {
+          // First try standard parse
+          const parsed = JSON.parse(jsonString);
+          if (Array.isArray(parsed)) {
+              data = parsed as PCAPBatch[];
+          } else {
+              data = [parsed as PCAPBatch]; 
+          }
+      } catch (e: unknown) {
+          // If standard parse fails, it might be concatenated objects: { ... } { ... }
+          if (jsonString.startsWith('{')) {
+                const fixedJson = '[' + jsonString.replace(/}\s*\{/g, '},{') + ']';
+                try {
+                  data = JSON.parse(fixedJson) as PCAPBatch[];
+                } catch (e2) {
+                  console.error("Fixed JSON parse failed. First error:", e, "Second error:", e2);
+                  throw new Error("Invalid JSON format in PCAP file");
+                }
+          } else {
+                console.error("JSON parse failed:", e);
+                throw new Error("Invalid JSON format in PCAP file");
+          }
+      }
+
+      const allQuestions: QuizQuestion[] = [];
+
+      // Transform data to QuizQuestion format with specific cleaning rules
+      data.forEach((batch) => {
+        if (batch.questions && Array.isArray(batch.questions)) {
+          batch.questions.forEach((q) => {
+              
+              const optionsMap = q.options || {};
+              const optionsKeys = Object.keys(optionsMap).sort();
+              const optionsArray = optionsKeys.map(k => optionsMap[k]);
+              
+              let answer: string | string[];
+              if (q.correctAnswer && Array.isArray(q.correctAnswer)) {
+                  if (q.correctAnswer.length === 1) {
+                      answer = optionsMap[q.correctAnswer[0]] || "";
+                  } else {
+                      answer = q.correctAnswer.map((k: string) => optionsMap[k] || "");
+                  }
+              } else {
+                  answer = ""; 
+              }
+
+              let explanation = q.explanation ? q.explanation.replace(/\[cite: \d+\]/g, '').trim() : "";
+              
+              // Specific fixes
+              if (q.id === 141) {
+                  explanation = "Attempting to delete an index that is out of range raises an IndexError. Here, `del spam[4]` targets the 5th element, but the list only has indices 0 to 4 (element 16). After checking range(4) creates [0,1,2,3], so index 4 is invalid.";
+              } else if (q.id === 64) {
+                    explanation = "The loop iterates through range(1, 3) (i.e., 1 and 2). For i=1: 1%1==0 -> prints '*'. For i=2: 2%2==0 and 2>1 -> prints '*'. Total 2 stars printed.";
+              }
+
+              // Clean internal monologue
+              if (explanation.includes("Wait,")) {
+                  const parts = explanation.split("Wait,");
+                  let clean = parts[0].trim();
+                  if (clean.length < 15) {
+                      if (explanation.includes("**Correction**")) {
+                            clean = explanation.split("**Correction**")[1].replace(/^[:\s]+/, '').trim();
+                      } else {
+                            clean = "Review the code execution logic.";
+                      }
+                  }
+                  explanation = clean;
+              }
+              
+              if (explanation.includes("I will provide")) {
+                    explanation = explanation.split("I will provide")[0].trim();
+              }
+
+              allQuestions.push({
+                  id: `${batch.batchId || 0}-${q.id}`, 
+                  type: q.type === 'multiple' ? 'MSQ' : 'mcq',
+                  question: q.question,
+                  code: q.code, 
+                  options: optionsArray,
+                  answer: answer,
+                  explanation: explanation
+              });
+          });
+        }
+      });
+
+      return allQuestions;
+  }
+
+
 
   /**
    * Generic selection logic

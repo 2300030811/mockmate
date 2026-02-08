@@ -39,11 +39,11 @@ export function QuizNavbar({
       <div className="flex items-center gap-4">
         {mode !== "exam" && (
           <Button
-            onClick={() => router.push("/")}
+            onClick={() => router.push("/pcap-quiz/mode")}
             variant="ghost"
             size="icon"
             className={isDark ? "text-gray-400 hover:text-white" : "text-gray-600 hover:text-gray-900"}
-            title="Home"
+            title="Back to PCAP Menu"
           >
             <Home className="w-5 h-5" />
           </Button>
@@ -56,7 +56,11 @@ export function QuizNavbar({
         >
           <Menu className="w-6 h-6" />
         </Button>
-        <div className="flex items-center gap-2">
+        <div 
+          onClick={() => router.push("/pcap-quiz/mode")}
+          className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+          title="Back to PCAP Menu"
+        >
           <Code className="w-6 h-6 text-blue-500" />
           <h1 className={`text-lg font-bold hidden sm:block ${
             isDark ? 'text-white' : 'text-gray-900'
