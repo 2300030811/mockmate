@@ -40,6 +40,15 @@ Detailed preparation tracks for major technical certifications:
 - **MongoDB Quiz**: Database skills verification and practice scenarios.
 - **Customizable Modes**: Choose strictly timed exams or relaxed practice modes.
 
+### 🦁 Bob Assistant
+
+Your personal AI study companion, integrated directly into every quiz:
+
+- **Instant Clarification**: Stuck on a question? Just ask Bob! He can explain complex concepts simply.
+- **Context-Aware**: Bob knows exactly which question you are looking at and provides tailored help.
+- **Mobile-Ready**: Featuring a smart collaborative interface (floating on desktop, bottom-sheet on mobile).
+- **Interactive Learning**: Ask for examples, why other options are wrong, or deep dives into specific topics.
+
 ### 🤖 Intelligent Quiz Generator
 
 Turn any document into a test:
