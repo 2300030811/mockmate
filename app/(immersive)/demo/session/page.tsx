@@ -129,6 +129,7 @@ function InterviewSessionContent() {
   const recognitionRef = useRef<any>(null);
   const hasStartedRef = useRef(false);
   const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isMountedRef = useRef(true);
 
   // State
   const [sessionId] = useState(
@@ -185,9 +186,12 @@ function InterviewSessionContent() {
 
   // Cleanup
   useEffect(() => {
+    isMountedRef.current = true;
     return () => {
+      isMountedRef.current = false;
       stopVisualization();
       if (streamRef.current) {
+// ... existing cleanup ...
         streamRef.current.getTracks().forEach((track) => track.stop());
       }
       if (recognitionRef.current) {
@@ -393,6 +397,8 @@ function InterviewSessionContent() {
       // Server Action Call
       const data = await chatWithAI(history, type, sessionId);
       
+      if (!isMountedRef.current) return; // Stop if unmounted
+
       if (data.error) {
          throw new Error(data.error);
       }
@@ -407,6 +413,7 @@ function InterviewSessionContent() {
       // Native TTS
       speakText(aiText);
     } catch (err) {
+      if (!isMountedRef.current) return;
       setDebugStatus("Connection Error");
       setIsProcessing(false);
     }

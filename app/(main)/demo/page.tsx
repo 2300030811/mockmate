@@ -151,7 +151,7 @@ export default function DemoSelection() {
             className={`group relative px-12 py-5 rounded-2xl font-bold text-lg transition-all duration-300 ${
               selectedType
                 ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-2xl shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-105"
-                : "bg-gray-800 text-gray-500 cursor-not-allowed"
+                : "bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed border border-gray-300 dark:border-gray-700"
             }`}
           >
             <span className="relative z-10 flex items-center gap-2">

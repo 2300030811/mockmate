@@ -1,10 +1,14 @@
+"use server";
+
 import { QuizService } from "@/lib/quiz-service";
 import type { QuizMode, QuizQuestion } from "@/types";
 import { AppError } from "@/lib/exceptions";
 import { env } from "@/lib/env";
 
 export async function fetchAWSQuestions(mode: QuizMode = "practice", countParam: string | null = null): Promise<QuizQuestion[]> {
-  const url = env.AWS_QUESTIONS_URL;
+  const url = env.AWS_QUESTIONS_URL || process.env.AWS_QUESTIONS_URL;
+  console.log("DEBUG: AWS_QUESTIONS_URL from env:", env.AWS_QUESTIONS_URL);
+  console.log("DEBUG: AWS_QUESTIONS_URL from process.env:", process.env.AWS_QUESTIONS_URL);
 
   try {
     if (!url) throw new Error("AWS_QUESTIONS_URL is missing.");
