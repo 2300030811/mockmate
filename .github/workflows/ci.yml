@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18]
+        node-version: [20]
 
     steps:
       - name: Checkout
@@ -38,6 +38,10 @@ jobs:
         run: npm test -- --run
         env:
           CI: true
+          NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co"
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: "dummy-key"
+          SUPABASE_URL: "https://example.supabase.co"
+          SUPABASE_ANON_KEY: "dummy-key"
 
       - name: Build
         run: npm run build
