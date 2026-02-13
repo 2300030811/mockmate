@@ -5,12 +5,12 @@ import { usePathname } from "next/navigation";
 import { useTheme } from "../app/providers";
 import { Button, buttonVariants } from "@/components/ui/Button";
 import { Home, Sun, Moon } from "lucide-react";
+import { UserAuthSection } from "./UserAuthSection";
 
 export function Header() {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === "dark";
-
 
   const isHomePage = pathname === "/" || pathname === "";
   
@@ -20,7 +20,9 @@ export function Header() {
     <header
       className="fixed top-0 left-0 right-0 z-50 px-6 py-4 pointer-events-none"
     >
-      <div className="flex items-center gap-4 max-w-7xl mx-auto pointer-events-auto">
+      <div className="flex items-center gap-2 max-w-7xl mx-auto pointer-events-auto">
+        <UserAuthSection />
+
         {/* Home Link - Only show when not on homepage */}
         {!isHomePage && (
           <Link 
@@ -43,9 +45,9 @@ export function Header() {
         >
           <div className="w-5 h-5 relative flex items-center justify-center">
             {isDark ? (
-              <Sun className="w-5 h-5 text-yellow-400 transition-transform duration-300 rotate-0" />
+              <Sun className="w-5 h-5 text-yellow-400" />
             ) : (
-              <Moon className="w-5 h-5 text-gray-700 transition-transform duration-300 -rotate-90" />
+              <Moon className="w-5 h-5 text-gray-700" />
             )}
           </div>
         </Button>

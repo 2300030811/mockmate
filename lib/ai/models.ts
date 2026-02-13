@@ -1,14 +1,14 @@
 import { z } from "zod";
 
-export const QuizQuestionSchema = z.object({
+export const GeneratedQuizQuestionSchema = z.object({
   question: z.string(),
   options: z.array(z.string()).min(2),
   answer: z.string(),
   explanation: z.string(),
 });
 
-export type QuizQuestion = z.infer<typeof QuizQuestionSchema>;
+export type GeneratedQuizQuestion = z.infer<typeof GeneratedQuizQuestionSchema>;
 
-export const QuizResponseSchema = z.array(QuizQuestionSchema);
+export const GeneratedQuizResponseSchema = z.array(GeneratedQuizQuestionSchema);
 
-export type QuizResponse = z.infer<typeof QuizResponseSchema>;
+export type GeneratedQuizResponse = z.infer<typeof GeneratedQuizResponseSchema>;

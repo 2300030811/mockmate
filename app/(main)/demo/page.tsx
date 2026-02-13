@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useTheme } from "@/app/providers";
+import { Button } from "@/components/ui/Button";
+import { ArrowRight } from "lucide-react";
 
 export default function DemoSelection() {
   const router = useRouter();
@@ -145,22 +147,18 @@ export default function DemoSelection() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
         >
-          <button
+          <Button
             onClick={handleStart}
             disabled={!selectedType}
-            className={`group relative px-12 py-5 rounded-2xl font-bold text-lg transition-all duration-300 ${
-              selectedType
-                ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-2xl shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-105"
-                : "bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed border border-gray-300 dark:border-gray-700"
-            }`}
+            variant="primary"
+            size="lg"
+            className="px-12 py-5"
           >
             <span className="relative z-10 flex items-center gap-2">
               Start Interview
-              <svg className={`w-5 h-5 transition-transform ${selectedType ? 'group-hover:translate-x-1' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
+              <ArrowRight className={`w-5 h-5 transition-transform ${selectedType ? 'group-hover:translate-x-1' : ''}`} />
             </span>
-          </button>
+          </Button>
           
           {!selectedType && (
             <p className="mt-4 text-sm text-gray-500">

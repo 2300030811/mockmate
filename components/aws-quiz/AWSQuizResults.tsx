@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/app/providers";
+import { NicknamePrompt } from "../quiz/NicknamePrompt";
 
 interface AWSQuizResultsProps {
     report: {
@@ -107,6 +108,17 @@ export function AWSQuizResults({ report, onRetake, mode }: AWSQuizResultsProps) 
                     </p>
                   </div>
                 </div>
+                
+                {/* Leaderboard Nickname Prompt */}
+                {mode === 'exam' && (
+                    <div className="mb-10">
+                        <NicknamePrompt 
+                            score={report.correct}
+                            totalQuestions={report.attempted + report.skipped}
+                            category="aws"
+                        />
+                    </div>
+                )}
                 
                 <div className="flex flex-wrap justify-center gap-4">
                   <button 

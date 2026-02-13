@@ -2,14 +2,21 @@ import { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-  return [
-    {
-      url: baseUrl,
-      lastModified: new Date(),
-    },
-    {
-      url: `${baseUrl}/demo`,
-      lastModified: new Date(),
-    },
+  const pages = [
+    "",
+    "/career-path",
+    "/demo",
+    "/upload",
+    "/aws-quiz",
+    "/azure-quiz",
+    "/salesforce-quiz",
+    "/mongodb-quiz",
+    "/oracle-quiz",
+    "/pcap-quiz",
   ];
+
+  return pages.map((page) => ({
+    url: `${baseUrl}${page}`,
+    lastModified: new Date(),
+  }));
 }

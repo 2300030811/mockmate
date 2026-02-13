@@ -35,8 +35,9 @@ export class StorageService {
       await blockBlobClient.uploadData(buffer);
       console.log(`✅ Resume backup success.`);
       return true;
-    } catch (error: any) {
-      console.error("⚠️ StorageService Upload Error:", error.message);
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : String(error);
+      console.error("⚠️ StorageService Upload Error:", errMsg);
       return false;
     }
   }
@@ -44,7 +45,7 @@ export class StorageService {
   /**
    * Reads a JSON file from the quizzes container
    */
-  static async fetchJsonFromContainer(containerName: string, blobName: string): Promise<any> {
+  static async fetchJsonFromContainer(containerName: string, blobName: string): Promise<unknown> {
     try {
         const client = getClient();
         if (!client) throw new Error("No Storage Connection String");
@@ -67,7 +68,7 @@ async function streamToBuffer(readableStream: NodeJS.ReadableStream): Promise<Bu
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
     readableStream.on("data", (data) => {
-      chunks.push(data instanceof Buffer ? data : Buffer.from(data));
+      chunks.push(data instanceof Buffer ? data : Buffer.from(data as ArrayBuffer));
     });
     readableStream.on("end", () => {
       resolve(Buffer.concat(chunks as any));

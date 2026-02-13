@@ -19,7 +19,9 @@ export default function Error({
     <div className="flex flex-col items-center justify-center min-h-[50vh] px-4 text-center">
       <h2 className="text-2xl font-bold mb-4 dark:text-white">Something went wrong!</h2>
       <p className="text-gray-600 dark:text-gray-400 mb-6">
-        {error.message || "An unexpected error occurred while loading the quiz."}
+        {process.env.NODE_ENV === "development"
+          ? error.message
+          : "An unexpected error occurred. Please try again."}
       </p>
       <div className="flex gap-4">
         <Button

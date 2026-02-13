@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+        continue-on-error: true # Don't fail CI on lint warnings initially
+
+      - name: Unit tests
+        run: npm test -- --run
+        env:
+          CI: true
+
+      - name: Build
+        run: npm run build
+        env:
+          # Provide dummy env vars so build doesn't fail on validation
+          AWS_QUESTIONS_URL: "https://example.com/aws.json"
+          AZURE_QUESTIONS_URL: "https://example.com/azure.json"
+          SALESFORCE_QUESTIONS_URL: "https://example.com/sf.json"
+          MONGODB_QUESTIONS_URL: "https://example.com/mongo.json"
+          PCAP_QUESTIONS_URL: "https://example.com/pcap.json"
+          ORACLE_QUESTIONS_URL: "https://example.com/oracle.json"
+          GROQ_API_KEY: "dummy-key-for-build"
+          GOOGLE_API_KEY: "dummy-key-for-build"

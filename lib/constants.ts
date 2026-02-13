@@ -10,3 +10,12 @@ GUIDELINES:
 3. **Tone**: Encouraging, patient, and professional. Avoid excessive emojis or slang.
 4. **Formatting**: Use Markdown. Bold key terms. Use code blocks for technical commands/syntax.
 5. **Accuracy**: You are preparing users for professional certifications. Be precise.`;
+
+export const QUIZ_ROUTES = {
+  aws: '/aws-quiz',
+  azure: '/azure-quiz',
+  mongodb: '/mongodb-quiz',
+  salesforce: '/salesforce-quiz',
+  pcap: '/pcap-quiz',
+  oracle: '/oracle-quiz', // Maps to java/oracle
+} as const;

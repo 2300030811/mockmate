@@ -3,6 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { QuizMode, QuizQuestion } from "@/types";
 import { fetchMongoDBQuestions } from "@/app/actions/quiz";
 import { useQuizEngine, UserAnswer } from "./useQuizEngine";
+import { getSessionId, getStoredNickname } from "@/utils/session";
+import { saveQuizResult } from "@/app/actions/results";
 
 interface UseMongoDBQuizProps {
   initialMode?: QuizMode;
@@ -25,9 +27,19 @@ export function useMongoDBQuiz({ initialMode = 'practice', countParam = null }: 
   const engine = useQuizEngine({
       questions,
       mode,
+      category: 'mongodb',
       initialTimeRemaining: 90 * 60,
       onSubmit: () => {
-          // Optional callback if needed when timer expires
+        if (mode === 'exam') {
+          const scoreData = calculateScore();
+          saveQuizResult({
+            sessionId: getSessionId(),
+            category: 'mongodb',
+            score: scoreData.correct,
+            totalQuestions: questions.length,
+            nickname: getStoredNickname() || undefined
+          });
+        }
       }
   });
 

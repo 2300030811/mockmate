@@ -17,6 +17,7 @@ import { useRouter } from "next/navigation";
 import { AzureQuizNavbar } from "./AzureQuizNavbar";
 import { AzureQuizSidebar } from "./AzureQuizSidebar";
 import { BobAssistant } from "../quiz/BobAssistant";
+import { NicknamePrompt } from "../quiz/NicknamePrompt";
 
 interface QuizContainerProps {
   mode: QuizMode;
@@ -128,7 +129,16 @@ export function QuizContainer({ mode: initialMode }: QuizContainerProps) {
                          </div>
                     </div>
 
-                    <div className="flex gap-4 justify-center">
+                    {/* Leaderboard Nickname Prompt */}
+                    {mode === 'exam' && (
+                        <NicknamePrompt 
+                            score={score}
+                            totalQuestions={questions.length}
+                            category="azure"
+                        />
+                    )}
+
+                    <div className="flex gap-4 justify-center mt-8">
                          <button 
                             onClick={() => router.push('/azure-quiz/mode')}
                             className={`px-8 py-3 rounded-xl font-semibold transition border

@@ -3,6 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { QuizQuestion, QuizMode } from "@/types";
 import { fetchPCAPQuestions } from "@/app/actions/quiz";
 import { useQuizEngine, UserAnswer } from "./useQuizEngine";
+import { getSessionId, getStoredNickname } from "@/utils/session";
+import { saveQuizResult } from "@/app/actions/results";
 
 interface UsePCAPQuizProps {
   initialMode?: QuizMode;
@@ -24,9 +26,19 @@ export function usePCAPQuiz({ initialMode = 'practice', countParam = null }: Use
   const engine = useQuizEngine({
       questions,
       mode,
+      category: 'pcap',
       initialTimeRemaining: 90 * 60,
       onSubmit: () => {
-          // Optional callback if needed when timer expires
+        if (mode === 'exam') {
+          const scoreData = calculateScore();
+          saveQuizResult({
+            sessionId: getSessionId(),
+            category: 'pcap',
+            score: scoreData.correct,
+            totalQuestions: questions.length,
+            nickname: getStoredNickname() || undefined
+          });
+        }
       }
   });
 

@@ -1,4 +1,4 @@
-import { QuizQuestion } from "./models";
+import { GeneratedQuizQuestion } from "./models";
 
 /**
  * Normalizes a string for comparison by removing whitespace and lowercasing.
@@ -103,12 +103,12 @@ function rescueFromExplanation(options: string[], explanation: string): string |
   return null;
 }
 
-export function sanitizeQuizQuestions(questions: any[]): QuizQuestion[] {
+export function sanitizeQuizQuestions(questions: any[]): GeneratedQuizQuestion[] {
   if (!Array.isArray(questions)) return [];
 
   return questions.map(q => {
     // Ensure basic structure
-    const sanitizedQuestion: QuizQuestion = {
+    const sanitizedQuestion: GeneratedQuizQuestion = {
       question: String(q.question || ""),
       options: Array.isArray(q.options) ? q.options.map(String) : [],
       answer: String(q.answer || ""),
@@ -117,7 +117,7 @@ export function sanitizeQuizQuestions(questions: any[]): QuizQuestion[] {
     
     // Trim everything
     sanitizedQuestion.question = sanitizedQuestion.question.trim();
-    sanitizedQuestion.options = sanitizedQuestion.options.map(o => o.trim());
+    sanitizedQuestion.options = sanitizedQuestion.options.map((o: string) => o.trim());
     sanitizedQuestion.answer = sanitizedQuestion.answer.trim();
     sanitizedQuestion.explanation = sanitizedQuestion.explanation.trim();
 

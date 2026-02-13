@@ -2,8 +2,27 @@ import { QuizQuestion, QuizConfig, QuizMode } from "@/types";
 import { shuffleArray } from "@/utils/quiz-helpers";
 import { AppError, ValidationError } from "@/lib/exceptions";
 import { detectAndParse } from "./parsers";
+import { supabase } from "./supabase";
 
-export class QuizService {
+export class QuizFetcher {
+  /**
+   * Fetches questions from Supabase database.
+   */
+  static async fetchQuestionsFromDB(category: string): Promise<QuizQuestion[] | null> {
+    try {
+      const { data, error } = await supabase
+        .from('quizzes')
+        .select('questions')
+        .eq('category', category)
+        .single();
+
+      if (error || !data) return null;
+      return data.questions as QuizQuestion[];
+    } catch (e) {
+      console.warn(`⚠️ [QuizFetcher] DB fetch failed for ${category}:`, e);
+      return null;
+    }
+  }
   /**
    * Parses and normalizes raw question data using the Strategy Pattern.
    */
@@ -21,8 +40,7 @@ export class QuizService {
     if (!url) throw new Error("Quiz URL is missing.");
 
     const res = await fetch(url, {
-      cache: "no-store",
-      headers: { "Cache-Control": "no-cache" },
+      next: { revalidate: 3600 }
     });
 
     if (!res.ok) throw new Error(`Fetch Failed: ${res.status}`);
@@ -34,61 +52,17 @@ export class QuizService {
   /**
    * Fetches PCAP questions handling specific malformed JSON issues.
    */
-  /**
-   * Fetches PCAP questions handling specific malformed JSON issues.
-   */
   static async fetchPCAPQuestions(url: string): Promise<QuizQuestion[]> {
       if (!url) throw new Error("PCAP Quiz URL is missing.");
 
-      const response = await fetch(url, { cache: 'no-store' });
+      const response = await fetch(url, { next: { revalidate: 3600 } });
       if (!response.ok) throw new Error(`Failed to fetch PCAP questions: ${response.statusText}`);
       
       const text = await response.text();
       
-      // Remove known invalid markers that break JSON
-      let jsonString = text.replace(/\[cite_start\]/g, '').trim();
-      
-      // Define a type for the raw structure we expect
-      type PCAPRawQuestion = {
-          id: number;
-          type: string;
-          question: string;
-          code?: string;
-          options?: Record<string, string>;
-          correctAnswer?: string[];
-          explanation?: string;
-      };
-      
-      type PCAPBatch = {
-          batchId?: string | number;
-          questions: PCAPRawQuestion[];
-      };
-
-      let data: PCAPBatch[];
-
-      try {
-          // First try standard parse
-          const parsed = JSON.parse(jsonString);
-          if (Array.isArray(parsed)) {
-              data = parsed as PCAPBatch[];
-          } else {
-              data = [parsed as PCAPBatch]; 
-          }
-      } catch (e: unknown) {
-          // If standard parse fails, it might be concatenated objects: { ... } { ... }
-          if (jsonString.startsWith('{')) {
-                const fixedJson = '[' + jsonString.replace(/}\s*\{/g, '},{') + ']';
-                try {
-                  data = JSON.parse(fixedJson) as PCAPBatch[];
-                } catch (e2) {
-                  console.error("Fixed JSON parse failed. First error:", e, "Second error:", e2);
-                  throw new Error("Invalid JSON format in PCAP file");
-                }
-          } else {
-                console.error("JSON parse failed:", e);
-                throw new Error("Invalid JSON format in PCAP file");
-          }
-      }
+      // Use Robust PCAP Parser
+      const { parsePCAPData } = await import("@/lib/pcap-parser");
+      const data = parsePCAPData(text);
 
       const allQuestions: QuizQuestion[] = [];
 

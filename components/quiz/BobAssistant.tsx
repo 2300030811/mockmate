@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
 import { X, Send, User, Bot, Loader2, Sparkles, Trash2, MessageSquare, Lightbulb, Code2 } from "lucide-react";
@@ -94,7 +96,7 @@ Code (if any): ${question.code}
         ]);
         setInput("");
     }
-  }, [question?.id, setMessages, setInput]);
+  }, [question, setMessages, setInput]);
 
   // Auto-scroll on new messages
   useEffect(() => {
@@ -114,7 +116,7 @@ Code (if any): ${question.code}
                 className="fixed bottom-6 right-6 z-40 bg-orange-500 hover:bg-orange-600 text-white p-4 rounded-full shadow-xl transition-transform hover:scale-110 active:scale-95 group"
                 title="Ask Bob"
             >
-                <div className="text-3xl leading-none">🦁</div>
+                <div className="text-3xl leading-none">✨</div>
                 <span className="absolute right-full mr-2 top-1/2 -translate-y-1/2 bg-black/75 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
                     Ask Bob
                 </span>
@@ -161,7 +163,7 @@ Code (if any): ${question.code}
                 >
                 <div className="flex items-center gap-3">
                     <div className="bg-orange-500 p-2 rounded-full shadow-lg text-white flex items-center justify-center w-10 h-10">
-                        <span className="text-lg">🦁</span>
+                        <span className="text-lg">✨</span>
                     </div>
                     <div>
                     <h3 className={`font-bold text-lg ${isDark ? "text-white" : "text-gray-900"}`}>Bob the Assistant</h3>
@@ -201,7 +203,7 @@ Code (if any): ${question.code}
                     >
                     {msg.role === "assistant" && (
                         <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center shrink-0 mt-1 text-white shadow-md">
-                            <span className="text-sm">🦁</span>
+                            <span className="text-sm">✨</span>
                         </div>
                     )}
                     <div className={`rounded-2xl p-3 max-w-[85%] text-sm leading-relaxed shadow-sm ${
@@ -257,7 +259,7 @@ Code (if any): ${question.code}
                 {isLoading && messages[messages.length - 1]?.role === "user" && (
                     <div className="flex gap-3 justify-start">
                          <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center shrink-0 text-white shadow-md">
-                            <span className="text-sm">🦁</span>
+                            <span className="text-sm">✨</span>
                         </div>
                         <div className={`rounded-2xl p-4 bg-gray-200 dark:bg-gray-800 rounded-bl-none flex items-center gap-2`}>
                             <Loader2 className="w-4 h-4 animate-spin opacity-50" />

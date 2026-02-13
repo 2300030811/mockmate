@@ -28,6 +28,14 @@ const features = [
     href: "/certification",
     color: "from-orange-500 to-cyan-500",
     delay: 0.6
+  },
+  {
+    icon: "🚀",
+    title: "Career Pathfinder",
+    description: "AI-driven skill gap analysis & personalized learning roadmaps",
+    href: "/career-path",
+    color: "from-green-500 to-emerald-500",
+    delay: 0.7
   }
 ];
 
@@ -37,7 +45,7 @@ export function FeatureCards() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, delay: 0.3 }}
-      className="grid md:grid-cols-3 gap-6 mb-12"
+      className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12"
     >
       {features.map((feature, index) => (
         <motion.div

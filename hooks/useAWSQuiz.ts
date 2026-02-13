@@ -3,6 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { QuizMode, AWSQuestion } from "@/types";
 import { fetchAWSQuestions } from "@/app/actions/quiz";
 import { useQuizEngine, UserAnswer } from "./useQuizEngine";
+import { getSessionId, getStoredNickname } from "@/utils/session";
+import { saveQuizResult } from "@/app/actions/results";
 
 interface UseAWSQuizProps {
   initialMode?: QuizMode;
@@ -24,9 +26,19 @@ export function useAWSQuiz({ initialMode = 'practice' }: UseAWSQuizProps = {}) {
   const engine = useQuizEngine({
       questions,
       mode,
+      category: 'aws',
       initialTimeRemaining: 90 * 60,
       onSubmit: () => {
-          // Optional callback if needed when timer expires
+        if (mode === 'exam') {
+          const scoreData = calculateScore();
+          saveQuizResult({
+            sessionId: getSessionId(),
+            category: 'aws',
+            score: scoreData.correct,
+            totalQuestions: questions.length,
+            nickname: getStoredNickname() || undefined
+          });
+        }
       }
   });
 

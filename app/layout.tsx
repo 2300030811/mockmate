@@ -9,29 +9,45 @@ const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
 export const metadata: Metadata = {
-  title: "Mockmate - AI-Powered Mock Interviews",
+  title: "Mockmate - AI-Powered Certification Quizzes & Mock Interviews",
+  description:
+    "Master AWS, Azure, Salesforce, and MongoDB exams with Mockmate. Get AI-powered mock interviews, personalized career path roadmaps, and instant feedback. The ultimate platform for certification success.",
+  keywords: ["AWS certification", "Azure exam prep", "Salesforce quiz", "MongoDB professional", "Oracle Java quiz", "AI Mock Interview", "Career Roadmap", "Resume Analyzer"],
+  authors: [{ name: "Mockmate Team" }],
+  creator: "Mockmate",
+  publisher: "Mockmate",
   openGraph: {
-    title: "Mockmate - AI-Powered Mock Interviews",
+    type: "website",
+    locale: "en_US",
+    url: baseUrl,
+    siteName: "Mockmate",
+    title: "Mockmate - AI Certification Prep & Career Tools",
     description:
-      "Mockmate is an AI-powered mock interview platform that helps you practice for your next job interview.",
+      "AI-powered platform to help you ace Cloud & IT certifications. Practice with 2,400+ real-world questions and realistic AI mock interviews.",
     images: [
       {
         url: `${baseUrl}/opengraph-image`,
+        width: 1200,
+        height: 630,
+        alt: "Mockmate - AI-Powered Certification Success",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Mockmate - AI-Powered Mock Interviews",
+    title: "Mockmate - Ace Your Next IT Certification",
     description:
-      "Mockmate is an AI-powered mock interview platform that helps you practice for your next job interview.",
+      "Interactive AI quizzes for AWS, Azure, & more. Plus, an AI Interviewer to get you job-ready.",
     images: [`${baseUrl}/opengraph-image`],
   },
   metadataBase: new URL(baseUrl),
 };
 
 export const viewport = {
-  themeColor: "#FFF",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#FFFFFF" },
+    { media: "(prefers-color-scheme: dark)", color: "#030712" },
+  ],
 };
 
 

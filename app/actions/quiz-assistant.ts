@@ -1,20 +1,29 @@
 "use server";
 
+import Groq from "groq-sdk";
 import { getNextKey } from "@/utils/keyManager";
+import { sanitizePromptInput } from "@/utils/sanitize";
 
-export async function askBob(context: string, question: string) {
+interface BobResponse {
+  success: boolean;
+  message: string;
+}
+
+export async function askBob(context: string, question: string): Promise<BobResponse> {
   try {
     const apiKey = getNextKey("GROQ_API_KEY");
     if (!apiKey) {
-      throw new Error("No API Key available");
+      throw new Error("No Groq API Key available for Bob assistant");
     }
 
-    const payload: any = {
+    const groq = new Groq({ apiKey });
+
+    const completion = await groq.chat.completions.create({
       model: "llama-3.3-70b-versatile",
       messages: [
         {
           role: "system",
-          content: `You are Bob, a helpful AI billingual assistant.
+          content: `You are Bob, a helpful AI bilingual assistant.
 Your goal is to help students understand quiz questions for their exams.
 When answering:
 - EXPLAIN LIKE I'M 5. Use simple, clear language that anyone can understand.
@@ -26,47 +35,25 @@ When answering:
         {
           role: "user",
           content: `Context (Question/Code/Options): 
-${context}
+${sanitizePromptInput(context, 5000)}
 
-User Question: ${question}`,
+User Question: ${sanitizePromptInput(question, 2000)}`,
         },
       ],
       temperature: 0.5,
-      top_p: 1,
-      frequency_penalty: 0,
-      presence_penalty: 0,
       max_tokens: 500,
-      stream: false, // For simplicity in this initial version, we effectively wait for the full response with a simple fetch if we were client side, but here we can just wait for the stream or use a invoke. 
-      // Actually, OpenAIStream returns a ReadableStream. 
-      // To make it easy for the client "use server" action, let's just use a simple fetch to Groq/OpenAI and return the text.
-      // The OpenAIStream util is designed for Edge runtime streaming responses.
-      // For a server action, it's easier to just await the response if we don't need streaming UI immediately.
-      n: 1,
-    };
-
-    // Re-implementing a simple non-streaming fetch here since OpenAIStream is for streaming responses
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`,
-        },
-        method: "POST",
-        body: JSON.stringify({
-            ...payload,
-            stream: false
-        }),
     });
 
-    if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Groq API Error: ${response.status} - ${error}`);
+    const content = completion.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error("Empty response from Groq");
     }
 
-    const data = await response.json();
-    return { success: true, message: data.choices[0].message.content };
+    return { success: true, message: content };
 
-  } catch (error: any) {
-    console.error("Error in askBob:", error);
-    return { success: false, message: "Roar! Something went wrong. Please try again later." };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("askBob failed:", message);
+    return { success: false, message: "Something went wrong. Please try again later." };
   }
 }

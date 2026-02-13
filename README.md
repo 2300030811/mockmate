@@ -3,11 +3,10 @@
 <div align="center">
 
 ![Mockmate Banner](https://img.shields.io/badge/AI-Powered-purple?style=for-the-badge)
-![Next.js](https://img.shields.io/badge/Next.js-13-black?style=for-the-badge&logo=next.js)
+![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js)
 ![TypeScript](https://img.shields.io/badge/TypeScript-Strict-blue?style=for-the-badge&logo=typescript)
 ![Tailwind](https://img.shields.io/badge/Tailwind-CSS-38B2AC?style=for-the-badge&logo=tailwind-css)
-![Vitest](https://img.shields.io/badge/Vitest-Tested-green?style=for-the-badge&logo=vitest)
-![Playwright](https://img.shields.io/badge/Playwright-E2E-orange?style=for-the-badge&logo=playwright)
+![Supabase](https://img.shields.io/badge/Supabase-Auth-green?style=for-the-badge&logo=supabase)
 
 **Your Intelligent Partner for Technical Interview Prep & Cloud Certification**
 
@@ -25,19 +24,28 @@ Powered by a dual-engine AI core (**Google Gemini Pro** & **Groq Llama 3**), it 
 
 - **Instant Quizzes** generated from your own study materials.
 - **Real-time Voice Interviews** that feel natural and authentic.
-- **Dedicated Cloud Prep** for both **AWS** and **Azure** certifications.
+- **Dedicated Cloud Prep** for AWS, Azure, Salesforce, and more.
 
 ## ✨ Key Features
+
+### 🏆 Global Leaderboard & Profiles
+
+Compete with others and track your growth:
+
+- **Authenticated Profiles**: Create an account via Email, **Google**, or **GitHub** to save your progress permanently.
+- **Global Leaderboard**: Claim your spot in the "Hall of Fame" for each certification category.
+- **Guest-First Design**: Start practicing immediately as a guest with a session-based nickname; your progress seamlessly syncs if you decide to join.
+- **Cross-Device History**: Log in from anywhere to see your previous quiz scores and career path analysis.
 
 ### ☁️ Certification Hub
 
 Detailed preparation tracks for major technical certifications:
 
 - **AWS Quiz**: Targeted practice for Cloud Practitioner & Solutions Architect.
-- **Azure Quiz**: Comprehensive questions for Azure Fundamentals (AZ-900) and beyond.
-- **PCAP Quiz**: Python Certified Associate in Programming prep with code-heavy labs.
+- **Azure Quiz**: Comprehensive questions for Azure Fundamentals (AZ-900).
+- **PCAP Quiz**: Python Certified Associate in Programming prep.
 - **Salesforce Quiz**: Specialist preparation for the Agentforce certification.
-- **MongoDB Quiz**: Database skills verification and practice scenarios.
+- **Oracle & MongoDB**: Specialized database and backend certification paths.
 - **Customizable Modes**: Choose strictly timed exams or relaxed practice modes.
 
 ### 🦁 Bob Assistant
@@ -46,7 +54,6 @@ Your personal AI study companion, integrated directly into every quiz:
 
 - **Instant Clarification**: Stuck on a question? Just ask Bob! He can explain complex concepts simply.
 - **Context-Aware**: Bob knows exactly which question you are looking at and provides tailored help.
-- **Mobile-Ready**: Featuring a smart collaborative interface (floating on desktop, bottom-sheet on mobile).
 - **Interactive Learning**: Ask for examples, why other options are wrong, or deep dives into specific topics.
 
 ### 🤖 Intelligent Quiz Generator
@@ -55,23 +62,23 @@ Turn any document into a test:
 
 - **Upload & Generate**: Support for PDFs and raw text.
 - **Smart Context**: Extracts high-yield concepts, not just random keywords.
-- **Resilient Architecture**: Uses a robust **Strategy Pattern** to automatically switch between AI providers (Gemini -> Groq) if one is busy or rate-limited.
+- **Resilient Architecture**: Uses a robust **Strategy Pattern** to automatically switch between AI providers (Gemini -> Groq).
 
 ### 🎙️ AI Interview Simulator
 
 Experience the pressure of a real interview from home:
 
-- **Voice-First Experience**: Utilizes **Native Web Speech API** for zero-latency transcription and browser-native TTS.
-- **Zero Latency**: No server round-trips for speech processing means instant feedback.
-- **Adaptive Feedback**: The AI analyzes your answers for technical accuracy and behavioral cues, providing constructive critique.
+- **Voice-First Experience**: Utilizes **Native Web Speech API** for zero-latency transcription.
+- **Adaptive Feedback**: AI analyzes technical accuracy and behavioral cues, providing constructive critique.
 
 ## 🛠️ Tech Stack & Quality
 
 ### ⚙️ Core Architecture
 
-- **Next.js 13** (App Router)
-- **TypeScript** (Strict Mode enables)
+- **Next.js 14** (App Router)
+- **TypeScript** (Strict Mode enabled)
 - **Tailwind CSS** (Responsive & Dark Mode optimized)
+- **Supabase**: Authentication, Database, and Row Level Security (RLS).
 - **Server Actions**: Clean separation of business logic and UI.
 
 ### 🧪 Testing & Reliability
@@ -79,12 +86,12 @@ Experience the pressure of a real interview from home:
 - **Vitest**: Comprehensive unit testing for logic (QuizService, Hooks).
 - **Playwright**: End-to-End (E2E) testing for critical user flows.
 - **Zod**: Runtime schema validation for AI responses.
-- **Lucide React**: Standardized, lightweight iconography.
 
 ### 🧠 AI & Data
 
 - **Google Gemini**: Primary reasoning engine (Flash 1.5 & 2.0).
 - **Groq**: Uber-fast inference for real-time chat (Llama 3).
+- **Supabase PostgREST**: High-performance data fetching.
 - **Redis (Upstash)**: Rate limiting and caching.
 
 ## 🚀 Getting Started
@@ -113,6 +120,10 @@ Create a `.env.local` file in the root directory:
 GOOGLE_API_KEY=your_gemini_key
 GROQ_API_KEY=your_groq_key
 
+# Supabase (Auth & Database)
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+
 # App Configuration
 NEXT_PUBLIC_BASE_URL=http://localhost:3000
 ```
@@ -127,31 +138,10 @@ Visit `http://localhost:3000` to start your prep!
 
 ## 🧪 Running Tests
 
-Ensure the reliability of the application with our full test suite.
-
-**Unit Tests (Logic & Components)**
-
 ```bash
-npm test
-# or
-npx vitest run
+npm test              # Run Unit Tests
+npx playwright test   # Run E2E Tests
 ```
-
-**End-to-End Tests (Browser Flows)**
-
-```bash
-npx playwright test
-```
-
-## 🤝 Contributing
-
-We love contributions! Whether it's adding a new quiz mode, improving AI prompts, or fixing a typo, your help is welcome.
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
 
 ---
 

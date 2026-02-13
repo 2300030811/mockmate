@@ -1,15 +1,14 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { QuizService } from './quiz-service';
+import { QuizGenerator } from './quiz-generator';
 import { GeminiProvider } from './providers/gemini-provider';
 import { GroqProvider } from './providers/groq-provider';
 
 // Hoist mocks
-const { geminiGenerateMock, groqGenerateMock, openaiGenerateMock } = vi.hoisted(() => {
+const { geminiGenerateMock, groqGenerateMock } = vi.hoisted(() => {
   return {
     geminiGenerateMock: vi.fn(),
     groqGenerateMock: vi.fn(),
-    openaiGenerateMock: vi.fn(),
   };
 });
 
@@ -35,15 +34,7 @@ vi.mock('./providers/groq-provider', () => {
   };
 });
 
-vi.mock('./providers/openai-provider', () => {
-  return {
-    OpenAIProvider: class {
-      generateQuiz = openaiGenerateMock;
-    }
-  };
-});
-
-describe('QuizService', () => {
+describe('QuizGenerator', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -60,7 +51,7 @@ describe('QuizService', () => {
     const mockQuestions = [getValidQuestion('Gemini')];
     geminiGenerateMock.mockResolvedValue(mockQuestions);
 
-    const result = await QuizService.generate('content', 'gemini');
+    const result = await QuizGenerator.generate('content', 'gemini');
 
     expect(geminiGenerateMock).toHaveBeenCalled();
     expect(result).toEqual(mockQuestions);
@@ -70,7 +61,7 @@ describe('QuizService', () => {
     const mockQuestions = [getValidQuestion('Groq')];
     groqGenerateMock.mockResolvedValue(mockQuestions);
 
-    const result = await QuizService.generate('content', 'groq');
+    const result = await QuizGenerator.generate('content', 'groq');
 
     expect(groqGenerateMock).toHaveBeenCalled();
     expect(result).toEqual(mockQuestions);
@@ -81,7 +72,7 @@ describe('QuizService', () => {
     const mockQuestions = [getValidQuestion('Fallback')];
     groqGenerateMock.mockResolvedValue(mockQuestions);
 
-    const result = await QuizService.generate('content', 'auto');
+    const result = await QuizGenerator.generate('content', 'auto');
 
     expect(geminiGenerateMock).toHaveBeenCalled();
     expect(groqGenerateMock).toHaveBeenCalled();

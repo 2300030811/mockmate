@@ -12,7 +12,14 @@
 
 /* ===== Base Styles ===== */
 @layer base {
-  * {
+  /* Apply transitions only to interactive elements, not every DOM node */
+  a,
+  button,
+  input,
+  select,
+  textarea,
+  [role="button"],
+  [tabindex] {
     @apply transition-colors duration-200;
   }
 
@@ -57,8 +64,6 @@
     transition: background-color 0.2s ease;
   }
 }
-
-
 
 /* ===== Performance Optimizations ===== */
 @layer base {

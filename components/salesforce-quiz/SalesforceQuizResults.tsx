@@ -2,6 +2,7 @@
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/app/providers";
+import { NicknamePrompt } from "../quiz/NicknamePrompt";
 
 interface SalesforceQuizResultsProps {
     report: {
@@ -108,6 +109,17 @@ export function SalesforceQuizResults({ report, onRetake, mode }: SalesforceQuiz
                     </p>
                   </div>
                 </div>
+                
+                {/* Leaderboard Nickname Prompt */}
+                {mode === 'exam' && (
+                    <div className="mb-10 text-left">
+                        <NicknamePrompt 
+                            score={report.correct}
+                            totalQuestions={report.attempted + report.skipped}
+                            category="salesforce"
+                        />
+                    </div>
+                )}
                 
                 <div className="flex flex-wrap justify-center gap-4">
                   <button 

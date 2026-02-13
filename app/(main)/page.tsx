@@ -1,11 +1,12 @@
-"use client";
+// Server Component — all children already have "use client"
 
-import { useState } from "react";
 import { FeatureCards } from "@/components/home/FeatureCards";
 import { HeroHeader } from "@/components/home/HeroHeader";
 import { HomeBackground } from "@/components/home/HomeBackground";
 import { HomeCTA } from "@/components/home/HomeCTA";
 import { StatsRow } from "@/components/home/StatsRow";
+import { ResultsHistory } from "@/components/home/ResultsHistory";
+import { Leaderboard } from "@/components/home/Leaderboard";
 import { BobAssistant } from "@/components/quiz/BobAssistant";
 
 export default function Home() {
@@ -25,6 +26,10 @@ export default function Home() {
           <FeatureCards />
 
           <HomeCTA />
+          
+          <ResultsHistory />
+
+          <Leaderboard />
 
           <StatsRow />
           
@@ -34,7 +39,7 @@ export default function Home() {
       <BobAssistant 
         key="home-bob"
         customContext="You are Bob, the friendly AI mascot for MockMate. Help users understand what MockMate is: a platform to practice certification exams (AWS, Azure, Salesforce, etc.) and generate quizzes from PDFs. You are encouraging, fun, and helpful."
-        initialMessage="Hi! I'm Bob, your MockMate guide! 🦁 enhancing your learning journey. Ask me anything about our quizzes or features!"
+        initialMessage="Hi! I'm Bob, your MockMate guide! ✨ Enhancing your learning journey. Ask me anything about our quizzes or features!"
       />
 
     </div>

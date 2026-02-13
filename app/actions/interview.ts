@@ -3,6 +3,15 @@
 import { Groq } from "groq-sdk";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getNextKey } from "@/utils/keyManager";
+import { z } from "zod";
+import { sanitizePromptInput } from "@/utils/sanitize";
+
+// Input validation schema
+const ChatMessageSchema = z.object({
+  role: z.enum(["user", "assistant", "system"]),
+  content: z.string().min(1).max(10000),
+});
+const ChatInputSchema = z.array(ChatMessageSchema).max(50);
 
 const getGroqClient = () => {
     // Access safely on server
@@ -11,12 +20,16 @@ const getGroqClient = () => {
     return new Groq({ apiKey });
 };
 
-type ChatMessage = {
-    role: string;
-    content: string;
-};
 
-export async function chatWithAI(messages: ChatMessage[], type: string, sessionId: string): Promise<{ response: string, error?: string }> {
+
+export async function chatWithAI(messages: { role: string; content: string }[], type: string): Promise<{ response: string, error?: string }> {
+    // Validate input
+    const parsed = ChatInputSchema.safeParse(messages);
+    if (!parsed.success) {
+      return { response: "", error: "Invalid message format" };
+    }
+    const validMessages = parsed.data;
+
     try {
         const systemPrompt = `You are a professional technical interviewer conducting a ${type} interview. 
     - Your goal is to assess the candidate's skills.
@@ -35,8 +48,11 @@ export async function chatWithAI(messages: ChatMessage[], type: string, sessionI
 
             const completion = await groq.chat.completions.create({
                 messages: [
-                    { role: "system", content: systemPrompt },
-                    ...messages as any // Groq might expect specific literal types for role, allow cast here but message struct is checked
+                    { role: "system" as const, content: systemPrompt },
+                    ...validMessages.map(m => ({
+                      role: m.role as "user" | "assistant" | "system",
+                      content: m.role === "user" ? sanitizePromptInput(m.content) : m.content,
+                    }))
                 ],
                 model: "llama-3.1-8b-instant",
                 temperature: 0.7,
@@ -57,9 +73,9 @@ export async function chatWithAI(messages: ChatMessage[], type: string, sessionI
                 const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite-preview-02-05" });
                 
                 // Gemini expects 'user' | 'model' roles
-                const history = messages.slice(0, -1).map((m) => ({
+                const history = validMessages.slice(0, -1).map((m) => ({
                     role: m.role === 'assistant' ? 'model' : 'user',
-                    parts: [{ text: m.content }]
+                    parts: [{ text: m.role === 'user' ? sanitizePromptInput(m.content) : m.content }]
                 }));
 
                 const chatObj = model.startChat({
@@ -67,9 +83,11 @@ export async function chatWithAI(messages: ChatMessage[], type: string, sessionI
                     systemInstruction: systemPrompt,
                 });
 
-                const lastMsg = messages[messages.length - 1];
+                const lastMsg = validMessages[validMessages.length - 1];
                 // Handle empty history case for initial greeting
-                const contentToSend = lastMsg ? lastMsg.content : "Hello, I am ready.";
+                const contentToSend = lastMsg 
+                    ? (lastMsg.role === 'user' ? sanitizePromptInput(lastMsg.content) : lastMsg.content) 
+                    : "Hello, I am ready.";
                 
                 const result = await chatObj.sendMessage(contentToSend);
                 responseText = result.response.text();

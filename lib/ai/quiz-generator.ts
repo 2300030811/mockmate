@@ -1,12 +1,11 @@
 import { GeminiProvider } from "./providers/gemini-provider";
 import { GroqProvider } from "./providers/groq-provider";
-import { OpenAIProvider } from "./providers/openai-provider";
-import { QuizQuestion } from "./models";
+import { GeneratedQuizQuestion } from "./models";
 import { sanitizeQuizQuestions } from "./quiz-cleanup";
 
-export type AIProviderName = "gemini" | "groq" | "openai" | "auto";
+export type AIProviderName = "gemini" | "groq" | "auto";
 
-export class QuizService {
+export class QuizGenerator {
   private static getSmartSample(text: string, limit: number = 25000): string {
     if (!text || text.length <= limit) return text;
 
@@ -40,7 +39,7 @@ export class QuizService {
     content: string, 
     providerName: AIProviderName = "auto", 
     customApiKey?: string
-  ): Promise<QuizQuestion[]> {
+  ): Promise<GeneratedQuizQuestion[]> {
     
     const context = this.getSmartSample(content);
     
@@ -51,13 +50,10 @@ export class QuizService {
       providers.push(new GeminiProvider());
     } else if (providerName === "groq") {
       providers.push(new GroqProvider());
-    } else if (providerName === "openai") {
-      providers.push(new OpenAIProvider());
     } else {
-      // Auto: Gemini -> Groq -> OpenAI (if configured)
+      // Auto: Gemini -> Groq
       providers.push(new GeminiProvider());
       providers.push(new GroqProvider());
-      providers.push(new OpenAIProvider()); // Optional fallback
     }
 
     let lastError;
@@ -69,13 +65,15 @@ export class QuizService {
           // Robustly sanitize/fix answers before returning
           return sanitizeQuizQuestions(questions);
         }
-      } catch (error: any) {
-        console.warn(`⚠️ [QuizService] Provider failed:`, error.message);
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        console.warn(`⚠️ [QuizGenerator] Provider failed:`, msg);
         lastError = error;
         // Continue to next provider
       }
     }
 
-    throw new Error(`All providers failed. Last error: ${lastError?.message || "Unknown"}`);
+    const lastMsg = lastError instanceof Error ? lastError.message : "Unknown";
+    throw new Error(`All providers failed. Last error: ${lastMsg}`);
   }
 }

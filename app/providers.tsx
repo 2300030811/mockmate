@@ -1,17 +1,22 @@
 "use client";
 
+import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "../components/providers/ThemeProvider";
 
-// Create a client
-const queryClient = new QueryClient();
+import { AuthProvider } from "./auth-provider";
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  // Create QueryClient in useState to avoid sharing it across SSR requests
+  const [queryClient] = useState(() => new QueryClient());
+
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        {children}
-      </ThemeProvider>
+      <AuthProvider>
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

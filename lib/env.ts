@@ -17,7 +17,6 @@ const envSchema = z.object({
   // AI
   GOOGLE_API_KEY: z.string().optional(),
   GROQ_API_KEY: z.string().optional(),
-  OPENAI_API_KEY: z.string().optional(),
 
   // Upstash (Redis/Ratelimit) - Not in template but used in middleware
   UPSTASH_REDIS_REST_URL: z.string().optional(),
@@ -29,6 +28,7 @@ const envSchema = z.object({
   SALESFORCE_QUESTIONS_URL: z.string().url().optional(),
   MONGODB_QUESTIONS_URL: z.string().url().optional(),
   PCAP_QUESTIONS_URL: z.string().url().optional(),
+  ORACLE_QUESTIONS_URL: z.string().url().optional(),
 
   // Legacy/Unsure
   NEXT_PUBLIC_AZURE_FINAL_JSON_URL: z.string().url().optional(),

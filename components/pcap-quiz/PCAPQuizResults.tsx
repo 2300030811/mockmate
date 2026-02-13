@@ -3,6 +3,7 @@ import { QuizMode } from "@/types";
 import { Button } from "@/components/ui/Button";
 import { useTheme } from "@/app/providers";
 import { RefreshCcw, CheckCircle, Home } from "lucide-react";
+import { NicknamePrompt } from "../quiz/NicknamePrompt";
 
 interface PCAPQuizResultsProps {
   report: {
@@ -73,6 +74,17 @@ export function PCAPQuizResults({ report, onRetake, mode }: PCAPQuizResultsProps
             <p className="text-2xl font-black">{report.skipped}</p>
           </div>
         </div>
+
+        {/* Leaderboard Nickname Prompt */}
+        {mode === 'exam' && (
+            <div className="mb-10">
+                <NicknamePrompt 
+                    score={report.correct}
+                    totalQuestions={report.totalQuestions}
+                    category="pcap"
+                />
+            </div>
+        )}
 
         <div className="flex flex-col sm:flex-row gap-4">
           <Button 

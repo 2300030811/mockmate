@@ -1,10 +1,11 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { AIProvider } from "./ai-provider";
-import { QuizQuestion, QuizResponseSchema } from "../models";
+import { GeneratedQuizQuestion, GeneratedQuizResponseSchema } from "../models";
 import { getNextKey } from "@/utils/keyManager";
+import { sanitizePromptInput } from "@/utils/sanitize";
 
 export class GeminiProvider implements AIProvider {
-  async generateQuiz(content: string, count: number = 20, customApiKey?: string): Promise<QuizQuestion[]> {
+  async generateQuiz(content: string, count: number = 20, customApiKey?: string): Promise<GeneratedQuizQuestion[]> {
     const apiKey = customApiKey || getNextKey("GOOGLE_API_KEY");
     if (!apiKey) throw new Error("Gemini API Key missing");
 
@@ -17,10 +18,10 @@ export class GeminiProvider implements AIProvider {
     
     for (const modelName of models) {
       try {
-        console.log(`🤖 [GeminiProvider] Attempting ${modelName}...`);
+
         const model = genAI.getGenerativeModel({ model: modelName });
 
-        const isMathOrTechnical = content.includes("math") || content.includes("formula") || content.includes("kg") || content.includes("boiler");
+        const safeContent = sanitizePromptInput(content, 50000);
 
         const prompt = `
           You are an expert AI Quiz Generator. 
@@ -47,7 +48,7 @@ export class GeminiProvider implements AIProvider {
              - Solving math problems is allowed and encouraged.
           
           TEXT CONTENT:
-          ${content.substring(0, 50000)}
+          ${safeContent}
         `;
 
         const result = await model.generateContent({
@@ -58,62 +59,27 @@ export class GeminiProvider implements AIProvider {
         const response = await result.response;
         const text = response.text();
         
-        // Clean and Parse
-        const cleaned = this.cleanJson(text);
-        let json = JSON.parse(cleaned);
+        // Clean and Parse using safeJsonParse
+        const { safeJsonParse } = await import("@/utils/safeJson");
+        const json = safeJsonParse(text, GeneratedQuizResponseSchema);
 
-        // Handle case where AI wraps in { "questions": [...] }
-        if (!Array.isArray(json) && json.questions && Array.isArray(json.questions)) {
-            json = json.questions;
+        if (!json) {
+            console.warn(`⚠️ [GeminiProvider] Failed to parse JSON from ${modelName}`);
+            continue; // Try next model
         }
         
-        // --- POST-PROCESSING & SANITIZATION ---
-        // Fixes "Red Answer" bug by ensuring exact string matches
-        if (Array.isArray(json)) {
-            json = json.map((q: any) => {
-                // Ensure options are strings
-                if (Array.isArray(q.options)) {
-                    q.options = q.options.map((opt: any) => String(opt).trim());
-                }
-                
-                // Fix Answer Mismatch (e.g. "720 kg " vs "720 kg")
-                const exactMatch = q.options.find((opt: string) => opt === q.answer?.trim());
-                if (!exactMatch) {
-                   // Fuzzy match attempt
-                   const fuzzyMatch = q.options.find((opt: string) => 
-                       opt.toLowerCase().includes(q.answer?.toLowerCase()) || 
-                       q.answer?.toLowerCase().includes(opt.toLowerCase())
-                   );
-                   if (fuzzyMatch) q.answer = fuzzyMatch;
-                } else {
-                   q.answer = exactMatch;
-                }
-                return q;
-            });
-        }
+        if (Array.isArray(json) && json.length > 0) return json;
 
-        // Validate with Zod
-        const questions = QuizResponseSchema.parse(json);
-        if (questions.length > 0) return questions;
 
-      } catch (e: any) {
-        console.warn(`⚠️ [GeminiProvider] ${modelName} failed:`, e.message);
+
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.warn(`⚠️ [GeminiProvider] ${modelName} failed:`, msg);
         lastError = e;
-        if (e.message.includes("429")) return []; // Stop trying if quota exceeded to let fallback handle it
+        if (msg.includes("429")) return []; // Stop trying if quota exceeded to let fallback handle it
       }
     }
 
     throw lastError || new Error("Gemini generation failed");
-  }
-
-  private cleanJson(text: string) {
-    try {
-      const first = text.indexOf("[");
-      const last = text.lastIndexOf("]");
-      if (first === -1 || last === -1) return "[]";
-      return text.substring(first, last + 1);
-    } catch {
-      return "[]";
-    }
   }
 }

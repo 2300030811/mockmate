@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { QuizMode } from "@/types";
 
 // Define a union type for possible user answers based on supported question types
@@ -12,6 +12,7 @@ export type UserAnswer =
 interface UseQuizEngineProps<T> {
   questions: T[];
   mode: QuizMode;
+  category: string; // New: To make the persistence key unique across categories
   initialTimeRemaining?: number; // seconds
   onSubmit?: () => void;
 }
@@ -19,6 +20,7 @@ interface UseQuizEngineProps<T> {
 export function useQuizEngine<T extends { id: string | number }>({
   questions,
   mode,
+  category,
   initialTimeRemaining = 90 * 60,
   onSubmit
 }: UseQuizEngineProps<T>) {
@@ -31,9 +33,9 @@ export function useQuizEngine<T extends { id: string | number }>({
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [hasHydrated, setHasHydrated] = useState(false);
 
-  // Persistence Key based on questions length to avoid collisions if quiz changes
-  // Ideally this should use a unique quiz ID passed as prop
-  const PERSISTENCE_KEY = `quiz_progress_${mode}_${questions.length}`;
+  // Persistence Key uses category, mode and first question ID for uniqueness
+  const firstId = questions.length > 0 ? questions[0].id : 'empty';
+  const PERSISTENCE_KEY = `quiz_progress_${category}_${mode}_${firstId}`;
 
   // Load state on mount
   useEffect(() => {
@@ -63,21 +65,28 @@ export function useQuizEngine<T extends { id: string | number }>({
     }
   }, [questions.length, mode, initialTimeRemaining, PERSISTENCE_KEY]);
 
-  // Save state on change
+  // Save state on change (debounced to avoid excessive writes during timer countdown)
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (!hasHydrated || questions.length === 0) return;
 
     if (!isSubmitted) {
-        // Debounce saving could be added here if needed
-        const stateToSave = {
-            currentQuestionIndex,
-            userAnswers,
-            markedQuestions,
-            timeRemaining,
-            isSubmitted
-        };
-        localStorage.setItem(PERSISTENCE_KEY, JSON.stringify(stateToSave));
+        if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = setTimeout(() => {
+            const stateToSave = {
+                currentQuestionIndex,
+                userAnswers,
+                markedQuestions,
+                timeRemaining,
+                isSubmitted
+            };
+            localStorage.setItem(PERSISTENCE_KEY, JSON.stringify(stateToSave));
+        }, 2000); // Debounce: save at most once per 2 seconds
     }
+
+    return () => {
+        if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
   }, [currentQuestionIndex, userAnswers, markedQuestions, timeRemaining, isSubmitted, hasHydrated, questions.length, PERSISTENCE_KEY]);
 
   const clearProgress = useCallback(() => {

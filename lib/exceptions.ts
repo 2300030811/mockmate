@@ -23,12 +23,6 @@ export class ValidationError extends AppError {
   }
 }
 
-export class AuthenticationError extends AppError {
-    constructor(message: string = "Not authenticated") {
-      super(message, 401);
-    }
-  }
-
 export class ServerError extends AppError {
   constructor(message: string = "Internal Server Error") {
     super(message, 500);

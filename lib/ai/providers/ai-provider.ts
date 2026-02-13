@@ -1,4 +1,4 @@
-import { QuizQuestion } from "../models";
+import { GeneratedQuizQuestion } from "../models";
 
 export interface AIProvider {
   /**
@@ -7,5 +7,5 @@ export interface AIProvider {
    * @param count Target number of questions (advisory, provider may return fewer or more).
    * @param customApiKey Optional specific API key to use.
    */
-  generateQuiz(content: string, count?: number, customApiKey?: string): Promise<QuizQuestion[]>;
+  generateQuiz(content: string, count?: number, customApiKey?: string): Promise<GeneratedQuizQuestion[]>;
 }

@@ -1,10 +1,10 @@
 "use server";
 
-import { QuizService, AIProviderName } from "@/lib/ai/quiz-service";
+import { QuizGenerator, AIProviderName } from "@/lib/ai/quiz-generator";
 import { getNextKey } from "@/utils/keyManager";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { safeJsonParse } from "@/utils/safeJson";
-import { QuizResponseSchema, QuizQuestion } from "@/lib/ai/models";
+import { GeneratedQuizResponseSchema, GeneratedQuizQuestion } from "@/lib/ai/models";
 import { sanitizeQuizQuestions } from "@/lib/ai/quiz-cleanup";
 import { StorageService } from "@/lib/services/storage";
 import { OCRService } from "@/lib/services/ocr";
@@ -25,7 +25,11 @@ export async function convertFileAction(formData: FormData) {
       throw new Error("No file uploaded");
     }
 
-    console.log(`📂 Processing: ${file.name} | Size: ${file.size} bytes`);
+    // Validate file type — only accept PDFs
+    const allowedTypes = ["application/pdf"];
+    if (!allowedTypes.includes(file.type)) {
+      throw new Error(`Invalid file type: ${file.type}. Only PDF files are accepted.`);
+    }
 
     if (file.size > 10 * 1024 * 1024) {
       throw new Error("File too large. Please upload < 10MB.");
@@ -53,16 +57,17 @@ export async function convertFileAction(formData: FormData) {
 
     return { text, isScanned: false, source };
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("❌ Convert Action Error:", error);
-    throw new Error(error.message || "File conversion failed");
+    const msg = error instanceof Error ? error.message : "File conversion failed";
+    throw new Error(msg);
   }
 }
 
 /**
  * Separate Vision Helper
  */
-async function generateWithGeminiVision(apiKey: string, base64Pdf: string): Promise<QuizQuestion[]> {
+async function generateWithGeminiVision(apiKey: string, base64Pdf: string): Promise<GeneratedQuizQuestion[]> {
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
@@ -82,7 +87,7 @@ async function generateWithGeminiVision(apiKey: string, base64Pdf: string): Prom
   const response = await result.response;
   const text = response.text();
   
-  const parsed = safeJsonParse(text, QuizResponseSchema);
+  const parsed = safeJsonParse(text, GeneratedQuizResponseSchema);
   if (!parsed) {
       throw new Error("Failed to parse AI response into valid Quiz JSON.");
   }
@@ -104,7 +109,7 @@ export async function generateQuizAction(
       throw new Error("Content too short or file empty.");
     }
 
-    let rawQuestions: QuizQuestion[] = [];
+    let rawQuestions: GeneratedQuizQuestion[] = [];
 
     // 1. VISION PATH
     if (base64Pdf) {
@@ -116,7 +121,7 @@ export async function generateQuizAction(
     } 
     // 2. TEXT PATH
     else {
-       rawQuestions = await QuizService.generate(content, provider as AIProviderName, customApiKey);
+       rawQuestions = await QuizGenerator.generate(content, provider as AIProviderName, customApiKey);
     }
 
     const sanitizedQuestions = sanitizeQuizQuestions(rawQuestions);
@@ -132,11 +137,12 @@ export async function generateQuizAction(
 
     return allQuestions;
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("🔥 Generate Action Error:", error);
-    if (error.constructor.name === "ZodError") {
-         throw new Error("AI Output Validation Failed: " + JSON.stringify(error.issues));
+    if (error && typeof error === 'object' && 'issues' in error) {
+      throw new Error("AI Output Validation Failed: " + JSON.stringify((error as { issues: unknown }).issues));
     }
-    throw new Error(error.message || "Failed to generate quiz.");
+    const msg = error instanceof Error ? error.message : "Failed to generate quiz.";
+    throw new Error(msg);
   }
 }

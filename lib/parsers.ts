@@ -8,6 +8,31 @@ export interface QuizParser {
   parse(data: unknown): QuizQuestion[];
 }
 
+// Raw data shapes from external sources (before normalization)
+interface RawQuestion {
+  id?: number | string;
+  type?: string;
+  question?: string;
+  options?: string[] | Record<string, string>;
+  answer?: string | string[] | Record<string, string>;
+  answer_mapping?: Record<string, string>;
+  explanation?: string;
+  code?: string;
+  image?: string;
+  section?: string;
+  domain?: string;
+  difficulty?: string;
+  batchId?: string;
+  correctAnswer?: string | string[];
+  correct_answers?: string | string[];
+  statements?: { text: string; answer: string }[];
+  rows?: string[];
+  hotspot_options?: string[];
+  boxes?: { label: string; options: string[]; answer: string }[];
+  drop_zones?: string[];
+  scenario?: string;
+}
+
 // --- Parsers ---
 
 export const MongoDBParser: QuizParser = {
@@ -15,7 +40,7 @@ export const MongoDBParser: QuizParser = {
     return Array.isArray(data) && data.length > 0 && 'questions' in data[0] && Array.isArray(data[0].questions);
   },
   parse(data: unknown): QuizQuestion[] {
-    const batches = data as { questions: any[] }[];
+    const batches = data as { questions: RawQuestion[] }[];
     return batches.flatMap((batch) => batch.questions).map(normalizeQuestion).filter(isValid);
   }
 };
@@ -23,15 +48,15 @@ export const MongoDBParser: QuizParser = {
 export const SalesforceParser: QuizParser = {
   canParse(data: unknown): boolean {
     if (typeof data !== 'object' || data === null) return false;
-    const obj = data as any;
-    return Array.isArray(obj.sections) || (Array.isArray(obj.questions) && !Array.isArray(obj)); // Object with questions array
+    const obj = data as Record<string, unknown>;
+    return Array.isArray(obj.sections) || (Array.isArray(obj.questions) && !Array.isArray(obj));
   },
   parse(data: unknown): QuizQuestion[] {
-    const obj = data as any;
+    const obj = data as { sections?: { sectionTitle?: string; questions?: RawQuestion[] }[]; questions?: RawQuestion[] };
     if (Array.isArray(obj.sections)) {
-      return obj.sections.flatMap((section: any) => 
+      return obj.sections.flatMap((section) => 
         Array.isArray(section.questions) 
-          ? section.questions.map((q: any) => ({ ...q, section: section.sectionTitle })) 
+          ? section.questions.map((q) => ({ ...q, section: section.sectionTitle })) 
           : []
       ).map(normalizeQuestion).filter(isValid);
     }
@@ -47,16 +72,21 @@ export const GenericArrayParser: QuizParser = {
         return Array.isArray(data);
     },
     parse(data: unknown): QuizQuestion[] {
-        return (data as any[]).map(normalizeQuestion).filter(isValid);
+        const arr = data as RawQuestion[];
+        // Check if it's a nested array (batches)
+        if (arr.length > 0 && Array.isArray(arr[0])) {
+            return (arr as unknown as RawQuestion[][]).flat().map(normalizeQuestion).filter(isValid);
+        }
+        return arr.map(normalizeQuestion).filter(isValid);
     }
 }
 
 // --- Helper Functions ---
 
-function normalizeQuestion(q: any): QuizQuestion | null {
+function normalizeQuestion(q: RawQuestion): QuizQuestion | null {
     if (!q || typeof q !== "object") return null;
     
-    const newQ = { ...q };
+    const newQ: Record<string, unknown> = { ...q };
 
     // Standardize ID
     if (!newQ.id && newQ.question) {
@@ -108,7 +138,7 @@ function normalizeQuestion(q: any): QuizQuestion | null {
         }
     }
     
-    return newQ as QuizQuestion;
+    return newQ as unknown as QuizQuestion;
 }
 
 function isValid(q: QuizQuestion | null): q is QuizQuestion {

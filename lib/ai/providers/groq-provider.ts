@@ -1,11 +1,15 @@
 import { AIProvider } from "./ai-provider";
-import { QuizQuestion, QuizResponseSchema } from "../models";
+import { GeneratedQuizQuestion, GeneratedQuizResponseSchema } from "../models";
 import { getNextKey } from "@/utils/keyManager";
+import { sanitizePromptInput } from "@/utils/sanitize";
+import Groq from "groq-sdk";
 
 export class GroqProvider implements AIProvider {
-  async generateQuiz(content: string, count: number = 20, customApiKey?: string): Promise<QuizQuestion[]> {
+  async generateQuiz(content: string, count: number = 20, customApiKey?: string): Promise<GeneratedQuizQuestion[]> {
     const apiKey = customApiKey || getNextKey("GROQ_API_KEY");
     if (!apiKey) throw new Error("Groq API Key missing");
+
+    const safeContent = sanitizePromptInput(content, 30000);
 
     const prompt = `
       You are an expert AI Quiz Generator. 
@@ -18,65 +22,38 @@ export class GroqProvider implements AIProvider {
       4. Format: [{"question": "...", "options": ["..."], "answer": "...", "explanation": "..."}]
       
       TEXT CONTENT:
-      ${content.substring(0, 30000)}
+      ${safeContent}
     `;
 
     try {
-      console.log(`⚡ [GroqProvider] Requesting...`);
-      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: "llama-3.3-70b-versatile",
-          messages: [
-            { role: "system", content: "You are a helpful assistant that outputs JSON." },
-            { role: "user", content: prompt }
-          ],
-          temperature: 0.7,
-          response_format: { type: "json_object" }
-        })
+      const groq = new Groq({ apiKey });
+
+      const response = await groq.chat.completions.create({
+        model: "llama-3.3-70b-versatile",
+        messages: [
+          { role: "system", content: "You are a helpful assistant that outputs JSON." },
+          { role: "user", content: prompt }
+        ],
+        temperature: 0.7,
+        response_format: { type: "json_object" }
       });
 
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(`Groq API Error: ${error.error?.message || response.statusText}`);
-      }
-
-      const data = await response.json();
-      const rawText = data.choices[0].message.content;
+      const rawText = response.choices[0]?.message?.content;
+      if (!rawText) throw new Error("Empty response from Groq");
 
       // Groq often wraps in a "questions" object despite instructions, checks for that
       let json = JSON.parse(rawText);
       if (json.questions && Array.isArray(json.questions)) {
           json = json.questions;
       }
-      
-      // --- POST-PROCESSING ---
-      if (Array.isArray(json)) {
-        json = json.map((q: any) => {
-            if (Array.isArray(q.options)) {
-                q.options = q.options.map((opt: any) => String(opt).trim());
-            }
-            const exactMatch = q.options.find((opt: string) => opt === q.answer?.trim());
-            if (exactMatch) {
-               q.answer = exactMatch;
-            } else {
-               // Fallback: Try to find containing string
-               const fuzzy = q.options.find((opt: string) => opt.includes(q.answer) || q.answer.includes(opt));
-               if (fuzzy) q.answer = fuzzy;
-            }
-            return q;
-        });
-      }
 
-      const questions = QuizResponseSchema.parse(json);
+      // Validate with Zod — cleanup is handled by QuizGenerator.sanitizeQuizQuestions()
+      const questions = GeneratedQuizResponseSchema.parse(json);
       return questions;
 
-    } catch (e: any) {
-      console.error(`❌ [GroqProvider] Failed:`, e.message);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`❌ [GroqProvider] Failed:`, msg);
       throw e;
     }
   }

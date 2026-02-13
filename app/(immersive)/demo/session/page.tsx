@@ -395,7 +395,7 @@ function InterviewSessionContent() {
 
     try {
       // Server Action Call
-      const data = await chatWithAI(history, type, sessionId);
+      const data = await chatWithAI(history, type);
       
       if (!isMountedRef.current) return; // Stop if unmounted
 

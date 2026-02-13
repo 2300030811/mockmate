@@ -1,57 +1,60 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { QuizQuestion } from "@/types";
+import { QuizQuestion, QuizMode } from "@/types";
 import { fetchAzureQuestionsAction } from "@/app/actions/quiz";
 import { useQuizEngine, UserAnswer } from "./useQuizEngine";
+import { getSessionId, getStoredNickname } from "@/utils/session";
+import { saveQuizResult } from "@/app/actions/results";
 
-export type QuizMode = 'practice' | 'exam' | 'review';
+type AzureQuizMode = QuizMode | 'review';
+// Re-export for backward compatibility with components that import QuizMode from this hook
+export type { AzureQuizMode as QuizMode };
 
 interface UseAzureQuizProps {
-  initialMode?: QuizMode;
+  initialMode?: AzureQuizMode;
 }
 
 export function useAzureQuiz({ initialMode = 'practice' }: UseAzureQuizProps = {}) {
-  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [mode, setMode] = useState<QuizMode>(initialMode);
+  const [mode, setMode] = useState<AzureQuizMode>(initialMode);
 
   // React Query for caching raw data
   const { data: rawQuestions, isLoading: isFetching } = useQuery({
     queryKey: ['azure-questions-raw'],
     queryFn: async () => {
-      // Use imported action directly
       return await fetchAzureQuestionsAction();
     },
     staleTime: 1000 * 60 * 60, // Cache raw questions for 1 hour
     refetchOnWindowFocus: false,
   });
 
-  useEffect(() => {
-    if (!rawQuestions) return;
-
-    setLoading(true);
-    let loadedQuestions = rawQuestions;
+  // Derive questions from raw data to avoid redundant state
+  const questions = useMemo(() => {
+    if (!rawQuestions) return [];
     if (initialMode === 'exam') {
       const shuffled = [...rawQuestions].sort(() => 0.5 - Math.random());
-      loadedQuestions = shuffled.slice(0, 40);
+      return shuffled.slice(0, 40) as QuizQuestion[];
     }
-    setQuestions(loadedQuestions as QuizQuestion[]);
-    setLoading(false);
+    return rawQuestions as QuizQuestion[];
   }, [rawQuestions, initialMode]);
 
-  // Sync loading state
-  useEffect(() => {
-     if (isFetching && questions.length === 0) {
-         setLoading(true);
-     }
-  }, [isFetching, questions.length]);
+  const loading = isFetching && questions.length === 0;
 
   const engine = useQuizEngine({
       questions,
       mode: mode === 'review' ? 'practice' : (mode as 'practice' | 'exam'), // Map review to practice for engine mechanics (no timer kill)
+      category: 'azure',
       initialTimeRemaining: 45 * 60,
       onSubmit: () => {
           setMode('review');
+          if (mode === 'exam') {
+            saveQuizResult({
+              sessionId: getSessionId(),
+              category: 'azure',
+              score: calculateScore(),
+              totalQuestions: questions.length,
+              nickname: getStoredNickname() || undefined
+            });
+          }
       }
   });
 
@@ -110,6 +113,8 @@ export function useAzureQuiz({ initialMode = 'practice' }: UseAzureQuizProps = {
     return score;
   };
 
+  const score = useMemo(() => calculateScore(), [questions, engine.userAnswers]);
+
   return {
     questions,
     loading,
@@ -122,7 +127,7 @@ export function useAzureQuiz({ initialMode = 'practice' }: UseAzureQuizProps = {
     timeRemaining: engine.timeRemaining,
     handleSubmitExam: engine.handleSubmit,
     isSubmitted: engine.isSubmitted,
-    score: calculateScore(),
+    score,
     mode,
     setMode,
     clearProgress: engine.clearProgress

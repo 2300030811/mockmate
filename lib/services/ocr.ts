@@ -29,8 +29,9 @@ export class OCRService {
           console.log(`✅ Azure extraction success: ${text.length} characters.`);
           return { text, source: "azure" };
         }
-      } catch (azureError: any) {
-        console.warn("⚠️ Azure Document Intelligence failed, falling back to local:", azureError.message);
+      } catch (azureError: unknown) {
+        const errMsg = azureError instanceof Error ? azureError.message : String(azureError);
+        console.warn("⚠️ Azure Document Intelligence failed, falling back to local:", errMsg);
       }
     }
 
@@ -40,8 +41,9 @@ export class OCRService {
       text = await parsePdf(buffer);
       console.log(`✅ Extracted ${text.length} characters (local).`);
       return { text, source: "local" };
-    } catch (parseError: any) {
-      console.warn("⚠️ Local pdf-parse failed:", parseError.message);
+    } catch (parseError: unknown) {
+      const errMsg = parseError instanceof Error ? parseError.message : String(parseError);
+      console.warn("⚠️ Local pdf-parse failed:", errMsg);
       // Return empty text so caller handles it as "failed extraction"
       return { text: "", source: "local" };
     }

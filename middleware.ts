@@ -8,15 +8,15 @@ export default async function middleware(
 ): Promise<Response | undefined> {
   const ip = request.ip ?? "127.0.0.1";
 
-  // Rate limiting for production API routes
+  // 1. Rate limiting for production API routes
   if (
-    process.env.NODE_ENV != "development" &&
+    request.nextUrl.pathname.startsWith("/api") &&
+    process.env.NODE_ENV !== "development" &&
     process.env.UPSTASH_REDIS_REST_URL &&
     process.env.UPSTASH_REDIS_REST_TOKEN
   ) {
     const ratelimit = new Ratelimit({
       redis: Redis.fromEnv(),
-      // Rate limit to 6 attempts per 2 days
       limiter: Ratelimit.cachedFixedWindow(12, `${24 * 60 * 60}s`),
       ephemeralCache: new Map(),
       analytics: true,
@@ -27,18 +27,27 @@ export default async function middleware(
     );
     event.waitUntil(pending);
 
-    const res = success
-      ? NextResponse.next()
-      : NextResponse.redirect(new URL("/api/blocked", request.url));
-
-    res.headers.set("X-RateLimit-Limit", limit.toString());
-    res.headers.set("X-RateLimit-Remaining", remaining.toString());
-    res.headers.set("X-RateLimit-Reset", reset.toString());
-    return res;
+    if (!success) {
+      const res = NextResponse.redirect(new URL("/api/blocked", request.url));
+      res.headers.set("X-RateLimit-Limit", limit.toString());
+      res.headers.set("X-RateLimit-Remaining", remaining.toString());
+      res.headers.set("X-RateLimit-Reset", reset.toString());
+      return res;
+    }
   }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/api/generate"],
+  matcher: [
+      "/api/:path*",
+      "/aws-quiz/:path*",
+      "/azure-quiz/:path*",
+      "/mongodb-quiz/:path*",
+      "/salesforce-quiz/:path*",
+      "/pcap-quiz/:path*",
+      "/oracle-quiz/:path*",
+      "/career-pathfinder/:path*"
+  ],
 };
