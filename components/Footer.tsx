@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Sparkles, Github, Twitter, Linkedin } from "lucide-react";
+import { Sparkles, Github, Linkedin } from "lucide-react";
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -60,13 +60,22 @@ export function Footer() {
               Connect
             </h4>
             <div className="flex gap-4">
-              <a href="#" className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-blue-600 hover:text-white transition-all">
+              <a 
+                href="https://github.com/2300030811" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-blue-600 hover:text-white transition-all"
+                aria-label="GitHub"
+              >
                 <Github className="w-5 h-5" />
               </a>
-              <a href="#" className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-blue-400 hover:text-white transition-all">
-                <Twitter className="w-5 h-5" />
-              </a>
-              <a href="#" className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-blue-700 hover:text-white transition-all">
+              <a 
+                href="https://www.linkedin.com/in/mahesh-sai-bhima-038243286" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-blue-700 hover:text-white transition-all"
+                aria-label="LinkedIn"
+              >
                 <Linkedin className="w-5 h-5" />
               </a>
             </div>
