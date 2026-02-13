@@ -1,7 +1,10 @@
-import { QuizMode } from "@/types";
-import { CheckCircle, XCircle, RefreshCw, Trophy } from "lucide-react";
+import { QuizMode, QuizQuestion, MCQQuestion } from "@/types";
+import { motion } from "framer-motion";
+import { CheckCircle, XCircle, RefreshCw, Trophy, ChevronLeft, ChevronRight } from "lucide-react";
 import { useTheme } from "@/app/providers";
 import { NicknamePrompt } from "../quiz/NicknamePrompt";
+import { useState } from "react";
+import { OracleQuestionCard } from "./OracleQuestionCard";
 
 interface OracleQuizResultsProps {
   report: {
@@ -14,11 +17,105 @@ interface OracleQuizResultsProps {
   };
   onRetake: () => void;
   mode: QuizMode;
+  questions: QuizQuestion[];
+  userAnswers: Record<string | number, string[]>;
+  checkAnswer: (q: QuizQuestion, answers: string[]) => boolean;
 }
 
-export function OracleQuizResults({ report, onRetake, mode }: OracleQuizResultsProps) {
+export function OracleQuizResults({ report, onRetake, mode, questions, userAnswers, checkAnswer }: OracleQuizResultsProps) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  const [showReview, setShowReview] = useState(false);
+  const [reviewIndex, setReviewIndex] = useState(0);
+
+  if (showReview) {
+    return (
+        <motion.div 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className={`min-h-screen transition-colors duration-500 py-12 px-4 ${
+                isDark 
+                  ? 'bg-gradient-to-br from-gray-950 via-gray-900 to-red-950 text-white' 
+                  : 'bg-gradient-to-br from-red-50 via-white to-orange-50 text-gray-900'
+              }`}
+        >
+            <div className="max-w-4xl mx-auto space-y-8">
+                <div className="flex items-center justify-between">
+                    <button 
+                        onClick={() => setShowReview(false)}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${
+                            isDark ? 'hover:bg-gray-800 text-gray-300' : 'hover:bg-gray-200 text-gray-600'
+                        }`}
+                    >
+                        <ChevronLeft className="w-5 h-5" />
+                        Back to Results
+                    </button>
+                    <div className="text-center">
+                        <h2 className="text-2xl font-bold">Review Answers</h2>
+                        <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                            Question {reviewIndex + 1} of {questions.length}
+                        </p>
+                    </div>
+                    <div className="w-24"></div> {/* Spacer */}
+                </div>
+
+                <div className="relative">
+                    <OracleQuestionCard 
+                        question={questions[reviewIndex]}
+                        selectedAnswers={userAnswers[questions[reviewIndex].id] || []}
+                        onAnswer={() => {}} // Read-only in review
+                        checkAnswer={checkAnswer as (q: QuizQuestion, answers: string[]) => boolean}
+                        isSubmitted={true}
+                        mode={mode}
+                    />
+                </div>
+
+                <div className="flex justify-between items-center bg-transparent pt-4">
+                    <button
+                        disabled={reviewIndex === 0}
+                        onClick={() => setReviewIndex(prev => prev - 1)}
+                        className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold transition-all ${
+                            reviewIndex === 0 
+                                ? 'opacity-30 cursor-not-allowed' 
+                                : isDark ? 'bg-gray-800 hover:bg-gray-700 text-white' : 'bg-white hover:bg-gray-50 text-gray-900 shadow-md border border-gray-200'
+                        }`}
+                    >
+                        <ChevronLeft className="w-5 h-5" />
+                        Previous
+                    </button>
+
+                    <div className="flex gap-2">
+                         {questions.map((_, idx) => (
+                             <button
+                                key={idx}
+                                onClick={() => setReviewIndex(idx)}
+                                className={`w-2.5 h-2.5 rounded-full transition-all ${
+                                    reviewIndex === idx 
+                                        ? 'bg-red-600 scale-125' 
+                                        : isDark ? 'bg-gray-700' : 'bg-gray-300'
+                                }`}
+                             />
+                         ))}
+                    </div>
+
+                    <button
+                        disabled={reviewIndex === questions.length - 1}
+                        onClick={() => setReviewIndex(prev => prev + 1)}
+                        className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold transition-all ${
+                            reviewIndex === questions.length - 1 
+                                ? 'opacity-30 cursor-not-allowed' 
+                                : isDark ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-500/30'
+                        }`}
+                    >
+                        Next
+                        <ChevronRight className="w-5 h-5" />
+                    </button>
+                </div>
+            </div>
+        </motion.div>
+    );
+  }
 
   return (
     <div className={`min-h-screen flex items-center justify-center p-4 transition-colors duration-500 ${
@@ -127,14 +224,22 @@ export function OracleQuizResults({ report, onRetake, mode }: OracleQuizResultsP
             </div>
         )}
 
-        {/* Action Button */}
-        <button
-          onClick={onRetake}
-          className="w-full py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-orange-600 text-white hover:opacity-90 active:scale-95"
-        >
-          <RefreshCw className="w-6 h-6" />
-          Retake Quiz
-        </button>
+        {/* Action Buttons */}
+        <div className="flex flex-col gap-4">
+            <button
+              onClick={() => setShowReview(true)}
+              className="w-full py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 bg-white text-gray-900 border border-gray-200 hover:bg-gray-50 active:scale-95"
+            >
+              Review Answers
+            </button>
+            <button
+              onClick={onRetake}
+              className="w-full py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-orange-600 text-white hover:opacity-90 active:scale-95"
+            >
+              <RefreshCw className="w-6 h-6" />
+              Retake Quiz
+            </button>
+        </div>
 
       </div>
     </div>

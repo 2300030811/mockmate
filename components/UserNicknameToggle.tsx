@@ -42,13 +42,13 @@ export function UserNicknameToggle() {
                             onClick={startEditing}
                             variant="glass"
                             size="sm"
-                            className="rounded-full gap-2 px-4 border-blue-500/20"
+                            className="border-0 shadow-none bg-transparent hover:bg-black/5 dark:hover:bg-white/5 rounded-full gap-2 px-3"
                         >
-                            <User className="w-4 h-4 text-blue-500" />
-                            <span className="max-w-[100px] truncate font-bold text-xs uppercase tracking-wider">
+                            <User className="w-3 h-3 text-blue-500" />
+                            <span className="max-w-[80px] truncate font-bold text-[10px] uppercase tracking-wider">
                                 {nickname || "Guest Player"}
                             </span>
-                            <Edit2 className="w-3 h-3 opacity-50 group-hover:opacity-100" />
+                            <Edit2 className="w-2.5 h-2.5 opacity-40 group-hover:opacity-100" />
                         </Button>
                     </motion.div>
                 ) : (

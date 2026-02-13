@@ -67,16 +67,25 @@ export async function convertFileAction(formData: FormData) {
 /**
  * Separate Vision Helper
  */
-async function generateWithGeminiVision(apiKey: string, base64Pdf: string): Promise<GeneratedQuizQuestion[]> {
+async function generateWithGeminiVision(apiKey: string, base64Pdf: string, count: number = 20, difficulty: string = "medium"): Promise<GeneratedQuizQuestion[]> {
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
   const prompt = `
-    You are an AI Quiz Generator. 
-    Analyze the provided PDF document (which may be scanned images).
-    EXTRACT recognized multiple-choice questions.
-    Return ONLY a raw JSON array.
-    Format: [{"question": "...", "options": ["..."], "answer": "...", "explanation": "..."}]
+    You are an expert AI Quiz Generator. 
+    Analyze the provided PDF document (which may contain scanned images, handwritten notes, or complex diagrams).
+    
+    TASK:
+    EXTRACT and GENERATE high-quality multiple-choice questions from the content.
+    
+    CRITICAL INSTRUCTIONS:
+    1. QUANTITY & QUALITY:
+       - Target: ${Math.max(count, 15)} questions.
+       - DIFFICULTY: ${difficulty.toUpperCase()}.
+       - Use factual recall, conceptual understanding, and scenario-based questions.
+    2. FORMAT: Return ONLY a raw JSON array.
+    3. STRUCTURE: [{"question": "...", "options": ["..."], "answer": "...", "explanation": "..."}]
+    4. ACCURACY: Ensure the "answer" field EXACTLY matches one of the "options" strings.
   `;
 
   const result = await model.generateContent([
@@ -89,7 +98,7 @@ async function generateWithGeminiVision(apiKey: string, base64Pdf: string): Prom
   
   const parsed = safeJsonParse(text, GeneratedQuizResponseSchema);
   if (!parsed) {
-      throw new Error("Failed to parse AI response into valid Quiz JSON.");
+      throw new Error("Failed to parse AI Vision response into valid Quiz JSON.");
   }
 
   return parsed;
@@ -102,10 +111,12 @@ export async function generateQuizAction(
     content: string, 
     provider: string = "auto", 
     customApiKey?: string,
-    base64Pdf?: string
+    base64Pdf?: string,
+    count: number = 20,
+    difficulty: string = "medium"
 ) {
   try {
-    if ((!content || content.length < 500) && !base64Pdf) {
+    if ((!content || content.length < 100) && !base64Pdf) {
       throw new Error("Content too short or file empty.");
     }
 
@@ -117,11 +128,17 @@ export async function generateQuizAction(
        const key = customApiKey || getNextKey("GOOGLE_API_KEY");
        if (!key) throw new Error("Gemini Key required for Vision");
        
-       rawQuestions = await generateWithGeminiVision(key, base64Pdf);
+       rawQuestions = await generateWithGeminiVision(key, base64Pdf, count, difficulty);
     } 
     // 2. TEXT PATH
     else {
-       rawQuestions = await QuizGenerator.generate(content, provider as AIProviderName, customApiKey);
+       rawQuestions = await QuizGenerator.generate(
+         content, 
+         provider as AIProviderName, 
+         customApiKey, 
+         count, 
+         difficulty
+       );
     }
 
     const sanitizedQuestions = sanitizeQuizQuestions(rawQuestions);

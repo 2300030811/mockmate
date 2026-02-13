@@ -2,6 +2,10 @@ import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/app/providers";
 import { NicknamePrompt } from "../quiz/NicknamePrompt";
+import { useState } from "react";
+import { AWSQuestionCard } from "./AWSQuestionCard";
+import { AWSQuestion } from "@/types";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface AWSQuizResultsProps {
     report: {
@@ -14,12 +18,106 @@ interface AWSQuizResultsProps {
     };
     onRetake: () => void;
     mode: 'practice' | 'exam';
+    questions: AWSQuestion[];
+    userAnswers: Record<string | number, string[]>;
+    checkAnswer: (q: AWSQuestion, answers: string[]) => boolean;
 }
 
-export function AWSQuizResults({ report, onRetake, mode }: AWSQuizResultsProps) {
+export function AWSQuizResults({ report, onRetake, mode, questions, userAnswers, checkAnswer }: AWSQuizResultsProps) {
     const router = useRouter();
     const { theme } = useTheme();
     const isDark = theme === 'dark';
+    const [showReview, setShowReview] = useState(false);
+    const [reviewIndex, setReviewIndex] = useState(0);
+
+    if (showReview) {
+        return (
+            <motion.div 
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className={`min-h-screen transition-colors duration-500 py-12 px-4 ${
+                    isDark 
+                      ? 'bg-gradient-to-br from-gray-950 via-gray-900 to-blue-950 text-white' 
+                      : 'bg-gradient-to-br from-gray-50 via-white to-blue-50 text-gray-900'
+                }`}
+            >
+                <div className="max-w-4xl mx-auto space-y-8">
+                    <div className="flex items-center justify-between">
+                        <button 
+                            onClick={() => setShowReview(false)}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${
+                                isDark ? 'hover:bg-gray-800 text-gray-300' : 'hover:bg-gray-200 text-gray-600'
+                            }`}
+                        >
+                            <ChevronLeft className="w-5 h-5" />
+                            Back to Results
+                        </button>
+                        <div className="text-center">
+                            <h2 className="text-2xl font-bold">Review Answers</h2>
+                            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                                Question {reviewIndex + 1} of {questions.length}
+                            </p>
+                        </div>
+                        <div className="w-24"></div> {/* Spacer */}
+                    </div>
+
+                    <div className="relative">
+                        <AWSQuestionCard 
+                            question={questions[reviewIndex]}
+                            selectedAnswers={userAnswers[questions[reviewIndex].id] || []}
+                            onAnswer={() => {}} // Read-only in review
+                            checkAnswer={checkAnswer}
+                            isSubmitted={true}
+                            mode={mode}
+                        />
+                    </div>
+
+                    <div className="flex justify-between items-center bg-transparent pt-4">
+                        <button
+                            disabled={reviewIndex === 0}
+                            onClick={() => setReviewIndex(prev => prev - 1)}
+                            className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold transition-all ${
+                                reviewIndex === 0 
+                                    ? 'opacity-30 cursor-not-allowed' 
+                                    : isDark ? 'bg-gray-800 hover:bg-gray-700 text-white' : 'bg-white hover:bg-gray-50 text-gray-900 shadow-md border border-gray-200'
+                            }`}
+                        >
+                            <ChevronLeft className="w-5 h-5" />
+                            Previous
+                        </button>
+
+                        <div className="flex gap-2">
+                             {questions.map((_, idx) => (
+                                 <button
+                                    key={idx}
+                                    onClick={() => setReviewIndex(idx)}
+                                    className={`w-2.5 h-2.5 rounded-full transition-all ${
+                                        reviewIndex === idx 
+                                            ? 'bg-blue-600 scale-125' 
+                                            : isDark ? 'bg-gray-700' : 'bg-gray-300'
+                                    }`}
+                                 />
+                             ))}
+                        </div>
+
+                        <button
+                            disabled={reviewIndex === questions.length - 1}
+                            onClick={() => setReviewIndex(prev => prev + 1)}
+                            className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold transition-all ${
+                                reviewIndex === questions.length - 1 
+                                    ? 'opacity-30 cursor-not-allowed' 
+                                    : isDark ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/30'
+                            }`}
+                        >
+                            Next
+                            <ChevronRight className="w-5 h-5" />
+                        </button>
+                    </div>
+                </div>
+            </motion.div>
+        );
+    }
 
     return (
         <div className={`min-h-screen transition-colors duration-500 py-12 px-4 ${
@@ -122,8 +220,22 @@ export function AWSQuizResults({ report, onRetake, mode }: AWSQuizResultsProps) 
                 
                 <div className="flex flex-wrap justify-center gap-4">
                   <button 
+                    onClick={() => setShowReview(true)} 
+                    className={`px-8 py-3 rounded-2xl font-bold transition-all hover:scale-105 ${
+                      isDark 
+                        ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                        : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg'
+                    }`}
+                  >
+                    Review Answers
+                  </button>
+                  <button 
                     onClick={onRetake} 
-                    className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-2xl font-bold shadow-2xl shadow-blue-500/30 hover:shadow-blue-500/50 transition-all hover:scale-105"
+                    className={`px-8 py-3 rounded-2xl font-bold transition-all hover:scale-105 ${
+                      isDark 
+                        ? 'bg-gray-800 hover:bg-gray-700 text-white border border-gray-700' 
+                        : 'bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 shadow-lg'
+                    }`}
                   >
                     Retake Quiz
                   </button>

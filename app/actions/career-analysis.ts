@@ -30,7 +30,23 @@ const AnalysisSchema = z.object({
       url: z.string(),
       type: z.enum(["course", "article", "project"]).catch("article")
     })).default([])
-  })).default([])
+  })).default([]),
+  marketInsights: z.object({
+    demand: z.enum(["high", "medium", "low"]).catch("medium"),
+    salaryRange: z.string(),
+    outlook: z.string()
+  }).optional(),
+  interviewPrep: z.object({
+    topQuestions: z.array(z.object({
+      question: z.string(),
+      reason: z.string()
+    }))
+  }).optional(),
+  resumeSuggestions: z.array(z.object({
+    category: z.enum(["keyword", "experience", "structure"]).catch("keyword"),
+    suggestion: z.string(),
+    impact: z.enum(["high", "medium", "low"]).catch("medium")
+  })).optional()
 });
 
 export async function analyzeCareerPath(formData: FormData, jobRole: string, company: string): Promise<CareerAnalysisResult> {
@@ -53,10 +69,15 @@ export async function analyzeCareerPath(formData: FormData, jobRole: string, com
     const truncatedResume = resumeText.slice(0, 15000); 
 
     const systemPrompt = `
-      You are an expert Career Coach and Technical Recruiter.
+      You are an expert Career Coach and Technical Recruiter specializing in the Indian and Global tech markets.
       Your task is to analyze a candidate's resume against a specific target job role.
       Target Job Role: ${sanitizePromptInput(jobRole, 100)}
       Target Company: ${sanitizePromptInput(company || 'General Industry Standard', 100)}
+      
+      CRITICAL INSTRUCTIONS:
+      1. Market Insights: Based on current 2024-2025 market trends.
+      2. Currency: All salary ranges MUST be in Indian Rupees (INR/₹). Use values like "₹12L - ₹18L PA" or similar.
+      3. Context: Prioritize the Indian job market context unless the target company is specifically global-only.
       
       Crucially, you must identify "Skill Gaps".
       If a missing skill directly maps to one of the following certifications/technologies, you MUST recommend the specific quiz ID:
@@ -82,6 +103,19 @@ export async function analyzeCareerPath(formData: FormData, jobRole: string, com
           "description": string,
           "duration": "Days 1-30" | "Days 31-60" | "Days 61-90",
           "resources": [{ "name": string, "url": string, "type": "course" | "article" | "project" }]
+        }],
+        "marketInsights": {
+          "demand": "high" | "medium" | "low",
+          "salaryRange": string,
+          "outlook": string
+        },
+        "interviewPrep": {
+          "topQuestions": [{ "question": string, "reason": string }]
+        },
+        "resumeSuggestions": [{
+          "category": "keyword" | "experience" | "structure",
+          "suggestion": string,
+          "impact": "high" | "medium" | "low"
         }]
       }
     `;
@@ -161,7 +195,10 @@ export async function analyzeCareerPath(formData: FormData, jobRole: string, com
                     url: String(res?.url || '#'),
                     type: (['course', 'article', 'project'].includes(res?.type ?? '') ? res!.type : 'article') as LearningStep['resources'][number]['type']
                 })) : []
-            })) : []
+            })) : [],
+            marketInsights: rawResult.marketInsights,
+            interviewPrep: rawResult.interviewPrep,
+            resumeSuggestions: rawResult.resumeSuggestions
         };
 
         return fallback;
@@ -190,7 +227,10 @@ export async function analyzeCareerPath(formData: FormData, jobRole: string, com
           url: res.url || '#',
           type: res.type
         }))
-      }))
+      })),
+      marketInsights: result.marketInsights,
+      interviewPrep: result.interviewPrep,
+      resumeSuggestions: result.resumeSuggestions
     };
 
     return finalResponse;

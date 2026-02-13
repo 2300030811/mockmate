@@ -178,7 +178,7 @@ export function QuizContainer({ mode: initialMode }: QuizContainerProps) {
     // If Practice Mode:
     //    - MCQ: Show if answered.
     //    - Drag/Hotspot: Show ONLY if user clicked "Check Answer".
-    const showExplanation = mode === 'review' || 
+    const showExplanation = mode === 'review' || isSubmitted ||
                             (mode === 'practice' && (isMcq ? isPracticeAndAnswered : showPracticeResult));
 
     const isDarkGlobal = isDark; // alias for clarity if needed

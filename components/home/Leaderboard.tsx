@@ -111,15 +111,15 @@ export function Leaderboard() {
                         ${index === 0 ? "bg-gradient-to-r from-yellow-500/10 to-transparent border-yellow-500/20" : "bg-white/50 dark:bg-white/5 border-gray-100 dark:border-white/5 hover:border-gray-300 dark:hover:border-white/10"}
                       `}
                     >
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center justify-center w-8">
+                      <div className="flex items-center gap-4 min-w-0">
+                        <div className="flex items-center justify-center w-8 flex-shrink-0">
                           {getRankIcon(index)}
                         </div>
-                        <div>
-                          <p className="font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        <div className="min-w-0">
+                          <p className="font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
                             {entry.nickname}
                           </p>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-gray-500 truncate">
                             {new Date(entry.completed_at).toLocaleDateString()}
                           </p>
                         </div>

@@ -3,9 +3,15 @@
 import { supabase } from "@/lib/supabase";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { validateNickname } from "@/utils/moderation";
 
 export async function signup(formData: { email: string; password: string; nickname: string }) {
   const { email, password, nickname } = formData;
+
+  const validation = validateNickname(nickname);
+  if (!validation.success) {
+    return { error: validation.error };
+  }
 
   const { data, error } = await supabase.auth.signUp({
     email,

@@ -18,6 +18,22 @@ export interface LearningStep {
   isCompleted?: boolean;
 }
 
+export interface MarketInsights {
+  demand: 'high' | 'medium' | 'low';
+  salaryRange: string;
+  outlook: string;
+}
+
+export interface InterviewPrep {
+  topQuestions: { question: string; reason: string }[];
+}
+
+export interface ResumeSuggestion {
+  category: 'keyword' | 'experience' | 'structure';
+  suggestion: string;
+  impact: 'high' | 'medium' | 'low';
+}
+
 export interface CareerAnalysisResult {
   jobRole: string;
   company?: string;
@@ -25,4 +41,8 @@ export interface CareerAnalysisResult {
   extractedSkills: Skill[];
   missingSkills: SkillGap[];
   roadmap: LearningStep[];
+  marketInsights?: MarketInsights;
+  interviewPrep?: InterviewPrep;
+  resumeSuggestions?: ResumeSuggestion[];
 }
+

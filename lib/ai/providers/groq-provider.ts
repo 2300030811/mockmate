@@ -5,7 +5,7 @@ import { sanitizePromptInput } from "@/utils/sanitize";
 import Groq from "groq-sdk";
 
 export class GroqProvider implements AIProvider {
-  async generateQuiz(content: string, count: number = 20, customApiKey?: string): Promise<GeneratedQuizQuestion[]> {
+  async generateQuiz(content: string, count: number = 20, difficulty: string = "medium", customApiKey?: string): Promise<GeneratedQuizQuestion[]> {
     const apiKey = customApiKey || getNextKey("GROQ_API_KEY");
     if (!apiKey) throw new Error("Groq API Key missing");
 
@@ -16,7 +16,10 @@ export class GroqProvider implements AIProvider {
       Analyze the text provided.
       
       CRITICAL REQUIREMENTS:
-      1. Generate AT LEAST ${Math.max(count, 15)} questions.
+      1. QUANTITY & QUALITY:
+         - Generate AT LEAST ${Math.max(count, 15)} questions.
+         - DIFFICULTY LEVEL: ${difficulty.toUpperCase()}.
+         - Ensure technical accuracy and a mix of conceptual and scenario questions.
       2. Return ONLY a raw JSON array.
       3. The "answer" field MUST be an EXACT string match to one of the "options".
       4. Format: [{"question": "...", "options": ["..."], "answer": "...", "explanation": "..."}]

@@ -5,7 +5,7 @@ import { getNextKey } from "@/utils/keyManager";
 import { sanitizePromptInput } from "@/utils/sanitize";
 
 export class GeminiProvider implements AIProvider {
-  async generateQuiz(content: string, count: number = 20, customApiKey?: string): Promise<GeneratedQuizQuestion[]> {
+  async generateQuiz(content: string, count: number = 20, difficulty: string = "medium", customApiKey?: string): Promise<GeneratedQuizQuestion[]> {
     const apiKey = customApiKey || getNextKey("GOOGLE_API_KEY");
     if (!apiKey) throw new Error("Gemini API Key missing");
 
@@ -30,9 +30,13 @@ export class GeminiProvider implements AIProvider {
           Generate a high-quality multiple-choice quiz from the provided text.
           
           CRITICAL INSTRUCTIONS:
-          1. QUANTITY: Generate AT LEAST ${Math.max(count, 15)} questions. Do not stop early.
-             - If the text is short, exhaustively extract every possible fact.
-             - If the text is long, cover different sections significantly.
+          1. QUANTITY & QUALITY:
+             - Generate AT LEAST ${Math.max(count, 15)} questions.
+             - DIFFICULTY LEVEL: ${difficulty.toUpperCase()}.
+             - Create a mix of question types: 
+               * Factual (direct recall)
+               * Conceptual (understanding principles)
+               * Scenario-based (applying knowledge in context)
           
           2. FORMATTING:
              - Return ONLY a raw JSON array.
@@ -41,11 +45,10 @@ export class GeminiProvider implements AIProvider {
           3. ANSWER MATCHING (VERY IMPORTANT):
              - The "answer" field MUST be an EXACT string copy of the correct option.
              - Do NOT return just "A" or "Option 1". It MUST match the text keys exactly.
-             - Example: If options is ["10 kg", "20 kg"], answer MUST be "10 kg", NOT "10" or "A".
           
           4. CONTENT:
              - Ignore headers/footers.
-             - Solving math problems is allowed and encouraged.
+             - Ensure questions are distinct and cover different sections of the text.
           
           TEXT CONTENT:
           ${safeContent}

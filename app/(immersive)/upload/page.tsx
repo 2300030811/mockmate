@@ -8,6 +8,7 @@ import { twMerge } from "tailwind-merge";
 import { useTheme } from "@/app/providers";
 import { convertFileAction, generateQuizAction } from "@/app/actions/generator";
 import { BobAssistant } from "@/components/quiz/BobAssistant";
+import { UserAuthSection } from "@/components/UserAuthSection";
 
 // --- Utility for cleaner classes ---
 function cn(...inputs: (string | undefined | null | false)[]) {
@@ -51,46 +52,65 @@ export default function UploadPage() {
   const isDark = theme === "dark";
 
   const [customApiKey, setCustomApiKey] = useState("");
-  const [provider, setProvider] = useState<"gemini" | "openai" | "groq" | "auto">("groq");
+  const [provider, setProvider] = useState<"gemini" | "openai" | "groq" | "auto">("auto");
+  const [count, setCount] = useState(15);
+  const [difficulty, setDifficulty] = useState("medium");
+  
+  const [visionData, setVisionData] = useState<{ text: string, base64: string } | null>(null);
+  const [loadingStep, setLoadingStep] = useState("");
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
       setFile(e.target.files[0]);
       setError("");
+      setVisionData(null);
     }
   };
 
 
-  const handleGenerate = async () => {
-    if (!file) return;
+  const handleGenerate = async (useVision: boolean = false) => {
+    if (!file && !visionData) return;
     setIsUploading(true);
     setError("");
+    setLoadingStep("Reading your document...");
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
+      let textContent = "";
+      let base64Pdf = "";
 
-      // 1. Convert File (Server Action)
-      const convertData = await convertFileAction(formData);
-      
-      // 🚫 STRICT BLOCK: Unreadable/Scanned PDFs
-      if (convertData.isScanned) {
-         throw new Error(
-           "❌ Unreadable File Detected.\n\n" +
-           "This PDF appears to be a scanned image. We can only process files with selectable text.\n" +
-           "--> Please upload a conversational/text-based PDF."
-         );
+      if (useVision && visionData) {
+        base64Pdf = visionData.base64;
+        setLoadingStep("AI Vision is analyzing the pages...");
+      } else {
+        const formData = new FormData();
+        formData.append("file", file!);
+
+        // 1. Convert File (Server Action)
+        const convertData = await convertFileAction(formData);
+        
+        // Check for scanned PDF
+        if (convertData.isScanned) {
+           setVisionData({ text: "", base64: convertData.base64 || "" });
+           setIsUploading(false);
+           return; // UI will show vision offer
+        }
+        textContent = convertData.text;
       }
 
+      setLoadingStep("Crafting high-quality quiz questions...");
+      
       // 2. Generate Quiz (Server Action)
       const questions = await generateQuizAction(
-        convertData.text,
+        textContent,
         provider,
-        customApiKey
+        customApiKey,
+        base64Pdf,
+        count,
+        difficulty
       );
 
       if (!questions || questions.length === 0) {
-        throw new Error("AI could not generate valid questions. Try a smaller file.");
+        throw new Error("AI could not generate valid questions. Try a different file.");
       }
 
       setQuiz(questions);
@@ -98,6 +118,7 @@ export default function UploadPage() {
       setError(err.message || "Something went wrong");
     } finally {
       setIsUploading(false);
+      setLoadingStep("");
     }
   };
 
@@ -222,7 +243,7 @@ export default function UploadPage() {
     }
 
     return (
-      <div className={`min-h-screen flex flex-col transition-colors duration-500 ${
+      <div className={`h-screen overflow-hidden flex flex-col transition-colors duration-500 ${
         isDark 
           ? 'bg-gradient-to-br from-gray-950 via-gray-900 to-blue-950' 
           : 'bg-gradient-to-br from-gray-50 via-white to-blue-50'
@@ -244,6 +265,12 @@ export default function UploadPage() {
           </div>
 
           <div className="flex items-center gap-4">
+            {/* Integrated User Section */}
+            <div className="hidden md:flex items-center">
+                <UserAuthSection />
+                <div className="w-px h-6 bg-gray-200 dark:bg-white/10 mx-4"></div>
+            </div>
+
             <button 
               onClick={() => setShowResults(true)}
               className={`text-sm font-bold px-3 py-2 rounded-lg transition ${
@@ -599,13 +626,100 @@ export default function UploadPage() {
               <div className="flex items-center gap-2">
                 <span>⚠️</span> {error}
               </div>
-              {error.includes("quota") && (
-                <p className="text-xs mt-2 opacity-75">
-                  Try adding your own API key below to bypass the limit.
-                </p>
-              )}
             </motion.div>
           )}
+
+          {/* Settings Section */}
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <label className={`text-sm font-extrabold flex items-center gap-2 ${isDark ? 'text-gray-400' : 'text-gray-500'} uppercase tracking-wider`}>
+                <span>📉</span> Difficulty Level
+              </label>
+              <div className={`flex gap-1 p-1 rounded-xl border ${isDark ? 'bg-gray-900/50 border-gray-800' : 'bg-gray-100/50 border-gray-200'}`}>
+                {['easy', 'medium', 'hard'].map((d) => (
+                  <button
+                    key={d}
+                    onClick={() => setDifficulty(d)}
+                    className={cn(
+                      "flex-1 py-2.5 rounded-lg text-xs font-black capitalize transition-all",
+                      difficulty === d
+                        ? isDark ? "bg-gray-800 shadow-xl text-blue-400 border border-gray-700" : "bg-white shadow-md text-blue-600"
+                        : "text-gray-500 hover:text-gray-700"
+                    )}
+                  >
+                    {d}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <label className={`text-sm font-extrabold flex items-center gap-2 ${isDark ? 'text-gray-400' : 'text-gray-500'} uppercase tracking-wider`}>
+                <span>🔢</span> Question Count
+              </label>
+              <div className={`flex gap-1 p-1 rounded-xl border ${isDark ? 'bg-gray-900/50 border-gray-800' : 'bg-gray-100/50 border-gray-200'}`}>
+                {[5, 10, 15, 20].map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => setCount(c)}
+                    className={cn(
+                      "flex-1 py-2.5 rounded-lg text-xs font-black transition-all",
+                      count === c
+                        ? isDark ? "bg-gray-800 shadow-xl text-purple-400 border border-gray-700" : "bg-white shadow-md text-purple-600"
+                        : "text-gray-500 hover:text-gray-700"
+                    )}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Vision Mode Offer */}
+          <AnimatePresence>
+            {visionData && !isUploading && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                className={`mt-8 p-6 rounded-3xl border-2 border-dashed ${
+                  isDark 
+                    ? 'bg-blue-900/10 border-blue-500/30 text-blue-200' 
+                    : 'bg-blue-50 border-blue-200 text-blue-800'
+                }`}
+              >
+                <div className="flex flex-col items-center text-center gap-4">
+                  <div className="w-16 h-16 rounded-full bg-blue-500/20 flex items-center justify-center text-3xl animate-pulse">
+                    👁️
+                  </div>
+                  <div>
+                    <h3 className="font-black text-xl mb-2">Switch to AI Vision Mode?</h3>
+                    <p className="text-sm opacity-80 max-w-md leading-relaxed">
+                      Standard text extraction failed (likely a scanned image). 
+                      Our <b>AI Vision</b> can analyze the visual content to generate questions.
+                    </p>
+                  </div>
+                  <div className="flex gap-3 w-full max-w-sm">
+                    <button
+                      onClick={() => handleGenerate(true)}
+                      className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded-2xl font-bold shadow-xl shadow-blue-500/20 transition-all hover:scale-105 active:scale-95"
+                    >
+                      Use Vision 🚀
+                    </button>
+                    <button
+                      onClick={() => setVisionData(null)}
+                      className={`flex-1 py-3 rounded-2xl font-bold transition-all hover:scale-105 active:scale-95 ${
+                        isDark ? 'bg-gray-800 text-gray-300 border border-gray-700' : 'bg-gray-200 text-gray-700'
+                      }`}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Optional API Key Input */}
           <div className="mt-6 text-left">
@@ -691,24 +805,31 @@ export default function UploadPage() {
           </div>
 
           <button
-            onClick={handleGenerate}
-            disabled={!file || isUploading}
+            onClick={() => handleGenerate(false)}
+            disabled={(!file && !visionData) || isUploading}
             aria-label="Generate Quiz"
             className={`mt-8 w-full py-4 rounded-2xl font-bold text-lg shadow-lg transition-all ${
-              isUploading || !file
+              isUploading || (!file && !visionData)
                 ? isDark
                   ? "bg-gray-800 text-gray-600 cursor-not-allowed"
                   : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-105"
+                : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-105 active:scale-95"
             }`}
           >
             {isUploading ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Generating Quiz...
+              <span className="flex flex-col items-center justify-center gap-1">
+                <span className="flex items-center gap-2">
+                  <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Generating Quiz...
+                </span>
+                {loadingStep && (
+                  <span className="text-[10px] uppercase tracking-[0.2em] opacity-60 font-black animate-pulse">
+                    {loadingStep}
+                  </span>
+                )}
               </span>
             ) : (
               "Generate Quiz 🚀"

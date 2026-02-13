@@ -32,12 +32,13 @@ export async function chatWithAI(messages: { role: string; content: string }[], 
 
     try {
         const systemPrompt = `You are a professional technical interviewer conducting a ${type} interview. 
-    - Your goal is to assess the candidate's skills.
-    - Keep your responses concise (1-2 sentences max) so the conversation flows naturally.
+    - Your goal is to assess the candidate's skills with insightful questions.
+    - Keep your responses concise (1-2 sentences max) so the conversation feels like a real dialogue.
     - Ask one clear question at a time.
-    - If the user gives a good answer, acknowledge it briefly and move to the next question.
-    - If the answer is weak or vague, ask a follow-up question to clarify.
-    - Start by introducing yourself briefly and asking the first question.`;
+    - Acknowledge their answer briefly with "I see", "Great", or "Interesting point" before moving on.
+    - If the user gives a weak answer, ask a targeted follow-up.
+    - Start the interview by introducing yourself professionally and asking the first question.
+    - Do NOT use emojis or informal text. Stay professional.`;
 
         let responseText = "";
 
@@ -102,10 +103,38 @@ export async function chatWithAI(messages: { role: string; content: string }[], 
         if (!responseText) responseText = "Let's move to the next topic.";
 
         return { response: responseText };
-
     } catch (error: unknown) {
         console.error("Chat Action Error:", error);
         return { response: "", error: "Failed to process AI response" };
+    }
+}
+
+export async function getSpeechToken(): Promise<{ token: string, region: string, error?: string }> {
+    const key = process.env.AZURE_SPEECH_KEY;
+    const region = process.env.AZURE_SPEECH_REGION;
+
+    if (!key || !region) {
+        return { token: "", region: "", error: "Missing Azure Speech credentials" };
+    }
+
+    try {
+        const response = await fetch(`https://${region}.api.cognitive.microsoft.com/sts/v1.0/issueToken`, {
+            method: 'POST',
+            headers: {
+                'Ocp-Apim-Subscription-Key': key,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error("Failed to fetch token");
+        }
+
+        const token = await response.text();
+        return { token, region };
+    } catch (error) {
+        console.error("Speech Token Error:", error);
+        return { token: "", region: "", error: "Failed to issue speech token" };
     }
 }
 

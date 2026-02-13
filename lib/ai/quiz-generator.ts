@@ -1,9 +1,10 @@
 import { GeminiProvider } from "./providers/gemini-provider";
 import { GroqProvider } from "./providers/groq-provider";
+import { OpenAIProvider } from "./providers/openai-provider";
 import { GeneratedQuizQuestion } from "./models";
 import { sanitizeQuizQuestions } from "./quiz-cleanup";
 
-export type AIProviderName = "gemini" | "groq" | "auto";
+export type AIProviderName = "gemini" | "groq" | "openai" | "auto";
 
 export class QuizGenerator {
   private static getSmartSample(text: string, limit: number = 25000): string {
@@ -17,7 +18,7 @@ export class QuizGenerator {
     const numChunks = 3;
     const chunkSize = Math.floor(remainingLimit / numChunks);
     
-    let result = `[SECTION 1: INTRO]\n${intro}\n\n`;
+    let result = `[SECTION 1: INTRODUCTION & OVERVIEW]\n${intro}\n\n`;
 
     const getRandom = (min: number, max: number) => Math.floor(Math.random() * (max - min) + min);
     const zoneSize = Math.floor(remainingText.length / numChunks);
@@ -29,7 +30,7 @@ export class QuizGenerator {
        const randomStart = getRandom(zoneStart, safeZoneEnd);
        
        const chunk = remainingText.substring(randomStart, randomStart + chunkSize);
-       result += `[SECTION ${i + 2}: RANDOM PART ${i + 1}]\n${chunk}\n\n`;
+       result += `[SECTION ${i + 2}: CORE CONTENT PART ${i + 1}]\n${chunk}\n\n`;
     }
 
     return result;
@@ -38,7 +39,9 @@ export class QuizGenerator {
   static async generate(
     content: string, 
     providerName: AIProviderName = "auto", 
-    customApiKey?: string
+    customApiKey?: string,
+    count: number = 20,
+    difficulty: string = "medium"
   ): Promise<GeneratedQuizQuestion[]> {
     
     const context = this.getSmartSample(content);
@@ -50,26 +53,39 @@ export class QuizGenerator {
       providers.push(new GeminiProvider());
     } else if (providerName === "groq") {
       providers.push(new GroqProvider());
+    } else if (providerName === "openai") {
+      providers.push(new OpenAIProvider());
     } else {
-      // Auto: Gemini -> Groq
+      // Auto Strategy: Gemini -> Groq -> OpenAI (OpenAI last due to tight limits on free accounts)
       providers.push(new GeminiProvider());
       providers.push(new GroqProvider());
+      providers.push(new OpenAIProvider());
     }
 
     let lastError;
 
     for (const provider of providers) {
       try {
-        const questions = await provider.generateQuiz(context, 20, customApiKey);
+        console.log(`🤖 Attempting generation with ${provider.constructor.name}...`);
+        const questions = await provider.generateQuiz(context, count, difficulty, customApiKey);
         if (questions && questions.length > 0) {
-          // Robustly sanitize/fix answers before returning
           return sanitizeQuizQuestions(questions);
         }
       } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
         console.warn(`⚠️ [QuizGenerator] Provider failed:`, msg);
         lastError = error;
-        // Continue to next provider
+        
+        // If it's a quota error (429), or specifically "limit", we definitely want to fall back
+        if (msg.toLowerCase().includes("limit") || msg.includes("429")) {
+           continue;
+        }
+        
+        // For other errors, we still continue to next provider in "auto" mode
+        if (providerName === "auto") continue;
+        
+        // If specific provider was requested and failed, throw immediately
+        throw error;
       }
     }
 

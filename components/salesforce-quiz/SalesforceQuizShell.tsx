@@ -95,6 +95,9 @@ export function SalesforceQuizShell({ mode, count }: SalesforceQuizShellProps) {
             report={calculateScore()} 
             onRetake={() => window.location.reload()}
             mode={mode}
+            questions={questions}
+            userAnswers={userAnswers}
+            checkAnswer={checkAnswer}
           />
       );
   }

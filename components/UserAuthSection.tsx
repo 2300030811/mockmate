@@ -21,15 +21,14 @@ export function UserAuthSection() {
 
     if (!user) {
         return (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center">
                 <UserNicknameToggle />
-                <div className="w-px h-6 bg-gray-200 dark:bg-gray-800 mx-1"></div>
                 <Link 
                     href="/login" 
-                    className={buttonVariants({ variant: "glass", size: "sm", className: "rounded-full gap-2 px-4 shadow-sm" })}
+                    className={buttonVariants({ variant: "glass", size: "sm", className: "border-0 shadow-none bg-transparent hover:bg-black/5 dark:hover:bg-white/5 rounded-full gap-2 px-4" })}
                 >
                     <LogIn className="w-4 h-4" />
-                    <span className="text-xs font-bold uppercase tracking-wider">Login</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider">Login</span>
                 </Link>
             </div>
         );
@@ -43,7 +42,7 @@ export function UserAuthSection() {
                 onClick={() => setMenuOpen(!menuOpen)}
                 variant="glass"
                 size="sm"
-                className="rounded-full gap-2 px-4 border-emerald-500/20"
+                className="border-0 shadow-none bg-transparent hover:bg-black/5 dark:hover:bg-white/5 rounded-full gap-2 px-3"
             >
                 <div className="w-5 h-5 bg-gradient-to-br from-emerald-400 to-teal-600 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/20">
                     <User className="w-3 h-3 text-white" />

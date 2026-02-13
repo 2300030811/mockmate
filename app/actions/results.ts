@@ -2,6 +2,7 @@
 
 import { supabase } from "@/lib/supabase";
 import { revalidatePath } from "next/cache";
+import { validateNickname } from "@/utils/moderation";
 
 export async function saveQuizResult(data: {
   sessionId: string;
@@ -13,6 +14,13 @@ export async function saveQuizResult(data: {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     const userId = user?.id || null;
+
+    if (data.nickname) {
+        const validation = validateNickname(data.nickname);
+        if (!validation.success) {
+            return { success: false, error: validation.error };
+        }
+    }
 
     // Check if there's a very recent result (last 1 minute)
     const oneMinuteAgo = new Date(Date.now() - 60 * 1000).toISOString();
@@ -95,6 +103,11 @@ export async function getRecentResults(sessionId: string) {
 
 export async function updateQuizResultNickname(id: string, nickname: string) {
     try {
+        const validation = validateNickname(nickname);
+        if (!validation.success) {
+            return { success: false, error: validation.error };
+        }
+
         const { error } = await supabase
             .from('quiz_results')
             .update({ nickname })

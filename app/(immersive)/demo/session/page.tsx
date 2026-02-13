@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { chatWithAI } from "@/app/actions/interview";
+import { chatWithAI, getSpeechToken } from "@/app/actions/interview";
+import * as SpeechSDK from "microsoft-cognitiveservices-speech-sdk";
+import { UserAuthSection } from "@/components/UserAuthSection";
 
 // --- Types for Web Speech API ---
 interface IWindow extends Window {
@@ -141,6 +143,7 @@ function InterviewSessionContent() {
   const [isListening, setIsListening] = useState(false); // Validating if mic is open
   const [isProcessing, setIsProcessing] = useState(false); // Waiting for AI response
   const [isAISpeaking, setIsAISpeaking] = useState(false); // AI is talking
+  const [isUserActive, setIsUserActive] = useState(false); // Volume-based detection
   const [transcript, setTranscript] = useState(""); // Current text
   const [finalTranscript, setFinalTranscript] = useState(""); // Confirmed text
   const [debugStatus, setDebugStatus] = useState("Initializing...");
@@ -148,6 +151,14 @@ function InterviewSessionContent() {
   const [permissionError, setPermissionError] = useState<string | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [browserSupport, setBrowserSupport] = useState(true);
+  const [azureConfig, setAzureConfig] = useState<{ token: string; region: string } | null>(null);
+
+  // Refs for Azure
+  const azureRecognizerRef = useRef<SpeechSDK.SpeechRecognizer | null>(null);
+
+  // Refs for VAD
+  const volumeDataRef = useRef<number[]>(new Array(30).fill(0));
+  const silenceStartRef = useRef<number | null>(null);
 
   // Setup Timer
   useEffect(() => {
@@ -176,6 +187,17 @@ function InterviewSessionContent() {
     }
   }, []);
 
+  // Fetch Azure Token
+  useEffect(() => {
+    const fetchToken = async () => {
+      const result = await getSpeechToken();
+      if (result.token && result.region) {
+        setAzureConfig({ token: result.token, region: result.region });
+      }
+    };
+    fetchToken();
+  }, []);
+
   // Initialize Session
   useEffect(() => {
     if (!hasStartedRef.current) {
@@ -191,13 +213,13 @@ function InterviewSessionContent() {
       isMountedRef.current = false;
       stopVisualization();
       if (streamRef.current) {
-// ... existing cleanup ...
         streamRef.current.getTracks().forEach((track) => track.stop());
       }
       if (recognitionRef.current) {
-        try {
-          recognitionRef.current.stop();
-        } catch (e) {}
+        try { recognitionRef.current.stop(); } catch (e) {}
+      }
+      if (azureRecognizerRef.current) {
+        try { azureRecognizerRef.current.stopContinuousRecognitionAsync(); } catch (e) {}
       }
       if (typeof window !== "undefined" && window.speechSynthesis) {
         window.speechSynthesis.cancel();
@@ -208,8 +230,10 @@ function InterviewSessionContent() {
 
   // Scroll to bottom
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isProcessing, transcript]);
+    if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, isProcessing, transcript, finalTranscript]);
 
   // Handle Stream for Video
   useEffect(() => {
@@ -262,109 +286,132 @@ function InterviewSessionContent() {
 
   // --- 2. SPEECH RECOGNITION (The Core Logic) ---
   const startListening = useCallback(() => {
-    if (isAISpeaking || isProcessing) return; // Don't listen while AI talks
+    if (isAISpeaking || isProcessing) return;
 
+    // A. TRY AZURE SPEECH (Pro Mode)
+    if (azureConfig) {
+      const speechConfig = SpeechSDK.SpeechConfig.fromAuthorizationToken(azureConfig.token, azureConfig.region);
+      speechConfig.speechRecognitionLanguage = "en-US";
+      
+      const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
+      const recognizer = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
+      
+      recognizer.recognizing = (s, e) => {
+        setTranscript(e.result.text);
+        setDebugStatus("Azure Listening...");
+      };
+      
+      recognizer.recognized = (s, e) => {
+        if (e.result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
+          setFinalTranscript((prev) => prev + " " + e.result.text);
+          setTranscript("");
+        }
+      };
+      
+      recognizer.startContinuousRecognitionAsync(() => {
+        setIsListening(true);
+        setDebugStatus("Pro Listening...");
+        volumeDataRef.current = new Array(30).fill(50);
+      });
+      
+      azureRecognizerRef.current = recognizer;
+      return;
+    }
+
+    // B. FALLBACK TO WEB SPEECH API
     const iWindow = window as unknown as IWindow;
-    const SpeechRecognition =
-      iWindow.webkitSpeechRecognition || iWindow.SpeechRecognition;
-
+    const SpeechRecognition = iWindow.webkitSpeechRecognition || iWindow.SpeechRecognition;
     if (!SpeechRecognition) {
       setDebugStatus("Browser not supported");
       return;
     }
 
-    // Stop existing instance
     if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch (e) {}
+      try { recognitionRef.current.stop(); } catch (e) {}
     }
 
     const recognition = new SpeechRecognition();
     recognition.lang = "en-US";
-    recognition.continuous = true; // Keep listening
-    recognition.interimResults = true; // Show text as I speak
-    recognition.maxAlternatives = 1;
+    recognition.continuous = true;
+    recognition.interimResults = true;
 
     recognition.onstart = () => {
       setIsListening(true);
       setDebugStatus("Listening...");
       setTranscript("");
+      volumeDataRef.current = new Array(30).fill(50);
     };
 
     recognition.onresult = (event: any) => {
       let interimTranscript = "";
       let finalTranscriptChunk = "";
-
       for (let i = event.resultIndex; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) {
-          finalTranscriptChunk += event.results[i][0].transcript;
-        } else {
-          interimTranscript += event.results[i][0].transcript;
-        }
+        if (event.results[i].isFinal) finalTranscriptChunk += event.results[i][0].transcript;
+        else interimTranscript += event.results[i][0].transcript;
       }
-
-      // Update UI with what user is saying NOW
       const currentText = finalTranscriptChunk || interimTranscript;
       if (currentText) {
-        setTranscript((prev) => {
-          // Determine if we are appending or replacing
-          // For simplicity in this demo, we just show the active buffer
-          // A more complex app would merge history, but here 'transcript' is the "Current Answer Buffer"
-          return (event.resultIndex === 0 ? "" : prev) + currentText;
-        });
-        setTranscript(currentText); // Simply show what is being heard
+        setTranscript(currentText); 
       }
-
-      // Silence Detection / Auto-Submit Logic
-      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-
-      // If we have a final result, wait a bit then submit
       if (finalTranscriptChunk) {
         setFinalTranscript((prev) => prev + " " + finalTranscriptChunk);
-        // Wait 3 seconds of silence after a "final" sentence to assume turn is over
-        silenceTimerRef.current = setTimeout(() => {
-          recognition.stop();
-        }, 3000);
-      } else {
-        // Even if just interim, if user pauses for 5 seconds, assume done
-        silenceTimerRef.current = setTimeout(() => {
-          recognition.stop();
-        }, 5000);
       }
     };
 
     recognition.onerror = (event: any) => {
-      console.error("Speech Error:", event.error);
-      if (event.error === "no-speech") {
-        setDebugStatus("No speech detected");
-        // Don't stop, just ignore of retry
-      } else {
-        setDebugStatus("Error: " + event.error);
-        setIsListening(false);
-      }
+      if (event.error !== "no-speech") setDebugStatus("Error: " + event.error);
     };
 
     recognition.onend = () => {
-      setIsListening(false);
-      // If we have text, verify and submit
-      // access state via ref or check the input value?
-      // We use a small timeout to let state settle
-      setTimeout(() => {
-        // We need to access the LATEST value of transcript/finalTranscript here.
-        // Since we are in a closure, we trust the `handleSubmit` will pull from state or we pass it
-        // Actually, `onend` might trigger before state update inside React.
-        // We will trigger submit manually via the useEffect or a ref check.
-        // Better approach: Trigger submit logic in `useEffect` monitoring `isListening`
-      }, 100);
+      if (isMountedRef.current && !isProcessing && !isAISpeaking) setIsListening(false);
     };
 
     recognitionRef.current = recognition;
     recognition.start();
-  }, [isAISpeaking, isProcessing]);
+  }, [isAISpeaking, isProcessing, azureConfig]);
+
+  // Improved VAD & Turn-Taking Logic
+  useEffect(() => {
+    if (!isListening || isProcessing || isAISpeaking) return;
+
+    const checkSilence = () => {
+      // Check volume-based silence
+      const recentVolume = volumeDataRef.current;
+      const avgVolume = recentVolume.reduce((a, b) => a + b, 0) / (recentVolume.length || 1);
+      const isCurrentlySpeaking = avgVolume > 15; // Threshold for active voice
+
+      setIsUserActive(isCurrentlySpeaking);
+
+      if (isCurrentlySpeaking) {
+        silenceStartRef.current = null;
+      } else {
+        if (!silenceStartRef.current) {
+          silenceStartRef.current = Date.now();
+        } else {
+          const silenceDuration = Date.now() - silenceStartRef.current;
+          // Substantial silence after speaking (1.5 seconds)
+          if (silenceDuration > 1500 && (transcript.trim() || finalTranscript.trim())) {
+            stopListening();
+          }
+        }
+      }
+      
+      if (isListening) {
+        animationFrameRef.current = requestAnimationFrame(checkSilence);
+      }
+    };
+
+    const animId = requestAnimationFrame(checkSilence);
+    return () => cancelAnimationFrame(animId);
+  }, [isListening, isProcessing, isAISpeaking, transcript, finalTranscript]);
 
   const stopListening = () => {
-    if (recognitionRef.current) {
+    if (azureRecognizerRef.current) {
+        azureRecognizerRef.current.stopContinuousRecognitionAsync(() => {
+            setIsListening(false);
+            azureRecognizerRef.current = null;
+        });
+    } else if (recognitionRef.current) {
       recognitionRef.current.stop();
       setIsListening(false);
     }
@@ -374,15 +421,17 @@ function InterviewSessionContent() {
   useEffect(() => {
     if (
       !isListening &&
-      (transcript.trim().length > 1 || finalTranscript.trim().length > 1)
+      (transcript.trim().length > 1 || finalTranscript.trim().length > 1) &&
+      !isProcessing &&
+      !isAISpeaking
     ) {
       // Check if we effectively have content to send
-      const textToSend = finalTranscript + " " + transcript;
+      const textToSend = (finalTranscript + " " + transcript).replace(/undefined/g, "").trim();
 
       // Double check to ensure we don't submit empty
-      if (textToSend.replace(/undefined/g, "").trim().length > 0) {
+      if (textToSend.length > 0) {
         // SUBMIT
-        handleSubmit(textToSend.replace(/undefined/g, "").trim());
+        handleSubmit(textToSend);
       }
     }
   }, [isListening]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -448,6 +497,7 @@ function InterviewSessionContent() {
 
     utterance.onend = () => {
       setIsAISpeaking(false);
+      setIsUserActive(false);
       setDebugStatus("Your Turn");
       // Auto-start listening again for fluid conversation
       // Give a small buffer
@@ -502,28 +552,54 @@ function InterviewSessionContent() {
     const dataArray = new Uint8Array(bufferLength);
 
     const draw = () => {
-      analyserRef.current!.getByteFrequencyData(dataArray);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const barWidth = (canvas.width / bufferLength) * 2.5;
-      const centerX = canvas.width / 2;
-      for (let i = 0; i < bufferLength; i += 2) {
-        let barHeight = (dataArray[i] / 255) * canvas.height * 0.8;
-        if (barHeight < 2) barHeight = 2;
-        const hue = (i / bufferLength) * 60 + 210;
-        ctx.fillStyle = `hsla(${hue}, 80%, 60%, 0.8)`;
-        ctx.fillRect(
-          centerX + (i / 2) * barWidth,
-          (canvas.height - barHeight) / 2,
-          barWidth - 1,
-          barHeight,
-        );
-        ctx.fillRect(
-          centerX - (i / 2) * barWidth,
-          (canvas.height - barHeight) / 2,
-          barWidth - 1,
-          barHeight,
-        );
+      if (!analyserRef.current) return;
+      analyserRef.current.getByteFrequencyData(dataArray);
+      
+      // Update volume data for VAD
+      let sum = 0;
+      for (let i = 0; i < bufferLength; i++) {
+        sum += dataArray[i];
       }
+      const currentVol = sum / (bufferLength || 1);
+      volumeDataRef.current.shift();
+      volumeDataRef.current.push(currentVol);
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      const width = canvas.width;
+      const height = canvas.height;
+      const barCount = 40;
+      const barWidth = width / barCount;
+      const midY = height / 2;
+
+      for (let i = 0; i < barCount; i++) {
+        const dataIndex = Math.floor((i / barCount) * bufferLength);
+        let val = dataArray[dataIndex] / 255.0;
+        
+        // Boost user voice visually
+        if (isListening && !isAISpeaking) val *= 1.2;
+        
+        const barHeight = Math.max(4, val * height * 0.8);
+        const opacity = val * 0.5 + 0.3;
+        
+        let color = isAISpeaking ? "168, 85, 247" : "59, 130, 246"; // Purple (AI) or Blue (User)
+        if (isUserActive && !isAISpeaking) color = "34, 197, 94"; // Green when speaking
+        
+        ctx.fillStyle = `rgba(${color}, ${opacity})`;
+        
+        // Draw symmetrical rounded bars
+        const x = i * barWidth;
+        const radius = 2;
+        
+        ctx.beginPath();
+        if (ctx.roundRect) {
+            ctx.roundRect(x + 2, midY - barHeight / 2, barWidth - 4, barHeight, radius);
+        } else {
+            ctx.rect(x + 2, midY - barHeight / 2, barWidth - 4, barHeight);
+        }
+        ctx.fill();
+      }
+      
       animationFrameRef.current = requestAnimationFrame(draw);
     };
     draw();
@@ -536,7 +612,7 @@ function InterviewSessionContent() {
   };
 
   return (
-    <div className="h-screen bg-gray-950 text-white flex flex-col overflow-hidden font-sans selection:bg-blue-500/30">
+    <div className="h-screen md:h-screen bg-gray-950 text-white flex flex-col overflow-hidden font-sans selection:bg-blue-500/30">
       {/* --- Header --- */}
       <header className="h-16 px-6 border-b border-gray-800 bg-gray-900/50 backdrop-blur-md flex items-center justify-between z-20">
         <div className="flex items-center gap-4">
@@ -549,12 +625,17 @@ function InterviewSessionContent() {
           </button>
           <div className="h-6 w-px bg-gray-800 hidden sm:block"></div>
           <div className="flex flex-col">
-            <span className="text-sm font-semibold text-gray-200">
-              System Design Interview
+            <span className="text-sm font-semibold text-gray-200 capitalize flex items-center gap-2">
+              {type.replace("-", " ")} Interview
+              {azureConfig && (
+                <span className="px-1.5 py-0.5 bg-blue-500/20 text-blue-400 text-[10px] font-bold rounded border border-blue-500/30 uppercase tracking-tighter">
+                  Pro
+                </span>
+              )}
             </span>
             <div className="flex items-center gap-2">
               <div
-                className={`w-1.5 h-1.5 rounded-full ${isAISpeaking || isProcessing ? "bg-amber-400 animate-pulse" : "bg-green-500"}`}
+                className={`w-1.5 h-1.5 rounded-full transition-colors duration-300 ${isAISpeaking || isProcessing ? "bg-amber-400 animate-pulse" : isListening && isUserActive ? "bg-green-500 scale-125" : "bg-blue-500"}`}
               ></div>
               <span className="text-xs text-gray-500">{debugStatus}</span>
             </div>
@@ -562,6 +643,11 @@ function InterviewSessionContent() {
         </div>
 
         <div className="flex items-center gap-4">
+          <div className="hidden lg:flex items-center">
+              <UserAuthSection />
+              <div className="w-px h-6 bg-gray-800 mx-4"></div>
+          </div>
+
           <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-gray-900 rounded-full border border-gray-800">
             <ClockIcon className="text-gray-500" />
             <span className="text-sm font-mono text-gray-300">
@@ -602,7 +688,7 @@ function InterviewSessionContent() {
         <div className="flex-1 flex flex-col bg-gray-900/30 overflow-hidden relative border-r border-gray-800">
           <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10 pointer-events-none"></div>
 
-          <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 custom-scrollbar pb-24">
+          <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 custom-scrollbar pb-32">
             {messages.length === 0 && (
               <div className="h-full flex flex-col items-center justify-center text-gray-500 opacity-50">
                 <div className="w-24 h-24 bg-gray-800 rounded-full mb-4 animate-pulse"></div>
@@ -656,7 +742,7 @@ function InterviewSessionContent() {
               <div
                 className={`
                         w-32 h-32 rounded-full flex items-center justify-center text-4xl shadow-2xl transition-all duration-500
-                        ${isAISpeaking ? "scale-110 shadow-blue-500/20 ring-4 ring-blue-500/20" : "scale-100 ring-2 ring-gray-700"}
+                        ${isAISpeaking ? "scale-110 shadow-purple-500/20 ring-4 ring-purple-500/20" : "scale-100 ring-2 ring-gray-700"}
                         bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500
                     `}
               >
@@ -664,15 +750,15 @@ function InterviewSessionContent() {
               </div>
               {isAISpeaking && (
                 <>
-                  <div className="absolute inset-0 rounded-full border border-blue-400/30 animate-ping [animation-duration:2s]"></div>
-                  <div className="absolute inset-0 rounded-full border border-purple-400/20 animate-ping [animation-duration:3s]"></div>
+                  <div className="absolute inset-0 rounded-full border border-purple-400/30 animate-ping [animation-duration:2s]"></div>
+                  <div className="absolute inset-0 rounded-full border border-indigo-400/20 animate-ping [animation-duration:3s]"></div>
                 </>
               )}
             </div>
             <div className="absolute bottom-6 left-0 right-0 text-center">
               <h3 className="font-semibold text-gray-200">AI Interviewer</h3>
-              <p className="text-xs text-gray-500">
-                {isAISpeaking ? "Speaking..." : "Listening"}
+              <p className="text-xs text-gray-500 transition-all">
+                {isAISpeaking ? "Speaking..." : isProcessing ? "Thinking..." : "Listening"}
               </p>
             </div>
           </div>
@@ -685,7 +771,7 @@ function InterviewSessionContent() {
                 autoPlay
                 playsInline
                 muted
-                className="w-full h-full object-cover transform scale-x-[-1]"
+                className={`w-full h-full object-cover transform scale-x-[-1] transition-opacity duration-700 ${isAISpeaking ? "opacity-40 grayscale-[50%]" : "opacity-100"}`}
               />
             ) : (
               <div className="flex flex-col items-center justify-center text-gray-600">
@@ -697,34 +783,45 @@ function InterviewSessionContent() {
             )}
 
             {/* Visualizer Overlay */}
-            <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-black via-black/50 to-transparent flex items-end justify-center pb-4">
-              <canvas
-                ref={canvasRef}
-                width={300}
-                height={60}
-                className="w-full max-w-[300px] h-[60px]"
-              />
+            <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-black via-black/80 to-transparent flex items-end justify-center pb-6">
+              <div className="w-full px-8">
+                <canvas
+                  ref={canvasRef}
+                  width={400}
+                  height={80}
+                  className="w-full h-[80px]"
+                />
+              </div>
             </div>
+            
+            {/* Active Glow */}
+            {isUserActive && !isAISpeaking && (
+                <div className="absolute inset-x-0 bottom-0 h-1 bg-green-500 shadow-[0_0_20px_rgba(34,197,94,0.8)] animate-pulse"></div>
+            )}
           </div>
         </div>
       </main>
 
       {/* --- Floating Bottom Bar --- */}
       <div className="absolute bottom-6 left-0 right-0 flex items-center justify-center px-4 z-30 pointer-events-none">
-        <div className="bg-gray-900/90 backdrop-blur-xl border border-gray-700/50 shadow-2xl rounded-2xl p-2 flex items-center gap-2 pointer-events-auto max-w-3xl w-full">
+        <div className={`
+            bg-gray-900/90 backdrop-blur-xl border shadow-2xl rounded-2xl p-2 flex items-center gap-2 pointer-events-auto max-w-3xl w-full transition-all duration-300
+            ${isUserActive && !isAISpeaking ? "border-green-500/50 ring-1 ring-green-500/20" : "border-gray-700/50"}
+        `}>
           {/* Input Field (Shows Live Transcript) */}
           <div className="flex-1 relative">
             <input
               type="text"
               value={transcript || finalTranscript}
               onChange={(e) => setTranscript(e.target.value)}
-              placeholder={isListening ? "Listening..." : "Type your answer..."}
+              placeholder={isListening ? (isUserActive ? "Detecting voice..." : "Listening...") : "Type your answer..."}
               aria-label="Type your answer"
               className={`
                         w-full bg-gray-800/50 border border-gray-700 
                         focus:border-blue-500/50 focus:bg-gray-800 text-white 
                         rounded-xl px-4 py-3 pr-12 outline-none transition-all placeholder:text-gray-600
-                        ${isListening ? "animate-pulse border-blue-500/30" : ""}
+                        ${isListening ? "border-blue-500/30" : ""}
+                        ${isUserActive && !isAISpeaking ? "border-green-500/40" : ""}
                     `}
               disabled={isProcessing}
               onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
@@ -752,14 +849,14 @@ function InterviewSessionContent() {
                     w-12 h-12 flex items-center justify-center rounded-xl transition-all duration-300 shrink-0
                     ${
                       isListening
-                        ? "bg-red-500 text-white shadow-lg shadow-red-500/40"
+                        ? (isUserActive ? "bg-green-600 shadow-green-500/40" : "bg-red-500 shadow-red-500/40") + " text-white shadow-lg"
                         : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
                     }
                     ${isProcessing || isAISpeaking ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
                 `}
           >
             {isListening ? (
-              <div className="w-4 h-4 bg-white rounded-sm" />
+              <div className={`w-4 h-4 rounded-sm transition-all ${isUserActive ? "bg-white scale-125 animate-pulse" : "bg-white"}`} />
             ) : (
               <MicIcon />
             )}

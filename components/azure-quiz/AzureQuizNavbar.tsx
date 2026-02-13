@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { QuizMode } from "@/hooks/useAzureQuiz";
 import { Home, Menu, Cloud, Sun, Moon } from "lucide-react";
+import { UserAuthSection } from "../UserAuthSection";
 
 interface AzureQuizNavbarProps {
   mode: QuizMode;
@@ -60,6 +61,12 @@ export function AzureQuizNavbar({
         </div>
 
         <div className="flex items-center gap-4">
+              {/* Integrated User Section */}
+              <div className="hidden md:flex items-center">
+                  <UserAuthSection />
+                  <div className="w-px h-6 bg-gray-200 dark:bg-white/10 mx-4"></div>
+              </div>
+
               <button
                 onClick={toggleTheme}
                 className={`p-2 rounded-full transition-all duration-300 ${isDark ? 'hover:bg-white/10 text-yellow-400' : 'hover:bg-gray-100 text-gray-600'}`}

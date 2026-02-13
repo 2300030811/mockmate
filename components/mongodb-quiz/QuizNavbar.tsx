@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { QuizMode } from "@/types";
 import { Home, Menu, Database, Sun, Moon, Clock } from "lucide-react";
+import { UserAuthSection } from "../UserAuthSection";
 
 interface QuizNavbarProps {
   mode: QuizMode;
@@ -73,6 +74,12 @@ export function QuizNavbar({
       </div>
 
       <div className="flex items-center gap-4">
+        {/* Integrated User Section */}
+        <div className="hidden md:flex items-center">
+            <UserAuthSection />
+            <div className="w-px h-6 bg-gray-200 dark:bg-white/10 mx-4"></div>
+        </div>
+
         <Button
           onClick={toggleTheme}
           variant="ghost"

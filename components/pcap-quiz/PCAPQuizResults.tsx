@@ -1,9 +1,10 @@
-
-import { QuizMode } from "@/types";
+import { QuizMode, QuizQuestion, PCAPQuestion } from "@/types";
 import { Button } from "@/components/ui/Button";
 import { useTheme } from "@/app/providers";
-import { RefreshCcw, CheckCircle, Home } from "lucide-react";
+import { RefreshCcw, CheckCircle, Home, ChevronLeft, ChevronRight } from "lucide-react";
 import { NicknamePrompt } from "../quiz/NicknamePrompt";
+import { useState } from "react";
+import { PCAPQuestionCard } from "./PCAPQuestionCard";
 
 interface PCAPQuizResultsProps {
   report: {
@@ -17,11 +18,100 @@ interface PCAPQuizResultsProps {
   };
   onRetake: () => void;
   mode: QuizMode;
+  questions: QuizQuestion[];
+  userAnswers: Record<string | number, string[]>;
+  checkAnswer: (q: QuizQuestion, answers: string[]) => boolean;
 }
 
-export function PCAPQuizResults({ report, onRetake, mode }: PCAPQuizResultsProps) {
+export function PCAPQuizResults({ report, onRetake, mode, questions, userAnswers, checkAnswer }: PCAPQuizResultsProps) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  const [showReview, setShowReview] = useState(false);
+  const [reviewIndex, setReviewIndex] = useState(0);
+
+  if (showReview) {
+    return (
+        <div className={`min-h-screen transition-colors duration-500 py-12 px-4 ${
+            isDark 
+              ? 'bg-gray-900 text-white' 
+              : 'bg-gray-50 text-gray-900'
+          }`}>
+            <div className="max-w-4xl mx-auto space-y-8">
+                <div className="flex items-center justify-between">
+                    <button 
+                        onClick={() => setShowReview(false)}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${
+                            isDark ? 'hover:bg-gray-800 text-gray-300' : 'hover:bg-gray-200 text-gray-600'
+                        }`}
+                    >
+                        <ChevronLeft className="w-5 h-5" />
+                        Back to Results
+                    </button>
+                    <div className="text-center">
+                        <h2 className="text-2xl font-bold">Review Answers</h2>
+                        <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                            Question {reviewIndex + 1} of {questions.length}
+                        </p>
+                    </div>
+                    <div className="w-24"></div> {/* Spacer */}
+                </div>
+
+                <div className="relative">
+                    <PCAPQuestionCard 
+                        question={questions[reviewIndex] as PCAPQuestion}
+                        selectedAnswers={userAnswers[questions[reviewIndex].id] || []}
+                        onAnswer={() => {}} // Read-only in review
+                        checkAnswer={checkAnswer as any}
+                        isSubmitted={true}
+                        mode={mode}
+                    />
+                </div>
+
+                <div className="flex justify-between items-center bg-transparent pt-4">
+                    <button
+                        disabled={reviewIndex === 0}
+                        onClick={() => setReviewIndex(prev => prev - 1)}
+                        className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold transition-all ${
+                            reviewIndex === 0 
+                                ? 'opacity-30 cursor-not-allowed' 
+                                : isDark ? 'bg-gray-800 hover:bg-gray-700 text-white' : 'bg-white hover:bg-gray-50 text-gray-900 shadow-md border border-gray-200'
+                        }`}
+                    >
+                        <ChevronLeft className="w-5 h-5" />
+                        Previous
+                    </button>
+
+                    <div className="flex gap-1 flex-wrap justify-center max-w-[50%]">
+                         {questions.map((_, idx) => (
+                             <button
+                                key={idx}
+                                onClick={() => setReviewIndex(idx)}
+                                className={`w-2 h-2 rounded-full transition-all ${
+                                    reviewIndex === idx 
+                                        ? 'bg-blue-600 scale-125' 
+                                        : isDark ? 'bg-gray-700' : 'bg-gray-300'
+                                }`}
+                             />
+                         ))}
+                    </div>
+
+                    <button
+                        disabled={reviewIndex === questions.length - 1}
+                        onClick={() => setReviewIndex(prev => prev + 1)}
+                        className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold transition-all ${
+                            reviewIndex === questions.length - 1 
+                                ? 'opacity-30 cursor-not-allowed' 
+                                : isDark ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/30'
+                        }`}
+                    >
+                        Next
+                        <ChevronRight className="w-5 h-5" />
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen flex items-center justify-center p-4 transition-colors duration-500 ${
@@ -86,22 +176,30 @@ export function PCAPQuizResults({ report, onRetake, mode }: PCAPQuizResultsProps
             </div>
         )}
 
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col gap-4">
           <Button 
-            onClick={onRetake}
-            className="flex-1 py-6 text-lg font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/30"
+            onClick={() => setShowReview(true)}
+            className="w-full py-6 text-lg font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/30"
           >
-            <RefreshCcw className="mr-2 h-5 w-5" />
-            Retake Quiz
+            Review Answers
           </Button>
-          <Button 
-            onClick={() => window.location.href = '/'}
-            variant="secondary"
-            className="flex-1 py-6 text-lg font-bold"
-          >
-            <Home className="mr-2 h-5 w-5" />
-            Dashbaord
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Button 
+              onClick={onRetake}
+              className="flex-1 py-6 text-lg font-bold variant-outline"
+            >
+              <RefreshCcw className="mr-2 h-5 w-5" />
+              Retake Quiz
+            </Button>
+            <Button 
+              onClick={() => window.location.href = '/'}
+              variant="secondary"
+              className="flex-1 py-6 text-lg font-bold"
+            >
+              <Home className="mr-2 h-5 w-5" />
+              Dashboard
+            </Button>
+          </div>
         </div>
       </div>
     </div>

@@ -102,6 +102,9 @@ export function PCAPQuizShell({ mode }: PCAPQuizShellProps) {
             report={formattedReport} 
             onRetake={() => window.location.reload()}
             mode={mode}
+            questions={questions}
+            userAnswers={userAnswers}
+            checkAnswer={checkAnswer}
           />
       );
   }
