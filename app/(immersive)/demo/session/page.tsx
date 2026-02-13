@@ -209,6 +209,7 @@ function InterviewSessionContent() {
   // Cleanup
   useEffect(() => {
     isMountedRef.current = true;
+    const timerRef = silenceTimerRef;
     return () => {
       isMountedRef.current = false;
       stopVisualization();
@@ -224,8 +225,7 @@ function InterviewSessionContent() {
       if (typeof window !== "undefined" && window.speechSynthesis) {
         window.speechSynthesis.cancel();
       }
-      const timer = silenceTimerRef.current;
-      if (timer) clearTimeout(timer);
+      if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, []);
 

@@ -97,13 +97,13 @@ export default function TermsOfService() {
               6. Limitation of Liability
             </h2>
             <p>
-              MockMate is provided "as is". We are not liable for any damages resulting from your use of the platform or your performance in official certification exams.
+              MockMate is provided &quot;as is&quot;. We are not liable for any damages resulting from your use of the platform or your performance in official certification exams.
             </p>
           </section>
 
           <section className="border-t border-gray-200 dark:border-gray-800 pt-8 text-center">
             <p className="text-sm opacity-60">
-               मॉकMate is built for growth. Let's learn together.
+               मॉकMate is built for growth. Let&apos;s learn together.
             </p>
           </section>
         </div>
