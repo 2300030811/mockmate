@@ -55,3 +55,7 @@ jobs:
           ORACLE_QUESTIONS_URL: "https://example.com/oracle.json"
           GROQ_API_KEY: "dummy-key-for-build"
           GOOGLE_API_KEY: "dummy-key-for-build"
+          NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co"
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: "dummy-key"
+          SUPABASE_URL: "https://example.supabase.co"
+          SUPABASE_ANON_KEY: "dummy-key"
