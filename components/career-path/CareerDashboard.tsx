@@ -266,7 +266,7 @@ export const CareerDashboard: React.FC<CareerDashboardProps> = ({ data }) => {
                     <div className="space-y-4">
                         {data.interviewPrep.topQuestions.map((q, idx) => (
                             <Card key={idx} className="p-5 border-l-4 border-l-blue-500 bg-blue-50/50 dark:bg-blue-500/5 border-gray-200 dark:border-white/10">
-                                <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">"{q.question}"</h4>
+                                <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">&quot;{q.question}&quot;</h4>
                                 <p className="text-sm text-gray-600 dark:text-gray-400 italic">
                                     <span className="font-semibold text-blue-600 dark:text-blue-400 not-italic mr-2">Why this?</span>
                                     {q.reason}

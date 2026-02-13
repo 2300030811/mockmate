@@ -224,7 +224,8 @@ function InterviewSessionContent() {
       if (typeof window !== "undefined" && window.speechSynthesis) {
         window.speechSynthesis.cancel();
       }
-      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+      const timer = silenceTimerRef.current;
+      if (timer) clearTimeout(timer);
     };
   }, []);
 
