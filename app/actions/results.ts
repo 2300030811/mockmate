@@ -1,6 +1,7 @@
 "use server";
 
 import { supabase } from "@/lib/supabase";
+import { revalidatePath } from "next/cache";
 
 export async function saveQuizResult(data: {
   sessionId: string;
@@ -38,6 +39,7 @@ export async function saveQuizResult(data: {
         .eq('id', existing.id);
       
       if (error) throw error;
+      revalidatePath("/");
       return { success: true, updated: true };
     }
 
@@ -54,6 +56,8 @@ export async function saveQuizResult(data: {
       });
 
     if (error) throw error;
+    
+    revalidatePath("/");
     return { success: true };
   } catch (error: any) {
     console.error("❌ Failed to save quiz result:", error.message);
@@ -97,6 +101,7 @@ export async function updateQuizResultNickname(id: string, nickname: string) {
             .eq('id', id);
         
         if (error) throw error;
+        revalidatePath("/");
         return { success: true };
     } catch (error: any) {
         console.error("❌ Failed to update nickname:", error.message);
@@ -111,7 +116,9 @@ export async function getLeaderboard(category: string) {
             .select('nickname, score, total_questions, completed_at')
             .eq('category', category)
             .not('nickname', 'is', null)
+            .neq('nickname', '')
             .order('score', { ascending: false })
+            .order('completed_at', { ascending: false })
             .limit(10);
             
         if (error) throw error;

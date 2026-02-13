@@ -51,11 +51,9 @@ CREATE POLICY "Public profiles are viewable by everyone" ON profiles FOR SELECT 
 CREATE POLICY "Users can insert their own profile" ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
 CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
 
--- 6. Policies for Results (Allow authenticated users to see their own data across sessions)
+-- 6. Policies for Results (Allow public leaderboard and personal history)
 CREATE POLICY "Allow public insert to quiz_results" ON quiz_results FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow users to see their own results" ON quiz_results FOR SELECT USING (
-  (auth.uid() IS NOT NULL AND user_id = auth.uid()) OR (session_id = session_id)
-);
+CREATE POLICY "Allow public select to quiz_results" ON quiz_results FOR SELECT USING (true);
 
 -- 7. Policies for Career Paths
 CREATE POLICY "Allow public insert to career_paths" ON career_paths FOR INSERT WITH CHECK (true);

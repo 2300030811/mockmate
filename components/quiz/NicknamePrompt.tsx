@@ -19,6 +19,7 @@ export function NicknamePrompt({ score, totalQuestions, category }: NicknameProm
   const { user, profile, loading: authLoading } = useAuth();
   const [nickname, setNickname] = useState(() => getStoredNickname() || "");
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
 
@@ -34,6 +35,7 @@ export function NicknamePrompt({ score, totalQuestions, category }: NicknameProm
 
   const handleSubmit = async () => {
     if (!nickname.trim()) return;
+    setError(null);
     
     // Save locally for other quizzes
     setStoredNickname(nickname.trim());
@@ -50,6 +52,8 @@ export function NicknamePrompt({ score, totalQuestions, category }: NicknameProm
     setLoading(false);
     if (result.success) {
       setSubmitted(true);
+    } else {
+      setError(result.error || "Failed to save score. Please try again.");
     }
   };
 
@@ -108,6 +112,7 @@ export function NicknamePrompt({ score, totalQuestions, category }: NicknameProm
                     )}
                   </Button>
                   {syncing && <p className="absolute -bottom-5 left-0 text-[10px] text-blue-500 font-bold animate-pulse px-1">Syncing profile...</p>}
+                  {error && <p className="absolute -bottom-5 left-0 text-[10px] text-red-500 font-bold px-1">{error}</p>}
                 </div>
             </motion.div>
           ) : (
