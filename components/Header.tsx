@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useTheme } from "../app/providers";
+import { useTheme } from "@/components/providers/providers";
 import { Button, buttonVariants } from "@/components/ui/Button";
 import { Home, Sun, Moon } from "lucide-react";
 import { UserAuthSection } from "./UserAuthSection";

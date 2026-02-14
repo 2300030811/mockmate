@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuiz } from "@/hooks/useQuiz";
 import { QuizMode } from "@/types";
-import { useTheme } from "@/app/providers";
+import { useTheme } from "@/components/providers/providers";
 import { QuestionRenderer } from "./QuestionRenderer";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";

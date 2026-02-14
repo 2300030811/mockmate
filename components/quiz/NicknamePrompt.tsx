@@ -7,7 +7,7 @@ import { saveQuizResult } from "@/app/actions/results";
 import { getSessionId, getStoredNickname, setStoredNickname } from "@/utils/session";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
-import { useAuth } from "@/app/auth-provider";
+import { useAuth } from "@/components/providers/auth-provider";
 
 interface NicknamePromptProps {
   userAnswers: Record<string | number, any>;

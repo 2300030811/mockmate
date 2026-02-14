@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useTheme } from "@/app/providers";
+import { useTheme } from "@/components/providers/providers";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useState } from "react";

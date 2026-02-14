@@ -1,7 +1,7 @@
 import "../styles/globals.css";
 import { Metadata } from "next";
 import { Inter, Outfit } from "next/font/google";
-import { Providers } from "./providers";
+import { Providers } from "@/components/providers/providers";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });

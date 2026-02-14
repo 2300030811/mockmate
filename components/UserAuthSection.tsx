@@ -7,7 +7,7 @@ import { Button, buttonVariants } from "./ui/Button";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { UserNicknameToggle } from "./UserNicknameToggle";
-import { useAuth } from "@/app/auth-provider";
+import { useAuth } from "@/components/providers/auth-provider";
 
 export function UserAuthSection() {
     const { user, profile, loading } = useAuth();

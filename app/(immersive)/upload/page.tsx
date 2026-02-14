@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { useTheme } from "@/app/providers";
+import { useTheme } from "@/components/providers/providers";
 import { convertFileAction, generateQuizAction } from "@/app/actions/generator";
 import { BobAssistant } from "@/components/quiz/BobAssistant";
 import { UserAuthSection } from "@/components/UserAuthSection";

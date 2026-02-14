@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
 import { X, Send, User, Bot, Loader2, Sparkles, Trash2, MessageSquare, Lightbulb, Code2 } from "lucide-react";
-import { useTheme } from "@/app/providers";
+import { useTheme } from "@/components/providers/providers";
 import { motion, AnimatePresence } from "framer-motion";
 import { useChat, Message } from "ai/react";
 import ReactMarkdown from 'react-markdown';

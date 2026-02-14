@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/Button";
 import { QuizMode, QuizQuestion } from "@/types";
 import { X, Star } from "lucide-react";
-import { useTheme } from "@/app/providers";
+import { useTheme } from "@/components/providers/providers";
 
 interface QuizSidebarProps {
   isOpen: boolean;

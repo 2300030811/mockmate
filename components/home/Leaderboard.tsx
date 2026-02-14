@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Trophy, Medal, Crown, Loader2, Sparkles, ChevronRight } from "lucide-react";
 import { getLeaderboard, deleteQuizResult } from "@/app/actions/results";
 import { Card } from "@/components/ui/Card";
-import { useAuth } from "@/app/auth-provider";
+import { useAuth } from "@/components/providers/auth-provider";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 

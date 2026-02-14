@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Shield, Lock, Eye, FileText } from "lucide-react";
-import { useTheme } from "@/app/providers";
+import { useTheme } from "@/components/providers/providers";
 
 export default function PrivacyPolicy() {
   const { theme } = useTheme();

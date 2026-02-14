@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { QuizMode } from "@/types";
 import { Home, Menu, Layout, Sun, Moon, Clock } from "lucide-react";
 import { UserAuthSection } from "../UserAuthSection";
-import { useTheme } from "@/app/providers";
+import { useTheme } from "@/components/providers/providers";
 
 interface QuizNavbarProps {
   category: string;

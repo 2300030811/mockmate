@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { useTheme } from "@/app/providers";
+import { useTheme } from "@/components/providers/providers";
 import { Button } from "@/components/ui/Button";
 import { ArrowRight } from "lucide-react";
 
