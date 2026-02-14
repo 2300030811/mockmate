@@ -3,38 +3,43 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { InteractiveCard } from "@/components/ui/Card";
+import { BrainCircuit, Mic, Trophy, Rocket } from "lucide-react";
 
 const features = [
   {
-    icon: "🎯",
+    Icon: BrainCircuit,
     title: "AI Quiz Generator",
     description: "Upload PDFs and generate smart quizzes instantly",
     href: "/upload",
-    color: "from-blue-500 to-cyan-500",
+    gradient: "from-blue-500 to-cyan-500",
+    shadow: "shadow-blue-500/20",
     delay: 0.4
   },
   {
-    icon: "🎤",
+    Icon: Mic,
     title: "Mock Interviews",
     description: "Practice with AI-powered interview sessions",
     href: "/demo",
-    color: "from-purple-500 to-pink-500",
+    gradient: "from-purple-500 to-pink-500",
+    shadow: "shadow-purple-500/20",
     delay: 0.5
   },
   {
-    icon: "🏆",
+    Icon: Trophy,
     title: "Certification Quizzes",
     description: "Prepare for AWS & Azure exams with curated quizzes",
     href: "/certification",
-    color: "from-orange-500 to-cyan-500",
+    gradient: "from-orange-500 to-amber-500",
+    shadow: "shadow-orange-500/20",
     delay: 0.6
   },
   {
-    icon: "🚀",
+    Icon: Rocket,
     title: "Career Pathfinder",
     description: "AI-driven skill gap analysis & personalized learning roadmaps",
     href: "/career-path",
-    color: "from-green-500 to-emerald-500",
+    gradient: "from-emerald-500 to-green-500",
+    shadow: "shadow-emerald-500/20",
     delay: 0.7
   }
 ];
@@ -58,24 +63,23 @@ export function FeatureCards() {
             href={feature.href}
             className="group relative block h-full"
           >
-            <InteractiveCard className="h-full flex flex-col items-center text-center p-8">
+            <InteractiveCard className="h-full flex flex-col items-center text-center p-8 overflow-hidden">
               
-              {/* Gradient Overlay */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${feature.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}></div>
-              
-              {/* Shimmer Effect on Hover */}
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-              </div>
-              
-              <div className="relative z-10">
-                <div className="text-5xl mb-4 transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
-                  {feature.icon}
+              {/* Background Glow Effect */}
+              <div className={`absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-10 blur-3xl transition-opacity duration-500 rounded-full pointer-events-none`}></div>
+              <div className={`absolute -bottom-20 -left-20 w-40 h-40 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-10 blur-3xl transition-opacity duration-500 rounded-full pointer-events-none`}></div>
+
+              <div className="relative z-10 flex flex-col items-center">
+                {/* Icon Container */}
+                <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mb-6 shadow-lg ${feature.shadow} transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
+                  <feature.Icon className="w-8 h-8 text-white" strokeWidth={2} />
                 </div>
-                <h3 className="text-xl font-bold mb-2 transition-colors text-gray-900 dark:text-white">
+
+                <h3 className="text-xl font-bold mb-2 transition-colors text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">
                   {feature.title}
                 </h3>
-                <p className="transition-colors text-gray-600 dark:text-gray-400">
+                
+                <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
                   {feature.description}
                 </p>
               </div>

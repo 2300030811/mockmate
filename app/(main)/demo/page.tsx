@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useTheme } from "@/components/providers/providers";
 import { Button } from "@/components/ui/Button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Users, Code2 } from "lucide-react";
 
 export default function DemoSelection() {
   const router = useRouter();
@@ -22,7 +22,7 @@ export default function DemoSelection() {
   const interviewTypes = [
     {
       id: "behavioral",
-      icon: "🤝",
+      Icon: Users,
       title: "Behavioral",
       description: "Leadership, teamwork, and conflict resolution scenarios",
       gradient: "from-blue-500 to-cyan-500",
@@ -31,7 +31,7 @@ export default function DemoSelection() {
     },
     {
       id: "technical",
-      icon: "💻",
+      Icon: Code2,
       title: "Technical",
       description: "System design, algorithms, and architecture discussions",
       gradient: "from-purple-500 to-pink-500",
@@ -99,16 +99,16 @@ export default function DemoSelection() {
               <div className="absolute inset-0 dark:bg-white/5 dark:backdrop-blur-sm hidden dark:block"></div>
               
               {/* Content */}
-              <div className="relative z-10">
-                <div className="text-6xl mb-4 transform group-hover:scale-110 transition-transform duration-300">
-                  {type.icon}
+              <div className="relative z-10 flex flex-col h-full">
+                <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${type.gradient} flex items-center justify-center mb-6 shadow-lg shadow-blue-500/20 transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
+                   <type.Icon className="w-8 h-8 text-white" strokeWidth={2} />
                 </div>
                 
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                   {type.title}
                 </h3>
                 
-                <p className="text-gray-600 dark:text-white/80 mb-4 leading-relaxed">
+                <p className="text-gray-600 dark:text-white/80 mb-4 leading-relaxed flex-grow">
                   {type.description}
                 </p>
                 

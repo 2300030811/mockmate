@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { useState } from "react";
 import { BobAssistant } from "@/components/quiz/BobAssistant";
-import { Database, Zap, Terminal } from "lucide-react";
+import { Database, Zap, Terminal, Code } from "lucide-react";
 
 // --- Icons ---
 const AWSIcon = () => (
@@ -293,7 +293,7 @@ export default function CertificationSelect() {
                     isDark ? "bg-green-500/20 text-green-400" : "bg-green-100 text-green-600"
                   }`}
                 >
-                  <span className="text-4xl">🍃</span>
+                  <Database className="w-12 h-12" />
                 </div>
                 <h2
                   className={`text-2xl font-bold mb-3 ${
@@ -352,7 +352,7 @@ export default function CertificationSelect() {
                     isDark ? "bg-blue-500/20 text-blue-400" : "bg-blue-100 text-blue-600"
                   }`}
                 >
-                  <span className="text-4xl">🐍</span>
+                  <Code className="w-12 h-12" />
                 </div>
                 <h2
                   className={`text-2xl font-bold mb-3 ${
@@ -458,4 +458,3 @@ export default function CertificationSelect() {
     </div>
   );
 }
-
