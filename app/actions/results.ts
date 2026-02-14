@@ -1,17 +1,23 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
+import { createAdminClient } from "@/utils/supabase/admin"; // Import Admin Client
 import { revalidatePath } from "next/cache";
 import { validateNickname } from "@/utils/moderation";
+
+import { getRawQuestions } from "@/app/actions/quiz";
+import { checkAnswer } from "@/utils/quiz-helpers";
 
 export async function saveQuizResult(data: {
   sessionId: string;
   category: string;
-  score: number;
-  totalQuestions: number;
+  userAnswers: Record<string, any>;
+  totalQuestions: number; // Claimed total
   nickname?: string;
 }) {
   const supabase = createClient();
+  const adminDb = createAdminClient(); // Initialize Admin Client
+
   try {
     const { data: { user } } = await supabase.auth.getUser();
     const userId = user?.id || null;
@@ -23,14 +29,37 @@ export async function saveQuizResult(data: {
         }
     }
 
+    // 1. Fetch Source of Truth
+    const questions = await getRawQuestions(data.category);
+    if (!questions || questions.length === 0) {
+        throw new Error("Failed to validate quiz: Source questions not found.");
+    }
+
+    // 2. Calculate Score Server-Side
+    let calculatedScore = 0;
+    const questionMap = new Map(questions.map(q => [String(q.id), q]));
+
+    Object.entries(data.userAnswers).forEach(([qId, ans]) => {
+        const question = questionMap.get(String(qId));
+        if (question) {
+             if (checkAnswer(question, ans)) {
+                 calculatedScore++;
+             }
+        }
+    });
+
+    const scoreToSave = calculatedScore;
+
     // Check if there's a very recent result (last 1 minute)
     const oneMinuteAgo = new Date(Date.now() - 60 * 1000).toISOString();
     
-    let query = supabase
+    // Use Admin Client to query without RLS blocking (or standard client works for read if policy exists)
+    // But for consistency/speed in this privileged action, let's use adminDb for the write check too.
+    let query = adminDb
       .from('quiz_results')
       .select('id')
       .eq('category', data.category)
-      .eq('score', data.score)
+      .eq('score', scoreToSave)
       .gt('completed_at', oneMinuteAgo);
 
     if (userId) {
@@ -42,7 +71,8 @@ export async function saveQuizResult(data: {
     const { data: existing } = await query.maybeSingle();
 
     if (existing) {
-      const { error } = await supabase
+      // Use Admin Client to UPDATE
+      const { error } = await adminDb
         .from('quiz_results')
         .update({ nickname: data.nickname || null })
         .eq('id', existing.id);
@@ -52,14 +82,15 @@ export async function saveQuizResult(data: {
       return { success: true, updated: true };
     }
 
-    const { error } = await supabase
+    // Use Admin Client to INSERT
+    const { error } = await adminDb
       .from('quiz_results')
       .insert({
         session_id: data.sessionId,
         user_id: userId,
         category: data.category,
-        score: data.score,
-        total_questions: data.totalQuestions,
+        score: scoreToSave,
+        total_questions: questions.length, // Ensure strict consistency with server-side count
         nickname: data.nickname || null,
         completed_at: new Date().toISOString()
       });

@@ -14,7 +14,7 @@ interface UseQuizEngineProps<T> {
   mode: QuizMode;
   category: string; // New: To make the persistence key unique across categories
   initialTimeRemaining?: number; // seconds
-  onSubmit?: () => void;
+  onSubmit?: (userAnswers: Record<string | number, UserAnswer>) => void;
 }
 
 export function useQuizEngine<T extends { id: string | number }>({
@@ -104,8 +104,8 @@ export function useQuizEngine<T extends { id: string | number }>({
      setIsSubmitted(true);
      // We keep the state in localStorage even after submit so results persist on refresh.
      // If user wants to "Retake", they should call clearProgress.
-     if (onSubmit) onSubmit();
-  }, [onSubmit]);
+     if (onSubmit) onSubmit(userAnswers);
+  }, [onSubmit, userAnswers]);
 
   const handleSubmit = useCallback(() => {
     // Only submit if not already submitted

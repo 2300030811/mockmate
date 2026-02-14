@@ -1,34 +1,21 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
-import { QuizFetcher } from "@/lib/quiz-fetcher";
+import { QuizFactory } from "@/lib/strategies/QuizFactory";
 
-const QUIZ_URLS: Record<string, string | undefined> = {
-  aws: process.env.AWS_QUESTIONS_URL,
-  azure: process.env.AZURE_QUESTIONS_URL,
-  salesforce: process.env.SALESFORCE_QUESTIONS_URL,
-  mongodb: process.env.MONGODB_QUESTIONS_URL,
-  pcap: process.env.PCAP_QUESTIONS_URL,
-  oracle: process.env.ORACLE_QUESTIONS_URL,
-};
+const CATEGORIES = ["aws", "azure", "salesforce", "mongodb", "pcap", "oracle"];
 
 export async function seedDatabase() {
   const supabase = createClient();
   const results = [];
 
-  for (const [category, url] of Object.entries(QUIZ_URLS)) {
-    if (!url) {
-      results.push({ category, status: "skipped", reason: "No URL found" });
-      continue;
-    }
-
+  for (const category of CATEGORIES) {
     try {
       console.log(`📡 Fetching and normalizing ${category} questions...`);
       
-      // Use the robust fetchers we already built
-      const questions = (category === 'pcap') 
-        ? await QuizFetcher.fetchPCAPQuestions(url)
-        : await QuizFetcher.fetchQuestions(url);
+      // Use the Factory Pattern
+      const source = QuizFactory.getSource(category);
+      const questions = await source.fetchRawQuestions();
 
       if (!questions || questions.length === 0) {
         throw new Error("No questions found or parsing failed");

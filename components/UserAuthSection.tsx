@@ -71,10 +71,25 @@ export function UserAuthSection() {
                                 <p className="text-xs font-bold text-gray-900 dark:text-white truncate">{user.email}</p>
                             </div>
                             
-                            <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl transition-colors text-left">
-                                <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                                My Dashboard
-                            </button>
+                            {profile?.role === 'admin' ? (
+                                <Link 
+                                    href="/admin"
+                                    onClick={() => setMenuOpen(false)}
+                                    className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl transition-colors text-left"
+                                >
+                                    <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                                    Admin Dashboard
+                                </Link>
+                            ) : (
+                                <Link
+                                    href="/#history"
+                                    onClick={() => setMenuOpen(false)}
+                                    className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl transition-colors text-left"
+                                >
+                                    <ShieldCheck className="w-4 h-4 text-blue-500" />
+                                    My Progress
+                                </Link>
+                            )}
                             
                             <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl transition-colors text-left">
                                 <Settings className="w-4 h-4 text-blue-500" />

@@ -1,13 +1,22 @@
 // Server Component — all children already have "use client"
-
+import dynamic from 'next/dynamic';
 import { FeatureCards } from "@/components/home/FeatureCards";
 import { HeroHeader } from "@/components/home/HeroHeader";
 import { HomeBackground } from "@/components/home/HomeBackground";
 import { HomeCTA } from "@/components/home/HomeCTA";
 import { StatsRow } from "@/components/home/StatsRow";
-import { ResultsHistory } from "@/components/home/ResultsHistory";
-import { Leaderboard } from "@/components/home/Leaderboard";
 import { BobAssistant } from "@/components/quiz/BobAssistant";
+
+// Lazy load heavy dashboard components
+const ResultsHistory = dynamic(() => import("@/components/home/ResultsHistory").then(mod => mod.ResultsHistory), {
+  ssr: false,
+  loading: () => <div className="h-40 animate-pulse bg-gray-100 dark:bg-gray-800 rounded-xl mt-20" />
+});
+
+const Leaderboard = dynamic(() => import("@/components/home/Leaderboard").then(mod => mod.Leaderboard), {
+  ssr: false,
+  loading: () => <div className="h-96 animate-pulse bg-gray-100 dark:bg-gray-800 rounded-xl mt-20" />
+});
 
 export default function Home() {
 

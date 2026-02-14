@@ -144,11 +144,10 @@ Code (if any): ${question.code}
                 initial={{ opacity: 0, y: 100, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 100, scale: 0.95 }}
-                className={`fixed bottom-0 left-0 right-0 md:left-auto md:bottom-24 md:right-8 z-[101] 
-                    w-full md:w-[450px] 
-                    h-[85vh] md:h-[600px] 
-                    max-h-[85vh] md:max-h-[80vh] 
-                    rounded-t-3xl rounded-b-none md:rounded-3xl 
+                className={`fixed bottom-4 left-4 right-4 md:left-auto md:bottom-24 md:right-8 z-[101] 
+                    md:w-[450px] 
+                    h-[60vh] md:h-[600px] 
+                    rounded-3xl 
                     shadow-2xl flex flex-col overflow-hidden border pointer-events-auto ${
                 isDark 
                     ? "bg-gray-900 border-gray-700" 

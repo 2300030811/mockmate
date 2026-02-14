@@ -1,107 +1,47 @@
 "use server";
 
-import { QuizFetcher } from "@/lib/quiz-fetcher";
+
 import type { QuizMode, QuizQuestion } from "@/types";
 import { AppError } from "@/lib/exceptions";
-import { env } from "@/lib/env";
+
 
 // ─────────────────────────────────────────────────────────
 // Quiz Type Configuration
 // ─────────────────────────────────────────────────────────
 
-type QuizType = "aws" | "azure" | "salesforce" | "mongodb" | "pcap" | "oracle";
 
-interface QuizConfig {
-  getUrl: () => string | undefined;
-  fallbackUrl?: string;
-  defaultExamCount: number;
-  useAzureLogic: boolean;
-  usePCAPFetcher: boolean;
-  label: string;
+import { QuizFactory } from "@/lib/strategies/QuizFactory";
+
+// ─────────────────────────────────────────────────────────
+// Generic Fetcher (delegating to Strategy Pattern)
+// ─────────────────────────────────────────────────────────
+
+export async function getRawQuestions(quizType: string): Promise<QuizQuestion[]> {
+  try {
+     const source = QuizFactory.getSource(quizType);
+     return await source.fetchRawQuestions();
+  } catch (error: any) {
+     console.error(`Error fetching raw questions for ${quizType}:`, error.message);
+     // Return empty array or throw based on preference, existing code returned [] on error sometimes?
+     // Existing code threw AppError if URL missing.
+     throw new AppError(error.message || `Failed to fetch questions for ${quizType}`, 500);
+  }
 }
 
-const QUIZ_CONFIGS: Record<QuizType, QuizConfig> = {
-  aws: {
-    getUrl: () => env.AWS_QUESTIONS_URL || process.env.AWS_QUESTIONS_URL,
-    defaultExamCount: 65,
-    useAzureLogic: false,
-    usePCAPFetcher: false,
-    label: "AWS",
-  },
-  azure: {
-    getUrl: () => env.AZURE_QUESTIONS_URL || env.NEXT_PUBLIC_AZURE_FINAL_JSON_URL,
-    defaultExamCount: 50,
-    useAzureLogic: true,
-    usePCAPFetcher: false,
-    label: "Azure",
-  },
-  salesforce: {
-    getUrl: () => env.SALESFORCE_QUESTIONS_URL,
-    defaultExamCount: 60,
-    useAzureLogic: false,
-    usePCAPFetcher: false,
-    label: "Salesforce",
-  },
-  mongodb: {
-    getUrl: () => env.MONGODB_QUESTIONS_URL,
-    defaultExamCount: 60,
-    useAzureLogic: false,
-    usePCAPFetcher: false,
-    label: "MongoDB",
-  },
-  pcap: {
-    getUrl: () => env.PCAP_QUESTIONS_URL,
-    defaultExamCount: 40,
-    useAzureLogic: true,
-    usePCAPFetcher: true,
-    label: "PCAP",
-  },
-  oracle: {
-    getUrl: () => env.ORACLE_QUESTIONS_URL,
-    fallbackUrl: "https://mockmatequiz.blob.core.windows.net/quizzes/oracle.json",
-    defaultExamCount: 50,
-    useAzureLogic: false,
-    usePCAPFetcher: false,
-    label: "Oracle",
-  },
-};
-
-// ─────────────────────────────────────────────────────────
-// Generic Fetcher (single source of truth)
-// ─────────────────────────────────────────────────────────
-
 export async function fetchQuizQuestions(
-  quizType: QuizType,
+  quizType: string,
   mode: QuizMode = "practice",
   countParam: string | null = null,
 ): Promise<QuizQuestion[]> {
-  const config = QUIZ_CONFIGS[quizType];
-
-  // 1. Try Database First
-  const dbQuestions = await QuizFetcher.fetchQuestionsFromDB(quizType);
-  let questions: QuizQuestion[] = [];
-
-  if (dbQuestions && dbQuestions.length > 0) {
-    questions = dbQuestions;
-  } else {
-    // 2. Fallback to URL-based fetching
-    const url = config.getUrl() || config.fallbackUrl;
-    if (!url) {
-      throw new AppError(`${config.label}_QUESTIONS_URL is missing.`, 500);
-    }
-    questions = config.usePCAPFetcher
-      ? await QuizFetcher.fetchPCAPQuestions(url)
-      : await QuizFetcher.fetchQuestions(url);
+  try {
+      const source = QuizFactory.getSource(quizType);
+      return await source.getQuestions(mode, countParam);
+  } catch (error: any) {
+      console.error(`Error fetching quiz questions for ${quizType}:`, error.message);
+      return [];
   }
-
-  return QuizFetcher.selectQuestions(
-    questions,
-    mode,
-    countParam,
-    config.defaultExamCount,
-    config.useAzureLogic,
-  );
 }
+
 
 // ─────────────────────────────────────────────────────────
 // Backwards-compatible named exports

@@ -36,7 +36,9 @@ export default function CareerPathPage() {
       const data = await analyzeCareerPath(formData, jobRole, company);
       setResult(data);
       // Auto-save to DB
-      saveCareerPath(getSessionId(), data);
+      if (data) {
+          await saveCareerPath(getSessionId(), data);
+      }
       setStep('results');
     } catch (error) {
       console.error(error);

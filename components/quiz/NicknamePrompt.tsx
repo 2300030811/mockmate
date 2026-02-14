@@ -10,12 +10,12 @@ import { Card } from "../ui/Card";
 import { useAuth } from "@/app/auth-provider";
 
 interface NicknamePromptProps {
-  score: number;
+  userAnswers: Record<string | number, any>;
   totalQuestions: number;
   category: string;
 }
 
-export function NicknamePrompt({ score, totalQuestions, category }: NicknamePromptProps) {
+export function NicknamePrompt({ userAnswers, totalQuestions, category }: NicknamePromptProps) {
   const { user, profile, loading: authLoading } = useAuth();
   const [nickname, setNickname] = useState(() => getStoredNickname() || "");
   const [submitted, setSubmitted] = useState(false);
@@ -44,7 +44,7 @@ export function NicknamePrompt({ score, totalQuestions, category }: NicknameProm
     const result = await saveQuizResult({
       sessionId: getSessionId(),
       category,
-      score,
+      userAnswers,
       totalQuestions,
       nickname: nickname.trim()
     });

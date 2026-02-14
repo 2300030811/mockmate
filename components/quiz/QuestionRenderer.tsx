@@ -1,14 +1,15 @@
-"use client";
 
+import dynamic from 'next/dynamic';
 import { QuizQuestion, MCQQuestion, DragDropQuestion, HotspotQuestion, HotspotYesNoTableQuestion, HotspotSentenceQuestion, HotspotBoxMappingQuestion, CaseStudyQuestion } from "@/types";
-import { MultipleChoiceCard } from "./cards/MultipleChoiceCard";
-import { DragDropBoard } from "./cards/DragDropBoard";
-import { HotspotYesNoTable } from "./cards/HotspotYesNoTable";
-import { HotspotYesNoTableNew } from "./cards/HotspotYesNoTableNew";
-import { HotspotSentenceCompletion } from "./cards/HotspotSentenceCompletion";
-import { HotspotBoxMapping } from "./cards/HotspotBoxMapping";
-import { CaseStudyEvaluator } from "./cards/CaseStudyEvaluator";
-import { AWSQuestionCard } from "./cards/AWSQuestionCard";
+
+// Lazy load question components to reduce bundle size
+const MultipleChoiceCard = dynamic(() => import("./cards/MultipleChoiceCard").then(mod => mod.MultipleChoiceCard), { ssr: false });
+const DragDropBoard = dynamic(() => import("./cards/DragDropBoard").then(mod => mod.DragDropBoard), { ssr: false });
+const HotspotYesNoTable = dynamic(() => import("./cards/HotspotYesNoTable").then(mod => mod.HotspotYesNoTable), { ssr: false });
+const HotspotYesNoTableNew = dynamic(() => import("./cards/HotspotYesNoTableNew").then(mod => mod.HotspotYesNoTableNew), { ssr: false });
+const HotspotSentenceCompletion = dynamic(() => import("./cards/HotspotSentenceCompletion").then(mod => mod.HotspotSentenceCompletion), { ssr: false });
+const HotspotBoxMapping = dynamic(() => import("./cards/HotspotBoxMapping").then(mod => mod.HotspotBoxMapping), { ssr: false });
+const CaseStudyEvaluator = dynamic(() => import("./cards/CaseStudyEvaluator").then(mod => mod.CaseStudyEvaluator), { ssr: false });
 
 interface QuestionRendererProps {
   question: QuizQuestion;
@@ -27,31 +28,7 @@ export function QuestionRenderer({
   isDark,
   category
 }: QuestionRendererProps) {
-  // Special handling for AWS if it's the old style, but ideally all follow types
-  if (category === 'aws') {
-      return (
-          <AWSQuestionCard 
-            question={question as any}
-            selectedAnswers={userAnswer || []}
-            onAnswer={(option, isMulti) => {
-                const current = Array.isArray(userAnswer) ? userAnswer : [];
-                if (isMulti) {
-                    if (current.includes(option)) {
-                        onAnswer(current.filter(a => a !== option));
-                    } else {
-                        onAnswer([...current, option]);
-                    }
-                } else {
-                    onAnswer([option]);
-                }
-            }}
-            isSubmitted={isReviewMode}
-            mode={isReviewMode ? 'exam' : 'practice'}
-            checkAnswer={() => false} // This prop in AWSQuestionCard is a bit redundant if we centralize scoring
-          />
-      );
-  }
-
+  
   switch (question.type) {
     case 'mcq':
     case 'MSQ':
@@ -126,7 +103,19 @@ export function QuestionRenderer({
         />
       );
     default:
-      // Exhaustive check to satisfy TypeScript
+      // Fallback for generic Questions, defaulting to MCQ card if it looks like one
+      if ((question as any).options) {
+          return (
+            <MultipleChoiceCard 
+                question={question as MCQQuestion}
+                selectedAnswers={Array.isArray(userAnswer) ? userAnswer : userAnswer ? [userAnswer] : []}
+                onAnswer={onAnswer}
+                isReviewMode={isReviewMode}
+                isDark={isDark}
+                category={category}
+            />
+          );
+      }
       return <div>Unsupported question type: {(question as any).type || 'unknown'}</div>;
   }
 }

@@ -5,13 +5,12 @@ import { Button } from "@/components/ui/Button";
 import { QuizMode } from "@/types";
 import { Home, Menu, Layout, Sun, Moon, Clock } from "lucide-react";
 import { UserAuthSection } from "../UserAuthSection";
+import { useTheme } from "@/app/providers";
 
 interface QuizNavbarProps {
   category: string;
   mode: QuizMode;
   timeRemaining: number;
-  isDark: boolean;
-  toggleTheme: () => void;
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
 }
@@ -20,12 +19,12 @@ export function QuizNavbar({
   category,
   mode,
   timeRemaining,
-  isDark,
-  toggleTheme,
   sidebarOpen,
   setSidebarOpen,
 }: QuizNavbarProps) {
   const router = useRouter();
+  const { theme, toggleTheme } = useTheme();
+  const isDark = theme === "dark";
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);

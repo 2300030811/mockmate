@@ -69,9 +69,12 @@ DROP POLICY IF EXISTS "Allow public select to quiz_results" ON quiz_results;
 DROP POLICY IF EXISTS "Allow public update to quiz_results" ON quiz_results;
 DROP POLICY IF EXISTS "Admins can delete results" ON quiz_results;
 
-CREATE POLICY "Allow public insert to quiz_results" ON quiz_results FOR INSERT WITH CHECK (true);
+-- CRITICAL SECURITY FIX: Disable public inserts.
+-- Only the Service Role (Server Actions) can insert/update results.
+-- We do NOT create an INSERT policy for public/authenticated users.
+
 CREATE POLICY "Allow public select to quiz_results" ON quiz_results FOR SELECT USING (true);
-CREATE POLICY "Allow public update to quiz_results" ON quiz_results FOR UPDATE USING (true);
+
 CREATE POLICY "Admins can delete results" ON quiz_results FOR DELETE USING (
   EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
 );
@@ -89,8 +92,14 @@ CREATE POLICY "Admins can manage quizzes" ON quizzes FOR ALL USING (
 DROP POLICY IF EXISTS "Allow public insert to career_paths" ON career_paths;
 DROP POLICY IF EXISTS "Allow users to see their own career paths" ON career_paths;
 
-CREATE POLICY "Allow public insert to career_paths" ON career_paths FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow users to see their own career paths" ON career_paths FOR SELECT USING (true);
+-- Career paths are sensitive, only allow user to see their own (or session-based)
+CREATE POLICY "Allow users to see their own career paths" ON career_paths FOR SELECT USING (
+  (auth.uid() = user_id) OR (session_id = current_setting('request.headers')::json->>'x-session-id')
+);
+
+-- Only allow inserts via Server Actions (Service Role). 
+-- If client-side insert is needed, ensure it only allows inserting for own user_id.
+-- For now, relying on Server Actions is safer.
 
 -- ==========================================
 -- 3. AUTOMATION (Trigger for new users)

@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/Button";
 import { QuizMode, QuizQuestion } from "@/types";
 import { X, Star } from "lucide-react";
+import { useTheme } from "@/app/providers";
 
 interface QuizSidebarProps {
   isOpen: boolean;
@@ -12,7 +13,6 @@ interface QuizSidebarProps {
   setCurrentQuestionIndex: (index: number) => void;
   userAnswers: Record<string | number, any>;
   markedQuestions: (string | number)[];
-  isDark: boolean;
   onOpenSubmitModal: () => void;
   mode: QuizMode;
 }
@@ -25,10 +25,11 @@ export function QuizSidebar({
   setCurrentQuestionIndex,
   userAnswers,
   markedQuestions,
-  isDark,
   onOpenSubmitModal,
   mode,
 }: QuizSidebarProps) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   
   const getQuestionStatus = (q: QuizQuestion) => {
     const ans = userAnswers[q.id];
