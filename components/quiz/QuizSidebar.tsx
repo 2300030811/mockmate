@@ -1,46 +1,56 @@
+"use client";
+
 import { Button } from "@/components/ui/Button";
-import { QuizMode } from "@/hooks/useAzureQuiz";
-import { QuizQuestion } from "@/types";
+import { QuizMode, QuizQuestion } from "@/types";
 import { X, Star } from "lucide-react";
 
-interface AzureQuizSidebarProps {
+interface QuizSidebarProps {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   questions: QuizQuestion[];
   currentQuestionIndex: number;
   setCurrentQuestionIndex: (index: number) => void;
-  userAnswers: Record<number, any>;
+  userAnswers: Record<string | number, any>;
+  markedQuestions: (string | number)[];
   isDark: boolean;
-  isSubmitted: boolean;
   onOpenSubmitModal: () => void;
   mode: QuizMode;
 }
 
-export function AzureQuizSidebar({
+export function QuizSidebar({
   isOpen,
   setIsOpen,
   questions,
   currentQuestionIndex,
   setCurrentQuestionIndex,
   userAnswers,
+  markedQuestions,
   isDark,
-  isSubmitted,
   onOpenSubmitModal,
   mode,
-}: AzureQuizSidebarProps) {
+}: QuizSidebarProps) {
+  
+  const getQuestionStatus = (q: QuizQuestion) => {
+    const ans = userAnswers[q.id];
+    let isAnswered = false;
+    
+    if (ans !== undefined && ans !== null) {
+        if (Array.isArray(ans)) isAnswered = ans.length > 0;
+        else if (typeof ans === 'object') isAnswered = Object.keys(ans).length > 0;
+        else if (typeof ans === 'string') isAnswered = ans.trim().length > 0;
+        else isAnswered = true;
+    }
 
-  const getQuestionStatus = (q: QuizQuestion, index: number) => {
-    const isAnswered = !!userAnswers[Number(q.id)];
-    const isCurrent = currentQuestionIndex === index;
-    // Azure doesn't seem to pass markedQuestions prop based on interface, skipping marked visual for now or assuming false
-    const isMarked = false; 
+    const isMarked = markedQuestions.includes(q.id);
+    const isCurrent = questions[currentQuestionIndex].id === q.id;
     
     return { isAnswered, isMarked, isCurrent };
   };
-  
+
+  const answeredCount = questions.filter(q => getQuestionStatus(q).isAnswered).length;
+
   return (
     <>
-      {/* Backdrop for mobile */}
       {isOpen && (
         <div 
           className="fixed inset-0 bg-black/50 lg:hidden z-40 backdrop-blur-sm"
@@ -57,9 +67,7 @@ export function AzureQuizSidebar({
         <div className={`p-4 border-b flex items-center justify-between ${
           isDark ? 'border-gray-800' : 'border-gray-200'
         }`}>
-          <h2 className={`font-bold text-lg ${
-            isDark ? 'text-white' : 'text-gray-900'
-          }`}>
+          <h2 className={`font-bold text-lg ${isDark ? 'text-white' : 'text-gray-900'}`}>
             Question Navigator
           </h2>
           <Button 
@@ -73,23 +81,24 @@ export function AzureQuizSidebar({
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          {/* Legend */}
-          <div className="flex flex-wrap gap-4 text-xs">
-            <div className="flex items-center gap-1.5">
-              <div className={`w-3 h-3 rounded-full ${
-                isDark ? 'bg-blue-500' : 'bg-blue-600'
-              }`} />
-              <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>Current</span>
+          <div className="flex flex-wrap gap-4 text-xs font-medium">
+            <div className="flex items-center gap-1.5 opacity-70">
+              <div className="w-3 h-3 rounded-full bg-blue-500" />
+              <span>Current</span>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 opacity-70">
               <div className="w-3 h-3 rounded-full bg-green-500" />
-              <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>Answered</span>
+              <span>Answered</span>
+            </div>
+            <div className="flex items-center gap-1.5 opacity-70">
+              <div className="w-3 h-3 rounded-full bg-yellow-500" />
+              <span>Marked</span>
             </div>
           </div>
 
           <div className="grid grid-cols-4 gap-2">
             {questions.map((q, index) => {
-              const { isAnswered, isMarked, isCurrent } = getQuestionStatus(q, index);
+              const { isAnswered, isMarked, isCurrent } = getQuestionStatus(q);
               
               let bgClass = isDark ? 'bg-gray-800' : 'bg-gray-100';
               let borderClass = 'border-transparent';
@@ -125,36 +134,25 @@ export function AzureQuizSidebar({
           </div>
         </div>
 
-        <div className={`p-4 border-t ${
-          isDark ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-white'
-        }`}>
-          <div className="flex justify-between items-center mb-4 text-sm">
-             <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>
-               Progress
-             </span>
-             <span className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-               {Object.keys(userAnswers).length}/{questions.length}
-             </span>
+        <div className={`p-4 border-t ${isDark ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-white'}`}>
+          <div className="flex justify-between items-center mb-4 text-sm font-medium">
+             <span className="opacity-50">Progress</span>
+             <span className="font-bold">{answeredCount}/{questions.length}</span>
           </div>
-          <div className={`w-full h-2 rounded-full mb-4 ${
-            isDark ? 'bg-gray-800' : 'bg-gray-200'
-          }`}>
+          <div className={`w-full h-2 rounded-full mb-6 ${isDark ? 'bg-gray-800' : 'bg-gray-200'}`}>
              <div 
                className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-               style={{ width: `${(Object.keys(userAnswers).length / questions.length) * 100}%` }}
+               style={{ width: `${(answeredCount / questions.length) * 100}%` }}
              />
           </div>
           
-          {!isSubmitted && (
-            <Button 
-                onClick={onOpenSubmitModal}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-            >
-                {mode === 'exam' ? 'Submit Exam' : 'Finish Practice'}
-            </Button>
-            )}
+          <Button 
+            onClick={onOpenSubmitModal}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold h-11"
+          >
+            Submit {mode === 'exam' ? 'Exam' : 'Test'}
+          </Button>
         </div>
-
       </aside>
     </>
   );

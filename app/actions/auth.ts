@@ -1,19 +1,20 @@
 "use server";
 
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { validateNickname } from "@/utils/moderation";
 
 export async function signup(formData: { email: string; password: string; nickname: string }) {
   const { email, password, nickname } = formData;
+  const supabase = createClient();
 
   const validation = validateNickname(nickname);
   if (!validation.success) {
     return { error: validation.error };
   }
 
-  const { data, error } = await supabase.auth.signUp({
+  const { error } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -33,6 +34,7 @@ export async function signup(formData: { email: string; password: string; nickna
 
 export async function login(formData: { email: string; password: string }) {
   const { email, password } = formData;
+  const supabase = createClient();
 
   const { error } = await supabase.auth.signInWithPassword({
     email,
@@ -48,6 +50,7 @@ export async function login(formData: { email: string; password: string }) {
 }
 
 export async function signInWithSocial(provider: 'google' | 'github') {
+  const supabase = createClient();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
@@ -65,12 +68,14 @@ export async function signInWithSocial(provider: 'google' | 'github') {
 }
 
 export async function logout() {
+  const supabase = createClient();
   await supabase.auth.signOut();
   revalidatePath("/", "layout");
   redirect("/");
 }
 
 export async function getCurrentUser() {
+  const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
@@ -84,5 +89,6 @@ export async function getCurrentUser() {
   return {
     ...user,
     nickname: profile?.nickname || user.user_metadata?.nickname || user.email?.split('@')[0],
+    role: profile?.role || 'user',
   };
 }

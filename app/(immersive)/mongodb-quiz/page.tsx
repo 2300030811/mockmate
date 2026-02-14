@@ -3,7 +3,7 @@
 
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { MongoDBQuizShell } from "@/components/mongodb-quiz/MongoDBQuizShell";
+import { UniversalQuizShell } from "@/components/quiz/UniversalQuizShell";
 import { QuizMode } from "@/types";
 
 function MongoDBQuizContent() {
@@ -11,7 +11,7 @@ function MongoDBQuizContent() {
   const modeParam = searchParams?.get("mode");
   const mode: QuizMode = (modeParam === "exam") ? "exam" : "practice";
 
-  return <MongoDBQuizShell mode={mode} />;
+  return <UniversalQuizShell category="mongodb" mode={mode} />;
 }
 
 export default function MongoDBQuizPage() {

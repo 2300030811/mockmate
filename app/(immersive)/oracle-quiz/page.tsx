@@ -2,7 +2,7 @@
 
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { OracleQuizShell } from "@/components/oracle-quiz/OracleQuizShell";
+import { UniversalQuizShell } from "@/components/quiz/UniversalQuizShell";
 import { QuizMode } from "@/types";
 
 function OracleQuizContent() {
@@ -10,7 +10,7 @@ function OracleQuizContent() {
   const modeParam = searchParams?.get("mode");
   const mode: QuizMode = (modeParam === "exam") ? "exam" : "practice";
 
-  return <OracleQuizShell mode={mode} />;
+  return <UniversalQuizShell category="oracle" mode={mode} />;
 }
 
 export default function OracleQuizPage() {

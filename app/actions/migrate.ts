@@ -1,6 +1,6 @@
 "use server";
 
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/utils/supabase/server";
 import { QuizFetcher } from "@/lib/quiz-fetcher";
 
 const QUIZ_URLS: Record<string, string | undefined> = {
@@ -13,6 +13,7 @@ const QUIZ_URLS: Record<string, string | undefined> = {
 };
 
 export async function seedDatabase() {
+  const supabase = createClient();
   const results = [];
 
   for (const [category, url] of Object.entries(QUIZ_URLS)) {

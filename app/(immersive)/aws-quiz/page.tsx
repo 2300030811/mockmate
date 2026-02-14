@@ -2,7 +2,7 @@
 
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { AWSQuizShell } from "@/components/aws-quiz/AWSQuizShell";
+import { UniversalQuizShell } from "@/components/quiz/UniversalQuizShell";
 import { QuizMode } from "@/types";
 
 function AWSQuizContent() {
@@ -10,7 +10,7 @@ function AWSQuizContent() {
   const modeParam = searchParams?.get("mode");
   const mode: QuizMode = (modeParam === "exam") ? "exam" : "practice";
 
-  return <AWSQuizShell mode={mode} />;
+  return <UniversalQuizShell category="aws" mode={mode} />;
 }
 
 export default function AWSQuizPage() {

@@ -1,10 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trophy, Medal, Crown, Loader2, Sparkles, ChevronRight } from "lucide-react";
-import { getLeaderboard } from "@/app/actions/results";
+import { getLeaderboard, deleteQuizResult } from "@/app/actions/results";
 import { Card } from "@/components/ui/Card";
+import { useAuth } from "@/app/auth-provider";
+import { Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 const categories = [
   { id: "aws", name: "AWS", icon: "☁️" },
@@ -19,16 +22,31 @@ export function Leaderboard() {
   const [activeCategory, setActiveCategory] = useState("aws");
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { profile } = useAuth();
+  const isAdmin = profile?.role === 'admin';
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    const results = await getLeaderboard(activeCategory);
+    setData(results);
+    setLoading(false);
+  }, [activeCategory]);
 
   useEffect(() => {
-    async function loadData() {
-      setLoading(true);
-      const results = await getLeaderboard(activeCategory);
-      setData(results);
-      setLoading(false);
-    }
     loadData();
-  }, [activeCategory]);
+  }, [loadData]);
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Are you sure you want to remove ${name} from the leaderboard?`)) return;
+    
+    const res = await deleteQuizResult(id);
+    if (res.success) {
+        toast.success("Result removed from leaderboard");
+        loadData();
+    } else {
+        toast.error("Failed to remove result");
+    }
+  };
 
   const getRankIcon = (index: number) => {
     switch (index) {
@@ -125,15 +143,27 @@ export function Leaderboard() {
                         </div>
                       </div>
                       
-                      <div className="text-right">
-                        <div className="flex items-center gap-2">
-                           <span className="text-xl font-black text-blue-600 dark:text-blue-400">
-                            {Math.round((entry.score / entry.total_questions) * 100)}%
-                          </span>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <div className="flex items-center gap-2">
+                             <span className="text-xl font-black text-blue-600 dark:text-blue-400">
+                              {Math.round((entry.score / entry.total_questions) * 100)}%
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tighter">
+                            {entry.score}/{entry.total_questions} Questions
+                          </p>
                         </div>
-                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tighter">
-                          {entry.score}/{entry.total_questions} Questions
-                        </p>
+                        
+                        {isAdmin && (
+                          <button 
+                            onClick={() => handleDelete(entry.id, entry.nickname)}
+                            className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                            title="Delete result"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </motion.div>
                   ))}

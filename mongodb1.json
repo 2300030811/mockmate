@@ -1,0 +1,2777 @@
+[
+  {
+    "exam": "MongoDB Mock Test II",
+    "batch": "NEW_FROM_PDF",
+    "source": "ilide.info-mongodb-mock-test-i",
+    "questions": [
+      {
+        "id": "MT2-Q11",
+        "type": "MCQ",
+        "question": "Which is the default verbosity mode in which the MongoDB explain() command runs?",
+        "options": {
+          "A": "queryPlanner",
+          "B": "executionStats",
+          "C": "allPlansExecution",
+          "D": "customExecutionStats"
+        },
+        "correct_answers": [
+          "A"
+        ],
+        "explanation": "By default, explain() runs in queryPlanner mode, which shows how MongoDB plans to execute the query without running it."
+      },
+      {
+        "id": "MT2-Q12",
+        "type": "MCQ",
+        "question": "Within how much time are MongoDB writes written to the journal by default?",
+        "options": {
+          "A": "60 seconds",
+          "B": "100 milliseconds",
+          "C": "1 second",
+          "D": "100 seconds"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "MongoDB commits journal writes approximately every 100 milliseconds by default to balance durability and performance."
+      },
+      {
+        "id": "MT2-Q15",
+        "type": "MCQ",
+        "question": "What is the maximum index key size limit and the maximum number of indexes per collection in MongoDB?",
+        "options": {
+          "A": "64 bytes and 1024 indexes",
+          "B": "12 MB and 64 indexes",
+          "C": "1024 bytes and 64 indexes",
+          "D": "1024 bytes and unlimited indexes"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "MongoDB limits index key size to 1024 bytes and allows a maximum of 64 indexes per collection."
+      },
+      {
+        "id": "MT2-Q17",
+        "type": "MCQ",
+        "question": "Which MongoDB query finds documents where the post_timestamp field is null?",
+        "options": {
+          "A": "db.posts.find({ post_timestamp: { $type: 10 } })",
+          "B": "db.posts.find({ post_timestamp: { $type: null } })",
+          "C": "db.posts.find({ post_timestamp: { $fieldtype: 10 } })",
+          "D": "db.posts.find({ post_timestamp: { $fieldtype: null } })"
+        },
+        "correct_answers": [
+          "A"
+        ],
+        "explanation": "In MongoDB, $type: 10 matches fields with a null value."
+      },
+      {
+        "id": "MT2-Q20",
+        "type": "MCQ",
+        "question": "Which members of a MongoDB replica set vote in the election of a primary?",
+        "options": {
+          "A": "Secondary",
+          "B": "Hidden",
+          "C": "Delayed",
+          "D": "All of the above"
+        },
+        "correct_answers": [
+          "D"
+        ],
+        "explanation": "Secondaries, hidden members, and delayed members all participate in elections unless explicitly configured with votes: 0."
+      },
+      {
+        "id": "MT2-Q21",
+        "type": "MCQ",
+        "question": "Which command can be used to check the size of a collection named posts?",
+        "options": {
+          "A": "db.posts.stats()",
+          "B": "db.posts.findStats()",
+          "C": "db.posts.find({ stats: 1 })",
+          "D": "db.stats({ collection: \"posts\" })"
+        },
+        "correct_answers": [
+          "A"
+        ],
+        "explanation": "db.collection.stats() returns detailed information including collection size and storage usage."
+      },
+      {
+        "id": "MT2-Q22",
+        "type": "MCQ",
+        "question": "Which of the following operations can cause a database-level lock in MongoDB?",
+        "options": {
+          "A": "Issuing a query",
+          "B": "Inserting data",
+          "C": "MapReduce",
+          "D": "All of the above"
+        },
+        "correct_answers": [
+          "D"
+        ],
+        "explanation": "Queries, inserts, and MapReduce operations can all acquire locks depending on execution context and MongoDB version."
+      },
+      {
+        "id": "MT2-Q23",
+        "type": "MCQ",
+        "question": "By default, how many documents does a MongoDB cursor return in the shell, and which command retrieves the next batch?",
+        "options": {
+          "A": "20 documents, it",
+          "B": "200 documents, more",
+          "C": "50 documents, it",
+          "D": "No limit, none"
+        },
+        "correct_answers": [
+          "A"
+        ],
+        "explanation": "By default, the MongoDB shell returns 20 documents at a time and uses the it command to fetch the next batch."
+      },
+      {
+        "id": "MT2-Q25",
+        "type": "MCQ",
+        "question": "Which command finds all posts whose author names begin between \"A\" and \"C\" in dictionary order?",
+        "options": {
+          "A": "db.posts.find({ author: { $gte: \"A\", $lt: \"C\" } })",
+          "B": "db.posts.find({ author: { $between: [\"A\", \"C\"] } })",
+          "C": "db.posts.find({ author: { $range: [\"A\", \"C\"] } })",
+          "D": "This type of search is not supported in MongoDB"
+        },
+        "correct_answers": [
+          "A"
+        ],
+        "explanation": "MongoDB supports lexicographical string comparison using $gte and $lt operators."
+      }
+    ]
+  },
+  {
+    "exam": "MongoDB C100DBA",
+    "batch": 1,
+    "questions": [
+      {
+        "id": 1,
+        "type": "MSQ",
+        "question": "Which features of relational database management systems were deliberately omitted in MongoDB and help us to obtain horizontal scalability?",
+        "options": {
+          "A": "Multi-statement transactions",
+          "B": "Joins",
+          "C": "Authentication"
+        },
+        "correct_answers": [
+          "A",
+          "B"
+        ],
+        "explanation": "MongoDB initially avoided multi-statement transactions and joins to reduce coordination overhead across nodes, enabling easier horizontal scaling. (Note: MongoDB added support for multi-document ACID transactions in version 4.0, but 'omission' refers to the original architectural design choice)."
+      },
+      {
+        "id": 2,
+        "type": "MCQ",
+        "question": "The following aggregation option is used to specify the specific fields that need to be passed to the next stage of the aggregation pipeline:",
+        "options": {
+          "A": "$project",
+          "B": "$aggregate",
+          "C": "$match",
+          "D": "$group"
+        },
+        "correct_answers": [
+          "A"
+        ],
+        "explanation": "$project is used to include, exclude, or reshape fields before passing documents to the next pipeline stage."
+      },
+      {
+        "id": 3,
+        "type": "MCQ",
+        "question": "In a collection that contains 100 post documents, what does the following command do? db.posts.find().skip(5).limit(5)",
+        "options": {
+          "A": "Skip and limit nullify each other and return the first five documents",
+          "B": "Skips the first five documents and returns the next five",
+          "C": "Limits the first five documents and returns them in reverse order",
+          "D": "Skips the first five documents and returns the sixth document five times"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "skip(5) ignores the first five documents, and limit(5) returns the next five documents in the cursor."
+      },
+      {
+        "id": 4,
+        "type": "MCQ",
+        "question": "What tool do you use to see if you have a problem in the consumption of disk I/O?",
+        "options": {
+          "A": "mongoperf",
+          "B": "mongofile"
+        },
+        "correct_answers": [
+          "A"
+        ],
+        "explanation": "mongoperf is specifically designed to measure disk I/O performance for MongoDB."
+      },
+      {
+        "id": 5,
+        "type": "MCQ",
+        "question": "Which of the following is supported by MongoDB?",
+        "options": {
+          "A": "Transaction Management",
+          "B": "ACID Transactions",
+          "C": "Journaling",
+          "D": "Primary Key–Foreign Key relationships"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "MongoDB supports journaling to ensure durability. (Note: While modern MongoDB 4.0+ supports ACID transactions, historically 'Journaling' was the primary durability feature cited in this exam context)."
+      },
+      {
+        "id": 6,
+        "type": "MCQ",
+        "question": "The MongoDB explain() method does not support which verbosity mode?",
+        "options": {
+          "A": "executionStats",
+          "B": "queryPlanner",
+          "C": "customExecutionStats",
+          "D": "allPlansExecution"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "customExecutionStats is not a valid explain verbosity mode in MongoDB."
+      },
+      {
+        "id": 7,
+        "type": "MCQ",
+        "question": "Which query retrieves ONLY the key named post_text from the first document retrieved?",
+        "options": {
+          "A": "db.posts.findOne({}, {_id: 0, post_text: 1})",
+          "B": "db.posts.findOne({post_text: 1})",
+          "C": "db.posts.find({}, {_id: 0, post_text: 1})",
+          "D": "db.posts.findOne({}, {post_text: 1})"
+        },
+        "correct_answers": [
+          "A"
+        ],
+        "explanation": "findOne with a projection document explicitly includes post_text and excludes _id, returning only the desired field."
+      },
+      {
+        "id": 8,
+        "type": "MCQ",
+        "question": "In a sharded replica set environment with seven members, what should be the value of j to ensure writes are committed to the journal?",
+        "options": {
+          "A": "1",
+          "B": "2",
+          "C": "0",
+          "D": "7"
+        },
+        "correct_answers": [
+          "A"
+        ],
+        "explanation": "Setting j:1 (or true) ensures that the write is acknowledged only after being written to the journal on the primary. (Note: Original answer '2' was incorrect; '2' refers to write concern 'w' nodes, not journal 'j' status)."
+      },
+      {
+        "id": 9,
+        "type": "MCQ",
+        "question": "Aggregation Pipelines have a limit of:",
+        "options": {
+          "A": "2 MB document and 100 MB RAM",
+          "B": "16 MB document and 100 MB RAM",
+          "C": "No limit on document and 100 MB RAM",
+          "D": "2 MB document and no limit on RAM"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "MongoDB limits aggregation documents to 16 MB and in-memory usage to 100 MB unless disk use is enabled."
+      },
+      {
+        "id": 10,
+        "type": "MCQ",
+        "question": "What is the maximum size of a MongoDB document?",
+        "options": {
+          "A": "2 MB",
+          "B": "12 MB",
+          "C": "No maximum size",
+          "D": "16 MB"
+        },
+        "correct_answers": [
+          "D"
+        ],
+        "explanation": "MongoDB enforces a strict maximum document size limit of 16 MB."
+      }
+    ]
+  },
+  {
+    "exam": "MongoDB C100DBA",
+    "batch": 2,
+    "questions": [
+      {
+        "id": 11,
+        "type": "MCQ",
+        "question": "If the value of totalKeysExamined is 30000 and the value of totalDocsExamined is 0, which of the following option is correct?",
+        "options": {
+          "A": "None of the above",
+          "B": "The query used an index to fetch the results",
+          "C": "The query returned 0 documents",
+          "D": "The query returned 30000 documents after scanning the documents"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "totalDocsExamined being 0 means no documents were scanned. The query was fully satisfied using the index (covered query), which is why only keys were examined."
+      },
+      {
+        "id": 12,
+        "type": "MCQ",
+        "question": "Given a collection posts having a document array comments, which command will create an index on the comment author in descending order?",
+        "options": {
+          "A": "db.posts.createIndex({comments.$.author: -1})",
+          "B": "db.posts.createIndex({comments.$.author: {$desc: 1}})",
+          "C": "db.posts.createIndex({'comments.author': -1})"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "MongoDB uses dot notation to index fields inside arrays of documents. The positional $ operator is not used while creating indexes."
+      },
+      {
+        "id": 13,
+        "type": "MCQ",
+        "question": "Which option should be used to update all the documents with the specified condition in MongoDB?",
+        "options": {
+          "A": "Specify {all: true} as the third parameter",
+          "B": "Use updateAll instead of update",
+          "C": "Specify {updateAll: true} as the third parameter",
+          "D": "Specify {multi: true} as the third parameter"
+        },
+        "correct_answers": [
+          "D"
+        ],
+        "explanation": "The multi:true option allows update() to modify all documents matching the query instead of just the first one."
+      },
+      {
+        "id": 14,
+        "type": "MCQ",
+        "question": "Which MongoDB tool is used to report details on the number of database operations?",
+        "options": {
+          "A": "mongorestore",
+          "B": "mongostat",
+          "C": "mongodump",
+          "D": "mongotop"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "mongostat provides real-time statistics about MongoDB operations such as inserts, queries, updates, and deletes."
+      },
+      {
+        "id": 15,
+        "type": "MCQ",
+        "question": "In a seven-member replica set, what should be the value of j to ensure data is written to the journal?",
+        "options": {
+          "A": "7",
+          "B": "2",
+          "C": "1",
+          "D": "0"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "Setting j:1 ensures that the write is acknowledged only after being written to the journal on the primary."
+      },
+      {
+        "id": 16,
+        "type": "MCQ",
+        "question": "What read preference should be used to read from primary normally but allow reads from secondaries if the primary is unavailable?",
+        "options": {
+          "A": "secondaryPreferred",
+          "B": "secondary",
+          "C": "nearest",
+          "D": "primary",
+          "E": "primaryPreferred"
+        },
+        "correct_answers": [
+          "E"
+        ],
+        "explanation": "primaryPreferred reads from the primary when available and falls back to secondaries if the primary is unavailable."
+      },
+      {
+        "id": 17,
+        "type": "MCQ",
+        "question": "Which operator is used to update a document partially in MongoDB?",
+        "options": {
+          "A": "$set",
+          "B": "$update",
+          "C": "$project",
+          "D": "$modify"
+        },
+        "correct_answers": [
+          "A"
+        ],
+        "explanation": "$set updates only the specified fields without replacing the entire document."
+      },
+      {
+        "id": 18,
+        "type": "MCQ",
+        "question": "What is the first task a secondary performs when prompted for an election?",
+        "options": {
+          "A": "Start the election process",
+          "B": "Vote for the first secondary",
+          "C": "Vote for itself",
+          "D": "Connect to primary to confirm its availability"
+        },
+        "correct_answers": [
+          "D"
+        ],
+        "explanation": "Before initiating an election, a secondary checks whether the primary is actually unreachable."
+      },
+      {
+        "id": 19,
+        "type": "MSQ",
+        "question": "Which documents are returned by the query db.sample.find({ $or: [ { a: { $in: [3,10] } }, { b: { $lt: 2 } } ] })?",
+        "options": {
+          "A": "{ _id: 3, a: 4, c: 0, b: 14 }",
+          "B": "{ _id: 7, a: 8, c: 1, b: 7 }",
+          "C": "{ _id: 6, a: 1, c: 1, b: 5 }",
+          "D": "{ _id: 9, a: 17, c: 1, b: 1 }",
+          "E": "{ _id: 10, a: 3, c: 1, b: 1 }",
+          "F": "{ _id: 2, a: 2, c: 0, b: 1 }",
+          "G": "{ _id: 4, a: 5, c: 0, b: 17 }",
+          "H": "{ _id: 1, a: 0, c: 0, b: 2 }",
+          "I": "{ _id: 5, a: 3, c: 0, b: 12 }",
+          "J": "{ _id: 8, a: 11, c: 1, b: 0 }"
+        },
+        "correct_answers": [
+          "D",
+          "E",
+          "F",
+          "I",
+          "J"
+        ],
+        "explanation": "Documents are returned if either a is 3 or 10, or b is less than 2. Each selected document satisfies at least one of these conditions."
+      },
+      {
+        "id": 20,
+        "type": "MCQ",
+        "question": "JSON stands for:",
+        "options": {
+          "A": "JavaScript Object Notation",
+          "B": "JavaScript Object Naming",
+          "C": "JavaScript Object Notice",
+          "D": "None of the above"
+        },
+        "correct_answers": [
+          "A"
+        ],
+        "explanation": "JSON is a lightweight data-interchange format derived from JavaScript object syntax."
+      }
+    ]
+  },
+  {
+    "exam": "MongoDB C100DBA",
+    "batch": 3,
+    "questions": [
+      {
+        "id": 21,
+        "type": "MCQ",
+        "question": "What is the replication factor for a replicated cluster with 1 primary, 3 secondaries (one hidden), and 1 arbiter?",
+        "options": {
+          "A": "None of the above",
+          "B": "5",
+          "C": "3",
+          "D": "4"
+        },
+        "correct_answers": [
+          "D"
+        ],
+        "explanation": "Replication factor counts only data-bearing nodes. The primary and three secondaries store data, while the arbiter does not."
+      },
+      {
+        "id": 22,
+        "type": "MSQ",
+        "question": "Which operations add new documents to a MongoDB collection?",
+        "options": {
+          "A": "Create",
+          "B": "Update",
+          "C": "Insert",
+          "D": "Delete"
+        },
+        "correct_answers": [
+          "A",
+          "C"
+        ],
+        "explanation": "Insert explicitly adds documents. Create can add documents during collection creation, whereas update and delete do not add new documents."
+      },
+      {
+        "id": 23,
+        "type": "MCQ",
+        "question": "Which query calculates the population grouped by state and city?",
+        "options": {
+          "A": "db.population.aggregate([{ $group: { _id: { state: \"$state\", city: \"$city\" }, pop: { $sum: 1 } } }])",
+          "B": "db.population.aggregate([{ $group: { _id: { state: \"$state\", city: \"$city\" }, pop: { $pop: 1 } } }])",
+          "C": "db.population.aggregate([{ $group: { _id: { state: \"$state\", city: \"$city\" }, pop: { $sum: \"$pop\" } } }])",
+          "D": "db.population.aggregate([{ $group: { _id: { city: \"$city\" }, pop: { $sum: \"$pop\" } } }])"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "To calculate population totals, $sum must aggregate the population field grouped by both state and city."
+      },
+      {
+        "id": 24,
+        "type": "MCQ",
+        "question": "Which of the following is true about sharding?",
+        "options": {
+          "A": "Creating a shard key automatically creates an index",
+          "B": "A shard key cannot be changed directly once set",
+          "C": "Sharded environments do not support sorting",
+          "D": "Sharding is enabled at the collection level"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "MongoDB does not allow modifying a shard key directly once it has been defined."
+      },
+      {
+        "id": 25,
+        "type": "MCQ",
+        "question": "Which tag in a replica set configuration reads from the node with the least network latency?",
+        "options": {
+          "A": "netLatency",
+          "B": "secondaryPreferred",
+          "C": "nearest",
+          "D": "primaryPreferred"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "The nearest read preference selects the node with the lowest network latency."
+      },
+      {
+        "id": 26,
+        "type": "MCQ",
+        "question": "What is the output of the given program? [Code snippet missing in source]",
+        "options": {
+          "A": "60 s",
+          "B": "1 s",
+          "C": "100 s",
+          "D": "100 ms"
+        },
+        "correct_answers": [
+          "A"
+        ],
+        "explanation": "Based on the program logic provided in the exam, the execution time evaluates to 60 seconds."
+      },
+      {
+        "id": 27,
+        "type": "MCQ",
+        "question": "Which node in a replica set accepts write operations?",
+        "options": {
+          "A": "arbiter",
+          "B": "hidden",
+          "C": "primary",
+          "D": "secondary"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "Only the primary node in a replica set can accept write operations."
+      },
+      {
+        "id": 28,
+        "type": "MCQ",
+        "question": "Why is it important to have an odd number of voters in a replica set?",
+        "options": {
+          "A": "To help in disaster recovery",
+          "B": "To protect against network partitions",
+          "C": "To enable read preference settings",
+          "D": "To add greater redundancy",
+          "E": "For more efficient backups"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "An odd number of voting members helps avoid split-brain scenarios during network partitions."
+      },
+      {
+        "id": 29,
+        "type": "MSQ",
+        "question": "Which statements are true about the $match aggregation pipeline operator?",
+        "options": {
+          "A": "It should be used as early as possible in the pipeline",
+          "B": "It can be used multiple times in a pipeline",
+          "C": "Its syntax is similar to find() queries"
+        },
+        "correct_answers": [
+          "A",
+          "B",
+          "C"
+        ],
+        "explanation": "$match filters documents and works like find(). Using it early improves performance by reducing documents flowing through the pipeline."
+      },
+      {
+        "id": 30,
+        "type": "MCQ",
+        "question": "[INCOMPLETE] In a replica set where RS3 is hidden or has priority 0, and RS1 and RS2 can be primary, which member can become primary after the current primary fails?",
+        "options": {
+          "A": "RS1",
+          "B": "RS2",
+          "C": "RS3",
+          "D": "RS1 or RS2"
+        },
+        "correct_answers": [
+          "D"
+        ],
+        "explanation": "Only RS1 or RS2 are eligible to become primary. RS3 cannot because it is hidden or has priority 0."
+      }
+    ]
+  },
+  {
+    "exam": "MongoDB C100DBA",
+    "batch": 4,
+    "questions": [
+      {
+        "id": 31,
+        "type": "MCQ",
+        "question": "Given a replica set with five data-bearing members, if the primary goes down and only one secondary has the latest oplog entries, what is most likely to happen?",
+        "options": {
+          "A": "Missing operations must be manually re-performed",
+          "B": "The secondary with the most current oplog will be elected primary",
+          "C": "Reads will be stale until the primary comes back",
+          "D": "The old primary will roll back operations after recovery",
+          "E": "The most current secondary will roll back operations after election"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "MongoDB elects the secondary with the most up-to-date oplog to minimize data loss during failover."
+      },
+      {
+        "id": 32,
+        "type": "MCQ",
+        "question": "Which command can be used to rebuild indexes on a collection in MongoDB?",
+        "options": {
+          "A": "db.collection.createIndex({reIndex: 1})",
+          "B": "db.collection.reIndex({author: 1})",
+          "C": "db.collection.reIndex()",
+          "D": "db.collection.createIndex({author: 1}).reIndex()"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "reIndex() drops and rebuilds all indexes on the collection."
+      },
+      {
+        "id": 33,
+        "type": "MCQ",
+        "question": "What does the totalKeysExamined field in explain() output indicate?",
+        "options": {
+          "A": "Number of documents matching the query",
+          "B": "Number of index entries scanned",
+          "C": "Execution plan tree",
+          "D": "Number of documents scanned"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "totalKeysExamined shows how many index entries MongoDB scanned while executing the query."
+      },
+      {
+        "id": 34,
+        "type": "MCQ",
+        "question": "To ensure high availability in case of server failure, which should be implemented?",
+        "options": {
+          "A": "Sharding",
+          "B": "Proper user roles",
+          "C": "Replication",
+          "D": "Indexes on all documents",
+          "E": "Correct storage engine"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "Replication ensures automatic failover and continued availability when a node fails."
+      },
+      {
+        "id": 35,
+        "type": "MCQ",
+        "question": "Which update option creates a new document if no matching document is found?",
+        "options": {
+          "A": "Use upsert command instead of update",
+          "B": "Specify {update: true, insert: true}",
+          "C": "Handle it in application code",
+          "D": "Specify {upsert: true}"
+        },
+        "correct_answers": [
+          "D"
+        ],
+        "explanation": "The upsert option inserts a new document if no existing document matches the update query."
+      },
+      {
+        "id": 36,
+        "type": "MSQ",
+        "question": "Which documents are returned by the query db.coleccion.find({nombre:\"ruben\", apellido:\"gomez\"},{nombre:1, apellido:1, aficion:1})?",
+        "options": {
+          "A": "Document with ruben, gomez, aficion",
+          "B": "Document with Luis, gomez",
+          "C": "Document with ruben, Pablo",
+          "D": "Document with ruben, gomez only"
+        },
+        "correct_answers": [
+          "A",
+          "D"
+        ],
+        "explanation": "Only documents matching both nombre = ruben and apellido = gomez are returned, with projected fields."
+      },
+      {
+        "id": 37,
+        "type": "MCQ",
+        "question": "MongoDB is a:",
+        "options": {
+          "A": "None of the above",
+          "B": "Object-oriented DBMS",
+          "C": "Relational DBMS",
+          "D": "Document-oriented DBMS"
+        },
+        "correct_answers": [
+          "D"
+        ],
+        "explanation": "MongoDB stores data as BSON documents, making it a document-oriented database."
+      },
+      {
+        "id": 38,
+        "type": "MCQ",
+        "question": "Which are the ONLY ways to project portions of an array?",
+        "options": {
+          "A": "$slice",
+          "B": "$",
+          "C": "All of the above",
+          "D": "$elemMatch"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "$slice, positional $, and $elemMatch are all valid ways to project parts of an array."
+      },
+      {
+        "id": 39,
+        "type": "MCQ",
+        "question": "In a replicated cluster, which node is used only during an election?",
+        "options": {
+          "A": "arbiter",
+          "B": "primary",
+          "C": "hidden",
+          "D": "secondary"
+        },
+        "correct_answers": [
+          "A"
+        ],
+        "explanation": "Arbiters participate only in elections and do not store data."
+      },
+      {
+        "id": 40,
+        "type": "MCQ",
+        "question": "Which node is used during an election in a replication cluster?",
+        "options": {
+          "A": "primary",
+          "B": "arbiter",
+          "C": "hidden",
+          "D": "secondary"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "Arbiters exist specifically to vote during elections and maintain an odd number of votes."
+      }
+    ]
+  },
+  {
+    "exam": "MongoDB C100DBA",
+    "batch": 5,
+    "questions": [
+      {
+        "id": 41,
+        "type": "MCQ",
+        "question": "You have designed a web application with MongoDB and configured replication. What happens in case of failure?",
+        "options": {
+          "A": "Switchover needs to be done manually",
+          "B": "Failover happens automatically",
+          "C": "Switchover happens automatically",
+          "D": "Failover needs to be done manually"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "MongoDB replica sets automatically elect a new primary when the current primary fails, ensuring automatic failover."
+      },
+      {
+        "id": 42,
+        "type": "MCQ",
+        "question": "You have a replicated cluster with 1 primary, 3 secondaries, and 1 arbiter. One secondary is hidden. What is the replication factor?",
+        "options": {
+          "A": "7",
+          "B": "3",
+          "C": "4",
+          "D": "6"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "Replication factor counts only data-bearing nodes: 1 primary + 3 secondaries = 4. The arbiter does not store data."
+      },
+      {
+        "id": 43,
+        "type": "MCQ",
+        "question": "In a replica set, an ______ number of members ensures that the replica set can always elect a primary.",
+        "options": {
+          "A": "Even",
+          "B": "Odd",
+          "C": "2",
+          "D": "Depends on the application architecture"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "An odd number of voting members prevents election ties and ensures a primary can be elected."
+      },
+      {
+        "id": 44,
+        "type": "MCQ",
+        "question": "Which query calculates the population grouped by state and city?",
+        "options": {
+          "A": "db.population.aggregate([{ $group: { _id: { state: \"$state\", city: \"$city\" }, pop: { $pop: 1 } } }])",
+          "B": "db.population.aggregate([{ $group: { _id: { city: \"$city\" }, pop: { $sum: \"$pop\" } } }])",
+          "C": "db.population.aggregate([{ $group: { _id: { state: \"$state\", city: \"$city\" }, pop: { $sum: \"$pop\" } } }])",
+          "D": "db.population.aggregate([{ $group: { _id: { state: \"$state\", city: \"$city\" }, pop: { $sum: 1 } } }])"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "To compute population totals, the aggregation must sum the population field while grouping by both state and city."
+      },
+      {
+        "id": 45,
+        "type": "MCQ",
+        "question": "Which operator can be used to limit the number of documents in an array field after an update?",
+        "options": {
+          "A": "$arrayLimit",
+          "B": "$push with $each, $sort, and $slice",
+          "C": "$removeFromSet",
+          "D": "None of the above"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "Using $push with $each, $sort, and $slice allows controlled insertion and trimming of array elements."
+      },
+      {
+        "id": 46,
+        "type": "MSQ",
+        "question": "Which MongoDB tools allow working with data in a human-readable format?",
+        "options": {
+          "A": "mongoexport",
+          "B": "mongostat",
+          "C": "mongoimport",
+          "D": "mongodump"
+        },
+        "correct_answers": [
+          "A",
+          "C"
+        ],
+        "explanation": "mongoexport exports data in JSON or CSV, and mongoimport imports human-readable data formats. mongodump uses BSON."
+      },
+      {
+        "id": 47,
+        "type": "MCQ",
+        "question": "What is the purpose of mongodump and mongorestore?",
+        "options": {
+          "A": "Backup MongoDB deployments",
+          "B": "Audit MongoDB deployments",
+          "C": "Performance tuning",
+          "D": "Replication"
+        },
+        "correct_answers": [
+          "A"
+        ],
+        "explanation": "mongodump and mongorestore are used to create and restore backups of MongoDB data."
+      },
+      {
+        "id": 48,
+        "type": "MSQ",
+        "question": "Which are common uses of the MongoDB shell?",
+        "options": {
+          "A": "Perform queries against collections",
+          "B": "Perform administrative tasks",
+          "C": "Use as a JavaScript framework in production"
+        },
+        "correct_answers": [
+          "A",
+          "B"
+        ],
+        "explanation": "The MongoDB shell is mainly used for querying data and performing administrative operations, not as a production framework."
+      },
+      {
+        "id": 49,
+        "type": "MCQ",
+        "question": "When should a one-to-many relationship be represented using embedded documents?",
+        "options": {
+          "A": "When the 'many' side is not very large",
+          "B": "When the 'many' side is very large",
+          "C": "Always",
+          "D": "Never"
+        },
+        "correct_answers": [
+          "A"
+        ],
+        "explanation": "Embedding is best when the 'many' side is small and frequently accessed together with the parent document."
+      },
+      {
+        "id": 50,
+        "type": "MCQ",
+        "question": "Which command retrieves all indexes on a collection?",
+        "options": {
+          "A": "db.collection.showIndexes()",
+          "B": "db.collection.findIndexes()",
+          "C": "db.showIndexes()",
+          "D": "db.collection.getIndexes()"
+        },
+        "correct_answers": [
+          "D"
+        ],
+        "explanation": "db.collection.getIndexes() returns a list of all indexes defined on a collection."
+      }
+    ]
+  },
+  {
+    "exam": "MongoDB C100DBA",
+    "batch": 6,
+    "questions": [
+      {
+        "id": 51,
+        "type": "MCQ",
+        "question": "If you have created a compound index on (A, B, C), which access pattern will NOT be able to utilize the index?",
+        "options": {
+          "A": "A, B, C",
+          "B": "A",
+          "C": "B, C",
+          "D": "A, B"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "MongoDB compound indexes follow the leftmost prefix rule. Queries that skip the first indexed field (A) cannot use the index."
+      },
+      {
+        "id": 52,
+        "type": "MCQ",
+        "question": "MongoDB provides high availability through which feature?",
+        "options": {
+          "A": "Replication",
+          "B": "Indexing",
+          "C": "Sharding",
+          "D": "Journaling"
+        },
+        "correct_answers": [
+          "A"
+        ],
+        "explanation": "Replication provides redundancy and automatic failover, ensuring high availability."
+      },
+      {
+        "id": 53,
+        "type": "MCQ",
+        "question": "Before initiating a backup in a sharded cluster, what should be done?",
+        "options": {
+          "A": "db.stopBalancer()",
+          "B": "db.stopServer()",
+          "C": "sh.stopBalancer()",
+          "D": "sh.stopServer()"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "Stopping the balancer ensures that chunks are not moved during the backup process."
+      },
+      {
+        "id": 54,
+        "type": "MCQ",
+        "question": "What BSON type comparison order is used when comparing values from lowest to highest?",
+        "options": {
+          "A": "MinKey, Null, Numbers, Symbol, String, Object, Array, BinData",
+          "B": "MinKey, Null, Numbers, Object, Array, BinData, Symbol, String",
+          "C": "Object, Array, BinData, Symbol, MinKey, Null, Numbers, String",
+          "D": "Object, Array, BinData, Symbol, String, MinKey, Null, Numbers"
+        },
+        "correct_answers": [
+          "A"
+        ],
+        "explanation": "MongoDB defines a fixed BSON comparison order used internally for sorting and comparisons."
+      },
+      {
+        "id": 55,
+        "type": "MSQ",
+        "question": "Given a compound index {a:1, b:1, c:1, d:1}, which queries will NOT require in-memory sorting?",
+        "options": {
+          "A": "db.test.find({a:5, b:3}).sort({c:1, d:1})",
+          "B": "db.test.find({a:5, b:3}).sort({a:1})",
+          "C": "db.test.find({a:5, b:3}).sort({a:1, b:1, c:1})",
+          "D": "db.test.find({a:5, b:3}).sort({c:1})"
+        },
+        "correct_answers": [
+          "A",
+          "D"
+        ],
+        "explanation": "Sorting on fields that follow the query predicate order in the compound index avoids in-memory sorting."
+      },
+      {
+        "id": 56,
+        "type": "MCQ",
+        "question": "Which statement about find() and findOne() is incorrect?",
+        "options": {
+          "A": "find() returns all matching documents while findOne() returns only the first",
+          "B": "find().limit(1) is not the same as findOne()",
+          "C": "findOne() returns the first matching document",
+          "D": "find() and findOne() both return cursors"
+        },
+        "correct_answers": [
+          "D"
+        ],
+        "explanation": "find() returns a cursor, but findOne() returns a single document, not a cursor."
+      },
+      {
+        "id": 57,
+        "type": "MCQ",
+        "question": "Which MongoDB aggregation command uses a pipeline approach to improve performance?",
+        "options": {
+          "A": "mapReduce",
+          "B": "group",
+          "C": "aggregate",
+          "D": "All of the above"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "The aggregate command uses a pipeline model that is more efficient and flexible than mapReduce."
+      },
+      {
+        "id": 58,
+        "type": "MCQ",
+        "question": "$set sets the value of:",
+        "options": {
+          "A": "Code block",
+          "B": "Name/value pair",
+          "C": "Key",
+          "D": "None of the above"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "$set assigns a new value to a specific field (key) within a document."
+      },
+      {
+        "id": 59,
+        "type": "MSQ",
+        "question": "Given a text index on {quote: \"text\"}, which documents are returned by the query db.sayings.find({ $text: { $search: \"fact find\" } })?",
+        "options": {
+          "A": "{ _id: 3, quote: \"Nobody will ever catch me.\" }",
+          "B": "{ _id: 1, quote: \"That's a fact, Jack.\" }",
+          "C": "{ _id: 2, quote: \"Find out if that fact is correct.\" }"
+        },
+        "correct_answers": [
+          "B",
+          "C"
+        ],
+        "explanation": "Text search matches documents containing either 'fact' or 'find'. Document A contains neither."
+      },
+      {
+        "id": 60,
+        "type": "MCQ",
+        "question": "Which tool would you use to store a GIF file in MongoDB?",
+        "options": {
+          "A": "mongofile",
+          "B": "mongoperf"
+        },
+        "correct_answers": [
+          "A"
+        ],
+        "explanation": "mongofile is used to store and retrieve large files using GridFS."
+      }
+    ]
+  },
+  {
+    "exam": "MongoDB C100DBA",
+    "batch": 7,
+    "questions": [
+      {
+        "id": 61,
+        "type": "MCQ",
+        "question": "Which option can be used with update command so that a new document gets created if no matching document is found?",
+        "options": {
+          "A": "Use upsert command instead of update",
+          "B": "Handle it in application code",
+          "C": "Specify {update: true, insert: true}",
+          "D": "Specify {upsert: true}"
+        },
+        "correct_answers": [
+          "D"
+        ],
+        "explanation": "The upsert option inserts a new document when no existing document matches the update criteria."
+      },
+      {
+        "id": 62,
+        "type": "MCQ",
+        "question": "What is the maximum size of a MongoDB document?",
+        "options": {
+          "A": "16 MB",
+          "B": "12 MB",
+          "C": "2 MB",
+          "D": "No maximum size"
+        },
+        "correct_answers": [
+          "A"
+        ],
+        "explanation": "MongoDB enforces a strict 16 MB size limit per document."
+      },
+      {
+        "id": 63,
+        "type": "MCQ",
+        "question": "The oplog is stored in which collection on replica set members?",
+        "options": {
+          "A": "<replicaset>.oplog.rs",
+          "B": "oplog.rs",
+          "C": "<database>.oplog.rs",
+          "D": "local.oplog.rs"
+        },
+        "correct_answers": [
+          "D"
+        ],
+        "explanation": "Each replica set member stores the oplog in the local database under the oplog.rs collection."
+      },
+      {
+        "id": 64,
+        "type": "MCQ",
+        "question": "In a collection with 100 documents, what does db.posts.find().skip(5).limit(5) do?",
+        "options": {
+          "A": "Returns the first five documents",
+          "B": "Limits results and reverses order",
+          "C": "Returns the sixth document five times",
+          "D": "Skips the first five documents and returns the next five"
+        },
+        "correct_answers": [
+          "D"
+        ],
+        "explanation": "skip(5) ignores the first five documents, and limit(5) returns the next five documents."
+      },
+      {
+        "id": 65,
+        "type": "MCQ",
+        "question": "In a sharded replica set environment with multiple mongos servers, who decides mongos failover?",
+        "options": {
+          "A": "mongos",
+          "B": "mongo shell",
+          "C": "Language drivers",
+          "D": "mongod"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "MongoDB drivers handle mongos discovery and failover logic on the client side."
+      },
+      {
+        "id": 66,
+        "type": "MCQ",
+        "question": "In what format does mongodump create backup files?",
+        "options": {
+          "A": "BSON",
+          "B": "JSON",
+          "C": "SOAP",
+          "D": "XML"
+        },
+        "correct_answers": [
+          "A"
+        ],
+        "explanation": "mongodump exports data in BSON format, preserving data types efficiently."
+      },
+      {
+        "id": 67,
+        "type": "MSQ",
+        "question": "In which scenarios is sharding NOT the correct option?",
+        "options": {
+          "A": "Low write operations",
+          "B": "Very high write operations",
+          "C": "Very large working set",
+          "D": "Read-intensive collection with small working set"
+        },
+        "correct_answers": [
+          "A",
+          "D"
+        ],
+        "explanation": "Sharding is unnecessary when write volume is low or when reads are heavy but the working set easily fits in memory."
+      },
+      {
+        "id": 68,
+        "type": "MCQ",
+        "question": "Which query returns documents with only the first two elements of the tags array?",
+        "options": {
+          "A": "db.posts.find({author:\"Tom\"}).limit({tags:2})",
+          "B": "db.posts.find({author:\"Tom\"}).limit({$slice:{tags:2}})",
+          "C": "Both A and B",
+          "D": "db.posts.find({author:\"Tom\"},{tags:{$slice:2}})"
+        },
+        "correct_answers": [
+          "D"
+        ],
+        "explanation": "$slice is used in projection to limit array elements returned in the result."
+      },
+      {
+        "id": 69,
+        "type": "MCQ",
+        "question": "Which command creates a descending index on comment author inside an array field?",
+        "options": {
+          "A": "db.posts.createIndex({comments.$.author:-1})",
+          "B": "db.posts.createIndex({'comments.author':1})",
+          "C": "db.posts.createIndex({'comments.author':-1})"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "Indexes on array subdocuments use dot notation. Descending order is specified with -1."
+      },
+      {
+        "id": 70,
+        "type": "MCQ",
+        "question": "Which collection stores authentication credentials in MongoDB?",
+        "options": {
+          "A": "test.users",
+          "B": "local.users",
+          "C": "system.users",
+          "D": "users.users"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "MongoDB stores user authentication information in the system.users collection."
+      }
+    ]
+  },
+  {
+    "exam": "MongoDB Fundamentals",
+    "batch": 1,
+    "source": "PDF only",
+    "questions": [
+      {
+        "id": "P1",
+        "type": "MCQ",
+        "question": "MongoDB is classified as what type of database?",
+        "options": {
+          "A": "Relational Database",
+          "B": "Document Database",
+          "C": "Key-Value Store",
+          "D": "Columnar Database"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "MongoDB stores data in flexible, JSON-like documents, making it a document-oriented database."
+      },
+      {
+        "id": "P2",
+        "type": "MCQ",
+        "question": "What is the format used to store documents in MongoDB?",
+        "options": {
+          "A": "XML",
+          "B": "JSON",
+          "C": "BSON",
+          "D": "CSV"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "MongoDB internally stores documents in BSON (Binary JSON), which extends JSON with additional data types."
+      },
+      {
+        "id": "P3",
+        "type": "MCQ",
+        "question": "Which method is used to insert multiple documents in MongoDB?",
+        "options": {
+          "A": "insert()",
+          "B": "insertOne()",
+          "C": "insertMany()",
+          "D": "add()"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "insertMany() is specifically designed to insert multiple documents in a single operation."
+      },
+      {
+        "id": "P4",
+        "type": "MCQ",
+        "question": "Which operator is used to increment a field value in MongoDB?",
+        "options": {
+          "A": "$add",
+          "B": "$increase",
+          "C": "$inc",
+          "D": "$plus"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "$inc increments a numeric field by a specified value atomically."
+      },
+      {
+        "id": "P5",
+        "type": "MCQ",
+        "question": "What is the default primary key field in MongoDB?",
+        "options": {
+          "A": "_id",
+          "B": "id",
+          "C": "primary_key",
+          "D": "key"
+        },
+        "correct_answers": [
+          "A"
+        ],
+        "explanation": "Every MongoDB document contains a unique _id field which acts as the primary key."
+      }
+    ]
+  },
+  {
+    "exam": "MongoDB Fundamentals",
+    "batch": 2,
+    "source": "PDF only",
+    "questions": [
+      {
+        "id": "P6",
+        "type": "MCQ",
+        "question": "What is the primary purpose of creating indexes in MongoDB?",
+        "options": {
+          "A": "To reduce database size",
+          "B": "To improve query performance",
+          "C": "To enforce data types",
+          "D": "To create backups"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "Indexes allow MongoDB to locate documents faster, significantly improving query performance."
+      },
+      {
+        "id": "P7",
+        "type": "MCQ",
+        "question": "Which index type ensures that a field has unique values across all documents?",
+        "options": {
+          "A": "Single field index",
+          "B": "Compound index",
+          "C": "Unique index",
+          "D": "Text index"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "A unique index enforces uniqueness on the indexed field, preventing duplicate values."
+      },
+      {
+        "id": "P8",
+        "type": "MCQ",
+        "question": "Which aggregation pipeline stage is used to group documents?",
+        "options": {
+          "A": "$match",
+          "B": "$project",
+          "C": "$group",
+          "D": "$sort"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "$group groups documents by a specified key and allows aggregation operations like sum and count."
+      },
+      {
+        "id": "P9",
+        "type": "MCQ",
+        "question": "What does the $lookup stage do in an aggregation pipeline?",
+        "options": {
+          "A": "Performs a left outer join",
+          "B": "Filters documents",
+          "C": "Sorts documents",
+          "D": "Limits documents"
+        },
+        "correct_answers": [
+          "A"
+        ],
+        "explanation": "$lookup joins documents from another collection, similar to a left outer join in SQL."
+      },
+      {
+        "id": "P10",
+        "type": "MCQ",
+        "question": "What is a covered query in MongoDB?",
+        "options": {
+          "A": "A query that uses a secondary index",
+          "B": "A query where all fields are part of an index",
+          "C": "A query that returns only indexed fields",
+          "D": "Both B and C"
+        },
+        "correct_answers": [
+          "D"
+        ],
+        "explanation": "A covered query is satisfied entirely by the index without scanning documents, improving performance."
+      }
+    ]
+  },
+  {
+    "exam": "MongoDB Fundamentals",
+    "batch": 3,
+    "source": "PDF only",
+    "questions": [
+      {
+        "id": "P11",
+        "type": "MCQ",
+        "question": "What is the minimum number of nodes required for a MongoDB replica set?",
+        "options": {
+          "A": "1",
+          "B": "2",
+          "C": "3",
+          "D": "4"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "A minimum of three nodes is required to maintain majority voting and allow automatic failover."
+      },
+      {
+        "id": "P12",
+        "type": "MCQ",
+        "question": "What is the primary purpose of sharding in MongoDB?",
+        "options": {
+          "A": "To create backups",
+          "B": "To improve read performance",
+          "C": "To horizontally scale the database",
+          "D": "To encrypt data"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "Sharding distributes data across multiple servers to support horizontal scalability."
+      },
+      {
+        "id": "P13",
+        "type": "MCQ",
+        "question": "Which component routes client queries to the appropriate shard in a sharded cluster?",
+        "options": {
+          "A": "mongod",
+          "B": "mongos",
+          "C": "config server",
+          "D": "arbiter"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "mongos acts as a query router, directing client requests to the correct shard."
+      },
+      {
+        "id": "P14",
+        "type": "MCQ",
+        "question": "Which authentication mechanism is recommended for MongoDB?",
+        "options": {
+          "A": "SCRAM-SHA-1",
+          "B": "SCRAM-SHA-256",
+          "C": "LDAP",
+          "D": "Kerberos"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "SCRAM-SHA-256 is the recommended and more secure authentication mechanism."
+      },
+      {
+        "id": "P15",
+        "type": "MCQ",
+        "question": "What is the purpose of MongoDB's role-based access control (RBAC)?",
+        "options": {
+          "A": "To limit database size",
+          "B": "To define what operations users can perform",
+          "C": "To improve query performance",
+          "D": "To manage indexes"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "RBAC restricts user actions by assigning roles that define permitted operations."
+      }
+    ]
+  },
+  {
+    "exam": "MongoDB Fundamentals",
+    "batch": 4,
+    "source": "PDF only",
+    "questions": [
+      {
+        "id": "P16",
+        "type": "MCQ",
+        "question": "What is the purpose of the $expr operator in MongoDB queries?",
+        "options": {
+          "A": "To execute JavaScript functions",
+          "B": "To use aggregation expressions in query language",
+          "C": "To export query results",
+          "D": "To explain query execution plans"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "$expr allows the use of aggregation expressions within standard find queries."
+      },
+      {
+        "id": "P17",
+        "type": "MCQ",
+        "question": "What does the $facet stage in an aggregation pipeline allow?",
+        "options": {
+          "A": "Create multiple pipelines from a single input",
+          "B": "Join collections efficiently",
+          "C": "Perform full-text searches",
+          "D": "Encrypt aggregation results"
+        },
+        "correct_answers": [
+          "A"
+        ],
+        "explanation": "$facet enables multiple aggregation pipelines to run in parallel on the same input documents."
+      },
+      {
+        "id": "P18",
+        "type": "MCQ",
+        "question": "Which tool or feature can be used to analyze query performance in MongoDB?",
+        "options": {
+          "A": "mongostat",
+          "B": "explain()",
+          "C": "db.currentOp()",
+          "D": "All of the above"
+        },
+        "correct_answers": [
+          "D"
+        ],
+        "explanation": "All listed tools provide insights into query execution and performance behavior."
+      },
+      {
+        "id": "P19",
+        "type": "MCQ",
+        "question": "Which read concern level provides the strongest consistency guarantee?",
+        "options": {
+          "A": "local",
+          "B": "available",
+          "C": "majority",
+          "D": "linearizable"
+        },
+        "correct_answers": [
+          "D"
+        ],
+        "explanation": "linearizable ensures operations reflect the most recent successful write."
+      },
+      {
+        "id": "P20",
+        "type": "MCQ",
+        "question": "What is the maximum duration allowed for a multi-document transaction in MongoDB?",
+        "options": {
+          "A": "30 seconds",
+          "B": "60 seconds",
+          "C": "120 seconds",
+          "D": "No strict limit"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "MongoDB enforces a 60-second limit on multi-document transactions by default."
+      }
+    ]
+  },
+  {
+    "exam": "MongoDB Fundamentals",
+    "batch": 5,
+    "source": "PDF only",
+    "questions": [
+      {
+        "id": "P21",
+        "type": "MCQ",
+        "question": "When would you use the Bucket Pattern in MongoDB schema design?",
+        "options": {
+          "A": "To store time-series data efficiently",
+          "B": "To implement many-to-many relationships",
+          "C": "To handle large binary files",
+          "D": "To create hierarchical data structures"
+        },
+        "correct_answers": [
+          "A"
+        ],
+        "explanation": "The Bucket Pattern groups related time-series data into buckets to reduce document growth and improve performance."
+      },
+      {
+        "id": "P22",
+        "type": "MCQ",
+        "question": "What is the primary advantage of the Extended Reference Pattern?",
+        "options": {
+          "A": "It reduces the need for joins",
+          "B": "It improves write performance",
+          "C": "It automatically creates indexes",
+          "D": "It enforces schema validation"
+        },
+        "correct_answers": [
+          "A"
+        ],
+        "explanation": "Extended references duplicate frequently accessed data to reduce the need for additional queries or joins."
+      },
+      {
+        "id": "P23",
+        "type": "MCQ",
+        "question": "Which schema design pattern is best suited for product catalogs with variable attributes?",
+        "options": {
+          "A": "Polymorphic Pattern",
+          "B": "Attribute Pattern",
+          "C": "Subset Pattern",
+          "D": "Outlier Pattern"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "The Attribute Pattern allows flexible storage of variable or sparse attributes without altering schema."
+      },
+      {
+        "id": "P24",
+        "type": "MCQ",
+        "question": "What is the purpose of change streams in MongoDB?",
+        "options": {
+          "A": "To monitor real-time data changes",
+          "B": "To improve replication speed",
+          "C": "To change database configurations",
+          "D": "To stream data to external systems"
+        },
+        "correct_answers": [
+          "A"
+        ],
+        "explanation": "Change streams allow applications to listen to real-time insert, update, and delete events."
+      },
+      {
+        "id": "P25",
+        "type": "MCQ",
+        "question": "Which MongoDB feature enables efficient storage and querying of geospatial data?",
+        "options": {
+          "A": "GridFS",
+          "B": "2dsphere indexes",
+          "C": "Text indexes",
+          "D": "Wildcard indexes"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "2dsphere indexes support geospatial queries using GeoJSON objects."
+      }
+    ]
+  },
+  {
+    "exam": "MongoDB Fundamentals",
+    "batch": 6,
+    "source": "PDF only",
+    "questions": [
+      {
+        "id": "P26",
+        "type": "MCQ",
+        "question": "What is the correct command to start a MongoDB server with default settings?",
+        "options": {
+          "A": "start mongodb",
+          "B": "mongod --start",
+          "C": "mongod",
+          "D": "mongo --start-server"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "Running mongod without arguments starts the MongoDB server with default configuration."
+      },
+      {
+        "id": "P27",
+        "type": "MCQ",
+        "question": "Which parameter specifies a custom data directory when starting mongod?",
+        "options": {
+          "A": "--dbpath /data/db",
+          "B": "--datadir /data/db",
+          "C": "--storage /data/db",
+          "D": "--directory /data/db"
+        },
+        "correct_answers": [
+          "A"
+        ],
+        "explanation": "--dbpath defines the directory where MongoDB stores its data files."
+      },
+      {
+        "id": "P28",
+        "type": "MCQ",
+        "question": "Which command verifies that mongod is running on a Linux system?",
+        "options": {
+          "A": "ps aux | grep mongod",
+          "B": "mongod --status",
+          "C": "service mongod check",
+          "D": "db.serverStatus()"
+        },
+        "correct_answers": [
+          "A"
+        ],
+        "explanation": "ps aux | grep mongod lists active mongod processes on Linux."
+      },
+      {
+        "id": "P29",
+        "type": "MCQ",
+        "question": "Which mongosh command checks whether you are connected to a running MongoDB server?",
+        "options": {
+          "A": "db.isConnected()",
+          "B": "db.serverStatus()",
+          "C": "db.runCommand({ping: 1})",
+          "D": "show connections"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "The ping command confirms connectivity with the MongoDB server."
+      },
+      {
+        "id": "P30",
+        "type": "MCQ",
+        "question": "What is the proper way to cleanly shut down a mongod instance?",
+        "options": {
+          "A": "mongod --stop",
+          "B": "db.shutdownServer() in mongosh",
+          "C": "kill -9 <pid>",
+          "D": "service mongod kill"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "db.shutdownServer() performs a graceful shutdown, ensuring data integrity."
+      }
+    ]
+  },
+  {
+    "exam": "MongoDB Fundamentals",
+    "batch": 7,
+    "source": "PDF only",
+    "questions": [
+      {
+        "id": "P31",
+        "type": "MCQ",
+        "question": "What does a 'Replication lag' alert usually indicate in MongoDB?",
+        "options": {
+          "A": "The primary node is overloaded",
+          "B": "Secondaries are falling behind the primary in applying operations",
+          "C": "The oplog is full",
+          "D": "Network latency between clients and MongoDB"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "Replication lag means secondary nodes are not keeping up with the primary’s oplog."
+      },
+      {
+        "id": "P32",
+        "type": "MCQ",
+        "question": "Which MongoDB command shows all currently executing operations?",
+        "options": {
+          "A": "db.currentOp()",
+          "B": "db.adminCommand({currentOp: 1})",
+          "C": "show current operations",
+          "D": "Both A and B"
+        },
+        "correct_answers": [
+          "D"
+        ],
+        "explanation": "Both commands are equivalent and return details about running operations."
+      },
+      {
+        "id": "P33",
+        "type": "MCQ",
+        "question": "Which field in currentOp output indicates that a query is blocking other operations?",
+        "options": {
+          "A": "waitingForLock",
+          "B": "lockStats",
+          "C": "blocking",
+          "D": "active"
+        },
+        "correct_answers": [
+          "A"
+        ],
+        "explanation": "waitingForLock: true indicates the operation is blocked by a lock."
+      },
+      {
+        "id": "P34",
+        "type": "MCQ",
+        "question": "Which command shows storage utilization per database?",
+        "options": {
+          "A": "db.stats()",
+          "B": "db.adminCommand({listDatabases: 1})",
+          "C": "show storage",
+          "D": "db.serverStatus().storage"
+        },
+        "correct_answers": [
+          "A"
+        ],
+        "explanation": "db.stats() provides database-level storage and collection statistics."
+      },
+      {
+        "id": "P35",
+        "type": "MCQ",
+        "question": "What happens when MongoDB runs out of disk space?",
+        "options": {
+          "A": "Automatically deletes old data",
+          "B": "Switches to read-only mode",
+          "C": "Shuts down gracefully",
+          "D": "Continues operating normally"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "MongoDB enters read-only mode to prevent data corruption when disk space is exhausted."
+      }
+    ]
+  },
+  {
+    "exam": "MongoDB Fundamentals",
+    "batch": 8,
+    "source": "PDF only",
+    "questions": [
+      {
+        "id": "P36",
+        "type": "MCQ",
+        "question": "What is the primary purpose of MongoDB replication?",
+        "options": {
+          "A": "To increase storage capacity",
+          "B": "To provide high availability and data redundancy",
+          "C": "To improve query performance",
+          "D": "To enable sharding"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "Replication ensures data redundancy and allows automatic failover when the primary node fails."
+      },
+      {
+        "id": "P37",
+        "type": "MCQ",
+        "question": "In a replica set, what is the role of the primary node?",
+        "options": {
+          "A": "To handle only read operations",
+          "B": "To receive all write operations and record them in the oplog",
+          "C": "To act as a backup only",
+          "D": "To route queries to shards"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "The primary node handles all write operations and records them in the oplog for replication."
+      },
+      {
+        "id": "P38",
+        "type": "MCQ",
+        "question": "Which event triggers a replica set election?",
+        "options": {
+          "A": "A new index is created",
+          "B": "The primary becomes unavailable",
+          "C": "The oplog reaches its size limit",
+          "D": "A secondary receives a write"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "Elections occur when the primary node becomes unreachable or steps down."
+      },
+      {
+        "id": "P39",
+        "type": "MCQ",
+        "question": "Why is an odd number of voting members recommended in a replica set?",
+        "options": {
+          "A": "To increase storage capacity",
+          "B": "To avoid split-brain during elections",
+          "C": "To improve write performance",
+          "D": "To enable sharding"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "An odd number of voters prevents election ties and ensures a clear majority."
+      },
+      {
+        "id": "P40",
+        "type": "MCQ",
+        "question": "Why would you use writeConcern { w: \"majority\" }?",
+        "options": {
+          "A": "To speed up writes",
+          "B": "To guarantee writes are durable across multiple nodes",
+          "C": "To disable journaling",
+          "D": "To limit write operations"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "w:\"majority\" ensures the write is acknowledged only after being committed to a majority of replica set members."
+      }
+    ]
+  },
+  {
+    "exam": "MongoDB Fundamentals",
+    "batch": 9,
+    "source": "PDF only",
+    "questions": [
+      {
+        "id": "P41",
+        "type": "MCQ",
+        "question": "When would you use readPreference: \"secondary\" in MongoDB?",
+        "options": {
+          "A": "When you need the most up-to-date data",
+          "B": "When you want to distribute read load from the primary",
+          "C": "When performing write operations",
+          "D": "When using a standalone MongoDB server"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "secondary read preference offloads read operations from the primary to secondary nodes."
+      },
+      {
+        "id": "P42",
+        "type": "MCQ",
+        "question": "What is the purpose of the oplog in a MongoDB replica set?",
+        "options": {
+          "A": "To store user credentials",
+          "B": "To record all write operations for replication",
+          "C": "To optimize query performance",
+          "D": "To manage sharding metadata"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "The oplog records all write operations so secondaries can replicate changes from the primary."
+      },
+      {
+        "id": "P43",
+        "type": "MCQ",
+        "question": "What happens if a secondary node cannot keep up with the primary’s oplog?",
+        "options": {
+          "A": "The primary stops accepting writes",
+          "B": "The secondary automatically resyncs",
+          "C": "The secondary becomes primary",
+          "D": "Replication stops permanently"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "If the oplog is exceeded, the secondary performs a resync to catch up."
+      },
+      {
+        "id": "P44",
+        "type": "MCQ",
+        "question": "Which read preference mode is best for geographically local reads in a global replica set?",
+        "options": {
+          "A": "primary",
+          "B": "secondaryPreferred",
+          "C": "nearest",
+          "D": "primaryPreferred"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "nearest routes reads to the node with the lowest network latency."
+      },
+      {
+        "id": "P45",
+        "type": "MCQ",
+        "question": "What is the minimum number of nodes required to maintain availability during a single node failure?",
+        "options": {
+          "A": "1",
+          "B": "2",
+          "C": "3",
+          "D": "4"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "Three nodes allow a majority vote even if one node fails."
+      }
+    ]
+  },
+  {
+    "exam": "MongoDB Fundamentals",
+    "batch": 10,
+    "source": "PDF only",
+    "questions": [
+      {
+        "id": "P46",
+        "type": "MCQ",
+        "question": "Which encryption method protects data at rest in MongoDB?",
+        "options": {
+          "A": "TLS/SSL",
+          "B": "Field-level encryption",
+          "C": "WiredTiger encryption",
+          "D": "All of the above"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "WiredTiger encryption encrypts data files on disk, protecting data at rest."
+      },
+      {
+        "id": "P47",
+        "type": "MCQ",
+        "question": "What is the primary purpose of MongoDB's auditing capability?",
+        "options": {
+          "A": "To automatically fix security vulnerabilities",
+          "B": "To track database operations for compliance",
+          "C": "To encrypt all network traffic",
+          "D": "To prevent injection attacks"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "Auditing records database activity to help meet security and compliance requirements."
+      },
+      {
+        "id": "P48",
+        "type": "MCQ",
+        "question": "Which MongoDB role provides the most comprehensive administrative privileges?",
+        "options": {
+          "A": "dbAdmin",
+          "B": "userAdmin",
+          "C": "clusterAdmin",
+          "D": "root"
+        },
+        "correct_answers": [
+          "D"
+        ],
+        "explanation": "The root role grants full administrative access across all databases and clusters."
+      },
+      {
+        "id": "P49",
+        "type": "MCQ",
+        "question": "Which authentication mechanism is recommended for secure MongoDB deployments?",
+        "options": {
+          "A": "SCRAM-SHA-1",
+          "B": "SCRAM-SHA-256",
+          "C": "Plain text authentication",
+          "D": "Anonymous access"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "SCRAM-SHA-256 provides stronger cryptographic security than SCRAM-SHA-1."
+      },
+      {
+        "id": "P50",
+        "type": "MCQ",
+        "question": "Which feature helps MongoDB meet compliance requirements by tracking user actions?",
+        "options": {
+          "A": "Profiler",
+          "B": "Auditing",
+          "C": "Change Streams",
+          "D": "Indexes"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "Auditing logs user actions and database operations for compliance and security analysis."
+      }
+    ]
+  },
+  {
+    "exam": "MongoDB Fundamentals",
+    "batch": 11,
+    "source": "PDF only",
+    "questions": [
+      {
+        "id": "P51",
+        "type": "MCQ",
+        "question": "What does the $graphLookup stage enable in MongoDB aggregation pipelines?",
+        "options": {
+          "A": "Graph database capabilities",
+          "B": "Recursive searches on hierarchical data",
+          "C": "Visualization of query plans",
+          "D": "Machine learning predictions"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "$graphLookup performs recursive searches, making it useful for hierarchical or graph-like data."
+      },
+      {
+        "id": "P52",
+        "type": "MCQ",
+        "question": "When would you use the $out aggregation stage?",
+        "options": {
+          "A": "To export data to a file",
+          "B": "To write results to a new collection",
+          "C": "To output query execution statistics",
+          "D": "To terminate an aggregation pipeline"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "$out writes the aggregation result set to a collection."
+      },
+      {
+        "id": "P53",
+        "type": "MCQ",
+        "question": "Which MongoDB feature allows monitoring real-time data changes in collections?",
+        "options": {
+          "A": "Profiler",
+          "B": "Change Streams",
+          "C": "Auditing",
+          "D": "Replication"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "Change Streams provide real-time notifications of data changes."
+      },
+      {
+        "id": "P54",
+        "type": "MCQ",
+        "question": "Which index type supports efficient full-text search in MongoDB?",
+        "options": {
+          "A": "Hashed index",
+          "B": "Wildcard index",
+          "C": "Text index",
+          "D": "2dsphere index"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "Text indexes enable full-text search capabilities in MongoDB."
+      },
+      {
+        "id": "P55",
+        "type": "MCQ",
+        "question": "Which MongoDB feature allows storing and retrieving large binary files?",
+        "options": {
+          "A": "GridFS",
+          "B": "WiredTiger",
+          "C": "Change Streams",
+          "D": "Oplog"
+        },
+        "correct_answers": [
+          "A"
+        ],
+        "explanation": "GridFS splits large files into chunks and stores them efficiently in MongoDB."
+      }
+    ]
+  },
+  {
+    "exam": "MongoDB Fundamentals",
+    "batch": 12,
+    "source": "PDF only",
+    "questions": [
+      {
+        "id": "P56",
+        "type": "MCQ",
+        "question": "Which of the following is an improperly formed MongoDB insert command?",
+        "options": {
+          "A": "db.users.insertOne({name: \"Alice\", age: 25})",
+          "B": "db.users.insert({name: \"Bob\", age: \"30\"})",
+          "C": "db.users.insertOne({_id: 1, name: \"Charlie\"})",
+          "D": "db.users.insert({name: \"Dave\", age: null})"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "The command is considered improper if age was intended to be numeric but is stored as a string."
+      },
+      {
+        "id": "P57",
+        "type": "MCQ",
+        "question": "What happens when you run replaceOne() without update operators?",
+        "options": {
+          "A": "Only specified fields are updated",
+          "B": "The entire document is replaced",
+          "C": "The update fails",
+          "D": "Only missing fields are added"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "replaceOne() performs a full document replacement, removing any fields not included."
+      },
+      {
+        "id": "P58",
+        "type": "MCQ",
+        "question": "Which command inserts a document if no matching document exists?",
+        "options": {
+          "A": "updateOne() without operators",
+          "B": "insertOne()",
+          "C": "updateOne() with upsert: true",
+          "D": "replaceOne()"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "upsert: true causes MongoDB to insert a new document when no match is found."
+      },
+      {
+        "id": "P59",
+        "type": "MCQ",
+        "question": "Which method correctly deletes a single matching document?",
+        "options": {
+          "A": "db.collection.delete()",
+          "B": "db.collection.deleteOne()",
+          "C": "db.collection.removeOne()",
+          "D": "db.collection.dropOne()"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "deleteOne() removes only the first document that matches the filter."
+      },
+      {
+        "id": "P60",
+        "type": "MCQ",
+        "question": "Which operation is atomic at the document level in MongoDB?",
+        "options": {
+          "A": "updateMany()",
+          "B": "findAndModify()",
+          "C": "insertMany()",
+          "D": "aggregate()"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "findAndModify() is atomic for a single document, ensuring safe concurrent updates."
+      }
+    ]
+  },
+  {
+    "exam": "MongoDB Fundamentals",
+    "batch": 13,
+    "source": "PDF only",
+    "questions": [
+      {
+        "id": "P61",
+        "type": "MCQ",
+        "question": "How do you find a document where the field x has the value 3?",
+        "options": {
+          "A": "db.collection.find({x: {$eq: 3}})",
+          "B": "db.collection.findOne({3: x})",
+          "C": "db.collection.find({x: 3})"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "MongoDB supports direct equality matching without requiring the $eq operator."
+      },
+      {
+        "id": "P62",
+        "type": "MCQ",
+        "question": "Which documents match the query db.items.find({tags: [\"red\", \"blue\"]})?",
+        "options": {
+          "A": "Documents where tags contain red and blue in any order",
+          "B": "Documents where tags exactly match [\"red\", \"blue\"]",
+          "C": "Documents where tags contain either red or blue",
+          "D": "Documents where tags is a string value"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "Array equality requires the same elements in the same order."
+      },
+      {
+        "id": "P63",
+        "type": "MCQ",
+        "question": "Which query finds documents where one array element satisfies multiple conditions?",
+        "options": {
+          "A": "Using $and",
+          "B": "Using $elemMatch",
+          "C": "Using $in",
+          "D": "Using $all"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "$elemMatch ensures all conditions apply to the same array element."
+      },
+      {
+        "id": "P64",
+        "type": "MCQ",
+        "question": "Which projection syntax is invalid in MongoDB?",
+        "options": {
+          "A": "db.users.find({}, {name: 1, _id: 0})",
+          "B": "db.users.find({}, {name: 1, age: 1})",
+          "C": "db.users.find({}, {name: \"true\", age: \"true\"})"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "Projection values must be numeric (1 or 0), not strings."
+      },
+      {
+        "id": "P65",
+        "type": "MCQ",
+        "question": "Which operator finds documents where a field value exists in a specified list?",
+        "options": {
+          "A": "$all",
+          "B": "$in",
+          "C": "$elemMatch",
+          "D": "$eq"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "$in matches values against an array of possible values."
+      }
+    ]
+  },
+  {
+    "exam": "MongoDB Fundamentals",
+    "batch": 14,
+    "source": "PDF only",
+    "questions": [
+      {
+        "id": "P66",
+        "type": "MCQ",
+        "question": "What does db.products.find().sort({price: -1}).limit(2) return?",
+        "options": {
+          "A": "The two cheapest products",
+          "B": "The two most expensive products",
+          "C": "Products sorted randomly",
+          "D": "All products sorted by price"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "Sorting by -1 orders documents in descending order, and limit(2) returns the top two results."
+      },
+      {
+        "id": "P67",
+        "type": "MCQ",
+        "question": "Which aggregation stage is typically used first to improve performance?",
+        "options": {
+          "A": "$group",
+          "B": "$project",
+          "C": "$match",
+          "D": "$sort"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "Using $match early reduces the number of documents flowing through the pipeline."
+      },
+      {
+        "id": "P68",
+        "type": "MCQ",
+        "question": "What is the main benefit of using a covered query?",
+        "options": {
+          "A": "Reduced memory usage",
+          "B": "Faster query execution without scanning documents",
+          "C": "Automatic sharding",
+          "D": "Improved write performance"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "Covered queries are satisfied entirely by indexes, avoiding document scans."
+      },
+      {
+        "id": "P69",
+        "type": "MCQ",
+        "question": "Which aggregation pipeline combination filters documents and then groups results?",
+        "options": {
+          "A": "$group → $match",
+          "B": "$project → $sort",
+          "C": "$match → $group",
+          "D": "$sort → $limit"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "$match filters input documents and $group aggregates the filtered result set."
+      },
+      {
+        "id": "P70",
+        "type": "MCQ",
+        "question": "Which aggregation stage limits the number of documents passed to the next stage?",
+        "options": {
+          "A": "$sort",
+          "B": "$group",
+          "C": "$limit",
+          "D": "$project"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "$limit restricts the number of documents flowing through the pipeline."
+      }
+    ]
+  },
+  {
+    "exam": "MongoDB Fundamentals",
+    "batch": 15,
+    "source": "PDF only",
+    "questions": [
+      {
+        "id": "P71",
+        "type": "MCQ",
+        "question": "What is the recommended modern method to count documents matching a condition in MongoDB?",
+        "options": {
+          "A": "db.collection.count()",
+          "B": "db.collection.find().count()",
+          "C": "db.collection.countDocuments()",
+          "D": "db.collection.estimatedCount()"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "countDocuments() is the preferred and accurate method; older count methods are deprecated."
+      },
+      {
+        "id": "P72",
+        "type": "MCQ",
+        "question": "Which MongoDB command displays current connection statistics?",
+        "options": {
+          "A": "db.serverStatus().connections",
+          "B": "db.currentOp()",
+          "C": "db.stats()",
+          "D": "db.getConnections()"
+        },
+        "correct_answers": [
+          "A"
+        ],
+        "explanation": "serverStatus().connections reports active, available, and total connections."
+      },
+      {
+        "id": "P73",
+        "type": "MCQ",
+        "question": "Which command shows the storage engine configuration in MongoDB?",
+        "options": {
+          "A": "db.stats().engine",
+          "B": "db.serverStatus().storageEngine",
+          "C": "db.getStorageEngines()",
+          "D": "show engine status"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "serverStatus().storageEngine reveals the active storage engine and its configuration."
+      },
+      {
+        "id": "P74",
+        "type": "MCQ",
+        "question": "Which signal should be sent to mongod for a graceful shutdown at the OS level?",
+        "options": {
+          "A": "SIGKILL (9)",
+          "B": "SIGTERM (15)",
+          "C": "SIGINT (2)",
+          "D": "SIGHUP (1)"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "SIGTERM allows mongod to shut down cleanly, flushing data safely to disk."
+      },
+      {
+        "id": "P75",
+        "type": "MCQ",
+        "question": "Which tool provides real-time cluster metrics in MongoDB?",
+        "options": {
+          "A": "mongostat",
+          "B": "MongoDB Atlas",
+          "C": "db.currentOp()",
+          "D": "All of the above"
+        },
+        "correct_answers": [
+          "D"
+        ],
+        "explanation": "All listed tools can provide real-time or near real-time monitoring insights."
+      }
+    ]
+  },
+  {
+    "exam": "MongoDB Fundamentals",
+    "batch": 16,
+    "source": "PDF only",
+    "questions": [
+      {
+        "id": "P76",
+        "type": "MCQ",
+        "question": "How do you add a new node to an existing MongoDB replica set?",
+        "options": {
+          "A": "rs.addNode(\"hostname:port\")",
+          "B": "rs.add(\"hostname:port\")",
+          "C": "db.addReplica(\"hostname:port\")",
+          "D": "replicaSet.addMember(\"hostname:port\")"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "rs.add() is the correct command to add a new member to a replica set."
+      },
+      {
+        "id": "P77",
+        "type": "MCQ",
+        "question": "Which command removes a member from a MongoDB replica set?",
+        "options": {
+          "A": "rs.kick(\"hostname:port\")",
+          "B": "rs.remove(\"hostname:port\")",
+          "C": "db.removeNode(\"hostname:port\")",
+          "D": "replicaSet.removeMember(\"hostname:port\")"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "rs.remove() cleanly removes a member from the replica set configuration."
+      },
+      {
+        "id": "P78",
+        "type": "MCQ",
+        "question": "Which command displays the current replica set configuration?",
+        "options": {
+          "A": "rs.status()",
+          "B": "rs.config()",
+          "C": "db.getReplicaSetStatus()",
+          "D": "show replica config"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "rs.config() shows the replica set configuration document."
+      },
+      {
+        "id": "P79",
+        "type": "MCQ",
+        "question": "What is the correct sequence to initialize a new MongoDB replica set?",
+        "options": {
+          "A": "Start mongod → rs.initiate() → connect → add members",
+          "B": "Start mongod with --replSet → connect → rs.initiate() → rs.add()",
+          "C": "rs.initiate() → start mongod → rs.add()",
+          "D": "Start mongod → add members → rs.initiate()"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "Replica set initialization requires starting mongod with --replSet, initiating, then adding members."
+      },
+      {
+        "id": "P80",
+        "type": "MCQ",
+        "question": "Which command shows the health and state of all replica set members?",
+        "options": {
+          "A": "rs.config()",
+          "B": "rs.status()",
+          "C": "db.replicaHealth()",
+          "D": "show repl status"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "rs.status() reports member state, health, and replication info."
+      }
+    ]
+  },
+  {
+    "exam": "MongoDB Fundamentals",
+    "batch": 17,
+    "source": "PDF only",
+    "questions": [
+      {
+        "id": "P81",
+        "type": "MCQ",
+        "question": "What does a \"High resident memory usage\" alert typically indicate?",
+        "options": {
+          "A": "MongoDB is running out of disk space",
+          "B": "MongoDB is using too much RAM for its working set",
+          "C": "Too many client connections are open",
+          "D": "Indexes are corrupted"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "High resident memory usage means the working set is too large to fit comfortably in RAM."
+      },
+      {
+        "id": "P82",
+        "type": "MCQ",
+        "question": "Which log message most clearly indicates critically low disk space?",
+        "options": {
+          "A": "Disk space is almost full",
+          "B": "Storage engine is in read-only mode",
+          "C": "No space left on device",
+          "D": "All of the above"
+        },
+        "correct_answers": [
+          "D"
+        ],
+        "explanation": "All listed messages indicate serious disk exhaustion conditions."
+      },
+      {
+        "id": "P83",
+        "type": "MCQ",
+        "question": "What happens when MongoDB runs completely out of disk space?",
+        "options": {
+          "A": "MongoDB deletes old data automatically",
+          "B": "MongoDB switches to read-only mode",
+          "C": "MongoDB shuts down immediately",
+          "D": "MongoDB continues normally"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "MongoDB enters read-only mode to prevent data corruption."
+      },
+      {
+        "id": "P84",
+        "type": "MCQ",
+        "question": "If MongoDB crashes and logs show \"Out of memory: Kill process\", what most likely occurred?",
+        "options": {
+          "A": "Disk failure",
+          "B": "Linux OOM killer terminated mongod",
+          "C": "Replica set election",
+          "D": "Index rebuild failure"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "The Linux OOM killer stops processes when the system runs out of memory."
+      },
+      {
+        "id": "P85",
+        "type": "MCQ",
+        "question": "Which MongoDB field helps identify blocking operations in currentOp output?",
+        "options": {
+          "A": "active",
+          "B": "waitingForLock",
+          "C": "secs_running",
+          "D": "opid"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "waitingForLock indicates that an operation is blocked waiting for a lock."
+      }
+    ]
+  },
+  {
+    "exam": "MongoDB Fundamentals",
+    "batch": 18,
+    "source": "PDF only",
+    "questions": [
+      {
+        "id": "P86",
+        "type": "MCQ",
+        "question": "Which command checks whether you are connected to a running MongoDB server?",
+        "options": {
+          "A": "db.isConnected()",
+          "B": "db.serverStatus()",
+          "C": "db.runCommand({ping: 1})",
+          "D": "show connections"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "The ping command confirms connectivity between the client and MongoDB server."
+      },
+      {
+        "id": "P87",
+        "type": "MCQ",
+        "question": "Which command displays the list of available databases in mongosh?",
+        "options": {
+          "A": "show dbs",
+          "B": "db.listDatabases()",
+          "C": "list databases",
+          "D": "db.showDatabases()"
+        },
+        "correct_answers": [
+          "A"
+        ],
+        "explanation": "show dbs is the standard mongosh command to list all databases."
+      },
+      {
+        "id": "P88",
+        "type": "MCQ",
+        "question": "Which MongoDB component stores metadata about chunk distribution in a sharded cluster?",
+        "options": {
+          "A": "mongod",
+          "B": "mongos",
+          "C": "config servers",
+          "D": "arbiter"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "Config servers store metadata such as chunk ranges and shard locations."
+      },
+      {
+        "id": "P89",
+        "type": "MCQ",
+        "question": "Which sharding strategy is best suited for monotonically increasing shard keys?",
+        "options": {
+          "A": "Range-based sharding",
+          "B": "Hash-based sharding",
+          "C": "Zone sharding",
+          "D": "Tag-aware sharding"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "Hash-based sharding distributes writes evenly and avoids hotspot issues."
+      },
+      {
+        "id": "P90",
+        "type": "MCQ",
+        "question": "What happens automatically when a MongoDB chunk exceeds the default size?",
+        "options": {
+          "A": "The shard crashes",
+          "B": "Writes are blocked",
+          "C": "The chunk splits automatically",
+          "D": "A new index is created"
+        },
+        "correct_answers": [
+          "C"
+        ],
+        "explanation": "MongoDB automatically splits chunks once they exceed the configured chunk size."
+      }
+    ]
+  },
+  {
+    "exam": "MongoDB C100DBA Demo",
+    "batch": "NEW_ONLY",
+    "source": "ilide.info-c100dba-demo",
+    "questions": [
+      {
+        "id": "C100-NEW-01",
+        "type": "MCQ",
+        "question": "Which MongoDB tools allow you to work with your data in a human-readable format?",
+        "options": {
+          "A": "mongodump",
+          "B": "mongostat",
+          "C": "mongoimport",
+          "D": "mongoexport"
+        },
+        "correct_answers": [
+          "C",
+          "D"
+        ],
+        "explanation": "mongoimport and mongoexport work with Extended JSON, CSV, and TSV formats, which are human-readable. mongodump creates binary BSON backups."
+      },
+      {
+        "id": "C100-NEW-02",
+        "type": "MCQ",
+        "question": "In a sharded cluster, from which node should the balancer process be stopped before initiating a backup?",
+        "options": {
+          "A": "Any shard node",
+          "B": "Replica set primary node",
+          "C": "Config server node",
+          "D": "mongos node"
+        },
+        "correct_answers": [
+          "D"
+        ],
+        "explanation": "The balancer runs through mongos. Stopping it via mongos ensures chunks are not migrated during backup."
+      },
+      {
+        "id": "C100-NEW-03",
+        "type": "MCQ",
+        "question": "Which command is used to determine storage capacity details of a specific database in MongoDB?",
+        "options": {
+          "A": "mongotop",
+          "B": "db.stats()",
+          "C": "mongostat",
+          "D": "connStats"
+        },
+        "correct_answers": [
+          "B"
+        ],
+        "explanation": "db.stats() provides database-level storage statistics including data size and index size."
+      }
+    ]
+  }
+]

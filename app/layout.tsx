@@ -50,6 +50,8 @@ export const viewport = {
   ],
 };
 
+import { Toaster } from "sonner";
+
 export default function RootLayout({
   children,
 }: {
@@ -61,6 +63,7 @@ export default function RootLayout({
       <body className={`${inter.variable} ${outfit.variable} font-sans scroll-smooth antialiased [font-feature-settings:'ss01'] bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300`}>
         <Providers>
           {children}
+          <Toaster position="top-center" richColors />
         </Providers>
       </body>
     </html>

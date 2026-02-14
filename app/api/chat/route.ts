@@ -1,4 +1,3 @@
-import { StreamingTextResponse } from 'ai';
 import { Groq } from 'groq-sdk';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { BOB_SYSTEM_PROMPT } from '@/lib/constants';
@@ -21,31 +20,44 @@ export async function POST(req: Request) {
       try {
         console.log("🦁 Bob is using Gemini...");
         const genAI = new GoogleGenerativeAI(geminiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ 
+          model: "gemini-1.5-flash",
+          systemInstruction: systemPrompt
+        });
 
         const result = await model.generateContentStream({
-          contents: [
-            { role: 'user', parts: [{ text: systemPrompt }] },
-            ...messages.map((m: any) => ({
+          contents: messages
+            .filter((m: any, i: number) => !(i === 0 && m.role === 'assistant'))
+            .map((m: any) => ({
               role: m.role === 'assistant' ? 'model' : 'user',
               parts: [{ text: m.content }]
-            }))
-          ],
+            })),
           generationConfig: { temperature: 0.5, maxOutputTokens: 1000 }
         });
 
         const stream = new ReadableStream({
           async start(controller) {
             const encoder = new TextEncoder();
-            for await (const chunk of result.stream) {
-              const text = chunk.text();
-              if (text) controller.enqueue(encoder.encode(text));
+            try {
+              for await (const chunk of result.stream) {
+                const text = chunk.text();
+                // Format for Vercel AI Data Stream Protocol: 0:"text"\n
+                if (text) controller.enqueue(encoder.encode(`0:${JSON.stringify(text)}\n`));
+              }
+            } catch (e) {
+              console.error("Gemini stream error:", e);
+            } finally {
+              controller.close();
             }
-            controller.close();
           }
         });
 
-        return new StreamingTextResponse(stream);
+        return new Response(stream, {
+          headers: {
+            'Content-Type': 'text/plain; charset=utf-8',
+            'x-vercel-ai-data-stream': 'v1',
+          }
+        });
 
       } catch (geminiErr: any) {
         console.warn("⚠️ Bob Gemini failed, falling back to Groq:", geminiErr.message);
@@ -73,15 +85,26 @@ export async function POST(req: Request) {
     const stream = new ReadableStream({
       async start(controller) {
         const encoder = new TextEncoder();
-        for await (const chunk of completion) {
-          const text = chunk.choices[0]?.delta?.content || '';
-          if (text) controller.enqueue(encoder.encode(text));
+        try {
+          for await (const chunk of completion) {
+            const text = chunk.choices[0]?.delta?.content || '';
+            // Format for Vercel AI Data Stream Protocol: 0:"text"\n
+            if (text) controller.enqueue(encoder.encode(`0:${JSON.stringify(text)}\n`));
+          }
+        } catch (e) {
+          console.error("Groq stream error:", e);
+        } finally {
+          controller.close();
         }
-        controller.close();
       },
     });
 
-    return new StreamingTextResponse(stream);
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'x-vercel-ai-data-stream': 'v1',
+      }
+    });
 
   } catch (error: any) {
     console.error("🔥 Bob Chat Error:", error);

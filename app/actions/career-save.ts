@@ -1,9 +1,10 @@
 "use server";
 
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/utils/supabase/server";
 import { CareerAnalysisResult } from "@/types/career";
 
 export async function saveCareerPath(sessionId: string, result: CareerAnalysisResult) {
+  const supabase = createClient();
   try {
     const { error } = await supabase
       .from('career_paths')
@@ -25,6 +26,7 @@ export async function saveCareerPath(sessionId: string, result: CareerAnalysisRe
 }
 
 export async function getRecentCareerPaths(sessionId: string) {
+    const supabase = createClient();
     try {
         const { data, error } = await supabase
             .from('career_paths')

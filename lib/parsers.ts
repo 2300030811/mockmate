@@ -95,11 +95,9 @@ function normalizeQuestion(q: RawQuestion): QuizQuestion | null {
         // Let's assume ID exists or we skip.
     }
 
-    // Handle MongoDB format: correct_answers -> correctAnswer
-    if (newQ.correct_answers && !newQ.correctAnswer) {
-        newQ.correctAnswer = newQ.correct_answers;
-    }
-
+    // Consolidate answer fields
+    const rawAnswer = q.answer || q.correctAnswer || q.correct_answers;
+    
     // Handle Salesforce/MongoDB format: options as object { "A": "...", "B": "..." }
     if (newQ.options && typeof newQ.options === 'object' && !Array.isArray(newQ.options)) {
         const optionsObj = newQ.options as Record<string, string>;
@@ -107,27 +105,51 @@ function normalizeQuestion(q: RawQuestion): QuizQuestion | null {
         newQ.options = sortedKeys.map(key => optionsObj[key]);
         
         // Map correctAnswer key to value
-        if (newQ.correctAnswer) {
-            if (typeof newQ.correctAnswer === 'string') {
-                const key = newQ.correctAnswer as string;
-                if (optionsObj[key]) newQ.answer = optionsObj[key];
-            } else if (Array.isArray(newQ.correctAnswer)) {
-                const keys = newQ.correctAnswer as string[];
-                const mappedAnswers = keys.map(k => optionsObj[k]).filter(Boolean);
-                if (mappedAnswers.length > 0) newQ.answer = mappedAnswers; 
+        if (rawAnswer) {
+            if (typeof rawAnswer === 'string') {
+                if (optionsObj[rawAnswer]) newQ.answer = optionsObj[rawAnswer];
+            } else if (Array.isArray(rawAnswer)) {
+                const mapped = rawAnswer.map(k => optionsObj[k]).filter(Boolean);
+                if (mapped.length > 0) newQ.answer = mapped;
             }
         }
+    } else if (Array.isArray(newQ.options) && rawAnswer) {
+        // Handle Array options with letter-based answers (Common in Azure/Oracle)
+        const optionsArr = newQ.options as string[];
+        const mapLetterToValue = (val: string) => {
+            if (typeof val === 'string' && val.length === 1 && /[A-Z]/i.test(val)) {
+                const index = val.toUpperCase().charCodeAt(0) - 65;
+                return optionsArr[index] || val;
+            }
+            return val;
+        };
+
+        if (typeof rawAnswer === 'string') {
+            newQ.answer = mapLetterToValue(rawAnswer);
+        } else if (Array.isArray(rawAnswer)) {
+            newQ.answer = (rawAnswer as string[]).map(mapLetterToValue);
+        }
+    } else {
+        newQ.answer = rawAnswer;
     }
 
     // Parse Hotspot Logic
-    const qType = String(newQ.type || "");
+    const qType = String(newQ.type || "").toLowerCase();
+    
     // Default to mcq if type is missing but options exist
     if (!newQ.type && Array.isArray(newQ.options)) {
         newQ.type = "mcq";
     }
 
+    // Detect MSQ if answer is multiple
+    if (Array.isArray(newQ.answer) && (newQ.answer as any[]).length > 1) {
+        newQ.type = "MSQ";
+    } else if (qType === 'multiple' || qType === 'msq') {
+        newQ.type = "MSQ";
+    }
+
     if (
-        (qType === "hotspot" || qType === "drag_drop" || qType === "mcq") &&
+        (newQ.type === "hotspot" || newQ.type === "drag_drop" || newQ.type === "mcq") &&
         (!newQ.answer || (typeof newQ.answer === "object" && Object.keys(newQ.answer as object).length === 0))
         ) {
         const explanation = typeof newQ.explanation === 'string' ? newQ.explanation : undefined;

@@ -3,7 +3,7 @@
 
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { SalesforceQuizShell } from "@/components/salesforce-quiz/SalesforceQuizShell";
+import { UniversalQuizShell } from "@/components/quiz/UniversalQuizShell";
 import { QuizMode } from "@/types";
 
 function SalesforceQuizContent() {
@@ -12,7 +12,7 @@ function SalesforceQuizContent() {
   const countParam = searchParams?.get("count");
   const mode: QuizMode = (modeParam === "exam") ? "exam" : "practice";
 
-  return <SalesforceQuizShell mode={mode} count={countParam} />;
+  return <UniversalQuizShell category="salesforce" mode={mode} count={countParam} />;
 }
 
 export default function SalesforceQuizPage() {

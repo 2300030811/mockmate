@@ -2,13 +2,14 @@ import { QuizQuestion, QuizConfig, QuizMode } from "@/types";
 import { shuffleArray } from "@/utils/quiz-helpers";
 import { AppError, ValidationError } from "@/lib/exceptions";
 import { detectAndParse } from "./parsers";
-import { supabase } from "./supabase";
+import { createClient } from "@/utils/supabase/server";
 
 export class QuizFetcher {
   /**
    * Fetches questions from Supabase database.
    */
   static async fetchQuestionsFromDB(category: string): Promise<QuizQuestion[] | null> {
+    const supabase = createClient();
     try {
       const { data, error } = await supabase
         .from('quizzes')

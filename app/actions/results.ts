@@ -1,6 +1,6 @@
 "use server";
 
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { validateNickname } from "@/utils/moderation";
 
@@ -11,6 +11,7 @@ export async function saveQuizResult(data: {
   totalQuestions: number;
   nickname?: string;
 }) {
+  const supabase = createClient();
   try {
     const { data: { user } } = await supabase.auth.getUser();
     const userId = user?.id || null;
@@ -74,6 +75,7 @@ export async function saveQuizResult(data: {
 }
 
 export async function getRecentResults(sessionId: string) {
+    const supabase = createClient();
     try {
         const { data: { user } } = await supabase.auth.getUser();
         
@@ -102,6 +104,7 @@ export async function getRecentResults(sessionId: string) {
 }
 
 export async function updateQuizResultNickname(id: string, nickname: string) {
+    const supabase = createClient();
     try {
         const validation = validateNickname(nickname);
         if (!validation.success) {
@@ -123,10 +126,11 @@ export async function updateQuizResultNickname(id: string, nickname: string) {
 }
 
 export async function getLeaderboard(category: string) {
+    const supabase = createClient();
     try {
         const { data, error } = await supabase
             .from('quiz_results')
-            .select('nickname, score, total_questions, completed_at')
+            .select('id, nickname, score, total_questions, completed_at')
             .eq('category', category)
             .not('nickname', 'is', null)
             .neq('nickname', '')
@@ -139,5 +143,35 @@ export async function getLeaderboard(category: string) {
     } catch (error: any) {
         console.error("❌ Failed to fetch leaderboard:", error.message);
         return [];
+    }
+}
+
+export async function deleteQuizResult(id: string) {
+    const supabase = createClient();
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("Unauthorized");
+
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+
+        if (profile?.role !== 'admin') {
+            throw new Error("Forbidden: Admin access required");
+        }
+
+        const { error } = await supabase
+            .from('quiz_results')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+        revalidatePath("/");
+        return { success: true };
+    } catch (error: any) {
+        console.error("❌ Failed to delete result:", error.message);
+        return { success: false, error: error.message };
     }
 }
