@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { InteractiveCard } from "@/components/ui/Card";
-import { BrainCircuit, Mic, Trophy, Rocket } from "lucide-react";
+import { BrainCircuit, Mic, Trophy, Rocket, Flame, Layers, Swords } from "lucide-react";
 
 const features = [
   {
@@ -13,7 +13,7 @@ const features = [
     href: "/upload",
     gradient: "from-blue-500 to-cyan-500",
     shadow: "shadow-blue-500/20",
-    delay: 0.4
+    delay: 0.1
   },
   {
     Icon: Mic,
@@ -22,21 +22,48 @@ const features = [
     href: "/demo",
     gradient: "from-purple-500 to-pink-500",
     shadow: "shadow-purple-500/20",
-    delay: 0.5
+    delay: 0.2
+  },
+  {
+    Icon: Swords,
+    title: "The Arena",
+    description: "1v1 high-speed technical duels with live progress tracking",
+    href: "/arena",
+    gradient: "from-red-600 to-orange-600",
+    shadow: "shadow-red-500/20",
+    delay: 0.3
   },
   {
     Icon: Trophy,
-    title: "Certification Quizzes",
-    description: "Prepare for AWS & Azure exams with curated quizzes",
+    title: "Certification Hub",
+    description: "Prepare for AWS, Azure, & Salesforce curated exams",
     href: "/certification",
-    gradient: "from-orange-500 to-amber-500",
+    gradient: "from-orange-400 to-amber-500",
     shadow: "shadow-orange-500/20",
+    delay: 0.4
+  },
+  {
+    Icon: Flame,
+    title: "Resume Roaster",
+    description: "Brutally honest AI analysis of your resume & ATS score",
+    href: "/resume-roaster",
+    gradient: "from-orange-500 to-red-500",
+    shadow: "shadow-red-500/20",
+    delay: 0.5
+  },
+  {
+    Icon: Layers,
+    title: "System Design",
+    description: "Interactive canvas to design and review architectures",
+    href: "/system-design",
+    gradient: "from-blue-600 to-indigo-600",
+    shadow: "shadow-indigo-500/20",
     delay: 0.6
   },
   {
     Icon: Rocket,
-    title: "Career Pathfinder",
-    description: "AI-driven skill gap analysis & personalized learning roadmaps",
+    title: "Career Path",
+    description: "AI-driven skill gap analysis & learning roadmaps",
     href: "/career-path",
     gradient: "from-emerald-500 to-green-500",
     shadow: "shadow-emerald-500/20",
@@ -50,7 +77,7 @@ export function FeatureCards() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, delay: 0.3 }}
-      className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12"
+      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12 text-left px-4"
     >
       {features.map((feature, index) => (
         <motion.div

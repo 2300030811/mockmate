@@ -2,9 +2,15 @@
 
 import Link from "next/link";
 import { Sparkles, Github, Linkedin } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
+  const pathname = usePathname();
+
+  // Hide footer on specific interactive pages
+  const hiddenPaths = ["/system-design", "/arena"];
+  if (hiddenPaths.includes(pathname)) return null;
 
   return (
     <footer className="relative mt-20 border-t border-gray-200 dark:border-gray-800 bg-white/50 dark:bg-gray-950/50 backdrop-blur-md">
@@ -21,7 +27,8 @@ export function Footer() {
               </span>
             </Link>
             <p className="text-gray-500 dark:text-gray-400 max-w-xs leading-relaxed">
-              Your AI-powered companion for mastering technical certifications and acing your dream job interviews.
+              Your AI-powered companion for mastering technical certifications
+              and acing your dream job interviews.
             </p>
           </div>
 
@@ -32,22 +39,38 @@ export function Footer() {
             </h4>
             <ul className="space-y-4">
               <li>
-                <Link href="/aws-quiz" className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors">
+                <Link
+                  href="/aws-quiz"
+                  target="_blank"
+                  className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors"
+                >
                   Cloud Quizzes
                 </Link>
               </li>
               <li>
-                <Link href="/demo" className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors">
+                <Link
+                  href="/demo"
+                  target="_blank"
+                  className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors"
+                >
                   Mock Interview
                 </Link>
               </li>
               <li>
-                <Link href="/career-path" className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors">
+                <Link
+                  href="/career-path"
+                  target="_blank"
+                  className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors"
+                >
                   Career Pathfinder
                 </Link>
               </li>
               <li>
-                <Link href="/upload" className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors">
+                <Link
+                  href="/upload"
+                  target="_blank"
+                  className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors"
+                >
                   PDF Quiz Generator
                 </Link>
               </li>
@@ -60,24 +83,32 @@ export function Footer() {
               Connect
             </h4>
             <div className="flex gap-4">
-              <a 
-                href="https://github.com/2300030811" 
-                target="_blank" 
-                rel="noopener noreferrer"
+              <button
+                onClick={() => {
+                  window.open("https://github.com/2300030811", "_blank");
+                  window.open("https://github.com/ktejaswanth", "_blank");
+                }}
                 className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-blue-600 hover:text-white transition-all"
                 aria-label="GitHub"
               >
                 <Github className="w-5 h-5" />
-              </a>
-              <a 
-                href="https://www.linkedin.com/in/mahesh-sai-bhima-038243286" 
-                target="_blank" 
-                rel="noopener noreferrer"
+              </button>
+              <button
+                onClick={() => {
+                  window.open(
+                    "https://www.linkedin.com/in/mahesh-sai-bhima-038243286",
+                    "_blank",
+                  );
+                  window.open(
+                    "https://www.linkedin.com/in/ktejaswanth/",
+                    "_blank",
+                  );
+                }}
                 className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-blue-700 hover:text-white transition-all"
                 aria-label="LinkedIn"
               >
                 <Linkedin className="w-5 h-5" />
-              </a>
+              </button>
             </div>
           </div>
         </div>
@@ -87,8 +118,18 @@ export function Footer() {
             © {currentYear} MockMate. All rights reserved.
           </p>
           <div className="flex gap-8 text-sm text-gray-500 dark:text-gray-400">
-            <Link href="/privacy" className="hover:text-gray-900 dark:hover:text-white transition-colors">Privacy Policy</Link>
-            <Link href="/terms" className="hover:text-gray-900 dark:hover:text-white transition-colors">Terms of Service</Link>
+            <Link
+              href="/privacy"
+              className="hover:text-gray-900 dark:hover:text-white transition-colors"
+            >
+              Privacy Policy
+            </Link>
+            <Link
+              href="/terms"
+              className="hover:text-gray-900 dark:hover:text-white transition-colors"
+            >
+              Terms of Service
+            </Link>
           </div>
         </div>
       </div>

@@ -95,6 +95,7 @@ export function MultipleChoiceCard({
 
             {question.image && (
                 <div className="my-6 rounded-xl overflow-hidden border border-white/10 shadow-lg">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img 
                         src={question.image} 
                         alt="Question Reference" 

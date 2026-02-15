@@ -20,8 +20,6 @@ const getGroqClient = () => {
     return new Groq({ apiKey });
 };
 
-
-
 export async function chatWithAI(messages: { role: string; content: string }[], type: string): Promise<{ response: string, error?: string }> {
     // Validate input
     const parsed = ChatInputSchema.safeParse(messages);
@@ -33,6 +31,7 @@ export async function chatWithAI(messages: { role: string; content: string }[], 
     try {
         const systemPrompt = `You are a professional technical interviewer conducting a ${type} interview. 
     - Your goal is to assess the candidate's skills with insightful questions.
+    ${type === 'technical' ? '- IMPORTANT: When you ask a coding question or ask the candidate to implement something, EXPLICITLY tell them to "type your solution in the Editor tab on the right".' : ''}
     - Keep your responses concise (1-2 sentences max) so the conversation feels like a real dialogue.
     - Ask one clear question at a time.
     - Acknowledge their answer briefly with "I see", "Great", or "Interesting point" before moving on.
@@ -67,11 +66,11 @@ export async function chatWithAI(messages: { role: string; content: string }[], 
 
             // 2. Fallback to Gemini (Free)
             try {
-                const googleKey = process.env.GOOGLE_API_KEY;
+                const googleKey = getNextKey("GOOGLE_API_KEY") || process.env.GOOGLE_API_KEY;
                 if (!googleKey) throw new Error("No Google Key either");
 
                 const genAI = new GoogleGenerativeAI(googleKey);
-                const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite-preview-02-05" });
+                const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
                 
                 // Gemini expects 'user' | 'model' roles
                 const history = validMessages.slice(0, -1).map((m) => ({
@@ -137,4 +136,3 @@ export async function getSpeechToken(): Promise<{ token: string, region: string,
         return { token: "", region: "", error: "Failed to issue speech token" };
     }
 }
-

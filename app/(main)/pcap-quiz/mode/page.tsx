@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { ModeCard } from "@/components/quiz/ModeCard";
+import { ArrowLeft, Home } from "lucide-react";
+import Link from "next/link";
 
 // --- Icons ---
 const BookIcon = () => <span className="text-5xl">🐍</span>; // Snake for Python
@@ -33,6 +35,21 @@ export default function ModeSelect() {
 
   return (
     <div className="min-h-screen transition-colors duration-500 bg-gradient-to-br from-blue-50 via-white to-yellow-50 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950 pt-20">
+      
+      {/* Navigation Pill */}
+      <div className="absolute top-6 left-6 z-50">
+        <div className="flex items-center gap-2 px-4 py-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-full shadow-lg border border-gray-200 dark:border-gray-700">
+          <button onClick={() => router.back()} className="flex items-center gap-1 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back</span>
+          </button>
+          <div className="w-px h-4 bg-gray-300 dark:bg-gray-600"></div>
+          <Link href="/" className="flex items-center gap-1 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
+            <Home className="w-4 h-4" />
+            <span>Home</span>
+          </Link>
+        </div>
+      </div>
       
       {/* Animated Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -138,9 +155,15 @@ export default function ModeSelect() {
 
             <div className="mb-6 p-4 rounded-lg text-sm bg-blue-50 text-blue-900 dark:bg-blue-500/20 dark:text-blue-200">
               <p>
-                <strong>Note:</strong> Practice mode gives you immediate feedback. Focus on understanding the logic behind code snippets.
+                <strong>Note:</strong> This mode is for study purposes. Correct answers and explanations will be shown immediately after answering.
               </p>
             </div>
+
+            <ul className="space-y-2 text-sm list-disc pl-5 mb-6 text-gray-600 dark:text-gray-400">
+              <li>Accuracy is not guaranteed. Focus on concepts.</li>
+              <li>Questions are from public sources.</li>
+              <li>No timer attached.</li>
+            </ul>
 
             {/* Question Count Selection */}
             <div className="mb-6 p-4 rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-700/30">

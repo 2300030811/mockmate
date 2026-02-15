@@ -12,16 +12,62 @@ export async function POST(req: Request) {
 
     const systemPrompt = `${BOB_SYSTEM_PROMPT}\n\nCONTEXT FROM CURRENT QUESTION:\n${context}`;
 
-    // --- STRATEGY: Gemini (Flash) -> Groq (Llama 3) ---
+    // --- STRATEGY: Groq (Llama 3) -> Gemini (Flash) ---
     
-    // 1. ATTEMPT GEMINI
+    // 1. ATTEMPT GROQ
+    const groqKey = getNextKey("GROQ_API_KEY");
+    if (groqKey) {
+      try {
+        console.log("🦁 Bob is using Groq...");
+        const groq = new Groq({ apiKey: groqKey });
+        
+        const completion = await groq.chat.completions.create({
+          model: 'llama-3.3-70b-versatile',
+          stream: true,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...messages
+          ],
+          temperature: 0.5,
+          max_tokens: 1000,
+        });
+
+        const stream = new ReadableStream({
+          async start(controller) {
+            const encoder = new TextEncoder();
+            try {
+              for await (const chunk of completion) {
+                const text = chunk.choices[0]?.delta?.content || '';
+                if (text) controller.enqueue(encoder.encode(`0:${JSON.stringify(text)}\n`));
+              }
+            } catch (e) {
+              console.error("Groq stream error:", e);
+            } finally {
+              controller.close();
+            }
+          },
+        });
+
+        return new Response(stream, {
+          headers: {
+            'Content-Type': 'text/plain; charset=utf-8',
+            'x-vercel-ai-data-stream': 'v1',
+          }
+        });
+
+      } catch (groqErr: any) {
+        console.warn("⚠️ Bob Groq failed, falling back to Gemini:", groqErr.message);
+      }
+    }
+
+    // 2. FALLBACK TO GEMINI
     const geminiKey = getNextKey("GOOGLE_API_KEY");
     if (geminiKey) {
       try {
         console.log("🦁 Bob is using Gemini...");
         const genAI = new GoogleGenerativeAI(geminiKey);
         const model = genAI.getGenerativeModel({ 
-          model: "gemini-1.5-flash",
+          model: "gemini-2.0-flash",
           systemInstruction: systemPrompt
         });
 
@@ -41,7 +87,6 @@ export async function POST(req: Request) {
             try {
               for await (const chunk of result.stream) {
                 const text = chunk.text();
-                // Format for Vercel AI Data Stream Protocol: 0:"text"\n
                 if (text) controller.enqueue(encoder.encode(`0:${JSON.stringify(text)}\n`));
               }
             } catch (e) {
@@ -60,51 +105,11 @@ export async function POST(req: Request) {
         });
 
       } catch (geminiErr: any) {
-        console.warn("⚠️ Bob Gemini failed, falling back to Groq:", geminiErr.message);
+        console.warn("⚠️ Bob Gemini failed:", geminiErr.message);
       }
     }
 
-    // 2. FALLBACK TO GROQ
-    const groqKey = getNextKey("GROQ_API_KEY");
-    if (!groqKey) throw new Error("No AI keys available for Bob");
-
-    console.log("🦁 Bob is using Groq...");
-    const groq = new Groq({ apiKey: groqKey });
-    
-    const completion = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
-      stream: true,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        ...messages
-      ],
-      temperature: 0.5,
-      max_tokens: 1000,
-    });
-
-    const stream = new ReadableStream({
-      async start(controller) {
-        const encoder = new TextEncoder();
-        try {
-          for await (const chunk of completion) {
-            const text = chunk.choices[0]?.delta?.content || '';
-            // Format for Vercel AI Data Stream Protocol: 0:"text"\n
-            if (text) controller.enqueue(encoder.encode(`0:${JSON.stringify(text)}\n`));
-          }
-        } catch (e) {
-          console.error("Groq stream error:", e);
-        } finally {
-          controller.close();
-        }
-      },
-    });
-
-    return new Response(stream, {
-      headers: {
-        'Content-Type': 'text/plain; charset=utf-8',
-        'x-vercel-ai-data-stream': 'v1',
-      }
-    });
+    throw new Error("No AI services available.");
 
   } catch (error: any) {
     console.error("🔥 Bob Chat Error:", error);

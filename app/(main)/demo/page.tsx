@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useTheme } from "@/components/providers/providers";
 import { Button } from "@/components/ui/Button";
-import { ArrowRight, Users, Code2 } from "lucide-react";
+import { ArrowRight, Users, Code2, ArrowLeft, Home } from "lucide-react";
+import Link from "next/link";
 
 export default function DemoSelection() {
   const router = useRouter();
@@ -42,6 +43,21 @@ export default function DemoSelection() {
 
   return (
     <div className="min-h-screen transition-colors duration-500 bg-gradient-to-br from-gray-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950 flex flex-col items-center justify-center p-4 pt-24 relative overflow-hidden">
+      
+      {/* Navigation Pill */}
+      <div className="absolute top-6 left-6 z-50">
+        <div className="flex items-center gap-2 px-4 py-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-full shadow-lg border border-gray-200 dark:border-gray-700">
+          <button onClick={() => router.back()} className="flex items-center gap-1 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back</span>
+          </button>
+          <div className="w-px h-4 bg-gray-300 dark:bg-gray-600"></div>
+          <Link href="/" className="flex items-center gap-1 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
+            <Home className="w-4 h-4" />
+            <span>Home</span>
+          </Link>
+        </div>
+      </div>
       
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">

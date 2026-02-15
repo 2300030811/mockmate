@@ -20,7 +20,13 @@ export function Header() {
     pathname?.includes("/session") || 
     pathname?.includes("-quiz") || 
     pathname?.includes("/interview") ||
-    pathname?.includes("/demo");
+    pathname?.includes("/demo") ||
+    pathname?.includes("/arena") ||
+    pathname?.includes("/daily-challenge") ||
+    pathname?.includes("/system-design") ||
+    pathname?.includes("/career-path") ||
+    pathname?.includes("/resume-roaster") ||
+    pathname?.includes("/certification");
 
   useEffect(() => {
     const handleScroll = () => {

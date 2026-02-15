@@ -5,6 +5,7 @@ import { HeroHeader } from "@/components/home/HeroHeader";
 import { HomeBackground } from "@/components/home/HomeBackground";
 import { HomeCTA } from "@/components/home/HomeCTA";
 import { StatsRow } from "@/components/home/StatsRow";
+import { DailyProblem } from "@/components/home/DailyProblem";
 import { BobAssistant } from "@/components/quiz/BobAssistant";
 
 // Lazy load heavy dashboard components
@@ -35,6 +36,8 @@ export default function Home() {
           <FeatureCards />
 
           <HomeCTA />
+
+          <DailyProblem />
           
           <ResultsHistory />
 

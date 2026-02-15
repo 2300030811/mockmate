@@ -1,12 +1,24 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useTheme } from "@/components/providers/providers";
-import { motion } from "framer-motion";
-import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
+import { 
+  ArrowRight, 
+  Database, 
+  Zap, 
+  Terminal, 
+  Code, 
+  Sparkles, 
+  Map, 
+  ChevronDown 
+} from "lucide-react";
+import { generateRoadmapAction } from "@/app/actions/roadmap";
+import ReactMarkdown from "react-markdown";
+import { useTheme } from "@/components/providers/providers";
 import { BobAssistant } from "@/components/quiz/BobAssistant";
-import { Database, Zap, Terminal, Code } from "lucide-react";
+import { NavigationPill } from "@/components/ui/NavigationPill";
 
 // --- Icons ---
 const AWSIcon = () => (
@@ -21,12 +33,10 @@ const AzureIcon = () => (
     </svg>
 );
 
-// Salesforce is now represented by a Lightning/Zap icon to distinguish from AWS cloud
 const SalesforceIcon = () => (
     <Zap className="w-12 h-12" />
 );
 
-// Oracle is represented by Terminal/Code to distinguish from generic databases
 const OracleIcon = () => (
     <Terminal className="w-12 h-12" />
 );
@@ -36,6 +46,24 @@ export default function CertificationSelect() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
+  const [roadmapGoal, setRoadmapGoal] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [roadmapResult, setRoadmapResult] = useState<string | null>(null);
+
+  const handleGenerateRoadmap = async () => {
+    if (!roadmapGoal || roadmapGoal.length < 5) return;
+    setIsGenerating(true);
+    setRoadmapResult(null);
+    try {
+      const result = await generateRoadmapAction(roadmapGoal, "Beginner to Intermediate");
+      setRoadmapResult(result.markdown);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
     <div
       className={`min-h-screen transition-colors duration-500 pt-20 ${
@@ -44,6 +72,8 @@ export default function CertificationSelect() {
           : "bg-gradient-to-br from-gray-50 via-white to-blue-50"
       }`}
     >
+      <NavigationPill className="absolute top-4 left-4 sm:top-6 sm:left-6 z-50 scale-75 origin-top-left sm:scale-100" />
+
       {/* Animated Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div
@@ -134,19 +164,7 @@ export default function CertificationSelect() {
 
                 <span className="inline-flex items-center gap-2 text-orange-500 font-bold group-hover:gap-4 transition-all mt-auto">
                   Start AWS Quiz
-                  <svg
-                    className="w-5 h-5 group-hover:translate-x-1 transition-transform"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 7l5 5m0 0l-5 5m5-5H6"
-                    />
-                  </svg>
+                  <ArrowRight className="group-hover:translate-x-1 transition-transform" />
                 </span>
               </div>
             </div>
@@ -193,19 +211,7 @@ export default function CertificationSelect() {
 
                 <span className="inline-flex items-center gap-2 text-cyan-500 font-bold group-hover:gap-4 transition-all mt-auto">
                   Start Azure Quiz
-                  <svg
-                    className="w-5 h-5 group-hover:translate-x-1 transition-transform"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 7l5 5m0 0l-5 5m5-5H6"
-                    />
-                  </svg>
+                  <ArrowRight className="group-hover:translate-x-1 transition-transform" />
                 </span>
                 </div>
             </div>
@@ -253,19 +259,7 @@ export default function CertificationSelect() {
 
                 <span className="inline-flex items-center gap-2 text-blue-500 font-bold group-hover:gap-4 transition-all mt-auto">
                   Start Salesforce Quiz
-                  <svg
-                    className="w-5 h-5 group-hover:translate-x-1 transition-transform"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 7l5 5m0 0l-5 5m5-5H6"
-                    />
-                  </svg>
+                  <ArrowRight className="group-hover:translate-x-1 transition-transform" />
                 </span>
               </div>
             </div>
@@ -312,19 +306,7 @@ export default function CertificationSelect() {
 
                 <span className="inline-flex items-center gap-2 text-green-500 font-bold group-hover:gap-4 transition-all mt-auto">
                   Start MongoDB Quiz
-                  <svg
-                    className="w-5 h-5 group-hover:translate-x-1 transition-transform"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 7l5 5m0 0l-5 5m5-5H6"
-                    />
-                  </svg>
+                  <ArrowRight className="group-hover:translate-x-1 transition-transform" />
                 </span>
               </div>
             </div>
@@ -371,19 +353,7 @@ export default function CertificationSelect() {
 
                 <span className="inline-flex items-center gap-2 text-blue-500 font-bold group-hover:gap-4 transition-all mt-auto">
                   Start Python Quiz
-                  <svg
-                    className="w-5 h-5 group-hover:translate-x-1 transition-transform"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 7l5 5m0 0l-5 5m5-5H6"
-                    />
-                  </svg>
+                  <ArrowRight className="group-hover:translate-x-1 transition-transform" />
                 </span>
               </div>
             </div>
@@ -430,23 +400,84 @@ export default function CertificationSelect() {
 
                 <span className="inline-flex items-center gap-2 text-red-500 font-bold group-hover:gap-4 transition-all mt-auto">
                   Start Oracle Quiz
-                  <svg
-                    className="w-5 h-5 group-hover:translate-x-1 transition-transform"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 7l5 5m0 0l-5 5m5-5H6"
-                    />
-                  </svg>
+                  <ArrowRight className="group-hover:translate-x-1 transition-transform" />
                 </span>
               </div>
             </div>
           </Link>
+        </motion.div>
+
+        {/* AI Roadmap Tool */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8, delay: 0.5 }}
+          className="max-w-4xl w-full mt-32 px-4"
+        >
+           <div className={`relative p-8 md:p-12 rounded-[3rem] overflow-hidden border ${
+             isDark ? 'bg-indigo-600/10 border-indigo-500/20' : 'bg-indigo-50 border-indigo-200'
+           }`}>
+              <div className="absolute -right-20 -top-20 opacity-5">
+                 <Map size={300} className="text-indigo-500" />
+              </div>
+              
+              <div className="relative z-10">
+                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 mb-6 font-bold text-xs tracking-widest uppercase">
+                    <Sparkles size={14} /> AI Powered
+                 </div>
+                 <h2 className={`text-3xl md:text-4xl font-black mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    Build Your Custom Learning Path
+                 </h2>
+                 <p className={`text-lg mb-8 max-w-xl ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                    Tell us your career goal, and our AI will build a personalized certification roadmap just for you.
+                 </p>
+
+                 <div className="flex flex-col md:flex-row gap-4">
+                    <input 
+                       type="text" 
+                       placeholder="e.g., I want to become a Senior DevOps Engineer"
+                       value={roadmapGoal}
+                       onChange={(e) => setRoadmapGoal(e.target.value)}
+                       className={`flex-1 px-6 py-4 rounded-2xl border transition-all outline-none text-lg ${
+                         isDark 
+                          ? 'bg-gray-900/50 border-gray-800 focus:border-indigo-500 text-white' 
+                          : 'bg-white border-gray-200 focus:border-indigo-500 text-gray-900'
+                       }`}
+                    />
+                    <button 
+                       onClick={handleGenerateRoadmap}
+                       disabled={isGenerating || roadmapGoal.length < 5}
+                       className="px-8 py-4 bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-800 text-white rounded-2xl font-black text-lg transition-all shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3 whitespace-nowrap"
+                    >
+                       {isGenerating ? <Sparkles className="animate-spin" /> : <Map size={20} />}
+                       {isGenerating ? 'Mapping Path...' : 'Generate Roadmap'}
+                    </button>
+                 </div>
+
+                 <AnimatePresence>
+                    {roadmapResult && (
+                       <motion.div 
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          className="mt-12 p-8 rounded-3xl bg-black/40 border border-white/5 backdrop-blur-xl relative group"
+                       >
+                          <div className="absolute top-4 right-4 text-gray-700">
+                             <Map size={24} />
+                          </div>
+                          <div className={`prose prose-sm md:prose-base max-w-none ${isDark ? 'prose-invert prose-indigo' : 'prose-indigo'} prose-headings:font-black prose-p:text-gray-300`}>
+                             <ReactMarkdown>{roadmapResult}</ReactMarkdown>
+                          </div>
+                          <button 
+                            onClick={() => setRoadmapResult(null)}
+                            className="mt-8 text-gray-500 hover:text-white transition-colors flex items-center gap-2 text-xs font-bold uppercase tracking-widest"
+                          >
+                             <ChevronDown className="rotate-180" size={14} /> Clear Result
+                          </button>
+                       </motion.div>
+                    )}
+                 </AnimatePresence>
+              </div>
+           </div>
         </motion.div>
 
         <BobAssistant

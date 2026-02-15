@@ -56,9 +56,9 @@ export class QuizGenerator {
     } else if (providerName === "openai") {
       providers.push(new OpenAIProvider());
     } else {
-      // Auto Strategy: Gemini -> Groq -> OpenAI (OpenAI last due to tight limits on free accounts)
-      providers.push(new GeminiProvider());
+      // Auto Strategy: Groq -> Gemini -> OpenAI
       providers.push(new GroqProvider());
+      providers.push(new GeminiProvider());
       providers.push(new OpenAIProvider());
     }
 

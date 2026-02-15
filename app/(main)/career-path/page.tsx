@@ -8,12 +8,15 @@ import { HomeBackground } from "@/components/home/HomeBackground";
 import { analyzeCareerPath } from '@/app/actions/career-analysis';
 import { CareerAnalysisResult } from '@/types/career';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Sparkles } from 'lucide-react';
-import Link from 'next/link';
 import { saveCareerPath } from '@/app/actions/career-save';
 import { getSessionId } from '@/utils/session';
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Sparkles, Home } from 'lucide-react';
+import Link from 'next/link';
+import { NavigationPill } from '@/components/ui/NavigationPill';
 
 export default function CareerPathPage() {
+  const router = useRouter();
   const [step, setStep] = useState<'upload' | 'analysis' | 'results'>('upload');
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<CareerAnalysisResult | null>(null);
@@ -57,6 +60,10 @@ export default function CareerPathPage() {
 
   return (
     <div className="min-h-screen relative transition-colors duration-500 bg-gradient-to-br from-gray-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950 pt-24 px-4 sm:px-6">
+       
+      {/* Navigation Pill */}
+      <NavigationPill />
+       
        <HomeBackground />
 
       <div className="max-w-6xl mx-auto relative z-10">

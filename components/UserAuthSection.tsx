@@ -82,12 +82,12 @@ export function UserAuthSection() {
                                 </Link>
                             ) : (
                                 <Link
-                                    href="/#history"
+                                    href="/dashboard"
                                     onClick={() => setMenuOpen(false)}
                                     className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl transition-colors text-left"
                                 >
                                     <ShieldCheck className="w-4 h-4 text-blue-500" />
-                                    My Progress
+                                    My Dashboard
                                 </Link>
                             )}
                             
