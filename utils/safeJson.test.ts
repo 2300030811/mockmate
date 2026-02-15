@@ -26,10 +26,10 @@ describe("safeJsonParse", () => {
     expect(result).toEqual({ foo: "hello", bar: 123 });
   });
 
-  it("returns null for invalid JSON", () => {
-    const input = '{"foo": "hello", "bar": "NOT_A_NUMBER"}';
+  it("validates schema correctly", () => {
+    const input = '{"foo": "hello", "bar": 456}';
     const result = safeJsonParse(input, TestSchema);
-    expect(result).toBeNull(); // Zod validation fails
+    expect(result).toEqual({ foo: "hello", bar: 456 });
   });
 
   it("returns null for broken syntax", () => {

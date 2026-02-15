@@ -226,7 +226,7 @@ export default function SystemDesignCanvas() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedNodeId]);
+  }, [selectedNodeId, deleteNode]);
 
   return (
     <div className="h-screen bg-[#080808] text-white flex flex-col overflow-hidden selection:bg-indigo-500/30 font-sans">
@@ -510,7 +510,7 @@ export default function SystemDesignCanvas() {
                       <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0 text-gray-400 font-mono text-xs">2</div>
                       <div>
                         <p className="text-sm font-bold text-white mb-1">Link Systems</p>
-                        <p className="text-xs text-gray-400">Switch to the "Connect" tool. Click your first component, then click the second one to create a data flow.</p>
+                        <p className="text-xs text-gray-400">Switch to the &quot;Connect&quot; tool. Click your first component, then click the second one to create a data flow.</p>
                       </div>
                     </div>
                   </div>
@@ -518,15 +518,15 @@ export default function SystemDesignCanvas() {
                     <div className="flex gap-4">
                       <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0 text-gray-400 font-mono text-xs">3</div>
                       <div>
-                        <p className="text-sm font-bold text-white mb-1">Design & Drag</p>
-                        <p className="text-xs text-gray-400">Grab any node to move it. Use "Select" tool to delete or zoom in/out to handle complex architectures.</p>
+                        <p className="text-sm font-bold text-white mb-1">Design &amp; Drag</p>
+                        <p className="text-xs text-gray-400">Grab any node to move it. Use &quot;Select&quot; tool to delete or zoom in/out to handle complex architectures.</p>
                       </div>
                     </div>
                     <div className="flex gap-4">
                       <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center shrink-0 text-indigo-400 font-mono text-xs">AI</div>
                       <div>
                         <p className="text-sm font-bold text-indigo-300 mb-1">Architecture Audit</p>
-                        <p className="text-xs text-gray-400">Click "AI Audit" to receive a senior-level critique of scalability, security, and potential points of failure.</p>
+                        <p className="text-xs text-gray-400">Click &quot;AI Audit&quot; to receive a senior-level critique of scalability, security, and potential points of failure.</p>
                       </div>
                     </div>
                   </div>
