@@ -5,17 +5,6 @@ import { motion } from "framer-motion";
 export function HeroHeader() {
   return (
     <>
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="mb-8 flex justify-center"
-      >
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border backdrop-blur-sm transition-all duration-300 hover:scale-105 bg-blue-500/10 border-blue-500/30 text-blue-600 hover:bg-blue-500/20 dark:bg-blue-500/10 dark:border-blue-500/20 dark:text-blue-400">
-          <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-          <span className="text-sm font-bold tracking-wider">MOCKMATE</span>
-        </div>
-      </motion.div>
 
       <motion.h1
         initial={{ opacity: 0, y: 20 }}
