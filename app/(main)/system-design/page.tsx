@@ -27,6 +27,7 @@ import { CanvasHeader } from "./components/CanvasHeader";
 
 // --- Helper ---
 const isInputActive = () => {
+  if (typeof window === 'undefined') return false;
   const el = document.activeElement;
   return el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || (el as HTMLElement).isContentEditable);
 };
@@ -57,6 +58,7 @@ export default function SystemDesignCanvas() {
   const [showHelp, setShowHelp] = useState(false);
   const [theme, setTheme] = useState<"dark" | "light" | "neo">("dark");
 
+  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
   const canvasRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const isPanningRef = useRef(false);
@@ -89,6 +91,15 @@ export default function SystemDesignCanvas() {
         setHistoryIndex(0);
     }
     setHasLoaded(true);
+    setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    
+    const handleResize = () => {
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    };
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
   }, []);
 
   useEffect(() => {
@@ -191,8 +202,8 @@ export default function SystemDesignCanvas() {
     const newNode: Node = {
       id: `n-${Date.now()}`,
       type,
-      x: Math.round((-pan.x + window.innerWidth / 2) / (scale * GRID_SIZE)) * GRID_SIZE,
-      y: Math.round((-pan.y + window.innerHeight / 2) / (scale * GRID_SIZE)) * GRID_SIZE,
+      x: Math.round((-pan.x + (typeof window !== 'undefined' ? window.innerWidth : 1200) / 2) / (scale * GRID_SIZE)) * GRID_SIZE,
+      y: Math.round((-pan.y + (typeof window !== 'undefined' ? window.innerHeight : 800) / 2) / (scale * GRID_SIZE)) * GRID_SIZE,
       name: type,
       metadata: {}
     };
@@ -208,8 +219,8 @@ export default function SystemDesignCanvas() {
     const newGroup: Group = {
        id: `g-${Date.now()}`,
        name: "Container",
-       x: Math.round((-pan.x + window.innerWidth / 4) / scale / GRID_SIZE) * GRID_SIZE,
-       y: Math.round((-pan.y + window.innerHeight / 4) / scale / GRID_SIZE) * GRID_SIZE,
+       x: Math.round((-pan.x + (typeof window !== 'undefined' ? window.innerWidth : 1200) / 4) / scale / GRID_SIZE) * GRID_SIZE,
+       y: Math.round((-pan.y + (typeof window !== 'undefined' ? window.innerHeight : 800) / 4) / scale / GRID_SIZE) * GRID_SIZE,
        w: 400,
        h: 300,
        color: "rgba(99, 102, 241, 0.1)"
@@ -462,7 +473,7 @@ export default function SystemDesignCanvas() {
               <svg viewBox={`${-pan.x/scale - 200} ${-pan.y/scale - 150} ${2500} ${1500}`} className="w-full h-full opacity-40 py-4">
                  {groups.map(g => <rect key={g.id} x={g.x} y={g.y} width={g.w} height={g.h} fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)" />)}
                  {nodes.map(n => <rect key={n.id} x={n.x} y={n.y} width={96} height={96} rx="20" fill="#6366f1" />)}
-                 <rect x={-pan.x/scale} y={-pan.y/scale} width={window.innerWidth / scale} height={window.innerHeight / scale} stroke="#6366f1" strokeWidth="15" fill="none" />
+                 <rect x={-pan.x/scale} y={-pan.y/scale} width={(windowSize.width || 1200) / scale} height={(windowSize.height || 800) / scale} stroke="#6366f1" strokeWidth="15" fill="none" />
               </svg>
            </div>
 
