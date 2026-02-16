@@ -25,7 +25,7 @@ export default function Home() {
     <div className="min-h-screen transition-colors duration-500 bg-gradient-to-br from-gray-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950 pt-20">
       
       {/* Hero Section */}
-      <div className="relative min-h-screen flex items-center justify-center px-4 overflow-hidden -mt-20">
+      <div className="relative min-h-screen flex items-center justify-center px-4 overflow-hidden">
         
         <HomeBackground />
 
