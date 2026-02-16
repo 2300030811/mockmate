@@ -28,41 +28,51 @@ Powered by a dual-engine AI core (**Google Gemini Pro** & **Groq Llama 3**), it 
 
 ## ✨ Key Features
 
-### 🏆 Global Leaderboard & Profiles
+### ⚔️ The Arena (Multiplayer)
 
-Compete with others and track your growth:
+**Real-time coding battles** to test your speed and accuracy:
 
-- **Authenticated Profiles**: Create an account via Email, **Google**, or **GitHub** to save your progress permanently.
-- **Global Leaderboard**: Claim your spot in the "Hall of Fame" for each certification category.
-- **Guest-First Design**: Start practicing immediately as a guest with a session-based nickname; your progress seamlessly syncs if you decide to join.
-- **Cross-Device History**: Log in from anywhere to see your previous quiz scores and career path analysis.
+- **Ranked Matchmaking**: Elo-based system to find your perfect opponent.
+- **Live Battles**: Compete in Python, SQL, and specific tech stacks.
+- **Win Streaks & Rewards**: Earn badges and climb the global leaderboards.
+
+### 🏗️ System Design Canvas
+
+**Interactive Architecture Designer** for modern cloud solutions:
+
+- **Drag-and-Drop Interface**: Build professional diagrams with AWS/Azure components.
+- **AI Audit**: One-click architecture review by our AI to find bottlenecks and security flaws.
+- **Microservices Templates**: Mobile-ready templates for Serverless and Web App architectures.
+
+### 📄 Resume Roaster
+
+**AI-Powered Career Coach**:
+
+- **Deep Analysis**: Get brutal yet constructive feedback on your resume.
+- **Audio Feedback**: Listen to your critique with natural-sounding AI speech.
+- **ATS Optimization**: Actionable tips to beat the Applicant Tracking Systems.
 
 ### ☁️ Certification Hub
 
 Detailed preparation tracks for major technical certifications:
 
-- **AWS Quiz**: Targeted practice for Cloud Practitioner & Solutions Architect.
-- **Azure Quiz**: Comprehensive questions for Azure Fundamentals (AZ-900).
-- **PCAP Quiz**: Python Certified Associate in Programming prep.
-- **Salesforce Quiz**: Specialist preparation for the Agentforce certification.
-- **Oracle & MongoDB**: Specialized database and backend certification paths.
+- **AWS Quiz**: Cloud Practitioner & Solutions Architect.
+- **Azure Quiz**: Azure Fundamentals (AZ-900).
+- **Salesforce Quiz**: Agentforce Specialist preparation.
+- **Oracle, MongoDB, & Python**: Specialized certification paths.
 - **Customizable Modes**: Choose strictly timed exams or relaxed practice modes.
 
-### 🦁 Bob Assistant
+### 📊 Professional Dashboard
 
-Your personal AI study companion, integrated directly into every quiz:
+- **Daily Streaks**: Track your consistency and habit building.
+- **Career Path Tracking**: Visualize your progress towards specific roles (e.g., DevOps Engineer).
+- **Recent Activity**: detailed logs of your past battles and quiz scores.
 
-- **Instant Clarification**: Stuck on a question? Just ask Bob! He can explain complex concepts simply.
-- **Context-Aware**: Bob knows exactly which question you are looking at and provides tailored help.
-- **Interactive Learning**: Ask for examples, why other options are wrong, or deep dives into specific topics.
+### 🦁 Bob Assistant & Quiz Generator
 
-### 🤖 Intelligent Quiz Generator
-
-Turn any document into a test:
-
-- **Upload & Generate**: Support for PDFs and raw text.
-- **Smart Context**: Extracts high-yield concepts, not just random keywords.
-- **Resilient Architecture**: Uses a robust **Strategy Pattern** to automatically switch between AI providers (Gemini -> Groq).
+- **Personal AI Tutor**: Context-aware help during any quiz or battle.
+- **Document to Quiz**: Upload PDFs/Text to generate custom study materials instantly.
+- **Dual-Engine AI**: Seamlessly switches between **Gemini** and **Groq** for optimal performance.
 
 ### 🎙️ AI Interview Simulator
 
@@ -78,6 +88,7 @@ Experience the pressure of a real interview from home:
 - **Next.js 14** (App Router)
 - **TypeScript** (Strict Mode enabled)
 - **Tailwind CSS** (Responsive & Dark Mode optimized)
+- **Framer Motion**: Complex animations for Arena & System Design.
 - **Supabase**: Authentication, Database, and Row Level Security (RLS).
 - **Server Actions**: Clean separation of business logic and UI.
 
