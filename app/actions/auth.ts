@@ -5,8 +5,34 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { validateNickname } from "@/utils/moderation";
 
+import { z } from "zod";
+
+const getURL = () => {
+  let url =
+    process.env.NEXT_PUBLIC_SITE_URL ?? // Set this to your site URL in production env.
+    process.env.NEXT_PUBLIC_VERCEL_URL ?? // Automatically set by Vercel.
+    "http://localhost:3000/";
+  // Make sure to include `https://` when not localhost.
+  url = url.includes("http") ? url : `https://${url}`;
+  // Make sure to include a trailing `/`.
+  url = url.charAt(url.length - 1) === "/" ? url : `${url}/`;
+  return url;
+};
+
+const signupSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  nickname: z.string().min(2, "Nickname must be at least 2 characters").max(20, "Nickname must be at most 20 characters").regex(/^[a-zA-Z0-9_]+$/, "Nickname can only contain letters, numbers, and underscores"),
+});
+
 export async function signup(formData: { email: string; password: string; nickname: string }) {
-  const { email, password, nickname } = formData;
+  const result = signupSchema.safeParse(formData);
+  
+  if (!result.success) {
+      return { error: result.error.errors[0].message };
+  }
+  
+  const { email, password, nickname } = result.data;
   const supabase = createClient();
 
   const validation = validateNickname(nickname);
@@ -21,6 +47,7 @@ export async function signup(formData: { email: string; password: string; nickna
       data: {
         nickname: nickname,
       },
+      emailRedirectTo: `${getURL()}auth/callback`,
     },
   });
 
@@ -32,8 +59,19 @@ export async function signup(formData: { email: string; password: string; nickna
   return { success: true };
 }
 
+const loginSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(1, "Password is required"),
+});
+
 export async function login(formData: { email: string; password: string }) {
-  const { email, password } = formData;
+  const result = loginSchema.safeParse(formData);
+
+  if (!result.success) {
+    return { error: result.error.errors[0].message };
+  }
+
+  const { email, password } = result.data;
   const supabase = createClient();
 
   const { error } = await supabase.auth.signInWithPassword({
@@ -48,18 +86,6 @@ export async function login(formData: { email: string; password: string }) {
   revalidatePath("/", "layout");
   return { success: true };
 }
-
-const getURL = () => {
-  let url =
-    process.env.NEXT_PUBLIC_SITE_URL ?? // Set this to your site URL in production env.
-    process.env.NEXT_PUBLIC_VERCEL_URL ?? // Automatically set by Vercel.
-    "http://localhost:3000/";
-  // Make sure to include `https://` when not localhost.
-  url = url.includes("http") ? url : `https://${url}`;
-  // Make sure to include a trailing `/`.
-  url = url.charAt(url.length - 1) === "/" ? url : `${url}/`;
-  return url;
-};
 
 export async function signInWithSocial(provider: 'google' | 'github') {
   const supabase = createClient();

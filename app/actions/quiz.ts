@@ -28,18 +28,29 @@ export async function getRawQuestions(quizType: string): Promise<QuizQuestion[]>
   }
 }
 
+import { z } from "zod";
+
+const quizParamsSchema = z.object({
+  quizType: z.enum(["aws", "azure", "salesforce", "mongodb", "pcap", "oracle"]),
+  mode: z.enum(["practice", "exam"]),
+  countParam: z.union([z.string().regex(/^\d+$/), z.literal("all"), z.null()]),
+});
+
 export async function fetchQuizQuestions(
   quizType: string,
   mode: QuizMode = "practice",
   countParam: string | null = null,
 ): Promise<QuizQuestion[]> {
-  try {
-      const source = QuizFactory.getSource(quizType);
-      return await source.getQuestions(mode, countParam);
-  } catch (error: any) {
-      console.error(`Error fetching quiz questions for ${quizType}:`, error.message);
-      return [];
-  }
+    const result = quizParamsSchema.safeParse({ quizType, mode, countParam });
+
+    if (!result.success) {
+        console.error("Invalid quiz parameters:", result.error);
+        throw new AppError("Invalid quiz parameters", 400); 
+    }
+
+  // Let errors propagate to useQuery
+  const source = QuizFactory.getSource(quizType);
+  return await source.getQuestions(mode, countParam);
 }
 
 

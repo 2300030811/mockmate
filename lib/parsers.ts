@@ -90,9 +90,35 @@ function normalizeQuestion(q: RawQuestion): QuizQuestion | null {
 
     // Standardize ID
     if (!newQ.id && newQ.question) {
-        // Generate robust ID if missing? For now rely on Zod or allow missing if schema allows (it requires id)
-        // If ID is missing, we might drop it or generate one. Zod requires it.
-        // Let's assume ID exists or we skip.
+        // ...
+    }
+
+    // Extract code block from question if it exists and q.code is missing
+    if (!newQ.code && typeof newQ.question === 'string') {
+        const qText = newQ.question;
+        
+        // Match Markdown code blocks
+        const markdownMatch = qText.match(/```(?:\w+)?\n([\s\S]*?)```/);
+        if (markdownMatch) {
+            newQ.code = markdownMatch[1].trim();
+            newQ.question = qText.replace(/```(?:\w+)?\n[\s\S]*?```/, "\n\n").trim();
+        } else {
+            // Heuristic for "Given:\n...code...\nQuestion"
+            const patterns = [
+                /Given:?\n([\s\S]*?)(\n(?:What|Which|And|Assume|If|The|A)\s+.*)/i,
+                /Given the following code fragment:?\n([\s\S]*?)(\n(?:What|Which|And|Assume|If|The|A)\s+.*)/i,
+                /fragment:?\n([\s\S]*?)(\n(?:What|Which|And|Assume|If)\s+.*)/i
+            ];
+
+            for (const pattern of patterns) {
+                const match = qText.match(pattern);
+                if (match && match[1].trim().length > 10) {
+                    newQ.code = match[1].trim();
+                    newQ.question = qText.replace(match[1], "\n\n").trim();
+                    break;
+                }
+            }
+        }
     }
 
     // Consolidate answer fields

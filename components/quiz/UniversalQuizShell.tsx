@@ -30,6 +30,7 @@ export function UniversalQuizShell({ category, mode, count = null }: UniversalQu
   const {
       questions,
       loading,
+      error,
       currentQuestionIndex,
       setCurrentQuestionIndex,
       userAnswers,
@@ -72,6 +73,10 @@ export function UniversalQuizShell({ category, mode, count = null }: UniversalQu
 
   if (loading) {
     return <LoadingState message={`Loading ${category.toUpperCase()} Quiz...`} isDark={isDark} />;
+  }
+
+  if (error) {
+    return <EmptyState title="Error Loading Quiz" message={(error as Error).message || "An unexpected error occurred while fetching questions."} isDark={isDark} />;
   }
 
   if (!questions.length) {

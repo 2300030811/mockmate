@@ -21,6 +21,20 @@ export async function saveQuizResult(data: {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     const userId = user?.id || null;
+    
+    // Resolve nickname (Required by DB constraint)
+    let finalNickname = data.nickname;
+    if (!finalNickname && userId) {
+        const { data: profile } = await adminDb
+            .from('profiles')
+            .select('nickname')
+            .eq('id', userId)
+            .single();
+        finalNickname = profile?.nickname;
+    }
+    if (!finalNickname) {
+        finalNickname = "Guest";
+    }
 
     if (data.nickname) {
         const validation = validateNickname(data.nickname);
@@ -30,9 +44,14 @@ export async function saveQuizResult(data: {
     }
 
     // 1. Fetch Source of Truth
-    const questions = await getRawQuestions(data.category);
+    // Handle arena prefixes like 'arena:win:aws' or 'arena_aws'
+    const sourceCategory = data.category
+      .replace(/^arena:[^:]+:/, '') // Matches arena:win:aws -> aws
+      .replace(/^arena_/, '');      // Matches arena_aws -> aws
+      
+    const questions = await getRawQuestions(sourceCategory);
     if (!questions || questions.length === 0) {
-        throw new Error("Failed to validate quiz: Source questions not found.");
+        throw new Error(`Failed to validate quiz: Source questions not found for ${sourceCategory}.`);
     }
 
     // 2. Calculate Score Server-Side
@@ -74,7 +93,7 @@ export async function saveQuizResult(data: {
       // Use Admin Client to UPDATE
       const { error } = await adminDb
         .from('quiz_results')
-        .update({ nickname: data.nickname || null })
+        .update({ nickname: finalNickname })
         .eq('id', existing.id);
       
       if (error) throw error;
@@ -91,7 +110,7 @@ export async function saveQuizResult(data: {
         category: data.category,
         score: scoreToSave,
         total_questions: questions.length, // Ensure strict consistency with server-side count
-        nickname: data.nickname || null,
+        nickname: finalNickname,
         completed_at: new Date().toISOString()
       });
 

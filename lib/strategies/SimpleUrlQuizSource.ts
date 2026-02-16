@@ -2,7 +2,6 @@
 import { QuizQuestion, QuizMode } from "@/types";
 import { BaseQuizSource } from "./BaseQuizSource";
 import { shuffleArray } from "@/utils/quiz-helpers";
-import { QuizFetcher } from "@/lib/quiz-fetcher"; // Import base fetcher for parsing if needed
 import { detectAndParse } from "@/lib/parsers";
 
 export class SimpleUrlQuizSource extends BaseQuizSource {
@@ -13,16 +12,14 @@ export class SimpleUrlQuizSource extends BaseQuizSource {
     this.url = url;
   }
 
-  async fetchRawQuestions(): Promise<QuizQuestion[]> {
+  async fetchRemoteQuestions(): Promise<QuizQuestion[]> {
     if (!this.url) {
         console.error(`[${this.label}] URL is missing.`);
         return [];
     }
     
-    // Check DB cache first
-    const dbQuestions = await QuizFetcher.fetchQuestionsFromDB(this.label.toLowerCase());
-    if (dbQuestions && dbQuestions.length > 0) return dbQuestions;
-
+    // DB check is now in BaseQuizSource
+    
     try {
         const res = await fetch(this.url, { next: { revalidate: 3600 } });
         if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);

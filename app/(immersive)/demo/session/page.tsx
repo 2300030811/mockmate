@@ -836,7 +836,7 @@ function InterviewSessionContent() {
       <main className="flex-1 flex flex-col md:flex-row relative min-h-0">
         {/* Permission/Browser Error Overlay */}
         {permissionError && (
-          <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="bg-gray-900 border border-red-500/30 p-6 rounded-2xl max-w-md w-full shadow-2xl text-center">
               <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
                 <CameraOffIcon className="text-red-500" />

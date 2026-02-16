@@ -29,36 +29,24 @@ import {
 } from "lucide-react";
 import { executeCode } from "@/app/actions/code-execution";
 import { getBobChallengeHint, submitChallengeAction } from "@/app/actions/challenge";
+import { DAILY_PROBLEMS } from "@/utils/daily-problems";
 import ReactMarkdown from "react-markdown";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { NavigationPill } from "@/components/ui/NavigationPill";
-
-const PROBLEMS = [
-  {
-    id: "p1",
-    title: "Array Intersection",
-    difficulty: "Easy",
-    category: "Algorithms",
-    points: 10,
-    description: `Given two integer arrays \`nums1\` and \`nums2\`, return an array of their intersection. Each element in the result must be unique and you may return the result in any order.`,
-    examples: [
-        { input: "nums1 = [1,2,2,1], nums2 = [2,2]", output: "[2]" },
-        { input: "nums1 = [4,9,5], nums2 = [9,4,9,8,4]", output: "[4,9]" }
-    ],
-    starterCode: {
-      javascript: "function intersection(nums1, nums2) {\n  // Type your solution here\n  \n}",
-      python: "def intersection(nums1, nums2):\n    # Type your solution here\n    pass",
-      cpp: "vector<int> intersection(vector<int>& nums1, vector<int>& nums2) {\n    // Type your solution here\n    \n}"
-    }
-  }
-];
+import { useTheme } from "@/components/providers/providers";
+import { Sun, Moon } from "lucide-react";
+import { useDailyStreak } from "@/hooks/useDailyStreak";
 
 export default function DailyChallengePage() {
   const router = useRouter();
-  const [problem] = useState(PROBLEMS[0]);
+  const { theme, toggleTheme } = useTheme();
+  const isDark = theme === "dark";
+  const { completeChallenge } = useDailyStreak();
+
+  const [problem, setProblem] = useState(DAILY_PROBLEMS[0]);
   const [language, setLanguage] = useState("javascript");
-  const [code, setCode] = useState(problem.starterCode.javascript);
+  const [code, setCode] = useState("");
   const [isRunning, setIsRunning] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [output, setOutput] = useState("");
@@ -68,7 +56,16 @@ export default function DailyChallengePage() {
   const [evaluation, setEvaluation] = useState<any>(null);
 
   useEffect(() => {
-    setCode((problem.starterCode as any)[language] || "");
+    const day = new Date().getDate();
+    const currentProblem = DAILY_PROBLEMS[day % DAILY_PROBLEMS.length];
+    setProblem(currentProblem);
+    setCode((currentProblem.starterCode as any).javascript || "");
+  }, []);
+
+  useEffect(() => {
+    if (problem) {
+        setCode((problem.starterCode as any)[language] || "");
+    }
   }, [language, problem]);
 
   const handleRun = async () => {
@@ -92,6 +89,10 @@ export default function DailyChallengePage() {
       const runResult = await executeCode(language, code);
       const evalResult = await submitChallengeAction(problem.title, code, language, runResult.output);
       setEvaluation(evalResult);
+      
+      if (evalResult.success) {
+          completeChallenge(problem.points);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -113,9 +114,10 @@ export default function DailyChallengePage() {
   };
 
   return (
-    <div className="h-screen bg-gray-950 text-white flex flex-col overflow-hidden selection:bg-blue-500/30">
+    // Fixed positioning to cover the footer from the main layout
+    <div className="fixed inset-0 z-40 bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white flex flex-col overflow-hidden selection:bg-blue-500/30 transition-colors duration-300">
       {/* Header */}
-      <header className="h-16 px-6 border-b border-gray-800 bg-gray-900/50 backdrop-blur-md flex items-center justify-between z-30 shrink-0">
+      <header className="h-16 px-6 border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/50 backdrop-blur-md flex items-center justify-between z-30 shrink-0 transition-colors duration-300">
         <div className="flex items-center gap-4">
           <div className="md:hidden">
               <NavigationPill showBack={true} showHome={false} className="relative z-50 scale-75 origin-left" />
@@ -123,15 +125,15 @@ export default function DailyChallengePage() {
           <div className="hidden md:block">
              <NavigationPill className="relative z-50 scale-90 origin-left" />
           </div>
-          <div className="w-px h-6 bg-gray-800"></div>
+          <div className="w-px h-6 bg-gray-300 dark:bg-gray-800"></div>
           <div>
-            <h1 className="text-sm font-black uppercase tracking-widest text-white/90">{problem.title}</h1>
+            <h1 className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white/90">{problem.title}</h1>
             <div className="flex items-center gap-2">
                <span className="text-[10px] text-gray-500 font-bold uppercase">{problem.category}</span>
-               <div className="w-1 h-1 bg-gray-700 rounded-full"></div>
+               <div className="w-1 h-1 bg-gray-400 dark:bg-gray-700 rounded-full"></div>
                <span className={`text-[10px] font-bold uppercase ${
-                 problem.difficulty === 'Easy' ? 'text-green-500' : 
-                 problem.difficulty === 'Medium' ? 'text-amber-500' : 'text-red-500'
+                 problem.difficulty === 'Easy' ? 'text-green-600 dark:text-green-500' : 
+                 problem.difficulty === 'Medium' ? 'text-amber-600 dark:text-amber-500' : 'text-red-600 dark:text-red-500'
                }`}>
                  {problem.difficulty}
                </span>
@@ -140,10 +142,28 @@ export default function DailyChallengePage() {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Theme Toggle */}
+          <button
+            onClick={toggleTheme}
+            className="flex items-center justify-center w-8 h-8 text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors"
+          >
+             <AnimatePresence mode="wait">
+               {isDark ? (
+                  <motion.div key="sun" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.2 }}>
+                     <Sun size={18} className="text-yellow-400" />
+                  </motion.div>
+               ) : (
+                  <motion.div key="moon" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.2 }}>
+                     <Moon size={18} />
+                  </motion.div>
+               )}
+             </AnimatePresence>
+          </button>
+
           <button 
             onClick={getHint}
             disabled={isGettingHint}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/20 rounded-xl text-xs font-bold transition-all"
+            className="flex items-center gap-2 px-4 py-2 bg-purple-100 dark:bg-purple-500/10 hover:bg-purple-200 dark:hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-500/20 rounded-xl text-xs font-bold transition-all"
           >
             {isGettingHint ? <Sparkles className="animate-spin" size={14} /> : <MessageSquare size={14} />}
             Ask Bob for Hint
@@ -162,28 +182,28 @@ export default function DailyChallengePage() {
 
       <main className="flex-1 flex overflow-hidden">
         {/* Left Pane: Problem & Instructions */}
-        <div className="w-1/3 border-r border-gray-800 bg-gray-900/30 overflow-y-auto custom-scrollbar flex flex-col drop-shadow-2xl">
+        <div className="w-1/3 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/30 overflow-y-auto custom-scrollbar flex flex-col drop-shadow-2xl transition-colors duration-300">
            <div className="p-8 space-y-8 flex-1">
               <section>
-                 <div className="flex items-center gap-2 text-gray-400 mb-4">
+                 <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-4">
                     <BookOpen size={16} className="text-blue-500" />
                     <h2 className="text-xs font-black uppercase tracking-widest">Description</h2>
                  </div>
-                 <div className="prose prose-invert prose-sm max-w-none prose-p:text-gray-400 prose-p:leading-relaxed">
+                 <div className="prose prose-sm max-w-none prose-gray dark:prose-invert prose-p:text-gray-600 dark:prose-p:text-gray-400 prose-p:leading-relaxed">
                     <ReactMarkdown>{problem.description}</ReactMarkdown>
                  </div>
               </section>
 
               <section>
-                 <div className="flex items-center gap-2 text-gray-400 mb-4">
+                 <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-4">
                     <Layout size={16} className="text-emerald-500" />
                     <h2 className="text-xs font-black uppercase tracking-widest">Examples</h2>
                  </div>
                  <div className="space-y-4">
                     {problem.examples.map((ex, i) => (
-                       <div key={i} className="bg-white/5 border border-white/5 rounded-2xl p-4 font-mono text-xs">
-                          <div className="mb-2"><span className="text-gray-500">Input:</span> <span className="text-blue-400">{ex.input}</span></div>
-                          <div><span className="text-gray-500">Output:</span> <span className="text-emerald-400">{ex.output}</span></div>
+                       <div key={i} className="bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-2xl p-4 font-mono text-xs">
+                          <div className="mb-2"><span className="text-gray-500">Input:</span> <span className="text-blue-600 dark:text-blue-400">{ex.input}</span></div>
+                          <div><span className="text-gray-500">Output:</span> <span className="text-emerald-600 dark:text-emerald-400">{ex.output}</span></div>
                        </div>
                     ))}
                  </div>
@@ -191,17 +211,17 @@ export default function DailyChallengePage() {
 
               {hint && (
                  <section className="animate-fadeIn">
-                    <div className="bg-purple-600/10 border border-purple-500/20 rounded-2xl p-5 relative overflow-hidden group">
+                    <div className="bg-purple-50 dark:bg-purple-600/10 border border-purple-200 dark:border-purple-500/20 rounded-2xl p-5 relative overflow-hidden group">
                        <div className="absolute -right-4 -top-4 opacity-5 group-hover:scale-110 transition-transform duration-500">
                           <MessageSquare size={80} />
                        </div>
-                       <h3 className="text-purple-400 text-xs font-black mb-3 flex items-center gap-2 uppercase tracking-widest">
+                       <h3 className="text-purple-600 dark:text-purple-400 text-xs font-black mb-3 flex items-center gap-2 uppercase tracking-widest">
                           <Sparkles size={14} /> Bob&apos;s Thought
                        </h3>
-                       <div className="text-gray-300 text-sm leading-relaxed prose prose-invert prose-purple">
+                       <div className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed prose prose-sm dark:prose-invert prose-purple">
                           <ReactMarkdown>{hint}</ReactMarkdown>
                        </div>
-                       <button onClick={() => setHint(null)} className="absolute top-4 right-4 text-purple-500/50 hover:text-purple-500 transition-colors">
+                       <button onClick={() => setHint(null)} className="absolute top-4 right-4 text-purple-400 hover:text-purple-600 dark:text-purple-500/50 dark:hover:text-purple-500 transition-colors">
                           <RotateCcw size={14} />
                        </button>
                     </div>
@@ -209,7 +229,7 @@ export default function DailyChallengePage() {
               )}
            </div>
            
-           <div className="p-8 border-t border-gray-800 bg-black/20">
+           <div className="p-8 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-black/20">
               <div className="flex items-center gap-4 text-xs font-bold text-gray-500 uppercase tracking-widest">
                  <div className="flex items-center gap-2">
                     <Info size={14} /> Solve to earn 10 XP
@@ -218,8 +238,8 @@ export default function DailyChallengePage() {
            </div>
         </div>
 
-        {/* Right Pane: Editor & Console */}
-        <div className="flex-1 flex flex-col bg-[#0d0d0d]">
+        {/* Right Pane: Editor & Console - Always Dark for Code Readability */}
+        <div className="flex-1 flex flex-col bg-[#0d0d0d] border-l border-gray-800 text-gray-400">
            {/* Editor Toolbar */}
            <div className="h-12 px-4 border-b border-gray-800 flex items-center justify-between bg-black/40">
               <div className="flex items-center gap-6">
@@ -228,7 +248,7 @@ export default function DailyChallengePage() {
                     <select 
                        value={language}
                        onChange={(e) => setLanguage(e.target.value)}
-                       className="bg-gray-800/50 border border-gray-700 text-[10px] font-bold text-blue-400 px-2 py-1 rounded-lg outline-none cursor-pointer uppercase"
+                       className="bg-gray-800/50 border border-gray-700 text-[10px] font-bold text-blue-400 px-2 py-1 rounded-lg outline-none cursor-pointer uppercase hover:bg-gray-800 transition-colors"
                     >
                        <option value="javascript">JavaScript (Node v18)</option>
                        <option value="python">Python (v3.10)</option>

@@ -4,7 +4,7 @@ import { Groq } from "groq-sdk";
 import { getNextKey } from "@/utils/keyManager";
 import { OCRService } from "@/lib/services/ocr";
 
-export async function roastResumeAction(formData: FormData, jobDescription?: string) {
+export async function roastResumeAction(formData: FormData, jobDescription?: string, tone: string = "Brutal") {
   try {
     const file = formData.get("file") as File;
     if (!file || !(file instanceof File)) {
@@ -27,55 +27,54 @@ export async function roastResumeAction(formData: FormData, jobDescription?: str
     const groq = new Groq({ apiKey });
 
     const prompt = `
-      You are "The Resume Roaster", a brutally honest yet helpful career coach. 
-      Analyze the provided resume and optionally the job description.
+      RESUME: ${resumeText}
+      ${jobDescription ? `JOB: ${jobDescription}` : ""}
+      TONE: ${tone}
+
+      TASK: Provide a ${tone} roast in JSON. Reference specific text from the resume to prove you read it.
       
-      RESUME CONTENT:
-      ${resumeText}
-      
-      ${jobDescription ? `TARGET JOB DESCRIPTION: ${jobDescription}` : ""}
-      
-      TASK:
-      Generate a structured JSON response. Use professional but funny "roast" language in the 'brutalRoast' field.
-      
-      JSON STRUCTURE:
+      JSON FORMAT:
       {
-        "brutalRoast": "the humorously honest critique",
-        "professionalScore": 85,
-        "criticalFlaws": ["list of 5 flaws"],
-        "winningPoints": ["list of 5 points"],
-        "atsAnalysis": {
-          "missingKeywords": ["keyword1", "keyword2"],
-          "formattingIssues": "desc of issues",
-          "matchRating": "Low/Medium/High"
-        },
-        "suggestions": ["list of improvements"]
+        "brutalRoast": "Humorous critique paragraph (2-3 sentences) referencing specific details.",
+        "professionalScore": 0-100,
+        "skillBreakdown": { "clarity": 0, "impact": 0, "technical": 0, "layout": 0 },
+        "criticalFlaws": ["5 specific flaws"],
+        "winningPoints": ["5 specific strengths"],
+        "atsAnalysis": { "missingKeywords": [], "formattingIssues": "", "matchRating": "Low/Medium/High" },
+        "suggestions": ["4 actionable fixes"]
       }
 
-      ONLY RETURN JSON.
+      Strictly return JSON only.
     `;
 
     const chatCompletion = await groq.chat.completions.create({
-      messages: [{ role: "user", content: prompt }],
+      messages: [
+        { 
+          role: "system", 
+          content: `You are a Resume Roaster with a ${tone} tone. You always respond in strictly valid JSON format.` 
+        },
+        { role: "user", content: prompt }
+      ],
       model: "llama-3.3-70b-versatile",
-      temperature: 0.8,
+      temperature: 0.85,
       response_format: { type: "json_object" },
       max_tokens: 3000,
     });
 
     const content = chatCompletion.choices[0]?.message?.content || "";
     try {
+      const parsedData = JSON.parse(content);
       return { 
-        data: JSON.parse(content),
+        data: parsedData,
         raw: content
       };
     } catch (e) {
-      // Fallback if JSON fails, extract with regex
+      console.warn("JSON Parse failed, attempting regex extraction", e);
       const match = content.match(/\{[\s\S]*\}/);
       if (match) {
         return { data: JSON.parse(match[0]), raw: content };
       }
-      throw new Error("Failed to parse AI response.");
+      throw new Error("The AI spat out garbage instead of JSON. Try again.");
     }
 
   } catch (error: unknown) {

@@ -8,9 +8,10 @@ import { useQuizEngine, UserAnswer } from "./useQuizEngine";
 import { getSessionId, getStoredNickname } from "@/utils/session";
 import { saveQuizResult } from "@/app/actions/results";
 import { checkAnswer } from "@/utils/quiz-helpers";
+import { quizThemes } from "@/lib/quiz-themes";
 
 interface UseQuizProps {
-  category: "aws" | "azure" | "salesforce" | "mongodb" | "pcap" | "oracle";
+  category: keyof typeof quizThemes;
   initialMode?: QuizMode;
   countParam?: string | null;
 }
@@ -18,12 +19,13 @@ interface UseQuizProps {
 export function useQuiz({ category, initialMode = 'practice', countParam = null }: UseQuizProps) {
   const [mode, setMode] = useState<QuizMode>(initialMode);
 
-  const { data: questions = [], isLoading: loading } = useQuery<QuizQuestion[]>({
+  const { data: questions = [], isLoading: loading, error } = useQuery<QuizQuestion[]>({
     queryKey: ['quiz', category, mode, countParam],
     queryFn: async () => {
       return await fetchQuizQuestions(category, mode, countParam);
     },
     staleTime: 1000 * 60 * 30,
+    retry: 1, // Retry once before failing
     refetchOnWindowFocus: false,
   });
 
@@ -31,7 +33,7 @@ export function useQuiz({ category, initialMode = 'practice', countParam = null 
       questions,
       mode,
       category,
-      initialTimeRemaining: category === 'azure' ? 45 * 60 : 90 * 60,
+      initialTimeRemaining: (quizThemes[category]?.exam.duration || 90) * 60,
       onSubmit: (answers) => {
         if (mode === 'exam') {
           saveQuizResult({
@@ -70,6 +72,7 @@ export function useQuiz({ category, initialMode = 'practice', countParam = null 
   return {
     questions,
     loading,
+    error,
     ...engine,
     calculateScore,
     mode,

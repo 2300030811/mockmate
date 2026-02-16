@@ -2,12 +2,21 @@ import { Groq } from 'groq-sdk';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { BOB_SYSTEM_PROMPT } from '@/lib/constants';
 import { getNextKey } from "@/utils/keyManager";
+import { createClient } from "@/utils/supabase/server";
 
 export const runtime = 'nodejs';
 
 export async function POST(req: Request) {
   try {
     const { messages, data } = await req.json();
+    
+    // --- SECURITY: Auth Check ---
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+
     const context = data?.context || '';
 
     const systemPrompt = `${BOB_SYSTEM_PROMPT}\n\nCONTEXT FROM CURRENT QUESTION:\n${context}`;

@@ -15,7 +15,8 @@ export async function seedDatabase() {
       
       // Use the Factory Pattern
       const source = QuizFactory.getSource(category);
-      const questions = await source.fetchRawQuestions();
+      // Force refresh to ensure we get the latest data from remote source to update DB
+      const questions = await source.fetchRawQuestions(true);
 
       if (!questions || questions.length === 0) {
         throw new Error("No questions found or parsing failed");

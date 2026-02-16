@@ -2,7 +2,7 @@
 import { BaseQuizSource } from "./BaseQuizSource";
 import { SimpleUrlQuizSource } from "./SimpleUrlQuizSource";
 import { AzureQuizSource } from "./AzureQuizSource";
-import { PCAPQuizSource } from "./PCAPQuizSource"; // We need to fix inheritance there
+import { PCAPQuizSource } from "./PCAPQuizSource";
 import { env } from "@/lib/env";
 
 // Factory

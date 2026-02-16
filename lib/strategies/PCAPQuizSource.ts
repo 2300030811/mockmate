@@ -1,7 +1,6 @@
 
 import { QuizQuestion, QuizMode } from "@/types";
 import { BaseQuizSource } from "./BaseQuizSource";
-import { QuizFetcher } from "@/lib/quiz-fetcher";
 import { parsePCAPData } from "@/lib/pcap-parser"; 
 import { selectExamQuestionsAzureStyle } from "@/utils/quiz-helpers";
 
@@ -13,11 +12,10 @@ export class PCAPQuizSource extends BaseQuizSource {
     this.url = url;
   }
 
-  async fetchRawQuestions(): Promise<QuizQuestion[]> {
+  async fetchRemoteQuestions(): Promise<QuizQuestion[]> {
     if (!this.url) return [];
     
-    const dbQuestions = await QuizFetcher.fetchQuestionsFromDB("pcap");
-    if (dbQuestions && dbQuestions.length > 0) return dbQuestions;
+    // DB check handled by BaseQuizSource
 
     try {
         const response = await fetch(this.url, { next: { revalidate: 3600 } });

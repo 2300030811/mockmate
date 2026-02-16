@@ -1,6 +1,7 @@
 
 import { QuizQuestion, QuizMode } from "@/types";
 import { shuffleArray } from "@/utils/quiz-helpers";
+import { QuizFetcher } from "@/lib/quiz-fetcher";
 
 export abstract class BaseQuizSource {
   protected defaultExamCount: number;
@@ -11,7 +12,26 @@ export abstract class BaseQuizSource {
     this.defaultExamCount = defaultExamCount;
   }
 
-  abstract fetchRawQuestions(): Promise<QuizQuestion[]>;
+  // Template method: Try DB -> Fallback to Remote
+  async fetchRawQuestions(forceRefresh: boolean = false): Promise<QuizQuestion[]> {
+      // 1. Try DB (skip if forceRefresh is true)
+      if (!forceRefresh) {
+          try {
+              const dbQuestions = await QuizFetcher.fetchQuestionsFromDB(this.label.toLowerCase());
+              if (dbQuestions && dbQuestions.length > 0) {
+                  return dbQuestions;
+              }
+          } catch (e) {
+              console.warn(`[${this.label}] DB fetch warning:`, e);
+          }
+      }
+
+      // 2. Fallback to Remote
+      return this.fetchRemoteQuestions();
+  }
+
+  // Abstract method to be implemented by subclasses for specific remote fetching logic
+  protected abstract fetchRemoteQuestions(): Promise<QuizQuestion[]>;
 
   async getQuestions(mode: QuizMode, countParam: string | number | null): Promise<QuizQuestion[]> {
     const rawQuestions = await this.fetchRawQuestions();
