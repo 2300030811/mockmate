@@ -6,7 +6,8 @@ import { z } from "zod";
 import { validateNickname } from "@/utils/moderation";
 
 const profileSchema = z.object({
-  nickname: z.string().min(2, "Nickname must be at least 2 characters").max(20, "Nickname must be at most 20 characters").regex(/^[a-zA-Z0-9_]+$/, "Nickname can only contain letters, numbers, and underscores"),
+  nickname: z.string().min(2, "Nickname must be at least 2 characters").max(20, "Nickname must be at most 20 characters").regex(/^[a-zA-Z0-9_ ]+$/, "Nickname can only contain letters, numbers, spaces, and underscores"),
+  avatar_icon: z.string().min(1, "Icon is required").default("User"),
 });
 
 export type ProfileState = {
@@ -17,8 +18,9 @@ export type ProfileState = {
 
 export async function updateProfile(prevState: ProfileState, formData: FormData): Promise<ProfileState> {
   const nickname = formData.get("nickname") as string;
+  const avatar_icon = formData.get("avatar_icon") as string;
 
-  const result = profileSchema.safeParse({ nickname });
+  const result = profileSchema.safeParse({ nickname, avatar_icon });
 
   if (!result.success) {
     return { error: result.error.errors[0].message };
@@ -38,7 +40,10 @@ export async function updateProfile(prevState: ProfileState, formData: FormData)
 
   const { error } = await supabase
     .from("profiles")
-    .update({ nickname: result.data.nickname })
+    .update({ 
+      nickname: result.data.nickname,
+      avatar_icon: result.data.avatar_icon 
+    })
     .eq("id", user.id);
 
   if (error) {
@@ -46,5 +51,8 @@ export async function updateProfile(prevState: ProfileState, formData: FormData)
   }
 
   revalidatePath("/", "layout");
+  revalidatePath("/dashboard");
+  revalidatePath("/settings");
+  
   return { success: true, message: "Profile updated successfully" };
 }

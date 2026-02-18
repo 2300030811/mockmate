@@ -116,4 +116,18 @@ export interface ExternalQuizResponse {
   questions?: unknown[];
   [key: string]: unknown;
 }
+export interface Profile {
+  id: string;
+  nickname: string | null;
+  avatar_icon: string | null;
+  updated_at?: string;
+}
 
+export interface AppUser {
+  id: string;
+  email?: string;
+  user_metadata: {
+    nickname?: string;
+    [key: string]: any;
+  };
+}

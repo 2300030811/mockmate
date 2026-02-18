@@ -6,9 +6,21 @@ import { createClient } from "@/utils/supabase/server";
 
 export const runtime = 'nodejs';
 
+interface ChatMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
+interface RequestData {
+  messages: ChatMessage[];
+  data?: {
+    context?: string;
+  };
+}
+
 export async function POST(req: Request) {
   try {
-    const { messages, data } = await req.json();
+    const { messages, data }: RequestData = await req.json();
     
     // --- SECURITY: Auth Check ---
     const supabase = createClient();
@@ -64,8 +76,9 @@ export async function POST(req: Request) {
           }
         });
 
-      } catch (groqErr: any) {
-        console.warn("⚠️ Bob Groq failed, falling back to Gemini:", groqErr.message);
+      } catch (groqErr: unknown) {
+        const message = groqErr instanceof Error ? groqErr.message : "Unknown error";
+        console.warn("⚠️ Bob Groq failed, falling back to Gemini:", message);
       }
     }
 
@@ -82,8 +95,8 @@ export async function POST(req: Request) {
 
         const result = await model.generateContentStream({
           contents: messages
-            .filter((m: any, i: number) => !(i === 0 && m.role === 'assistant'))
-            .map((m: any) => ({
+            .filter((m, i) => !(i === 0 && m.role === 'assistant'))
+            .map((m) => ({
               role: m.role === 'assistant' ? 'model' : 'user',
               parts: [{ text: m.content }]
             })),
@@ -113,16 +126,18 @@ export async function POST(req: Request) {
           }
         });
 
-      } catch (geminiErr: any) {
-        console.warn("⚠️ Bob Gemini failed:", geminiErr.message);
+      } catch (geminiErr: unknown) {
+        const message = geminiErr instanceof Error ? geminiErr.message : "Unknown error";
+        console.warn("⚠️ Bob Gemini failed:", message);
       }
     }
 
     throw new Error("No AI services available.");
 
-  } catch (error: any) {
-    console.error("🔥 Bob Chat Error:", error);
-    return new Response(JSON.stringify({ error: error.message }), { 
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("🔥 Bob Chat Error:", message);
+    return new Response(JSON.stringify({ error: message }), { 
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });

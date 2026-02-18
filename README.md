@@ -81,6 +81,14 @@ Experience the pressure of a real interview from home:
 - **Voice-First Experience**: Utilizes **Native Web Speech API** for zero-latency transcription.
 - **Adaptive Feedback**: AI analyzes technical accuracy and behavioral cues, providing constructive critique.
 
+### ⚔️ Project Mode
+
+**Real-world engineering challenges**:
+
+- **Real-world Scenarios**: Fix bugs in pre-configured project environments (Blood Banking, FinTech).
+- **Senior Solution Reviews**: Compare your code with expert solutions and learn architectural best practices.
+- **Success Metrics**: Track time-to-solve and hint usage to measure growth.
+
 ## 🛠️ Tech Stack & Quality
 
 ### ⚙️ Core Architecture
@@ -91,6 +99,13 @@ Experience the pressure of a real interview from home:
 - **Framer Motion**: Complex animations for Arena & System Design.
 - **Supabase**: Authentication, Database, and Row Level Security (RLS).
 - **Server Actions**: Clean separation of business logic and UI.
+
+### ⚡ Performance & Optimization (Recent)
+
+- **Dynamic Imports**: Code splitting for heavy components like `BobAssistant` to reduce TTI.
+- **Memoized Rendering**: Custom `MemoizedMarkdown` and `SyntaxHighlighter` implementations to minimize re-renders.
+- **Modular Refactoring**: Decoupled monolithic components (`SettingsForm`, `BobAssistant`) into single-responsibility sub-components.
+- **Asset Optimization**: Strategic use of Next.js Image component and layout stability.
 
 ### 🧪 Testing & Reliability
 

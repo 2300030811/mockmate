@@ -8,12 +8,15 @@ import { validateNickname } from "@/utils/moderation";
 import { getRawQuestions } from "@/app/actions/quiz";
 import { checkAnswer } from "@/utils/quiz-helpers";
 
+import { ActivityItem, LeaderboardItem } from "@/types/dashboard";
+
 export async function saveQuizResult(data: {
   sessionId: string;
   category: string;
-  userAnswers: Record<string, any>;
+  userAnswers: Record<string, string | string[] | Record<string, string> | boolean | number>;
   totalQuestions: number; // Claimed total
   nickname?: string;
+  generatedQuiz?: any[]; // Optional: For AI generated quizzes where we pass the source of truth
 }) {
   const supabase = createClient();
   const adminDb = createAdminClient(); // Initialize Admin Client
@@ -43,19 +46,30 @@ export async function saveQuizResult(data: {
         }
     }
 
-    // 1. Fetch Source of Truth
-    // Handle arena prefixes like 'arena:win:aws' or 'arena_aws'
-    const sourceCategory = data.category
-      .replace(/^arena:[^:]+:/, '') // Matches arena:win:aws -> aws
-      .replace(/^arena_/, '');      // Matches arena_aws -> aws
-      
-    const questions = await getRawQuestions(sourceCategory);
+    let questions: any[] = [];
+
+    // 1. Determine Source of Truth
+    if (data.generatedQuiz && (data.category === "AI Generated" || data.category.startsWith("PDF:"))) {
+       // For AI quizzes, trust the passed quiz data as source of truth
+       questions = data.generatedQuiz;
+    } else {
+       // For static quizzes, fetch from server-side source
+       const sourceCategory = data.category
+        .replace(/^arena:[^:]+:/, '') // Matches arena:win:aws -> aws
+        .replace(/^arena_/, '');      // Matches arena_aws -> aws
+        
+       questions = await getRawQuestions(sourceCategory);
+    }
+    
     if (!questions || questions.length === 0) {
-        throw new Error(`Failed to validate quiz: Source questions not found for ${sourceCategory}.`);
+        throw new Error(`Failed to validate quiz: Questions not found for ${data.category}.`);
     }
 
     // 2. Calculate Score Server-Side
     let calculatedScore = 0;
+    // ... rest of logic
+    
+    // Helper to normalize ID for map lookup (some are strings "1", some numbers 1)
     const questionMap = new Map(questions.map(q => [String(q.id), q]));
 
     Object.entries(data.userAnswers).forEach(([qId, ans]) => {
@@ -118,13 +132,14 @@ export async function saveQuizResult(data: {
     
     revalidatePath("/");
     return { success: true };
-  } catch (error: any) {
-    console.error("❌ Failed to save quiz result:", error.message);
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "An unknown error occurred";
+    console.error("❌ Failed to save quiz result:", message);
+    return { success: false, error: message };
   }
 }
 
-export async function getRecentResults(sessionId: string) {
+export async function getRecentResults(sessionId: string): Promise<ActivityItem[]> {
     const supabase = createClient();
     try {
         const { data: { user } } = await supabase.auth.getUser();
@@ -136,19 +151,17 @@ export async function getRecentResults(sessionId: string) {
             .limit(10);
         
         if (user) {
-            // Priority: User's own results
             query = query.eq('user_id', user.id);
         } else {
-            // Fallback: Current session results
             query = query.eq('session_id', sessionId);
         }
 
         const { data, error } = await query;
         
         if (error) throw error;
-        return data;
-    } catch (error: any) {
-        console.error("❌ Failed to fetch results:", error.message);
+        return (data as ActivityItem[]) || [];
+    } catch (error: unknown) {
+        console.error("❌ Failed to fetch results:", error instanceof Error ? error.message : "Unknown error");
         return [];
     }
 }
@@ -169,29 +182,43 @@ export async function updateQuizResultNickname(id: string, nickname: string) {
         if (error) throw error;
         revalidatePath("/");
         return { success: true };
-    } catch (error: any) {
-        console.error("❌ Failed to update nickname:", error.message);
-        return { success: false, error: error.message };
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "An unknown error occurred";
+        console.error("❌ Failed to update nickname:", message);
+        return { success: false, error: message };
     }
 }
 
-export async function getLeaderboard(category: string) {
+
+export async function getLeaderboard(category: string, timeframe: 'all-time' | 'weekly' = 'all-time'): Promise<LeaderboardItem[]> {
     const supabase = createClient();
     try {
-        const { data, error } = await supabase
+        let query = supabase
             .from('quiz_results')
             .select('id, nickname, score, total_questions, completed_at')
             .eq('category', category)
             .not('nickname', 'is', null)
-            .neq('nickname', '')
+            .neq('nickname', '');
+
+        if (timeframe === 'weekly') {
+            const now = new Date();
+            const lastSunday = new Date(now);
+            lastSunday.setDate(now.getDate() - now.getDay());
+            lastSunday.setHours(0, 0, 0, 0);
+            
+            query = query.gte('completed_at', lastSunday.toISOString());
+        }
+
+        query = query
             .order('score', { ascending: false })
             .order('completed_at', { ascending: false })
-            .limit(10);
+            .limit(50);
             
+        const { data, error } = await query;
         if (error) throw error;
-        return data || [];
-    } catch (error: any) {
-        console.error("❌ Failed to fetch leaderboard:", error.message);
+        return (data as LeaderboardItem[]) || [];
+    } catch (error: unknown) {
+        console.error("❌ Failed to fetch leaderboard:", error instanceof Error ? error.message : "Unknown error");
         return [];
     }
 }
@@ -220,8 +247,9 @@ export async function deleteQuizResult(id: string) {
         if (error) throw error;
         revalidatePath("/");
         return { success: true };
-    } catch (error: any) {
-        console.error("❌ Failed to delete result:", error.message);
-        return { success: false, error: error.message };
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "An unknown error occurred";
+        console.error("❌ Failed to delete result:", message);
+        return { success: false, error: message };
     }
 }

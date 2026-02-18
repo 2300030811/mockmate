@@ -5,22 +5,29 @@ import { ArenaQuestion } from "../(main)/arena/types";
 
 const CATEGORIES = ["aws", "azure", "salesforce", "mongodb", "pcap", "oracle"];
 
+interface Question {
+  id: string | number;
+  question: string;
+  type?: string;
+  options?: string[];
+  answer?: string | string[];
+  explanation?: string;
+  code?: string;
+}
+
 export async function startArenaMatch(category?: string) {
   try {
-    // 1. Pick category
     const actualCategory = (category && category !== "random") 
       ? category 
       : CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
     
-    // 2. Fetch questions
-    const rawQuestions = await getRawQuestions(actualCategory);
+    const rawQuestions = await getRawQuestions(actualCategory) as Question[];
     
     if (!rawQuestions || rawQuestions.length === 0) {
-      throw new Error(`No questions found for category: ${actualCategory}`);
+      throw new Error(`The questions database for '${actualCategory}' is currently offline or empty. Please try another category.`);
     }
 
-    // 3. Filter for MCQ only (Arena UI is built for MCQs) and Shuffle
-    const filtered = rawQuestions.filter(q => q.type === 'mcq' || q.type === 'MSQ' || (q as any).options);
+    const filtered = rawQuestions.filter(q => q.type === 'mcq' || q.type === 'MSQ' || q.options);
     
     if (filtered.length === 0) {
       throw new Error(`No compatible questions found for category: ${actualCategory}`);
@@ -30,14 +37,12 @@ export async function startArenaMatch(category?: string) {
       .sort(() => 0.5 - Math.random())
       .slice(0, 5);
 
-    // 4. Transform to ArenaQuestion format
     const formattedQuestions: ArenaQuestion[] = shuffled.map(q => {
-      const mcq = q as any; // Cast to access fields safely after check
       return {
         id: String(q.id),
         q: q.question,
-        options: mcq.options || [],
-        a: Array.isArray(mcq.answer) ? mcq.answer[0] : (mcq.answer as string),
+        options: q.options || [],
+        a: Array.isArray(q.answer) ? q.answer[0] : (q.answer as string),
         tip: q.explanation || "",
         category: actualCategory,
         code: q.code

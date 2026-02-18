@@ -1,13 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { User, LogOut, Settings, ShieldCheck, ChevronDown, LogIn } from "lucide-react";
+import { 
+    User, 
+    LogOut, 
+    Settings, 
+    ShieldCheck, 
+    ChevronDown, 
+    LogIn
+} from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import { Button, buttonVariants } from "./ui/Button";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { UserNicknameToggle } from "./UserNicknameToggle";
 import { useAuth } from "@/components/providers/auth-provider";
+import { getAvatarIcon } from "@/lib/icons";
 
 export function UserAuthSection() {
     const { user, profile, loading } = useAuth();
@@ -34,6 +42,9 @@ export function UserAuthSection() {
         );
     }
 
+    const avatarIconName = profile?.avatar_icon || "User";
+    const AvatarIcon = getAvatarIcon(avatarIconName);
+
     const nickname = profile?.nickname || user.user_metadata?.nickname || user.email?.split('@')[0];
 
     return (
@@ -45,7 +56,7 @@ export function UserAuthSection() {
                 className="border-0 shadow-none bg-transparent hover:bg-black/5 dark:hover:bg-white/5 rounded-full gap-2 px-3"
             >
                 <div className="w-5 h-5 bg-gradient-to-br from-emerald-400 to-teal-600 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                    <User className="w-3 h-3 text-white" />
+                    <AvatarIcon className="w-3 h-3 text-white" />
                 </div>
                 <span className="max-w-[100px] truncate font-bold text-xs uppercase tracking-wider dark:text-white">
                     {nickname}

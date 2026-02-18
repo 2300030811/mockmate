@@ -13,9 +13,13 @@ import { EmptyState, LoadingState } from "@/components/ui/States";
 import { QuizResults } from "./QuizResults";
 import { Star, ChevronLeft, ChevronRight } from "lucide-react";
 
+import dynamic from 'next/dynamic';
 import { QuizNavbar } from "./QuizNavbar";
 import { QuizSidebar } from "./QuizSidebar";
-import { BobAssistant } from "./BobAssistant";
+
+const BobAssistant = dynamic(() => import("./BobAssistant").then(mod => mod.BobAssistant), {
+  ssr: false,
+});
 
 interface UniversalQuizShellProps {
   category: "aws" | "azure" | "salesforce" | "mongodb" | "pcap" | "oracle";

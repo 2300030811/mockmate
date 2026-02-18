@@ -10,9 +10,11 @@ import { Badges } from "./components/Badges";
 import { CareerPaths } from "./components/CareerPaths";
 import { motion } from "framer-motion";
 
+import { DashboardData } from "@/types/dashboard";
+
 export default function DashboardPage() {
   const router = useRouter();
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

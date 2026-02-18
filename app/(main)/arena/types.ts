@@ -36,3 +36,10 @@ export interface StatItem {
   bg: string;
   hideOnMobile?: boolean;
 }
+
+export interface RecentMatch {
+  category: string;
+  score: number;
+  total_questions: number;
+  completed_at: string;
+}

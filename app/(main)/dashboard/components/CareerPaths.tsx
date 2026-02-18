@@ -1,11 +1,15 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Link } from "lucide-react";
 import { Map, ArrowRight } from "lucide-react";
-import NextLink from "next/link"; // Renamed to avoid confusion with lucide-react Link icon (if needed) or just use NextLink
+import NextLink from "next/link";
+import { CareerPath } from "@/types/dashboard";
 
-export function CareerPaths({ paths }: { paths: any[] }) {
+interface CareerPathsProps {
+  paths: CareerPath[];
+}
+
+export function CareerPaths({ paths }: CareerPathsProps) {
   return (
     <motion.div 
       initial={{ opacity: 0, x: 20 }}
@@ -18,7 +22,7 @@ export function CareerPaths({ paths }: { paths: any[] }) {
        </h2>
        <div className="space-y-3">
           {paths?.length > 0 ? (
-             paths.map((path: any, i: number) => (
+             paths.map((path, i) => (
                 <NextLink href="/career-path" key={i} className="block group">
                    <div className="p-3 bg-gray-800/50 hover:bg-gray-800 border border-gray-700/50 hover:border-gray-600 rounded-xl transition-all">
                       <p className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors truncate">{path.job_role}</p>

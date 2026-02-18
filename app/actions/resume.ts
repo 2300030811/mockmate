@@ -3,8 +3,9 @@
 import { Groq } from "groq-sdk";
 import { getNextKey } from "@/utils/keyManager";
 import { OCRService } from "@/lib/services/ocr";
+import { RoastData } from "../(main)/resume-roaster/types";
 
-export async function roastResumeAction(formData: FormData, jobDescription?: string, tone: string = "Brutal") {
+export async function roastResumeAction(formData: FormData, jobDescription?: string, tone: string = "Brutal"): Promise<{ data: RoastData; raw: string }> {
   try {
     const file = formData.get("file") as File;
     if (!file || !(file instanceof File)) {
@@ -63,7 +64,7 @@ export async function roastResumeAction(formData: FormData, jobDescription?: str
 
     const content = chatCompletion.choices[0]?.message?.content || "";
     try {
-      const parsedData = JSON.parse(content);
+      const parsedData = JSON.parse(content) as RoastData;
       return { 
         data: parsedData,
         raw: content
@@ -72,7 +73,7 @@ export async function roastResumeAction(formData: FormData, jobDescription?: str
       console.warn("JSON Parse failed, attempting regex extraction", e);
       const match = content.match(/\{[\s\S]*\}/);
       if (match) {
-        return { data: JSON.parse(match[0]), raw: content };
+        return { data: JSON.parse(match[0]) as RoastData, raw: content };
       }
       throw new Error("The AI spat out garbage instead of JSON. Try again.");
     }

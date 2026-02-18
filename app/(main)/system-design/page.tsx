@@ -32,23 +32,33 @@ const isInputActive = () => {
   return el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || (el as HTMLElement).isContentEditable);
 };
 
+// --- Custom Hooks ---
+import { useSystemDesignHistory } from "./hooks/useSystemDesignHistory";
+import { useCanvasControls } from "./hooks/useCanvasControls";
+import { useSelection } from "./hooks/useSelection";
+
 export default function SystemDesignCanvas() {
-  // --- Canvas State ---
   const [nodes, setNodes] = useState<Node[]>([]);
   const [connections, setConnections] = useState<Connection[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [scale, setScale] = useState(1);
-  
-  // --- History & Persistence ---
-  const [history, setHistory] = useState<{nodes: Node[], connections: Connection[], groups: Group[]}[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
+  const { 
+    history, historyIndex, historyLength, 
+    setInitialHistory, addToHistory, 
+    undo: undoHistory, redo: redoHistory 
+  } = useSystemDesignHistory({ nodes: [], connections: [], groups: [] });
+
+  const {
+    pan, setPan, scale, setScale,
+    handleMouseDown, handleMouseMove, handleMouseUp, handleWheel
+  } = useCanvasControls();
+
+  const { selectedId, selectedType, selectElement, clearSelection } = useSelection();
+
+  // --- History & Persistence State ---
   const [hasLoaded, setHasLoaded] = useState(false);
 
   // --- UI Tools ---
   const [activeTool, setActiveTool] = useState<"Select" | "Connect" | "Pan" | "Group">("Select");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [selectedType, setSelectedType] = useState<"node" | "connection" | "group" | null>(null);
   const [connectStart, setConnectStart] = useState<string | null>(null);
   const [showGrid, setShowGrid] = useState(true);
   
@@ -61,8 +71,6 @@ export default function SystemDesignCanvas() {
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
   const canvasRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
-  const isPanningRef = useRef(false);
-  const lastMouseRef = useRef({ x: 0, y: 0 });
 
   // --- Persistence Logic ---
   useEffect(() => {
@@ -76,31 +84,26 @@ export default function SystemDesignCanvas() {
         setNodes(p.nodes || []);
         setConnections(p.connections || []);
         setGroups(p.groups || []);
-        setHistory([{ nodes: p.nodes || [], connections: p.connections || [], groups: p.groups || [] }]);
-        setHistoryIndex(0);
+        setInitialHistory({ nodes: p.nodes || [], connections: p.connections || [], groups: p.groups || [] });
       } catch (e) {
-        // Fallback for old version
         const old = localStorage.getItem('mockmate-design-pro');
         if (old) {
           const p = JSON.parse(old);
-          setNodes(p.nodes || []); setConnections(p.connections || []); setGroups(p.groups || []);
+          const initial = { nodes: p.nodes || [], connections: p.connections || [], groups: p.groups || [] };
+          setNodes(initial.nodes); setConnections(initial.connections); setGroups(initial.groups);
+          setInitialHistory(initial);
         }
       }
     } else {
-        setHistory([{ nodes: [], connections: [], groups: [] }]);
-        setHistoryIndex(0);
+        setInitialHistory({ nodes: [], connections: [], groups: [] });
     }
     setHasLoaded(true);
     setWindowSize({ width: window.innerWidth, height: window.innerHeight });
     
-    const handleResize = () => {
-      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
-    };
+    const handleResize = () => setWindowSize({ width: window.innerWidth, height: window.innerHeight });
     window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [setInitialHistory]);
 
   useEffect(() => {
     if (!hasLoaded) return;
@@ -109,73 +112,30 @@ export default function SystemDesignCanvas() {
     localStorage.setItem('mockmate-design-theme', theme);
   }, [nodes, connections, groups, theme, hasLoaded]);
 
-  // --- History Managers ---
-  const addToHistory = useCallback((n: Node[], c: Connection[], g: Group[]) => {
-    setHistory(prev => {
-      const next = prev.slice(0, historyIndex + 1);
-      return [...next, { nodes: n, connections: c, groups: g }].slice(-50);
-    });
-    setHistoryIndex(prev => prev + 1);
-  }, [historyIndex]);
+  // --- Wrapper Handlers ---
+  const recordHistory = useCallback((n: Node[], c: Connection[], g: Group[]) => {
+    addToHistory({ nodes: n, connections: c, groups: g });
+  }, [addToHistory]);
 
   const undo = useCallback(() => {
-    if (historyIndex > 0) {
-      const p = history[historyIndex - 1];
-      setNodes(p.nodes); setConnections(p.connections); setGroups(p.groups);
-      setHistoryIndex(historyIndex - 1);
-    }
-  }, [historyIndex, history]);
+    const prev = undoHistory();
+    if (prev) { setNodes(prev.nodes); setConnections(prev.connections); setGroups(prev.groups); }
+  }, [undoHistory]);
 
   const redo = useCallback(() => {
-    if (historyIndex < history.length - 1) {
-      const p = history[historyIndex + 1];
-      setNodes(p.nodes); setConnections(p.connections); setGroups(p.groups);
-      setHistoryIndex(historyIndex + 1);
-    }
-  }, [historyIndex, history]);
-
-  // --- Handlers ---
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (activeTool === "Pan" || e.button === 1 || (e.button === 0 && e.altKey)) {
-       isPanningRef.current = true;
-       lastMouseRef.current = { x: e.clientX, y: e.clientY };
-       if(canvasRef.current) canvasRef.current.style.cursor = 'grabbing';
-    }
-  }, [activeTool]);
-
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (isPanningRef.current) {
-      const dx = e.clientX - lastMouseRef.current.x;
-      const dy = e.clientY - lastMouseRef.current.y;
-      setPan(prev => ({ x: prev.x + dx, y: prev.y + dy }));
-      lastMouseRef.current = { x: e.clientX, y: e.clientY };
-    }
-  }, []);
-
-  const handleMouseUp = useCallback(() => {
-    isPanningRef.current = false;
-    if (canvasRef.current) canvasRef.current.style.cursor = activeTool === "Pan" ? 'grab' : 'crosshair';
-  }, [activeTool]);
-
-  const handleWheel = useCallback((e: React.WheelEvent) => {
-    if (e.ctrlKey) {
-      e.preventDefault();
-      const delta = e.deltaY > 0 ? -0.1 : 0.1;
-      setScale(s => Math.min(Math.max(0.2, s + delta), 3));
-    } else {
-       setPan(p => ({ x: p.x - e.deltaX, y: p.y - e.deltaY }));
-    }
-  }, []);
+    const next = redoHistory();
+    if (next) { setNodes(next.nodes); setConnections(next.connections); setGroups(next.groups); }
+  }, [redoHistory]);
 
   const updateNodePos = useCallback((id: string, x: number, y: number) => {
     setNodes(prev => {
        const old = prev.find(n => n.id === id);
        if (old && old.x === x && old.y === y) return prev;
        const next = prev.map(n => n.id === id ? { ...n, x, y } : n);
-       addToHistory(next, connections, groups);
+       recordHistory(next, connections, groups);
        return next;
     });
-  }, [connections, groups, addToHistory]);
+  }, [connections, groups, recordHistory]);
 
   const handleNodeClick = useCallback((id: string) => {
     if (activeTool === "Connect") {
@@ -187,16 +147,15 @@ export default function SystemDesignCanvas() {
         if (!exists) {
           const nc = { id: `c-${Date.now()}`, from: connectStart, to: id, label: "Interface" };
           const nx = [...connections, nc];
-          setConnections(nx); addToHistory(nodes, nx, groups);
+          setConnections(nx); recordHistory(nodes, nx, groups);
           toast.success("Link established");
         }
         setConnectStart(null); setActiveTool("Select");
       }
     } else {
-      setSelectedId(id);
-      setSelectedType("node");
+      selectElement(id, "node");
     }
-  }, [activeTool, connectStart, connections, nodes, groups, addToHistory]);
+  }, [activeTool, connectStart, connections, nodes, groups, recordHistory, selectElement]);
 
   const addNode = useCallback((type: NodeType) => {
     const newNode: Node = {
@@ -209,11 +168,10 @@ export default function SystemDesignCanvas() {
     };
     const next = [...nodes, newNode];
     setNodes(next);
-    addToHistory(next, connections, groups);
-    setSelectedId(newNode.id);
-    setSelectedType("node");
+    recordHistory(next, connections, groups);
+    selectElement(newNode.id, "node");
     toast.success(`Added ${type}`);
-  }, [pan, scale, nodes, connections, groups, addToHistory]);
+  }, [pan, scale, nodes, connections, groups, recordHistory, selectElement]);
 
   const addGroup = useCallback(() => {
     const newGroup: Group = {
@@ -227,10 +185,9 @@ export default function SystemDesignCanvas() {
     };
     const next = [...groups, newGroup];
     setGroups(next);
-    addToHistory(nodes, connections, next);
-    setSelectedId(newGroup.id);
-    setSelectedType("group");
-  }, [pan, scale, nodes, connections, groups, addToHistory]);
+    recordHistory(nodes, connections, next);
+    selectElement(newGroup.id, "group");
+  }, [pan, scale, nodes, connections, groups, recordHistory, selectElement]);
 
   const deleteSelected = useCallback(() => {
     if (!selectedId) return;
@@ -238,19 +195,18 @@ export default function SystemDesignCanvas() {
        const nextN = nodes.filter(n => n.id !== selectedId);
        const nextC = connections.filter(c => c.from !== selectedId && c.to !== selectedId);
        setNodes(nextN); setConnections(nextC);
-       addToHistory(nextN, nextC, groups);
+       recordHistory(nextN, nextC, groups);
     } else if (selectedType === "connection") {
        const nextC = connections.filter(c => c.id !== selectedId);
        setConnections(nextC);
-       addToHistory(nodes, nextC, groups);
+       recordHistory(nodes, nextC, groups);
     } else if (selectedType === "group") {
        const nextG = groups.filter(g => g.id !== selectedId);
        setGroups(nextG);
-       addToHistory(nodes, connections, nextG);
+       recordHistory(nodes, connections, nextG);
     }
-    setSelectedId(null);
-    setSelectedType(null);
-  }, [selectedId, selectedType, nodes, connections, groups, addToHistory]);
+    clearSelection();
+  }, [selectedId, selectedType, nodes, connections, groups, recordHistory, clearSelection]);
 
   const exportSVG = useCallback(() => {
     if (!svgRef.current) return;
@@ -307,8 +263,8 @@ export default function SystemDesignCanvas() {
     const nextN = [...nodes, ...newNodes];
     const nextC = [...connections, ...newConns];
     setNodes(nextN); setConnections(nextC);
-    addToHistory(nextN, nextC, groups);
-  }, [pan, scale, nodes, connections, groups, addToHistory]);
+    recordHistory(nextN, nextC, groups);
+  }, [pan, scale, nodes, connections, groups, recordHistory]);
 
   const handleReview = useCallback(async () => {
     if (nodes.length === 0) return;
@@ -344,7 +300,7 @@ export default function SystemDesignCanvas() {
     }`}>
       
       <CanvasHeader 
-        undo={undo} redo={redo} historyIndex={historyIndex} historyLength={history.length}
+        undo={undo} redo={redo} historyIndex={historyIndex} historyLength={historyLength}
         setPan={setPan} setScale={setScale} scale={scale}
         showGrid={showGrid} setShowGrid={setShowGrid}
         exportSVG={exportSVG} copyJSON={copyJSON}
@@ -363,7 +319,10 @@ export default function SystemDesignCanvas() {
 
         <main 
            ref={canvasRef}
-           onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onWheel={handleWheel}
+           onMouseDown={(e) => handleMouseDown(e, activeTool, canvasRef)} 
+           onMouseMove={handleMouseMove} 
+           onMouseUp={() => handleMouseUp(activeTool, canvasRef)} 
+           onWheel={handleWheel}
            className={`flex-1 relative overflow-hidden select-none outline-none transition-colors duration-500 ${
              theme === "light" ? "bg-white" : 
              theme === "neo" ? "bg-[#050508]" : "bg-[#030303]"
@@ -419,7 +378,7 @@ export default function SystemDesignCanvas() {
                     key={g.id}
                     className={`absolute rounded-3xl border-2 transition-all duration-200 ${selectedId === g.id ? 'border-indigo-500/50 bg-indigo-500/10' : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.04]'}`}
                     style={{ x: g.x, y: g.y, width: g.w, height: g.h }}
-                    onClick={(e) => { e.stopPropagation(); setSelectedId(g.id); setSelectedType("group"); }}
+                    onClick={(e) => { e.stopPropagation(); selectElement(g.id, "group"); }}
                  >
                     <div className="p-4 flex items-center gap-2">
                        <Layout size={12} className="text-gray-600" />
@@ -445,7 +404,7 @@ export default function SystemDesignCanvas() {
                        fromNode={nodes.find(n => n.id === c.from)} 
                        toNode={nodes.find(n => n.id === c.to)} 
                        isSelected={selectedId === c.id}
-                       onClick={(id) => { setSelectedId(id); setSelectedType("connection"); }}
+                       onClick={(id) => { selectElement(id, "connection"); }}
                     />
                  ))}
               </svg>
@@ -497,7 +456,7 @@ export default function SystemDesignCanvas() {
            selectedId={selectedId} selectedType={selectedType}
            nodes={nodes} connections={connections} groups={groups}
            setNodes={setNodes} setConnections={setConnections} setGroups={setGroups}
-           setSelectedId={setSelectedId} addToHistory={addToHistory}
+           setSelectedId={(id: string | null) => selectElement(id, selectedType)} addToHistory={recordHistory}
            deleteSelected={deleteSelected}
            theme={theme}
         />

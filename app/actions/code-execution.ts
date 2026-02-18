@@ -25,7 +25,12 @@ const LANGUAGE_MAP: Record<string, number> = {
   "c#": 51      // C# (Mono 6.6.0.161)
 };
 
-export async function executeCode(language: string, code: string): Promise<{ output: string; error?: string }> {
+export interface ExecutionResult {
+  output: string;
+  error?: string;
+}
+
+export async function executeCode(language: string, code: string): Promise<ExecutionResult> {
   // 1. Validation
   if (!code || !code.trim()) {
     return { output: "", error: "Code is empty" };
@@ -104,14 +109,10 @@ export async function executeCode(language: string, code: string): Promise<{ out
 
     return { 
         output: combinedOutput,
-        // We separate 'error' only if it's a critical execution failure, 
-        // but often stderr is just part of the 'result' for the user.
-        // If stderr exists, we can populate the error field if the frontend treats it specially.
-        // For now, let's keep it simple:
-        error: result.stderr || result.compile_output ? undefined : undefined 
+        error: result.stderr || result.compile_output || undefined
     };
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Code Execution Failed:", error);
     return { output: "", error: "Network Error: Failed to reach execution engine." };
   }

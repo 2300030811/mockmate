@@ -1,9 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Activity, Target, Flame, Trophy, Swords } from "lucide-react"; // Import Swords
+import { Activity, Target, Flame, Trophy, Swords } from "lucide-react";
+import { memo } from "react";
+import { DashboardStats } from "@/types/dashboard";
 
-export function StatsGrid({ stats }: { stats: any }) {
+export const StatsGrid = memo(function StatsGrid({ stats }: { stats: DashboardStats }) {
   const statItems = [
     { label: "Total Quizzes", value: stats.totalTests, icon: Activity, color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20" },
     { label: "Arena Wins", value: stats.arenaWins || 0, icon: Swords, color: "text-red-400", bg: "bg-red-500/10", border: "border-red-500/20" },
@@ -29,4 +31,4 @@ export function StatsGrid({ stats }: { stats: any }) {
       ))}
     </div>
   );
-}
+});

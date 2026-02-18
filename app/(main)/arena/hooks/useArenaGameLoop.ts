@@ -30,33 +30,40 @@ export function useArenaGameLoop(selectedCategory: string, lobbyStats: StatItem[
     setCombo(0);
     setMatchLog(["Connecting to Global Server...", "Searching for available players...", "Filtering by Elo rating (1200)..."]);
     
-    // Start fetching questions in background
-    const matchDataPromise = startArenaMatch(selectedCategory);
+    try {
+      // Start fetching questions in background
+      const matchDataPromise = startArenaMatch(selectedCategory);
 
-    setTimeout(async () => {
-      setMatchLog(prev => [...prev, "Peer found!", "Synchronizing clocks...", "Ready!"]);
-      
-      const matchData = await matchDataPromise;
+      setTimeout(async () => {
+        setMatchLog(prev => [...prev, "Peer found!", "Synchronizing clocks...", "Ready!"]);
+        
+        const matchData = await matchDataPromise;
 
-      setTimeout(() => {
-        if (matchData.success && matchData.questions) {
-          setQuestions(matchData.questions);
-          setCategory(matchData.category || "");
-          const randomOpponent = OPPONENTS[Math.floor(Math.random() * OPPONENTS.length)];
-          setOpponent(randomOpponent);
-          setGameState('battle');
-          setCurrentQuestion(0);
-          setUserScore(0);
-          setOpponentScore(0);
-          setOpponentProgress(0);
-          setTimeLeft(30);
-          setBattleResults([]);
-        } else {
-          setMatchLog(prev => [...prev, "❌ Failed to load match data. Returning to lobby..."]);
-          setTimeout(() => setGameState('lobby'), 2000);
-        }
-      }, 1000);
-    }, 3000);
+        setTimeout(() => {
+          if (matchData && matchData.success && matchData.questions) {
+            setQuestions(matchData.questions);
+            setCategory(matchData.category || "");
+            const randomOpponent = OPPONENTS[Math.floor(Math.random() * OPPONENTS.length)];
+            setOpponent(randomOpponent);
+            setGameState('battle');
+            setCurrentQuestion(0);
+            setUserScore(0);
+            setOpponentScore(0);
+            setOpponentProgress(0);
+            setTimeLeft(30);
+            setBattleResults([]);
+          } else {
+            const errorMsg = matchData?.error || "Failed to load match data.";
+            setMatchLog(prev => [...prev, `❌ ${errorMsg}`, "Returning to lobby..."]);
+            setTimeout(() => setGameState('lobby'), 3000);
+          }
+        }, 1000);
+      }, 3000);
+    } catch (err) {
+      console.error("Matchmaking error:", err);
+      setMatchLog(prev => [...prev, "❌ Critical connection error.", "Returning to lobby..."]);
+      setTimeout(() => setGameState('lobby'), 3000);
+    }
   }, [selectedCategory]);
 
   const handleAnswer = useCallback((option: string) => {
@@ -91,8 +98,9 @@ export function useArenaGameLoop(selectedCategory: string, lobbyStats: StatItem[
   // Battle Logic Effect
   useEffect(() => {
     if (gameState === 'battle') {
-      const eloValue = parseInt(lobbyStats.find(s => s.label === "Elo Rating")?.val.replace(',', '') || "1000");
-      const difficultyMult = Math.max(0.8, Math.min(1.5, eloValue / 1200));
+      const eloStat = lobbyStats.find(s => s.label === "Elo Rating")?.val || "1000";
+      const eloValue = parseInt(eloStat.replace(/,/g, '') || "1000");
+      const difficultyMult = Math.max(0.7, Math.min(1.6, eloValue / 1200));
 
       const timer = setInterval(() => {
         setTimeLeft((prev) => {
@@ -103,27 +111,40 @@ export function useArenaGameLoop(selectedCategory: string, lobbyStats: StatItem[
           return prev - 1;
         });
 
+        // Opponent progress logic
         setOpponentProgress((prev) => {
-           const baseIncrement = Math.random() * 5; 
-           const increment = baseIncrement * difficultyMult;
+           // Simulating thinking speed based on elo
+           const pauseProb = 0.2 / difficultyMult; 
+           if (Math.random() < pauseProb) return prev;
+           
+           const baseIncrement = Math.random() * 5 + 2; // 2-7% per tick
+           const speedBoost = Math.random() > 0.8 ? 1.5 : 1.0; // Random speed bursts
+           const increment = baseIncrement * difficultyMult * speedBoost;
+           
            const next = prev + increment;
-           if (next >= 100) return 100;
-           return next;
+           return next >= 100 ? 100 : next;
         });
 
-        const scoreProb = 0.85 + (difficultyMult * 0.05);
+        // Opponent scoring logic
+        const scoreProb = 0.88 + (difficultyMult * 0.04);
         if (Math.random() > scoreProb && opponentScore < questions.length) {
-            setOpponentScore(s => s + 1);
+            // Only score if they have progress "banked"
+            // Let's say every 20% progress = 1 question potentially answered
+            const maxScoreForProgress = Math.floor(opponentProgress / (100 / questions.length)) + 1;
+            if (opponentScore < maxScoreForProgress) {
+                setOpponentScore(s => s + 1);
+            }
         }
       }, 1000);
 
       return () => clearInterval(timer);
     }
-  }, [gameState, opponentScore, questions.length, lobbyStats]);
+  }, [gameState, opponentScore, questions.length, lobbyStats, opponentProgress]);
 
   useEffect(() => {
     if (opponentProgress >= 100 && gameState === 'battle') {
-        setTimeout(() => setGameState('results'), 1500);
+        const finishDelay = Math.random() * 1000 + 500;
+        setTimeout(() => setGameState('results'), finishDelay);
     }
   }, [opponentProgress, gameState]);
 

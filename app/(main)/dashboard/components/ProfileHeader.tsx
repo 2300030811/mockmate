@@ -1,11 +1,20 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { User, Zap, Target, Flame, ShieldCheck } from "lucide-react";
+import { 
+  User, 
+  Zap, 
+  Target, 
+  Flame, 
+  ShieldCheck
+} from "lucide-react";
 import { useRouter } from "next/navigation";
+import { getAvatarIcon } from "@/lib/icons";
 
 export function ProfileHeader({ data }: { data: any }) {
   const router = useRouter();
+  const avatarIconName = data.user.profile.avatar_icon || "User";
+  const AvatarIcon = getAvatarIcon(avatarIconName);
 
   return (
     <motion.div 
@@ -14,13 +23,11 @@ export function ProfileHeader({ data }: { data: any }) {
       className="bg-gray-900/50 border border-gray-800 rounded-3xl p-8 backdrop-blur-xl flex flex-col md:flex-row items-center gap-8 relative overflow-hidden group"
     >
       <div className="absolute top-0 right-0 p-12 opacity-5 scale-150 rotate-12 pointer-events-none group-hover:rotate-6 transition-transform duration-700">
-        <User size={200} />
+        <AvatarIcon size={200} />
       </div>
 
       <div className="w-24 h-24 md:w-32 md:h-32 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-2xl shadow-blue-500/20 ring-4 ring-gray-900 border border-blue-400/30">
-         <span className="text-3xl md:text-5xl font-black text-white">
-            {data.user.profile.nickname?.[0]?.toUpperCase() || data.user.email?.[0]?.toUpperCase()}
-         </span>
+         <AvatarIcon className="w-12 h-12 md:w-16 md:h-16 text-white" />
       </div>
 
       <div className="flex-1 text-center md:text-left z-10">

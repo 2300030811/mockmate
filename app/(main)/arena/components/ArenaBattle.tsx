@@ -3,6 +3,8 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Cpu } from "lucide-react";
 import { ArenaQuestion, Opponent } from "../types";
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 interface ArenaBattleProps {
   opponent: Opponent | null;
@@ -132,20 +134,27 @@ export function ArenaBattle({
                   {currentQ?.q}
                </h2>
                
+
                {currentQ?.code && (
                  <motion.div 
                    initial={{ opacity: 0, y: 10 }}
                    animate={{ opacity: 1, y: 0 }}
-                   className="w-full max-w-2xl mx-auto mt-6 p-4 md:p-6 bg-black/40 border border-white/10 rounded-xl md:rounded-2xl text-left overflow-x-auto custom-scrollbar"
+                   className="w-full max-w-2xl mx-auto mt-4 md:mt-6 text-left overflow-hidden rounded-xl md:rounded-2xl border border-white/10 shadow-2xl max-h-[40vh] overflow-y-auto custom-scrollbar"
                  >
-                   <pre className="font-mono text-xs md:text-sm text-blue-300 leading-relaxed">
-                     <code>{currentQ.code}</code>
-                   </pre>
+                   <SyntaxHighlighter 
+                     language="javascript" 
+                     style={vscDarkPlus} 
+                     customStyle={{ margin: 0, padding: '1.5rem', fontSize: '0.85rem', lineHeight: '1.6', background: 'rgba(0,0,0,0.6)' }}
+                     wrapLines={true}
+                     wrapLongLines={true}
+                   >
+                     {currentQ.code}
+                   </SyntaxHighlighter>
                  </motion.div>
                )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-5 px-4 md:px-0">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-5 px-4 md:px-0" role="group" aria-label="Multiple choice options">
                {currentQ?.options.map((opt, i) => {
                   const isCorrect = userSelected && opt === currentQ.a;
                   const isWrong = userSelected === opt && opt !== currentQ.a;
@@ -155,6 +164,8 @@ export function ArenaBattle({
                         key={i}
                         onClick={() => handleAnswer(opt)}
                         disabled={!!userSelected}
+                        aria-label={`Option ${String.fromCharCode(65 + i)}: ${opt}`}
+                        aria-pressed={userSelected === opt}
                         className={`relative p-4 md:p-8 rounded-xl md:rounded-[2rem] border-2 font-black text-xs md:text-xl transition-all text-left flex items-center justify-between group overflow-hidden
                           ${isCorrect ? 'bg-emerald-600/20 border-emerald-500/50 text-emerald-400' : 
                             isWrong ? 'bg-red-600/20 border-red-500/50 text-red-400' : 
@@ -163,7 +174,7 @@ export function ArenaBattle({
                         `}
                      >
                         <span className="flex gap-3 md:gap-4 items-center">
-                           <span className="w-6 h-6 md:w-8 md:h-8 rounded-lg bg-black/40 flex items-center justify-center text-[10px] md:text-xs">
+                           <span className="w-6 h-6 md:w-8 md:h-8 rounded-lg bg-black/40 flex items-center justify-center text-[10px] md:text-xs" aria-hidden="true">
                               {String.fromCharCode(65 + i)}
                            </span>
                            {opt}

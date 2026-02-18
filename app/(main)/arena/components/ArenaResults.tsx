@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { Zap, Target, TrendingUp, Award } from "lucide-react";
 import { BattleResult } from "../types";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { saveQuizResult } from "@/app/actions/results";
 import { v4 as uuidv4 } from "uuid";
 
@@ -25,10 +25,14 @@ export function ArenaResults({
   onRematch
 }: ArenaResultsProps) {
   const displayCategory = category.replace('arena_', '').toUpperCase();
+  const hasSaved = useRef(false);
   
   useEffect(() => {
     // Persist results on mount
     const persistResults = async () => {
+      if (hasSaved.current) return;
+      hasSaved.current = true;
+
       const sessionId = uuidv4();
       const userAnswers: Record<string, any> = {};
       
@@ -50,7 +54,46 @@ export function ArenaResults({
     };
 
     persistResults();
-  }, [battleResults, category]);
+  }, [battleResults, category, userScore, opponentScore]);
+
+  const calculateRewards = () => {
+    const isWin = userScore > opponentScore;
+    const isDraw = userScore === opponentScore;
+    const accuracy = userScore / (battleResults.length || 1);
+    
+    // XP Calculation
+    let xp = 50; // Participation Base
+    if (isWin) xp += 150;
+    if (isDraw) xp += 50;
+    xp += userScore * 20; // 20 XP per correct answer
+    xp += Math.round(accuracy * 100 * 2); // Accuracy bonus (up to 200 XP)
+
+    // Credits Calculation
+    let credits = 5; // Base
+    if (isWin) credits += 25;
+    if (isDraw) credits += 10;
+    credits += userScore * 5; // 5 credits per correct answer
+
+    // Elo Calculation (Simulated)
+    let elo = 0;
+    const scoreDiff = userScore - opponentScore;
+    
+    if (isWin) {
+        elo = 25 + (scoreDiff * 2); // Win + dominance bonus
+    } else if (isDraw) {
+        elo = 5;
+    } else {
+        // Loss
+        elo = -20 + userScore; // Lose less if you scored points
+        if (elo > -5) elo = -5; // Minimum penalty cap
+    }
+
+    return { totalXp: xp, totalCredits: credits, eloChange: elo };
+  };
+
+  const { totalXp, totalCredits, eloChange } = calculateRewards();
+
+  // ... useEffect for saveQuizResult (using these new values if we wanted to save them, but sticking to existing pattern for now)
 
   return (
     <motion.div 
@@ -69,10 +112,10 @@ export function ArenaResults({
         
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 w-full max-w-5xl my-12">
            {[
-             { label: "XP Gain", val: `+${userScore * 120}`, color: "text-emerald-400", icon: Zap },
+             { label: "XP Gain", val: `+${totalXp}`, color: "text-emerald-400", icon: Zap },
              { label: "Accuracy", val: `${Math.round((userScore / (battleResults.length || 1)) * 100)}%`, color: "text-blue-400", icon: Target },
-             { label: "Rank Change", val: userScore >= opponentScore ? '+32' : '-14', color: "text-indigo-400", icon: TrendingUp },
-             { label: "Credits", val: `+${userScore * 10}`, color: "text-amber-400", icon: Award }
+             { label: "Rank Change", val: eloChange > 0 ? `+${eloChange}` : `${eloChange}`, color: eloChange >= 0 ? "text-indigo-400" : "text-red-400", icon: TrendingUp },
+             { label: "Credits", val: `+${totalCredits}`, color: "text-amber-400", icon: Award }
            ].map((s, i) => (
              <div key={i} className="bg-gray-900/60 border border-white/5 p-4 md:p-6 rounded-2xl md:rounded-[2rem] text-center group hover:border-white/20 transition-all">
                 <div className={`w-10 h-10 md:w-12 md:h-12 bg-white/5 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform`}>

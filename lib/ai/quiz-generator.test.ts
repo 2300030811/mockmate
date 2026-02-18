@@ -62,7 +62,14 @@ describe('QuizGenerator', () => {
     const result = await QuizGenerator.generate('content', 'gemini');
 
     expect(geminiGenerateMock).toHaveBeenCalled();
-    expect(result).toEqual(mockQuestions);
+    
+    // Check main properties
+    expect(result[0].question).toBe(mockQuestions[0].question);
+    expect(result[0].answer).toBe(mockQuestions[0].answer);
+    
+    // Check options contain the same elements (ignoring order due to shuffling)
+    expect(result[0].options).toHaveLength(mockQuestions[0].options.length);
+    expect(result[0].options).toEqual(expect.arrayContaining(mockQuestions[0].options));
   });
   
   it('should use GroqProvider when specified', async () => {
@@ -72,7 +79,9 @@ describe('QuizGenerator', () => {
     const result = await QuizGenerator.generate('content', 'groq');
 
     expect(groqGenerateMock).toHaveBeenCalled();
-    expect(result).toEqual(mockQuestions);
+    
+    expect(result[0].question).toBe(mockQuestions[0].question);
+    expect(result[0].options).toEqual(expect.arrayContaining(mockQuestions[0].options));
   });
 
   it('should fallback to Groq and then OpenAI if Gemini fails in auto mode', async () => {

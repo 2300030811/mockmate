@@ -5,28 +5,59 @@ import { sanitizePromptInput } from "@/utils/sanitize";
 import { safeJsonParse } from "@/utils/safeJson";
 
 export class OpenAIProvider implements AIProvider {
-  async generateQuiz(content: string, count: number = 20, difficulty: string = "medium", customApiKey?: string): Promise<GeneratedQuizQuestion[]> {
+  async generateQuiz(content: string, count: number = 20, difficulty: string = "medium", customApiKey?: string, mode: "quiz" | "flashcard" = "quiz"): Promise<GeneratedQuizQuestion[]> {
     const apiKey = customApiKey || getNextKey("OPENAI_API_KEY");
     if (!apiKey) throw new Error("OpenAI API Key missing");
 
     const safeContent = sanitizePromptInput(content, 30000);
 
-    const prompt = `
-      You are an expert AI Quiz Generator. 
-      Analyze the text provided.
-      
-      CRITICAL REQUIREMENTS:
-      1. QUANTITY & QUALITY:
-         - Generate AT LEAST ${Math.max(count, 12)} questions.
-         - DIFFICULTY LEVEL: ${difficulty.toUpperCase()}.
-         - Create a mix of question types (conceptual, factual, scenario-based).
-      2. Return ONLY a raw JSON array.
-      3. The "answer" field MUST be an EXACT string match to one of the "options".
-      4. Format: [{"question": "...", "options": ["..."], "answer": "...", "explanation": "..."}]
-      
-      TEXT CONTENT:
-      ${safeContent}
-    `;
+    let prompt = "";
+    if (mode === "flashcard") {
+        prompt = `
+          You are an elite Study Assistant.
+          
+          TASK:
+          Generate FLASHCARDS from the text.
+          
+          RULES:
+          1. STRUCTURE:
+             - JSON Array: [{"question": "Front", "options": ["Back"], "answer": "Back", "explanation": "Context"}]
+             - "options" must have exactly one string (the definition).
+             - "answer" must match that definition.
+          
+          2. CONTENT:
+             - Front: Term/Question.
+             - Back: Definition/Answer (Brief).
+             - SELF-CONTAINED: No meta-references to the source text.
+          
+          3. COUNT: ${Math.max(count, 15)}+ cards.
+          
+          TEXT CONTENT:
+          ${safeContent}
+        `;
+    } else {
+        prompt = `
+          You are an elite AI Quiz Architect. 
+          
+          TASK:
+          Create a multiple-choice quiz based on the provided text.
+          
+          RULES:
+          1. QUESTIONS MUST BE SELF-CONTAINED.
+             - Bad: "What is mentioned in the second paragraph?"
+             - Good: "What is the primary function of the mitochondria?"
+          
+          2. DIFFICULTY: ${difficulty.toUpperCase()}
+             - Target Count: ${Math.max(count, 12)}+
+          
+          3. OUTPUT FORMAT:
+             - Raw JSON Array: [{"question": "...", "options": ["A","B","C","D"], "answer": "A", "explanation": "..."}]
+             - Ensure "answer" is an exact match to one of the options.
+          
+          TEXT CONTENT:
+          ${safeContent}
+        `;
+    }
 
     try {
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -57,11 +88,14 @@ export class OpenAIProvider implements AIProvider {
       if (!rawText) throw new Error("Empty response from OpenAI");
 
       let json = JSON.parse(rawText);
+      
       // OpenAI sometimes wraps in a "quiz" or "questions" object if it feels like it
-      if (json.questions && Array.isArray(json.questions)) {
-          json = json.questions;
-      } else if (json.quiz && Array.isArray(json.quiz)) {
-          json = json.quiz;
+      // Standardize robust unwrapping:
+      if (!Array.isArray(json)) {
+          const arrayKey = Object.keys(json).find(key => Array.isArray(json[key]));
+          if (arrayKey) {
+              json = json[arrayKey];
+          }
       }
 
       const questions = GeneratedQuizResponseSchema.parse(json);

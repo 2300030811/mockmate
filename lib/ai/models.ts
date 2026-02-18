@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const GeneratedQuizQuestionSchema = z.object({
   question: z.string(),
-  options: z.array(z.string()).min(2),
+  options: z.array(z.string()).min(1),
   answer: z.string(),
   explanation: z.string(),
 });

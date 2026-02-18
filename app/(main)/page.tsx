@@ -6,7 +6,9 @@ import { HomeBackground } from "@/components/home/HomeBackground";
 import { HomeCTA } from "@/components/home/HomeCTA";
 import { StatsRow } from "@/components/home/StatsRow";
 import { DailyProblem } from "@/components/home/DailyProblem";
-import { BobAssistant } from "@/components/quiz/BobAssistant";
+const BobAssistant = dynamic(() => import("@/components/quiz/BobAssistant").then(mod => mod.BobAssistant), {
+  ssr: false,
+});
 
 // Lazy load heavy dashboard components
 const ResultsHistory = dynamic(() => import("@/components/home/ResultsHistory").then(mod => mod.ResultsHistory), {

@@ -2,8 +2,9 @@
 
 import { Groq } from "groq-sdk";
 import { getNextKey } from "@/utils/keyManager";
+import { Node, Connection } from "../(main)/system-design/types";
 
-export async function reviewSystemDesignAction(components: any[], connections: any[]) {
+export async function reviewSystemDesignAction(components: Node[], connections: Connection[]) {
   try {
     const apiKey = getNextKey("GROQ_API_KEY") || process.env.GROQ_API_KEY;
     if (!apiKey) throw new Error("Groq API Service configuration missing.");

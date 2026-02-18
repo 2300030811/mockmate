@@ -2,8 +2,10 @@
 
 import { motion } from "framer-motion";
 import { TrendingUp, Calendar } from "lucide-react";
+import { memo } from "react";
+import { ActivityItem } from "@/types/dashboard";
 
-export function RecentActivity({ activity }: { activity: any[] }) {
+export const RecentActivity = memo(function RecentActivity({ activity }: { activity: ActivityItem[] }) {
   return (
     <motion.div 
       initial={{ opacity: 0, x: -20 }}
@@ -68,4 +70,4 @@ export function RecentActivity({ activity }: { activity: any[] }) {
        </div>
     </motion.div>
   );
-}
+});

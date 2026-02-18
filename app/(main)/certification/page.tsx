@@ -9,9 +9,13 @@ import {
   Terminal, 
   Code 
 } from "lucide-react";
+import dynamic from 'next/dynamic';
 import { useTheme } from "@/components/providers/providers";
-import { BobAssistant } from "@/components/quiz/BobAssistant";
 import { NavigationPill } from "@/components/ui/NavigationPill";
+
+const BobAssistant = dynamic(() => import("@/components/quiz/BobAssistant").then(mod => mod.BobAssistant), {
+  ssr: false,
+});
 
 // --- Icons ---
 const AWSIcon = () => (

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { InteractiveCard } from "@/components/ui/Card";
-import { BrainCircuit, Mic, Trophy, Rocket, Flame, Layers, Swords } from "lucide-react";
+import { BrainCircuit, Mic, Trophy, Rocket, Flame, Layers, Swords, Code2 } from "lucide-react";
 
 const features = [
   {
@@ -32,6 +32,15 @@ const features = [
     gradient: "from-red-600 to-orange-600",
     shadow: "shadow-red-500/20",
     delay: 0.3
+  },
+  {
+    Icon: Code2,
+    title: "Project Mode",
+    description: "Fix real bugs in multi-file sandboxed environments",
+    href: "/project-mode",
+    gradient: "from-pink-500 to-rose-500",
+    shadow: "shadow-pink-500/20",
+    delay: 0.35
   },
   {
     Icon: Trophy,

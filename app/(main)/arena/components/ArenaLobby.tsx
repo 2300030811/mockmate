@@ -2,11 +2,11 @@
 
 import { motion } from "framer-motion";
 import { ChevronRight, History, Swords, Globe, Database, Cloud, Terminal, Shield } from "lucide-react";
-import { StatItem } from "../types";
+import { StatItem, RecentMatch } from "../types";
 
 interface ArenaLobbyProps {
   stats: StatItem[];
-  recentMatches: any[];
+  recentMatches: RecentMatch[];
   selectedCategory: string;
   onCategoryChange: (cat: string) => void;
   onStart: () => void;
