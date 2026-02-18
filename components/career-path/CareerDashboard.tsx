@@ -1,20 +1,190 @@
 "use client";
 
 import React from 'react';
-import { motion } from 'framer-motion';
-import { CheckCircle, XCircle, BookOpen, ExternalLink, ArrowRight, Award, Target, TrendingUp, Briefcase, MessageSquare, ListChecks, Download, Lightbulb } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { CheckCircle, XCircle, BookOpen, ExternalLink, ArrowRight, Award, Target, TrendingUp, Briefcase, MessageSquare, ListChecks, Download, Lightbulb, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { CareerAnalysisResult, SkillGap } from '@/types/career';
 import Link from 'next/link';
 import { QUIZ_ROUTES } from '@/lib/constants';
+import { useTheme } from '@/components/providers/providers';
 
 interface CareerDashboardProps {
   data: CareerAnalysisResult;
 }
 
+const StatCard = React.memo(({ title, value, icon: Icon, subtitle, gradient, benchmark }: any) => (
+  <Card className="p-6 bg-white dark:bg-white/5 border-gray-200 dark:border-white/10 relative overflow-hidden group">
+    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+      <Icon size={80} className="text-gray-900 dark:text-white" />
+    </div>
+    <h3 className="text-xs font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">{title}</h3>
+    <div className="flex items-center gap-3">
+      <p className={`text-3xl font-black italic tracking-tighter text-gray-900 dark:text-white truncate`}>
+        {value}
+      </p>
+      {benchmark && (
+        <div className="flex-1 flex gap-1 items-end h-6">
+          {benchmark}
+        </div>
+      )}
+    </div>
+    {subtitle && <p className="text-[10px] font-bold text-gray-500 mt-2 uppercase tracking-widest truncate">{subtitle}</p>}
+  </Card>
+));
+
+StatCard.displayName = "StatCard";
+
+const ResumeSection = React.memo(({ suggestions }: { suggestions: any[] }) => (
+    <div className="pt-8 space-y-6">
+        <h2 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2 uppercase tracking-tighter italic">
+            <Lightbulb className="text-yellow-500" size={20} />
+            Resume Intel
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {suggestions.map((sug, idx) => (
+                <Card key={idx} className="p-5 bg-white dark:bg-white/5 border-gray-200 dark:border-white/10 hover:border-yellow-500/30 transition-all shadow-sm group">
+                    <div className="flex items-start gap-4">
+                        <div className={`mt-1 p-2 rounded-xl transition-transform group-hover:scale-110 ${
+                            sug.impact === 'high' ? 'bg-orange-100 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400' :
+                            'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400'
+                        }`}>
+                            <Award size={18} />
+                        </div>
+                        <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] uppercase font-black tracking-[0.2em] text-gray-400">{sug.category}</span>
+                                {sug.impact === 'high' && <span className="text-[8px] uppercase font-black tracking-widest px-1.5 py-0.5 bg-orange-500/10 text-orange-500 rounded border border-orange-500/20">Critical</span>}
+                            </div>
+                            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed font-bold italic tracking-tight">
+                                "{sug.suggestion}"
+                            </p>
+                        </div>
+                    </div>
+                </Card>
+            ))}
+        </div>
+    </div>
+));
+
+ResumeSection.displayName = "ResumeSection";
+
+const InterviewPrepSection = React.memo(({ interviewPrep, isDark }: { interviewPrep: any, isDark: boolean }) => (
+    <div className="pt-8 space-y-6">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <MessageSquare className="text-blue-500 dark:text-blue-400" />
+            Interview Prep
+        </h2>
+        <div className="space-y-4">
+            {interviewPrep.topQuestions.map((q: any, idx: number) => (
+                <Card key={idx} className="p-5 border-l-4 border-l-blue-500 bg-blue-50/50 dark:bg-blue-500/5 border-gray-200 dark:border-white/10">
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">&quot;{q.question}&quot;</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 italic">
+                        <span className="font-semibold text-blue-600 dark:text-blue-400 not-italic mr-2">Why this?</span>
+                        {q.reason}
+                    </p>
+                </Card>
+            ))}
+        </div>
+    </div>
+));
+
+InterviewPrepSection.displayName = "InterviewPrepSection";
+
+const MarketPulseSection = React.memo(({ marketInsights }: { marketInsights: any }) => (
+    <div className="space-y-4">
+        <h2 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2 uppercase tracking-tighter italic">
+            <Briefcase className="text-emerald-500" size={20} />
+            Market Pulse
+        </h2>
+        <Card className="p-6 bg-emerald-50/50 dark:bg-emerald-500/5 border-emerald-200 dark:border-emerald-500/10 shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-3xl -mr-10 -mt-10" />
+            <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400">Demand Heat</span>
+                    <div className="flex gap-1 h-3 items-center">
+                        {[1, 2, 3, 4, 5].map((lvl) => (
+                            <div 
+                                key={lvl}
+                                className={`w-2 h-full rounded-full transition-colors ${
+                                    (marketInsights?.demand === 'high' && lvl <= 5) || 
+                                    (marketInsights?.demand === 'medium' && lvl <= 3) ||
+                                    (lvl <= 2)
+                                    ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]'
+                                    : 'bg-emerald-200 dark:bg-emerald-950'
+                                }`}
+                            />
+                        ))}
+                    </div>
+                </div>
+                <div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 block mb-1">Salary Benchmark</span>
+                    <p className="text-2xl font-black text-gray-900 dark:text-white tracking-tighter italic">{marketInsights.salaryRange}</p>
+                </div>
+                <div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 block mb-2">Trend Velocity</span>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed font-medium selection:bg-emerald-500/20">
+                        {marketInsights.outlook}
+                    </p>
+                </div>
+            </div>
+        </Card>
+    </div>
+));
+
+MarketPulseSection.displayName = "MarketPulseSection";
+
+const SkillGapCard = React.memo(({ gap, idx, getQuizLink }: any) => (
+  <motion.div 
+    initial={{ opacity: 0, x: -20 }}
+    animate={{ opacity: 1, x: 0 }}
+    transition={{ delay: idx * 0.05 }}
+  >
+    <Card className="p-5 bg-red-50 dark:bg-red-500/5 border-red-200 dark:border-red-500/20 hover:bg-red-100 dark:hover:bg-red-500/10 transition-colors">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className="mt-1">
+            <XCircle className="text-red-500 dark:text-red-400" size={20} />
+          </div>
+          <div>
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-white">{gap.skill}</h4>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-300 border border-red-200 dark:border-red-500/20 uppercase tracking-wider">
+                Missing
+              </span>
+              <span className="text-xs text-gray-500 dark:text-gray-400 capitalize font-medium">{gap.importance} Priority</span>
+            </div>
+          </div>
+        </div>
+
+        {gap.recommendedQuiz && (
+          <Link href={getQuizLink(gap.recommendedQuiz) || '#'} target="_blank" rel="noopener noreferrer">
+            <Button size="sm" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 border-none shadow-lg shadow-purple-900/20 text-white whitespace-nowrap">
+              Take {gap.recommendedQuiz.toUpperCase()} Quiz
+              <ArrowRight size={16} className="ml-2" />
+            </Button>
+          </Link>
+        )}
+      </div>
+    </Card>
+  </motion.div>
+));
+
+SkillGapCard.displayName = "SkillGapCard";
+
 export const CareerDashboard: React.FC<CareerDashboardProps> = ({ data }) => {
-  const container = {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+  const [expandedSteps, setExpandedSteps] = React.useState<number[]>([0]);
+
+  const toggleStep = React.useCallback((idx: number) => {
+    setExpandedSteps(prev => 
+      prev.includes(idx) ? prev.filter(i => i !== idx) : [...prev, idx]
+    );
+  }, []);
+
+  const container = React.useMemo(() => ({
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
@@ -22,14 +192,14 @@ export const CareerDashboard: React.FC<CareerDashboardProps> = ({ data }) => {
         staggerChildren: 0.1
       }
     }
-  };
+  }), []);
 
-  const item = {
+  const item = React.useMemo(() => ({
     hidden: { opacity: 0, y: 20 },
     show: { opacity: 1, y: 0 }
-  };
+  }), []);
 
-  const getQuizLink = (quizType: SkillGap['recommendedQuiz']) => {
+  const getQuizLink = React.useCallback((quizType: SkillGap['recommendedQuiz']) => {
     switch (quizType) {
       case 'aws': return QUIZ_ROUTES.aws;
       case 'azure': return QUIZ_ROUTES.azure;
@@ -39,9 +209,9 @@ export const CareerDashboard: React.FC<CareerDashboardProps> = ({ data }) => {
       case 'java': return QUIZ_ROUTES.oracle;
       default: return null;
     }
-  };
+  }, []);
 
-  const handleDownloadMarkdown = () => {
+  const handleDownloadMarkdown = React.useCallback(() => {
     let md = `# Career Roadmap: ${data.jobRole}${data.company ? ` at ${data.company}` : ''}\n\n`;
     md += `## Readiness Score: ${data.matchScore}%\n\n`;
     
@@ -79,7 +249,7 @@ export const CareerDashboard: React.FC<CareerDashboardProps> = ({ data }) => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  };
+  }, [data]);
 
   return (
     <div className="w-full max-w-6xl mx-auto space-y-8 pb-20">
@@ -92,59 +262,43 @@ export const CareerDashboard: React.FC<CareerDashboardProps> = ({ data }) => {
         className="grid grid-cols-1 md:grid-cols-3 gap-6"
       >
         <motion.div variants={item}>
-            <Card className="p-6 bg-white dark:bg-white/5 border-gray-200 dark:border-white/10 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <Target size={80} className="text-gray-900 dark:text-white" />
-                </div>
-                <h3 className="text-gray-500 dark:text-gray-400 mb-1">Target Role</h3>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white truncate" title={data.jobRole}>
-                    {data.jobRole}
-                </p>
-                {data.company && <p className="text-sm text-purple-600 dark:text-purple-400">{data.company}</p>}
-            </Card>
+            <StatCard 
+              title="Target Role"
+              value={data.jobRole}
+              icon={Target}
+              subtitle={data.company}
+            />
         </motion.div>
 
         <motion.div variants={item}>
-            <Card className="p-6 bg-white dark:bg-white/5 border-gray-200 dark:border-white/10 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <Award size={80} className="text-gray-900 dark:text-white" />
-                </div>
-                <h3 className="text-gray-500 dark:text-gray-400 mb-1">Readiness Score</h3>
-                <div className="flex items-baseline gap-2">
-                    <p className={`text-4xl font-bold ${
-                        data.matchScore >= 80 ? 'text-green-500 dark:text-green-400' : 
-                        data.matchScore >= 60 ? 'text-yellow-500 dark:text-yellow-400' : 'text-red-500 dark:text-red-400'
-                    }`}>
-                        {data.matchScore}%
-                    </p>
-                    <span className="text-sm text-gray-500 dark:text-gray-500">match</span>
-                </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full mt-3 overflow-hidden">
-                    <div 
-                        className={`h-full rounded-full ${
-                             data.matchScore >= 80 ? 'bg-green-500' : 
-                             data.matchScore >= 60 ? 'bg-yellow-500' : 'bg-red-500'
-                        }`} 
-                        style={{ width: `${data.matchScore}%` }}
-                    />
-                </div>
-            </Card>
+            <StatCard 
+              title="Readiness Power"
+              value={`${data.matchScore}%`}
+              icon={Award}
+              subtitle={data.matchScore >= 80 ? 'Elite Applicant Status' : data.matchScore >= 60 ? 'Competitive Match' : 'High Growth Needed'}
+              benchmark={
+                [...Array(10)].map((_, i) => (
+                  <div 
+                    key={i}
+                    className={`flex-1 rounded-sm transition-all duration-700 ${
+                        i < data.matchScore / 10 
+                        ? (data.matchScore >= 80 ? 'bg-green-500' : data.matchScore >= 60 ? 'bg-yellow-500' : 'bg-red-500')
+                        : 'bg-gray-200 dark:bg-white/5'
+                    }`}
+                    style={{ height: `${20 + (i * 8)}%` }}
+                  />
+                ))
+              }
+            />
         </motion.div>
 
         <motion.div variants={item}>
-            <Card className="p-6 bg-white dark:bg-white/5 border-gray-200 dark:border-white/10 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <TrendingUp size={80} className="text-gray-900 dark:text-white" />
-                </div>
-                <h3 className="text-gray-500 dark:text-gray-400 mb-1">Skills Analyzed</h3>
-                <p className="text-4xl font-bold text-gray-900 dark:text-white">
-                    {data.extractedSkills.length + data.missingSkills.length}
-                </p>
-                <p className="text-sm text-gray-500 mt-2">
-                    <span className="text-green-600 dark:text-green-400">{data.extractedSkills.length} caught</span> • 
-                    <span className="text-red-600 dark:text-red-400 ml-1">{data.missingSkills.length} missing</span>
-                </p>
-            </Card>
+            <StatCard 
+              title="Skills Analyzed"
+              value={data.extractedSkills.length + data.missingSkills.length}
+              icon={TrendingUp}
+              subtitle={`${data.extractedSkills.length} Caught • ${data.missingSkills.length} Missing`}
+            />
         </motion.div>
       </motion.div>
 
@@ -170,40 +324,12 @@ export const CareerDashboard: React.FC<CareerDashboardProps> = ({ data }) => {
             <div className="space-y-4">
                 {/* Missing Skills (Priority) */}
                 {data.missingSkills.map((gap, idx) => (
-                    <motion.div 
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: idx * 0.1 }}
-                        key={idx}
-                    >
-                        <Card className="p-5 bg-red-50 dark:bg-red-500/5 border-red-200 dark:border-red-500/20 hover:bg-red-100 dark:hover:bg-red-500/10 transition-colors">
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                <div className="flex items-start gap-3">
-                                    <div className="mt-1">
-                                        <XCircle className="text-red-500 dark:text-red-400" size={20} />
-                                    </div>
-                                    <div>
-                                        <h4 className="text-lg font-semibold text-gray-900 dark:text-white">{gap.skill}</h4>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-300 border border-red-200 dark:border-red-500/20 uppercase tracking-wider">
-                                                Missing
-                                            </span>
-                                            <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">{gap.importance} Priority</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {gap.recommendedQuiz && (
-                                    <Link href={getQuizLink(gap.recommendedQuiz) || '#'} target="_blank" rel="noopener noreferrer">
-                                        <Button size="sm" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 border-none shadow-lg shadow-purple-900/20 text-white whitespace-nowrap">
-                                            Take {gap.recommendedQuiz.toUpperCase()} Quiz
-                                            <ArrowRight size={16} className="ml-2" />
-                                        </Button>
-                                    </Link>
-                                )}
-                            </div>
-                        </Card>
-                    </motion.div>
+                    <SkillGapCard 
+                      key={idx}
+                      gap={gap}
+                      idx={idx}
+                      getQuizLink={getQuizLink}
+                    />
                 ))}
 
                 {/* Match Skills */}
@@ -225,56 +351,12 @@ export const CareerDashboard: React.FC<CareerDashboardProps> = ({ data }) => {
 
             {/* Resume Suggestions Section */}
             {data.resumeSuggestions && data.resumeSuggestions.length > 0 && (
-                <div className="pt-8 space-y-6">
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                        <Lightbulb className="text-yellow-500" />
-                        Resume Optimization
-                    </h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {data.resumeSuggestions.map((sug, idx) => (
-                            <Card key={idx} className="p-4 bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
-                                <div className="flex items-start gap-3">
-                                    <div className={`mt-1 p-1.5 rounded-lg ${
-                                        sug.impact === 'high' ? 'bg-orange-100 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400' :
-                                        'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400'
-                                    }`}>
-                                        <Award size={16} />
-                                    </div>
-                                    <div>
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400">{sug.category}</span>
-                                            {sug.impact === 'high' && <span className="text-[10px] uppercase font-bold tracking-wider text-orange-500">High Impact</span>}
-                                        </div>
-                                        <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed font-medium">
-                                            {sug.suggestion}
-                                        </p>
-                                    </div>
-                                </div>
-                            </Card>
-                        ))}
-                    </div>
-                </div>
+                <ResumeSection suggestions={data.resumeSuggestions} />
             )}
 
             {/* Interview Preparation Section */}
             {data.interviewPrep && (
-                <div className="pt-8 space-y-6">
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                        <MessageSquare className="text-blue-500 dark:text-blue-400" />
-                        Interview Prep
-                    </h2>
-                    <div className="space-y-4">
-                        {data.interviewPrep.topQuestions.map((q, idx) => (
-                            <Card key={idx} className="p-5 border-l-4 border-l-blue-500 bg-blue-50/50 dark:bg-blue-500/5 border-gray-200 dark:border-white/10">
-                                <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">&quot;{q.question}&quot;</h4>
-                                <p className="text-sm text-gray-600 dark:text-gray-400 italic">
-                                    <span className="font-semibold text-blue-600 dark:text-blue-400 not-italic mr-2">Why this?</span>
-                                    {q.reason}
-                                </p>
-                            </Card>
-                        ))}
-                    </div>
-                </div>
+                <InterviewPrepSection interviewPrep={data.interviewPrep} isDark={isDark} />
             )}
         </div>
 
@@ -282,83 +364,87 @@ export const CareerDashboard: React.FC<CareerDashboardProps> = ({ data }) => {
         <div className="space-y-8">
             {/* Market Insights */}
             {data.marketInsights && (
-                <div className="space-y-4">
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                        <Briefcase className="text-emerald-500" />
-                        Market Outlook
-                    </h2>
-                    <Card className="p-6 bg-emerald-50 dark:bg-emerald-500/5 border-emerald-200 dark:border-emerald-500/20">
-                        <div className="space-y-6">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-500 dark:text-gray-400">Demand Level</span>
-                                <span className={`px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${
-                                    data.marketInsights.demand === 'high' ? 'bg-emerald-200 text-emerald-800 dark:bg-emerald-500/30 dark:text-emerald-300' :
-                                    'bg-yellow-200 text-yellow-800 dark:bg-yellow-500/30 dark:text-yellow-300'
-                                }`}>
-                                    {data.marketInsights.demand}
-                                </span>
-                            </div>
-                            <div>
-                                <span className="text-sm text-gray-500 dark:text-gray-400 block mb-1">Salary Range</span>
-                                <p className="text-xl font-bold text-gray-900 dark:text-white">{data.marketInsights.salaryRange}</p>
-                            </div>
-                            <div>
-                                <span className="text-sm text-gray-500 dark:text-gray-400 block mb-2">Trend Analysis</span>
-                                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                                    {data.marketInsights.outlook}
-                                </p>
-                            </div>
-                        </div>
-                    </Card>
-                </div>
+                <MarketPulseSection marketInsights={data.marketInsights} />
             )}
 
             <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                    <BookOpen className="text-blue-500 dark:text-blue-400" />
-                    Learning Path
-                </h2>
+                <div className="flex items-center justify-between">
+                   <h2 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2 uppercase tracking-tighter italic">
+                       <BookOpen className="text-blue-500 dark:text-blue-400" size={20} />
+                       Mission Roadmap
+                   </h2>
+                   <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-2 py-1 bg-gray-100 dark:bg-white/5 rounded-md border border-gray-200 dark:border-white/10">
+                      {data.roadmap.length} Phases
+                   </span>
+                </div>
                 
-                <div className="relative border-l-2 border-gray-200 dark:border-white/10 ml-3 space-y-8 py-2">
-                    {data.roadmap.map((step, idx) => (
-                        <motion.div 
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.5 + (idx * 0.1) }}
-                            key={idx} 
-                            className="pl-8 relative"
-                        >
-                            {/* Timeline Dot */}
-                            <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-white dark:bg-gray-900 border-2 border-blue-500" />
-                            
-                            <div className="space-y-2">
-                                <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
-                                    {step.duration}
-                                </span>
-                                <h4 className="text-lg font-semibold text-gray-900 dark:text-white">{step.title}</h4>
-                                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                                    {step.description}
-                                </p>
-                                
-                                {step.resources.length > 0 && (
-                                    <div className="mt-3 space-y-2">
-                                        {step.resources.map((res, rIdx) => (
-                                            <a 
-                                                key={rIdx}
-                                                href={res.url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors group/link p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5"
-                                            >
-                                                <ExternalLink size={14} className="group-hover/link:text-blue-500 dark:group-hover/link:text-blue-400" />
-                                                {res.name}
-                                            </a>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        </motion.div>
-                    ))}
+                <div className="relative border-l-2 border-gray-200 dark:border-white/10 ml-3 space-y-4 py-2">
+                    {data.roadmap.map((step, idx) => {
+                        const isExpanded = expandedSteps.includes(idx);
+                        return (
+                          <motion.div 
+                              initial={{ opacity: 0, x: 20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: 0.5 + (idx * 0.1) }}
+                              key={idx} 
+                              className="pl-8 relative"
+                          >
+                              {/* Timeline Dot */}
+                              <div className={`absolute -left-[9px] top-1 w-4 h-4 rounded-full border-2 transition-all duration-500 ${
+                                 isExpanded ? 'bg-blue-500 border-blue-400 scale-125 shadow-[0_0_15px_rgba(59,130,246,0.5)]' : 'bg-gray-200 dark:bg-gray-800 border-gray-300 dark:border-white/10 scale-100'
+                              }`} />
+                              
+                              <div className="space-y-3 group cursor-pointer" onClick={() => toggleStep(idx)}>
+                                  <div className="flex items-center justify-between">
+                                     <span className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-[0.2em]">
+                                         PHASE {idx + 1} • {step.duration.toUpperCase()}
+                                     </span>
+                                     {isExpanded ? <ChevronUp size={14} className="text-gray-400" /> : <ChevronDown size={14} className="text-gray-400 group-hover:text-blue-400" />}
+                                  </div>
+                                  
+                                  <h4 className={`text-lg font-black tracking-tight transition-colors ${isExpanded ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300'}`}>
+                                     {step.title}
+                                  </h4>
+
+                                  <AnimatePresence>
+                                     {isExpanded && (
+                                        <motion.div
+                                           initial={{ height: 0, opacity: 0 }}
+                                           animate={{ height: 'auto', opacity: 1 }}
+                                           exit={{ height: 0, opacity: 0 }}
+                                           className="overflow-hidden"
+                                        >
+                                           <div className="space-y-4 pt-1">
+                                              <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed font-medium selection:bg-blue-500/20">
+                                                  {step.description}
+                                              </p>
+                                              
+                                              {step.resources.length > 0 && (
+                                                  <div className="grid grid-cols-1 gap-2 pt-2">
+                                                      {step.resources.map((res, rIdx) => (
+                                                          <a 
+                                                              key={rIdx}
+                                                              href={res.url}
+                                                              target="_blank"
+                                                              rel="noopener noreferrer"
+                                                              className="flex items-center gap-3 text-sm text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-all group/link p-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:border-blue-500/30 shadow-sm"
+                                                          >
+                                                              <div className="p-2 bg-white dark:bg-gray-900 rounded-lg group-hover/link:shadow-md transition-all">
+                                                                 <ExternalLink size={14} className="group-hover/link:rotate-45 transition-transform" />
+                                                              </div>
+                                                              <span className="font-bold truncate">{res.name}</span>
+                                                          </a>
+                                                      ))}
+                                                  </div>
+                                              )}
+                                           </div>
+                                        </motion.div>
+                                     )}
+                                  </AnimatePresence>
+                              </div>
+                          </motion.div>
+                        );
+                    })}
                 </div>
             </div>
         </div>

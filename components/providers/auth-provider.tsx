@@ -73,20 +73,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (currentUser) {
         setupProfileSubscription(currentUser.id);
-        try {
-          const profileData = await fetchProfile(currentUser.id);
-          if (profileData) {
+        
+        // Fast polling for profile creation (helps with race conditions from DB triggers)
+        let attempts = 0;
+        const maxAttempts = 10;
+        const pollProfile = async () => {
+          try {
+            const profileData = await fetchProfile(currentUser.id);
+            if (profileData) {
               setProfile(profileData);
-          } else {
-              // Retry once after a short delay if profile is missing (race condition helper)
-              setTimeout(async () => {
-                  const retryData = await fetchProfile(currentUser.id);
-                  if (retryData) setProfile(retryData);
-              }, 1500);
+              return true;
+            }
+          } catch (err) {
+            console.error("Polling profile error:", err);
           }
-        } catch (error) {
-          console.error("Error fetching profile in getSession:", error);
-        }
+          return false;
+        };
+
+        const executePoll = async () => {
+          const found = await pollProfile();
+          if (!found && attempts < maxAttempts) {
+            attempts++;
+            const delay = attempts < 3 ? 200 : 800; // Fast first 3 attempts, then slower
+            setTimeout(executePoll, delay);
+          }
+        };
+
+        executePoll();
       }
       setLoading(false);
     });

@@ -53,6 +53,12 @@ export function UniversalQuizShell({ category, mode, count = null }: UniversalQu
   const [showConfirm, setShowConfirm] = useState(false);
   const [viewingResults, setViewingResults] = useState(false);
 
+  // Memoized setters for child components
+  const toggleSidebar = useCallback(() => setSidebarOpen(prev => !prev), []);
+  const openSubmitModal = useCallback(() => setShowConfirm(true), []);
+  const closeSubmitModal = useCallback(() => setShowConfirm(false), []);
+  const closeResults = useCallback(() => setViewingResults(false), []);
+
   const mainRef = useRef<HTMLDivElement>(null);
 
   // Scroll to top when question changes
@@ -68,6 +74,35 @@ export function UniversalQuizShell({ category, mode, count = null }: UniversalQu
       setViewingResults(true);
     }
   }, [isSubmitted]);
+
+  // Global Keyboard Navigation
+  useEffect(() => {
+    if (viewingResults || showConfirm) return;
+
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in BobAssistant or any other input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      switch(e.key) {
+        case 'ArrowLeft':
+            if (currentQuestionIndex > 0) prevQuestion();
+            break;
+        case 'ArrowRight':
+            if (currentQuestionIndex < questions.length - 1) nextQuestion();
+            break;
+        case 'Enter':
+            if (currentQuestionIndex < questions.length - 1) {
+              nextQuestion();
+            } else {
+              setShowConfirm(true);
+            }
+            break;
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [currentQuestionIndex, questions.length, viewingResults, showConfirm, prevQuestion, nextQuestion]);
 
   // Memoize handlers to prevent unnecessary re-renders of children
   const onAnswerQuestion = useCallback((ans: any) => {
@@ -96,7 +131,7 @@ export function UniversalQuizShell({ category, mode, count = null }: UniversalQu
         questionsLength={questions.length}
         userAnswers={userAnswers}
         isDark={isDark}
-        onReview={() => setViewingResults(false)}
+        onReview={closeResults}
         onRetake={() => window.location.reload()} // Simple reload for retake
       />
     );
@@ -126,7 +161,7 @@ export function UniversalQuizShell({ category, mode, count = null }: UniversalQu
           setCurrentQuestionIndex={setCurrentQuestionIndex}
           userAnswers={userAnswers}
           markedQuestions={markedQuestions}
-          onOpenSubmitModal={() => setShowConfirm(true)}
+          onOpenSubmitModal={openSubmitModal}
           mode={mode}
         />
 
@@ -167,6 +202,7 @@ export function UniversalQuizShell({ category, mode, count = null }: UniversalQu
                           onAnswer={onAnswerQuestion}
                           isReviewMode={isSubmitted}
                           isDark={isDark}
+                          mode={mode}
                       />
                   </motion.div>
               </AnimatePresence>
@@ -208,15 +244,15 @@ export function UniversalQuizShell({ category, mode, count = null }: UniversalQu
 
       <Modal 
         isOpen={showConfirm} 
-        onClose={() => setShowConfirm(false)}
+        onClose={closeSubmitModal}
         title="Submit Results?"
         description={`You have answered ${answeredCount} out of ${questions.length} questions.`}
         isDark={isDark}
         footer={
-            <>
-                <Button onClick={() => setShowConfirm(false)} variant="ghost" className="flex-1">Continue</Button>
-                <Button onClick={() => { setShowConfirm(false); handleSubmit(); }} variant="primary" className="flex-1">Submit</Button>
-            </>
+            <div className="flex gap-4 w-full">
+                <Button onClick={closeSubmitModal} variant="ghost" className="flex-1">Continue</Button>
+                <Button onClick={() => { closeSubmitModal(); handleSubmit(); }} variant="primary" className="flex-1">Submit</Button>
+            </div>
         }
       />
 

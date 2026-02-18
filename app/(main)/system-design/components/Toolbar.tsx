@@ -28,7 +28,7 @@ export const Toolbar = memo(({
   theme 
 }: ToolbarProps) => {
   return (
-    <aside className="w-16 md:w-56 border-r border-white/5 bg-[#080808] flex flex-col z-20 overflow-y-auto custom-scrollbar shadow-2xl">
+    <aside id="sd-toolbar" className="w-16 md:w-56 border-r border-white/5 bg-[#080808] flex flex-col z-20 overflow-y-auto custom-scrollbar shadow-2xl">
       <div className="p-4 border-b border-white/5 space-y-3">
         <p className="text-[10px] font-black uppercase text-gray-500 tracking-widest pl-1">Navigator</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -48,6 +48,7 @@ export const Toolbar = memo(({
           </button>
         </div>
         <button 
+          id="sd-toolbar-connect"
           onClick={() => setActiveTool("Connect")} 
           className={`flex w-full items-center gap-3 p-2 rounded-xl border transition-all ${activeTool === "Connect" ? 'bg-indigo-500/10 border-indigo-500/50 text-indigo-400 shadow-[0_0_10px_rgba(99,102,241,0.1)]' : 'border-transparent text-gray-400 hover:text-gray-200 hover:bg-white/5'}`}
         >

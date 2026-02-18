@@ -94,6 +94,7 @@ export async function getArenaStats() {
       winStreak,
       rank: data.stats.totalTests > 10 ? `#${Math.max(1, 421 - Math.floor(data.stats.xp / 100))}` : "Unranked",
       nickname: data.user.profile?.nickname || "Guest",
+      avatarIcon: data.user.profile?.avatar_icon || "User",
       recentArenaMatches: arenaResults
     };
   } catch (error) {

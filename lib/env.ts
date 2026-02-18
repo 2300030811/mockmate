@@ -17,6 +17,7 @@ const envSchema = z.object({
   // AI
   GOOGLE_API_KEY: z.string().optional(),
   GROQ_API_KEY: z.string().optional(),
+  RESEND_API_KEY: z.string().optional(),
 
   // Upstash (Redis/Ratelimit) - Not in template but used in middleware
   UPSTASH_REDIS_REST_URL: z.string().optional(),

@@ -1,10 +1,12 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Cpu } from "lucide-react";
+import { Cpu, Zap } from "lucide-react";
 import { ArenaQuestion, Opponent } from "../types";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { getAvatarIcon } from "@/lib/icons";
 
 interface ArenaBattleProps {
   opponent: Opponent | null;
@@ -18,6 +20,7 @@ interface ArenaBattleProps {
   handleAnswer: (option: string) => void;
   category: string;
   combo: number;
+  userAvatar?: string;
 }
 
 export function ArenaBattle({
@@ -31,20 +34,49 @@ export function ArenaBattle({
   userSelected,
   handleAnswer,
   category,
-  combo
+  combo,
+  userAvatar
 }: ArenaBattleProps) {
+  const UserIcon = getAvatarIcon(userAvatar);
   const currentQ = questions[currentQuestion];
   const isLowTime = timeLeft <= 5;
+
+  // Keyboard Shortcuts (1, 2, 3, 4)
+  useEffect(() => {
+    if (userSelected) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (['1', '2', '3', '4'].includes(e.key)) {
+        const index = parseInt(e.key) - 1;
+        if (currentQ?.options[index]) {
+          handleAnswer(currentQ.options[index]);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentQ?.options, userSelected, handleAnswer]);
+
+  const isWrongAnswer = userSelected && userSelected !== currentQ?.a;
+
+  const shakeVariants = {
+    shake: {
+      x: [0, -10, 10, -10, 10, 0],
+      transition: { duration: 0.4 }
+    }
+  };
 
   return (
     <motion.div 
       key="battle"
       initial={{ opacity: 0, scale: 1.05 }}
-      animate={{ 
+      animate={isWrongAnswer ? "shake" : { 
         opacity: 1, 
         scale: 1,
         backgroundColor: isLowTime ? ["rgba(5,5,5,1)", "rgba(153,27,27,0.1)", "rgba(5,5,5,1)"] : "rgba(5,5,5,1)"
       }}
+      variants={shakeVariants}
       transition={isLowTime ? { repeat: Infinity, duration: 1 } : {}}
       className={`flex-1 flex flex-col relative z-10 ${isLowTime ? 'animate-pulse' : ''}`}
     >
@@ -53,11 +85,21 @@ export function ArenaBattle({
         {combo > 1 && (
           <motion.div
             initial={{ opacity: 0, x: -50, scale: 0.5 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
+            animate={{ 
+              opacity: 1, 
+              x: 0, 
+              scale: [1, 1.2, 1],
+              rotate: [-2, 2, -2]
+            }}
             exit={{ opacity: 0, scale: 1.5 }}
+            transition={{ 
+              scale: { repeat: Infinity, duration: 2 },
+              rotate: { repeat: Infinity, duration: 0.5 }
+            }}
             className="absolute top-32 left-8 z-20"
           >
-            <div className="bg-gradient-to-r from-orange-500 to-red-600 px-4 py-2 rounded-full font-black italic shadow-2xl flex items-center gap-2">
+            <div className="bg-gradient-to-r from-orange-500 via-red-600 to-purple-600 px-4 py-2 rounded-full font-black italic shadow-[0_0_30px_rgba(239,68,68,0.5)] flex items-center gap-2 border border-white/20">
+              <Zap className="w-5 h-5 text-yellow-400 fill-yellow-400 animate-pulse" />
               <span className="text-2xl text-white">{combo}x</span>
               <span className="text-[10px] text-white/80 uppercase tracking-tighter">COMBO</span>
             </div>
@@ -68,7 +110,9 @@ export function ArenaBattle({
       <div className="h-20 md:h-28 border-b border-white/5 bg-gray-950/80 backdrop-blur-3xl flex items-center pl-24 pr-4 md:pl-44 md:pr-12 gap-2 md:gap-12">
          <div className="flex-1 flex items-center gap-3 md:gap-4">
             <div className="relative shrink-0 scale-75 md:scale-100">
-               <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center text-2xl shadow-2xl relative z-10">👤</div>
+               <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center text-white shadow-2xl relative z-10">
+                  <UserIcon size={24} />
+               </div>
             </div>
             <div className="hidden sm:block">
                <div className="text-sm md:text-xl font-black text-white leading-none">{userScore} <span className="text-gray-500 text-[8px] md:text-[10px] ml-0.5 md:ml-1">PTS</span></div>

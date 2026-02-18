@@ -22,7 +22,7 @@ export class QuizFactory {
       case "pcap":
         return new PCAPQuizSource(env.PCAP_QUESTIONS_URL);
       case "oracle":
-        return new SimpleUrlQuizSource("Oracle", env.ORACLE_QUESTIONS_URL || "https://mockmatequiz.blob.core.windows.net/quizzes/oracle.json", 50);
+        return new SimpleUrlQuizSource("Oracle", env.ORACLE_QUESTIONS_URL, 50);
       default:
         throw new Error(`Unknown quiz category: ${category}`);
     }

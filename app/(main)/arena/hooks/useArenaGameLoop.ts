@@ -72,7 +72,12 @@ export function useArenaGameLoop(selectedCategory: string, lobbyStats: StatItem[
     
     const isCorrect = option === questions[currentQuestion].a;
     if (isCorrect) {
-      setUserScore(s => s + 1);
+      // Points = Base (100) + Speed Bonus (up to 50) + Combo Bonus (10 * combo)
+      const speedBonus = Math.floor(timeLeft / 2); // Max 15 if 30s left
+      const comboBonus = combo * 10;
+      const points = 100 + speedBonus + comboBonus;
+      
+      setUserScore(s => s + points);
       setCombo(c => c + 1);
     } else {
       setCombo(0);
@@ -114,11 +119,16 @@ export function useArenaGameLoop(selectedCategory: string, lobbyStats: StatItem[
         // Opponent progress logic
         setOpponentProgress((prev) => {
            // Simulating thinking speed based on elo
-           const pauseProb = 0.2 / difficultyMult; 
+           // Increased pause probability for more variety
+           const pauseProb = 0.25 / difficultyMult; 
            if (Math.random() < pauseProb) return prev;
            
-           const baseIncrement = Math.random() * 5 + 2; // 2-7% per tick
-           const speedBoost = Math.random() > 0.8 ? 1.5 : 1.0; // Random speed bursts
+           // Slight "hesitation" logic if they just scored or at certain milestones
+           const isHesitating = (Math.floor(prev) % 25 === 0 && Math.random() > 0.5);
+           if (isHesitating) return prev + 0.5;
+
+           const baseIncrement = Math.random() * 4 + 1.5; // 1.5-5.5% per tick
+           const speedBoost = Math.random() > 0.85 ? 1.8 : 1.0; // Rare speed bursts
            const increment = baseIncrement * difficultyMult * speedBoost;
            
            const next = prev + increment;
@@ -126,13 +136,14 @@ export function useArenaGameLoop(selectedCategory: string, lobbyStats: StatItem[
         });
 
         // Opponent scoring logic
-        const scoreProb = 0.88 + (difficultyMult * 0.04);
+        const scoreProb = 0.85 + (difficultyMult * 0.05);
         if (Math.random() > scoreProb && opponentScore < questions.length) {
             // Only score if they have progress "banked"
-            // Let's say every 20% progress = 1 question potentially answered
             const maxScoreForProgress = Math.floor(opponentProgress / (100 / questions.length)) + 1;
             if (opponentScore < maxScoreForProgress) {
-                setOpponentScore(s => s + 1);
+                // Opponent scoring should also look realistic (around 100-130 pts)
+                const opponentPoints = Math.floor(100 + (Math.random() * 30));
+                setOpponentScore(s => s + opponentPoints);
             }
         }
       }, 1000);

@@ -1,6 +1,7 @@
 
+import { memo } from 'react';
 import dynamic from 'next/dynamic';
-import { QuizQuestion, MCQQuestion, DragDropQuestion, HotspotQuestion, HotspotYesNoTableQuestion, HotspotSentenceQuestion, HotspotBoxMappingQuestion, CaseStudyQuestion } from "@/types";
+import { QuizQuestion, MCQQuestion, DragDropQuestion, HotspotQuestion, HotspotYesNoTableQuestion, HotspotSentenceQuestion, HotspotBoxMappingQuestion, CaseStudyQuestion, QuizMode } from "@/types";
 
 // Lazy load question components to reduce bundle size
 const MultipleChoiceCard = dynamic(() => import("./cards/MultipleChoiceCard").then(mod => mod.MultipleChoiceCard), { ssr: false });
@@ -18,16 +19,18 @@ interface QuestionRendererProps {
   isReviewMode: boolean;
   isDark: boolean;
   category: string;
+  mode: QuizMode;
 }
 
-export function QuestionRenderer({
+export const QuestionRenderer = memo(({
   question,
   userAnswer,
   onAnswer,
   isReviewMode,
   isDark,
-  category
-}: QuestionRendererProps) {
+  category,
+  mode
+}: QuestionRendererProps) => {
   
   switch (question.type) {
     case 'mcq':
@@ -40,6 +43,7 @@ export function QuestionRenderer({
           isReviewMode={isReviewMode}
           isDark={isDark}
           category={category}
+          mode={mode}
         />
       );
     case 'drag_drop':
@@ -113,9 +117,10 @@ export function QuestionRenderer({
                 isReviewMode={isReviewMode}
                 isDark={isDark}
                 category={category}
+                mode={mode}
             />
           );
       }
       return <div>Unsupported question type: {(question as any).type || 'unknown'}</div>;
   }
-}
+});

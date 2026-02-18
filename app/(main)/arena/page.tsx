@@ -35,6 +35,7 @@ export default function ArenaPage() {
   const [lobbyStats, setLobbyStats] = useState<StatItem[]>(LOBBY_STATS);
   const [selectedCategory, setSelectedCategory] = useState<string>("random");
   const [recentMatches, setRecentMatches] = useState<any[]>([]);
+  const [avatarIcon, setAvatarIcon] = useState<string>("User");
 
   const {
     gameState,
@@ -66,6 +67,7 @@ export default function ArenaPage() {
           { icon: Activity, label: "Global Rank", val: stats.rank, color: "text-emerald-500", bg: "bg-emerald-500/10", hideOnMobile: true }
         ]);
         setRecentMatches(stats.recentArenaMatches || []);
+        if (stats.avatarIcon) setAvatarIcon(stats.avatarIcon);
       }
     };
     fetchStats();
@@ -92,6 +94,7 @@ export default function ArenaPage() {
             selectedCategory={selectedCategory}
             onCategoryChange={setSelectedCategory}
             onStart={startMatchmaking} 
+            userAvatar={avatarIcon}
           />
         )}
 
@@ -112,6 +115,7 @@ export default function ArenaPage() {
             handleAnswer={handleAnswer}
             category={category}
             combo={combo}
+            userAvatar={avatarIcon}
           />
         )}
 

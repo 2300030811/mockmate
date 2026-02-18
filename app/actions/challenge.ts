@@ -44,7 +44,7 @@ import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { DAILY_PROBLEMS } from "@/utils/daily-problems";
 
-export async function submitChallengeAction(problemTitle: string, code: string, language: string, output: string) {
+export async function submitChallenge(problemTitle: string, code: string, language: string, output: string) {
     try {
         const apiKey = getNextKey("GROQ_API_KEY") || process.env.GROQ_API_KEY;
         if(!apiKey) throw new Error("Groq API Service configuration missing.");

@@ -7,7 +7,8 @@ import {
     Settings, 
     ShieldCheck, 
     ChevronDown, 
-    LogIn
+    LogIn,
+    MessageSquare
 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import { Button, buttonVariants } from "./ui/Button";
@@ -16,10 +17,15 @@ import Link from "next/link";
 import { UserNicknameToggle } from "./UserNicknameToggle";
 import { useAuth } from "@/components/providers/auth-provider";
 import { getAvatarIcon } from "@/lib/icons";
+import { FeedbackModal } from "./FeedbackModal";
+import { useTheme } from "./providers/providers";
 
 export function UserAuthSection() {
     const { user, profile, loading } = useAuth();
     const [menuOpen, setMenuOpen] = useState(false);
+    const [feedbackOpen, setFeedbackOpen] = useState(false);
+    const { theme } = useTheme();
+    const isDark = theme === "dark";
 
     if (loading) {
         return (
@@ -35,16 +41,33 @@ export function UserAuthSection() {
             <motion.div 
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="flex items-center"
+                className="flex items-center gap-1"
             >
                 <UserNicknameToggle />
+                
+                <Button
+                    onClick={() => setFeedbackOpen(true)}
+                    variant="glass"
+                    size="sm"
+                    className="border-0 shadow-none bg-transparent hover:bg-black/5 dark:hover:bg-white/5 rounded-full w-9 h-9 p-0 group"
+                    title="Send Feedback"
+                >
+                    <MessageSquare className="w-4 h-4 text-orange-500 transition-transform group-hover:scale-110" />
+                </Button>
+
                 <Link 
                     href="/login" 
-                    className={buttonVariants({ variant: "glass", size: "sm", className: "border-0 shadow-none bg-transparent hover:bg-black/5 dark:hover:bg-white/5 rounded-full gap-2 px-4" })}
+                    className={buttonVariants({ variant: "glass", size: "sm", className: "border-0 shadow-none bg-transparent hover:bg-black/5 dark:hover:bg-white/5 rounded-full gap-2 px-4 transition-all" })}
                 >
                     <LogIn className="w-4 h-4" />
                     <span className="text-[10px] font-bold uppercase tracking-wider">Login</span>
                 </Link>
+
+                <FeedbackModal 
+                    isOpen={feedbackOpen} 
+                    onClose={() => setFeedbackOpen(false)} 
+                    isDark={isDark}
+                />
             </motion.div>
         );
     }
@@ -122,13 +145,23 @@ export function UserAuthSection() {
                                 Settings
                             </Link>
 
+                            <button
+                                onClick={() => {
+                                    setMenuOpen(false);
+                                    setFeedbackOpen(true);
+                                }}
+                                className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl transition-colors text-left"
+                            >
+                                <MessageSquare className="w-4 h-4 text-orange-500" />
+                                Send Feedback
+                            </button>
+
                             <div className="h-px bg-gray-100 dark:bg-white/5 my-2 mx-2"></div>
 
                             <button 
                                 onClick={async () => {
-                                    await logout();
                                     setMenuOpen(false);
-                                    window.location.reload(); // Force clear state
+                                    await logout();
                                 }}
                                 className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-colors text-left"
                             >
@@ -139,6 +172,12 @@ export function UserAuthSection() {
                     </>
                 )}
             </AnimatePresence>
+
+            <FeedbackModal 
+                isOpen={feedbackOpen} 
+                onClose={() => setFeedbackOpen(false)} 
+                isDark={isDark}
+            />
         </div>
     );
 }

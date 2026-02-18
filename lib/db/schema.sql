@@ -131,7 +131,18 @@ CREATE TRIGGER on_auth_user_created
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 
 -- ==========================================
--- 4. REFRESH
+-- 4. PERFORMANCE (Indexes)
+-- ==========================================
+
+-- Optimize quiz result queries (History & Leaderboards)
+CREATE INDEX IF NOT EXISTS idx_quiz_results_user_id ON quiz_results(user_id);
+CREATE INDEX IF NOT EXISTS idx_quiz_results_session_id ON quiz_results(session_id);
+CREATE INDEX IF NOT EXISTS idx_quiz_results_category ON quiz_results(category);
+CREATE INDEX IF NOT EXISTS idx_quiz_results_completed_at ON quiz_results(completed_at DESC);
+CREATE INDEX IF NOT EXISTS idx_quiz_results_leaderboard ON quiz_results(category, score DESC, completed_at DESC);
+
+-- ==========================================
+-- 5. REFRESH
 -- ==========================================
 
 NOTIFY pgrst, 'reload schema';

@@ -118,3 +118,48 @@ export function checkAnswer(q: QuizQuestion, uAns: any): boolean {
     }
     return false;
 }
+
+/**
+ * Universal MCQ Correct Answer Parser.
+ * Normalizes various answer formats (letter, string, comma-separated) into a letter array [A, B, C...].
+ */
+export const getCorrectAnswers = (question: { answer: any; options: string[] }): string[] => {
+  const rawAnswer = question.answer;
+  if (!rawAnswer) return [];
+
+  let rawArray: string[] = [];
+  if (Array.isArray(rawAnswer)) {
+      rawArray = rawAnswer.filter((a): a is string => typeof a === 'string');
+  } else if (typeof rawAnswer === 'string') {
+      if (rawAnswer.includes(',')) {
+          rawArray = rawAnswer.split(',').map(s => s.trim());
+      } else {
+          rawArray = [rawAnswer];
+      }
+  }
+
+  return rawArray.map(val => {
+      // 1. Single letter reference (A, B, C...)
+      if (val.length === 1 && /[A-Z]/i.test(val)) {
+          return val.toUpperCase();
+      }
+      // 2. Index in options
+      const answerIndex = question.options.findIndex(opt => opt === val);
+      if (answerIndex !== -1) {
+          return String.fromCharCode(65 + answerIndex);
+      }
+      // 3. Fallback
+      return val.toUpperCase();
+  }).filter(Boolean);
+};
+
+/**
+ * Maps category to Prism-compatible language string.
+ */
+export const getLanguageForCategory = (category: string | undefined): string => {
+  switch(category?.toLowerCase()) {
+      case 'pcap': return 'python';
+      case 'oracle': return 'java';
+      default: return 'javascript';
+  }
+};

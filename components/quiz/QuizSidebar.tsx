@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { Button } from "@/components/ui/Button";
 import { QuizMode, QuizQuestion } from "@/types";
 import { X, Star } from "lucide-react";
@@ -17,7 +18,7 @@ interface QuizSidebarProps {
   mode: QuizMode;
 }
 
-export function QuizSidebar({
+export const QuizSidebar = memo(({
   isOpen,
   setIsOpen,
   questions,
@@ -27,7 +28,7 @@ export function QuizSidebar({
   markedQuestions,
   onOpenSubmitModal,
   mode,
-}: QuizSidebarProps) {
+}: QuizSidebarProps) => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   
@@ -157,4 +158,4 @@ export function QuizSidebar({
       </aside>
     </>
   );
-}
+});

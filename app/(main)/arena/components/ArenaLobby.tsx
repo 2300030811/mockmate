@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { ChevronRight, History, Swords, Globe, Database, Cloud, Terminal, Shield } from "lucide-react";
 import { StatItem, RecentMatch } from "../types";
+import { getAvatarIcon } from "@/lib/icons";
 
 interface ArenaLobbyProps {
   stats: StatItem[];
@@ -10,6 +11,7 @@ interface ArenaLobbyProps {
   selectedCategory: string;
   onCategoryChange: (cat: string) => void;
   onStart: () => void;
+  userAvatar?: string;
 }
 
 const CATEGORIES = [
@@ -27,8 +29,10 @@ export function ArenaLobby({
   recentMatches, 
   selectedCategory, 
   onCategoryChange, 
-  onStart 
+  onStart,
+  userAvatar
 }: ArenaLobbyProps) {
+  const UserIcon = getAvatarIcon(userAvatar);
   return (
     <motion.div 
       key="lobby"
@@ -40,7 +44,7 @@ export function ArenaLobby({
       <div className="relative group mb-8">
          <div className="absolute inset-0 bg-red-600 rounded-[2.5rem] blur-2xl opacity-20 group-hover:opacity-40 transition-opacity" />
          <div className="relative w-24 h-24 md:w-28 md:h-28 bg-gray-900 border-2 border-red-500/30 rounded-[2.5rem] flex items-center justify-center shadow-2xl overflow-hidden">
-            <span className="text-4xl md:text-5xl animate-[wiggle_3s_ease-in-out_infinite]">⚔️</span>
+            <UserIcon className="w-10 h-10 md:w-12 md:h-12 text-red-500 animate-[wiggle_3s_ease-in-out_infinite]" />
             <div className="absolute inset-0 bg-gradient-to-tr from-red-600/10 to-transparent" />
          </div>
       </div>

@@ -28,7 +28,7 @@ import {
   ArrowLeft
 } from "lucide-react";
 import { executeCode } from "@/app/actions/code-execution";
-import { getBobChallengeHint, submitChallengeAction } from "@/app/actions/challenge";
+import { submitChallenge, getBobChallengeHint } from "@/app/actions/challenge";
 import { DAILY_PROBLEMS } from "@/utils/daily-problems";
 import ReactMarkdown from "react-markdown";
 import Link from "next/link";
@@ -87,7 +87,7 @@ export default function DailyChallengePage() {
     try {
       // First run code to get output
       const runResult = await executeCode(language, code);
-      const evalResult = await submitChallengeAction(problem.title, code, language, runResult.output);
+      const evalResult = await submitChallenge(problem.title, code, language, runResult.output);
       setEvaluation(evalResult);
       
       if (evalResult.success) {

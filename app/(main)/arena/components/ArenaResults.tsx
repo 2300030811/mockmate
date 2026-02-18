@@ -59,39 +59,47 @@ export function ArenaResults({
   const calculateRewards = () => {
     const isWin = userScore > opponentScore;
     const isDraw = userScore === opponentScore;
-    const accuracy = userScore / (battleResults.length || 1);
+    
+    // Count actual correct answers for accuracy and base bonuses
+    const correctCount = battleResults.filter(r => r.correct).length;
+    const accuracy = correctCount / (battleResults.length || 1);
     
     // XP Calculation
     let xp = 50; // Participation Base
     if (isWin) xp += 150;
     if (isDraw) xp += 50;
-    xp += userScore * 20; // 20 XP per correct answer
+    xp += correctCount * 25; // 25 XP per correct answer
     xp += Math.round(accuracy * 100 * 2); // Accuracy bonus (up to 200 XP)
 
     // Credits Calculation
     let credits = 5; // Base
     if (isWin) credits += 25;
     if (isDraw) credits += 10;
-    credits += userScore * 5; // 5 credits per correct answer
+    credits += correctCount * 10; // 10 credits per correct answer
 
     // Elo Calculation (Simulated)
     let elo = 0;
-    const scoreDiff = userScore - opponentScore;
+    const scoreDiff = userScore - opponentScore; // Using points for elo dominance
     
     if (isWin) {
-        elo = 25 + (scoreDiff * 2); // Win + dominance bonus
+        // Points diff usually between 0 - 1000. 
+        // Normalize it so a big win gives +10 bonus elo
+        const dominanceBonus = Math.min(10, Math.floor(scoreDiff / 100));
+        elo = 25 + dominanceBonus; 
     } else if (isDraw) {
         elo = 5;
     } else {
         // Loss
-        elo = -20 + userScore; // Lose less if you scored points
+        // Lose less if you had more points
+        const mitigation = Math.min(15, Math.floor(userScore / 100));
+        elo = -25 + mitigation;
         if (elo > -5) elo = -5; // Minimum penalty cap
     }
 
-    return { totalXp: xp, totalCredits: credits, eloChange: elo };
+    return { totalXp: xp, totalCredits: credits, eloChange: elo, actualAccuracy: accuracy };
   };
 
-  const { totalXp, totalCredits, eloChange } = calculateRewards();
+  const { totalXp, totalCredits, eloChange, actualAccuracy } = calculateRewards();
 
   // ... useEffect for saveQuizResult (using these new values if we wanted to save them, but sticking to existing pattern for now)
 
@@ -113,7 +121,7 @@ export function ArenaResults({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 w-full max-w-5xl my-12">
            {[
              { label: "XP Gain", val: `+${totalXp}`, color: "text-emerald-400", icon: Zap },
-             { label: "Accuracy", val: `${Math.round((userScore / (battleResults.length || 1)) * 100)}%`, color: "text-blue-400", icon: Target },
+             { label: "Accuracy", val: `${Math.round(actualAccuracy * 100)}%`, color: "text-blue-400", icon: Target },
              { label: "Rank Change", val: eloChange > 0 ? `+${eloChange}` : `${eloChange}`, color: eloChange >= 0 ? "text-indigo-400" : "text-red-400", icon: TrendingUp },
              { label: "Credits", val: `+${totalCredits}`, color: "text-amber-400", icon: Award }
            ].map((s, i) => (

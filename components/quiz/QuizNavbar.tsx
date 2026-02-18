@@ -1,9 +1,10 @@
 "use client";
 
+import { memo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { QuizMode } from "@/types";
-import { Home, Menu, Layout, Sun, Moon, Clock } from "lucide-react";
+import { Menu, Layout, Sun, Moon, Clock } from "lucide-react";
 import { UserAuthSection } from "../UserAuthSection";
 import { useTheme } from "@/components/providers/providers";
 
@@ -15,22 +16,35 @@ interface QuizNavbarProps {
   setSidebarOpen: (open: boolean) => void;
 }
 
-export function QuizNavbar({
+const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+};
+
+const QuizTimer = memo(({ seconds, isDark }: { seconds: number, isDark: boolean }) => {
+    return (
+        <div className={`flex items-center gap-2 font-mono text-xl ${
+            seconds < 300 ? 'text-red-500 animate-pulse' : isDark ? 'text-white' : 'text-gray-900'
+        }`}>
+            <Clock className="w-5 h-5" />
+            {formatTime(seconds)}
+        </div>
+    );
+});
+
+QuizTimer.displayName = "QuizTimer";
+
+export const QuizNavbar = memo(({
   category,
   mode,
   timeRemaining,
   sidebarOpen,
   setSidebarOpen,
-}: QuizNavbarProps) {
+}: QuizNavbarProps) => {
   const router = useRouter();
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === "dark";
-
-  const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-  };
 
   const categoryName = category.toUpperCase();
 
@@ -79,14 +93,9 @@ export function QuizNavbar({
         </Button>
         
         {mode === "exam" && (
-          <div className={`flex items-center gap-2 font-mono text-xl ${
-            timeRemaining < 300 ? 'text-red-500 animate-pulse' : isDark ? 'text-white' : 'text-gray-900'
-          }`}>
-            <Clock className="w-5 h-5" />
-            {formatTime(timeRemaining)}
-          </div>
+          <QuizTimer seconds={timeRemaining} isDark={isDark} />
         )}
       </div>
     </nav>
   );
-}
+});

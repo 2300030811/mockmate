@@ -24,6 +24,7 @@ import { ConnectionLine } from "./components/ConnectionLine";
 import { Toolbar } from "./components/Toolbar";
 import { PropertyPanel } from "./components/PropertyPanel";
 import { CanvasHeader } from "./components/CanvasHeader";
+import { SystemDesignTutorial } from "./components/SystemDesignTutorial";
 
 // --- Helper ---
 const isInputActive = () => {
@@ -63,9 +64,9 @@ export default function SystemDesignCanvas() {
   const [showGrid, setShowGrid] = useState(true);
   
   // --- UI States ---
-  const [isReviewing, setIsReviewing] = useState(false);
-  const [reviewResult, setReviewResult] = useState<string | null>(null);
+  const [showReview, setShowReview] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
   const [theme, setTheme] = useState<"dark" | "light" | "neo">("dark");
 
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
@@ -100,6 +101,12 @@ export default function SystemDesignCanvas() {
     setHasLoaded(true);
     setWindowSize({ width: window.innerWidth, height: window.innerHeight });
     
+    // Auto-trigger tutorial if not onboarded
+    const onboarded = localStorage.getItem('mockmate-sd-onboarded');
+    if (!onboarded) {
+        setTimeout(() => setShowTutorial(true), 1500);
+    }
+
     const handleResize = () => setWindowSize({ width: window.innerWidth, height: window.innerHeight });
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -280,12 +287,27 @@ export default function SystemDesignCanvas() {
     }
   }, [nodes, connections]);
 
+  const clearCanvas = useCallback(() => {
+    if (nodes.length === 0 && connections.length === 0 && groups.length === 0) return;
+    if (window.confirm("Are you sure you want to clear the entire workspace? This cannot be undone.")) {
+      setNodes([]);
+      setConnections([]);
+      setGroups([]);
+      recordHistory([], [], []);
+      toast.success("Workspace cleared");
+    }
+  }, [nodes.length, connections.length, groups.length, recordHistory]);
+
+  const [isReviewing, setIsReviewing] = useState(false);
+  const [reviewResult, setReviewResult] = useState<string | null>(null);
+
   // --- Keyboard Shortcuts ---
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (isInputActive()) return;
       if (e.key === "Delete" || e.key === "Backspace") deleteSelected();
       if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'p') { e.preventDefault(); setShowTutorial(true); }
       if (e.key === " ") { e.preventDefault(); setActiveTool("Pan"); if(canvasRef.current) canvasRef.current.style.cursor = 'grab'; }
     };
     const up = (e: KeyboardEvent) => { if (e.key === " ") { setActiveTool("Select"); if(canvasRef.current) canvasRef.current.style.cursor = 'crosshair'; } };
@@ -307,6 +329,7 @@ export default function SystemDesignCanvas() {
         handleReview={handleReview} isReviewing={isReviewing}
         nodesLength={nodes.length}
         theme={theme} setTheme={setTheme}
+        clearCanvas={clearCanvas}
       />
 
       <div className="flex-1 flex overflow-hidden">
@@ -318,6 +341,7 @@ export default function SystemDesignCanvas() {
         />
 
         <main 
+           id="sd-canvas"
            ref={canvasRef}
            onMouseDown={(e) => handleMouseDown(e, activeTool, canvasRef)} 
            onMouseMove={handleMouseMove} 
@@ -510,15 +534,25 @@ export default function SystemDesignCanvas() {
                           <ul className="space-y-3 text-sm text-gray-400 font-medium">
                              <li className="flex gap-3"><kbd className="bg-white/10 px-2 rounded font-mono">Del</kbd> Remove Selection</li>
                              <li className="flex gap-3"><kbd className="bg-white/10 px-2 rounded font-mono">Ctrl+Z</kbd> Undo Changes</li>
-                             <li className="flex gap-3"><kbd className="bg-white/10 px-2 rounded font-mono">Ctrl+Y</kbd> Redo Changes</li>
+                             <li className="flex gap-3"><kbd className="bg-white/10 px-2 rounded font-mono">Ctrl+P</kbd> Start Tutorial</li>
                           </ul>
                        </div>
                     </div>
-                    <button onClick={() => setShowHelp(false)} className="w-full py-5 bg-white text-black font-black uppercase tracking-widest rounded-2xl hover:bg-gray-200 transition-all">Acknowledge</button>
+                    <div className="flex gap-3">
+                        <button onClick={() => setShowHelp(false)} className="flex-1 py-5 bg-white/5 text-white font-black uppercase tracking-widest rounded-2xl hover:bg-white/10 transition-all">Dismiss</button>
+                        <button onClick={() => { setShowHelp(false); setShowTutorial(true); }} className="flex-1 py-5 bg-white text-black font-black uppercase tracking-widest rounded-2xl hover:bg-gray-200 transition-all flex items-center justify-center gap-2">
+                           <Sparkles size={16} /> Tutorial
+                        </button>
+                    </div>
                  </motion.div>
               </motion.div>
            )}
-       </AnimatePresence>
+
+           <SystemDesignTutorial 
+              isOpen={showTutorial} 
+              onClose={() => setShowTutorial(false)} 
+           />
+        </AnimatePresence>
 
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }

@@ -6,6 +6,7 @@ import { HomeBackground } from "@/components/home/HomeBackground";
 import { HomeCTA } from "@/components/home/HomeCTA";
 import { StatsRow } from "@/components/home/StatsRow";
 import { DailyProblem } from "@/components/home/DailyProblem";
+import { PersonalizedStats } from "@/components/home/PersonalizedStats";
 const BobAssistant = dynamic(() => import("@/components/quiz/BobAssistant").then(mod => mod.BobAssistant), {
   ssr: false,
 });
@@ -40,6 +41,8 @@ export default function Home() {
           <HomeCTA />
 
           <DailyProblem />
+          
+          <PersonalizedStats />
           
           <ResultsHistory />
 
