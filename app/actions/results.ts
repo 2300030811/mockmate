@@ -198,7 +198,8 @@ export async function getLeaderboard(category: string, timeframe: 'all-time' | '
             .select('id, nickname, score, total_questions, completed_at')
             .eq('category', category)
             .not('nickname', 'is', null)
-            .neq('nickname', '');
+            .neq('nickname', '')
+            .gt('score', 0);
 
         if (timeframe === 'weekly') {
             const now = new Date();

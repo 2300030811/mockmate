@@ -72,10 +72,13 @@ export function Leaderboard() {
     }
   };
 
-  const getRankTier = (index: number) => {
-    if (index < 3) return { name: "Diamond", color: "text-cyan-400", bg: "bg-cyan-400/10 border-cyan-400/20", icon: Crown };
-    if (index < 10) return { name: "Platinum", color: "text-slate-300", bg: "bg-slate-300/10 border-slate-300/20", icon: Shield };
-    if (index < 25) return { name: "Gold", color: "text-yellow-400", bg: "bg-yellow-400/10 border-yellow-400/20", icon: Medal };
+  const getRankTier = (index: number, percentage: number) => {
+    if (percentage < 40) return { name: "Bronze", color: "text-orange-700 dark:text-orange-500", bg: "bg-orange-700/10 border-orange-700/20", icon: Zap };
+    
+    if (index < 3 && percentage >= 80) return { name: "Diamond", color: "text-cyan-400", bg: "bg-cyan-400/10 border-cyan-400/20", icon: Crown };
+    if (index < 10 && percentage >= 60) return { name: "Platinum", color: "text-slate-300", bg: "bg-slate-300/10 border-slate-300/20", icon: Shield };
+    if (index < 25 && percentage >= 40) return { name: "Gold", color: "text-yellow-400", bg: "bg-yellow-400/10 border-yellow-400/20", icon: Medal };
+    
     return { name: "Silver", color: "text-gray-400", bg: "bg-gray-400/10 border-gray-400/20", icon: Zap };
   };
 
@@ -183,7 +186,8 @@ export function Leaderboard() {
                   className="space-y-3"
                 >
                   {data.map((entry, index) => {
-                    const tier = getRankTier(index);
+                    const percentage = Math.round((entry.score / entry.total_questions) * 100);
+                    const tier = getRankTier(index, percentage);
                     const TierIcon = tier.icon;
                     return (
                         <motion.div
