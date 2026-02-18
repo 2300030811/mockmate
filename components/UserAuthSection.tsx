@@ -23,13 +23,20 @@ export function UserAuthSection() {
 
     if (loading) {
         return (
-            <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-800 animate-pulse border border-gray-300 dark:border-gray-700"></div>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/5 animate-pulse">
+                <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-800" />
+                <div className="w-16 h-2 bg-gray-200 dark:bg-gray-800 rounded" />
+            </div>
         );
     }
 
     if (!user) {
         return (
-            <div className="flex items-center">
+            <motion.div 
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="flex items-center"
+            >
                 <UserNicknameToggle />
                 <Link 
                     href="/login" 
@@ -38,7 +45,7 @@ export function UserAuthSection() {
                     <LogIn className="w-4 h-4" />
                     <span className="text-[10px] font-bold uppercase tracking-wider">Login</span>
                 </Link>
-            </div>
+            </motion.div>
         );
     }
 
@@ -53,15 +60,18 @@ export function UserAuthSection() {
                 onClick={() => setMenuOpen(!menuOpen)}
                 variant="glass"
                 size="sm"
-                className="border-0 shadow-none bg-transparent hover:bg-black/5 dark:hover:bg-white/5 rounded-full gap-2 px-3"
+                className="border-0 shadow-none bg-transparent hover:bg-black/10 dark:hover:bg-white/10 rounded-full gap-2 px-3 transition-all duration-300"
             >
-                <div className="w-5 h-5 bg-gradient-to-br from-emerald-400 to-teal-600 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                <div className="w-5 h-5 bg-gradient-to-br from-emerald-400 to-teal-600 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:scale-110 transition-transform">
                     <AvatarIcon className="w-3 h-3 text-white" />
                 </div>
-                <span className="max-w-[100px] truncate font-bold text-xs uppercase tracking-wider dark:text-white">
+                <motion.span 
+                    layout
+                    className="max-w-[100px] truncate font-bold text-xs uppercase tracking-wider dark:text-white"
+                >
                     {nickname}
-                </span>
-                <ChevronDown className={`w-3 h-3 transition-transform duration-300 ${menuOpen ? 'rotate-180' : ''}`} />
+                </motion.span>
+                <ChevronDown className={`w-3 h-3 transition-transform duration-500 ease-in-out ${menuOpen ? 'rotate-180' : ''}`} />
             </Button>
 
             <AnimatePresence>

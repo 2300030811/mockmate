@@ -48,13 +48,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
+    let profileSubscription: any = null;
+
+    const setupProfileSubscription = (userId: string) => {
+      if (profileSubscription) profileSubscription.unsubscribe();
+      
+      profileSubscription = supabase
+        .channel(`profile:${userId}`)
+        .on('postgres_changes', { 
+          event: '*', 
+          schema: 'public', 
+          table: 'profiles',
+          filter: `id=eq.${userId}`
+        }, (payload) => {
+          setProfile(payload.new);
+        })
+        .subscribe();
+    };
+
     // Check active sessions and sets the user
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      
+      if (currentUser) {
+        setupProfileSubscription(currentUser.id);
         try {
-          const profileData = await fetchProfile(session.user.id);
-          setProfile(profileData);
+          const profileData = await fetchProfile(currentUser.id);
+          if (profileData) {
+              setProfile(profileData);
+          } else {
+              // Retry once after a short delay if profile is missing (race condition helper)
+              setTimeout(async () => {
+                  const retryData = await fetchProfile(currentUser.id);
+                  if (retryData) setProfile(retryData);
+              }, 1500);
+          }
         } catch (error) {
           console.error("Error fetching profile in getSession:", error);
         }
@@ -64,23 +93,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Listen for changes on auth state (sign in, sign out, etc.)
     const {
-      data: { subscription },
+      data: { subscription: authSubscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      
+      if (currentUser) {
+        setupProfileSubscription(currentUser.id);
         try {
-          const profileData = await fetchProfile(session.user.id);
+          const profileData = await fetchProfile(currentUser.id);
           setProfile(profileData);
         } catch (error) {
           console.error("Error fetching profile in onAuthStateChange:", error);
         }
       } else {
         setProfile(null);
+        if (profileSubscription) {
+            profileSubscription.unsubscribe();
+            profileSubscription = null;
+        }
       }
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+        authSubscription.unsubscribe();
+        if (profileSubscription) profileSubscription.unsubscribe();
+    };
   }, []);
 
   return (

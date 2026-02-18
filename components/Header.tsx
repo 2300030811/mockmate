@@ -46,13 +46,13 @@ export function Header() {
         scrolled ? "py-2" : "py-4 sm:py-6"
       }`}
     >
-      <div className={`max-w-5xl mx-auto px-4 sm:px-6 transition-all duration-500 pointer-events-auto ${scrolled ? "scale-95" : "scale-100"}`}>
+      <div className={`max-w-5xl mx-auto px-4 sm:px-6 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] pointer-events-auto ${scrolled ? "scale-[0.98] -translate-y-1" : "scale-100"}`}>
         <nav 
           className={`
-            flex items-center justify-between gap-2 p-1 transition-all duration-500 rounded-full border shadow-sm
+            flex items-center justify-between gap-2 p-1 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] rounded-full border shadow-sm
             bg-white/40 dark:bg-gray-900/40 backdrop-blur-md border-gray-200/30 dark:border-white/5
             ${scrolled 
-              ? "bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl border-gray-200/50 dark:border-white/10 shadow-2xl" 
+              ? "bg-white/90 dark:bg-gray-950/90 backdrop-blur-2xl border-gray-200/50 dark:border-white/10 shadow-2xl shadow-black/5 dark:shadow-black/20" 
               : "hover:bg-white/60 dark:hover:bg-gray-900/60"
             }
           `}
