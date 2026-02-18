@@ -118,6 +118,25 @@ export function SystemDesignTutorial({ isOpen, onClose }: SystemDesignTutorialPr
     return () => window.removeEventListener('resize', updatePointer);
   }, [updatePointer]);
 
+  const finish = useCallback(() => {
+    localStorage.setItem("mockmate-sd-onboarded", "true");
+    onClose();
+  }, [onClose]);
+
+  const handleNext = useCallback(() => {
+    if (currentStep < STEPS.length - 1) {
+      setCurrentStep(currentStep + 1);
+    } else {
+      finish();
+    }
+  }, [currentStep, finish]);
+
+  const handleBack = useCallback(() => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  }, [currentStep]);
+
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -127,26 +146,7 @@ export function SystemDesignTutorial({ isOpen, onClose }: SystemDesignTutorialPr
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, currentStep]);
-
-  const handleNext = () => {
-    if (currentStep < STEPS.length - 1) {
-      setCurrentStep(currentStep + 1);
-    } else {
-      finish();
-    }
-  };
-
-  const handleBack = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const finish = () => {
-    localStorage.setItem("mockmate-sd-onboarded", "true");
-    onClose();
-  };
+  }, [isOpen, handleNext, handleBack, finish]);
 
   if (!isOpen) return null;
 

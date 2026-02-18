@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, memo, useEffect } from 'react';
+import { useState, memo, useEffect, useCallback } from 'react';
 import { MCQQuestion, QuizMode } from '@/types';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -39,7 +39,7 @@ export const MultipleChoiceCard = memo(({
   const language = getLanguageForCategory(category);
   const isMSQ = question.type === 'MSQ' || correctAnswers.length > 1;
 
-  const handleToggle = (letter: string) => {
+  const handleToggle = useCallback((letter: string) => {
     if (isReviewMode) return;
 
     if (isMSQ) {
@@ -59,7 +59,7 @@ export const MultipleChoiceCard = memo(({
         setShowExplanation(true);
       }
     }
-  };
+  }, [isReviewMode, isMSQ, selectedAnswers, onAnswer, mode]);
 
   // Keyboard Shortcuts (A, B, C, D)
   useEffect(() => {
@@ -242,3 +242,5 @@ export const MultipleChoiceCard = memo(({
     </div>
   );
 });
+
+MultipleChoiceCard.displayName = "MultipleChoiceCard";

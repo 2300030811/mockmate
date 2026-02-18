@@ -124,3 +124,5 @@ export const QuestionRenderer = memo(({
       return <div>Unsupported question type: {(question as any).type || 'unknown'}</div>;
   }
 });
+
+QuestionRenderer.displayName = "QuestionRenderer";

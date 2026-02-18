@@ -58,7 +58,7 @@ const ResumeSection = React.memo(({ suggestions }: { suggestions: any[] }) => (
                                 {sug.impact === 'high' && <span className="text-[8px] uppercase font-black tracking-widest px-1.5 py-0.5 bg-orange-500/10 text-orange-500 rounded border border-orange-500/20">Critical</span>}
                             </div>
                             <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed font-bold italic tracking-tight">
-                                "{sug.suggestion}"
+                                &quot;{sug.suggestion}&quot;
                             </p>
                         </div>
                     </div>

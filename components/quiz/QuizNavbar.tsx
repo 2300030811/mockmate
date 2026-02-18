@@ -99,3 +99,5 @@ export const QuizNavbar = memo(({
     </nav>
   );
 });
+
+QuizNavbar.displayName = "QuizNavbar";

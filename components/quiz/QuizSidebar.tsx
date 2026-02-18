@@ -159,3 +159,5 @@ export const QuizSidebar = memo(({
     </>
   );
 });
+
+QuizSidebar.displayName = "QuizSidebar";
