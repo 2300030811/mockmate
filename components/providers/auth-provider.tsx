@@ -35,7 +35,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const refresh = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     setUser(user);
     if (user) {
       const profileData = await fetchProfile(user.id);
@@ -47,20 +49,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Check active sessions and sets the user
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user.id).then(setProfile);
+        try {
+          const profileData = await fetchProfile(session.user.id);
+          setProfile(profileData);
+        } catch (error) {
+          console.error("Error fetching profile in getSession:", error);
+        }
       }
       setLoading(false);
     });
 
     // Listen for changes on auth state (sign in, sign out, etc.)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        const profileData = await fetchProfile(session.user.id);
-        setProfile(profileData);
+        try {
+          const profileData = await fetchProfile(session.user.id);
+          setProfile(profileData);
+        } catch (error) {
+          console.error("Error fetching profile in onAuthStateChange:", error);
+        }
       } else {
         setProfile(null);
       }

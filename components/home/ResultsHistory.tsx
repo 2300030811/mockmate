@@ -83,33 +83,67 @@ export function ResultsHistory() {
                     whileHover={{ y: -5 }}
                     className="group relative overflow-hidden bg-white/40 dark:bg-gray-900/40 backdrop-blur-xl border border-white/20 dark:border-gray-800 rounded-2xl p-5 shadow-sm hover:shadow-xl transition-all duration-300"
                   >
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="text-xs font-bold uppercase tracking-wider text-blue-500 px-2 py-1 bg-blue-500/10 rounded-md">
-                        {result.category}
-                      </span>
-                      <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                        <Clock className="w-3 h-3" />
-                        {new Date(result.completed_at).toLocaleDateString()}
-                      </div>
-                    </div>
-
-                    <div className="flex items-end justify-between">
-                      <div>
-                        <p className="text-3xl font-black text-gray-900 dark:text-white">
-                          {Math.round((result.score / result.total_questions) * 100)}%
-                        </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          {result.score}/{result.total_questions} Correct
-                        </p>
-                      </div>
+                    {/* Display and Link Logic */}
+                    {(() => {
+                      const isArena = result.category.includes('arena');
+                      const isPDF = result.category.startsWith('PDF:');
                       
-                      <Link
-                        href={`/${result.category === 'pcap' ? 'pcap-quiz' : result.category + '-quiz'}`}
-                        className="p-3 bg-gray-100 dark:bg-gray-800 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-all duration-300"
-                      >
-                        <RotateCcw className="w-5 h-5" />
-                      </Link>
-                    </div>
+                      // Sanitize category for display
+                      let displayCat = result.category;
+                      if (isArena) {
+                        displayCat = result.category.replace(/^arena:[^:]+:/, '').toUpperCase() + " ARENA";
+                      } else if (isPDF) {
+                        displayCat = "PDF QUIZ";
+                      } else {
+                        displayCat = result.category.toUpperCase();
+                      }
+
+                      // Sanitize category for link
+                      const quizSlug = result.category.replace(/^arena:[^:]+:/, '').replace(/^arena_/, '');
+                      const href = isArena 
+                        ? '/arena' 
+                        : isPDF 
+                          ? '/upload'
+                          : result.category === 'daily-challenge'
+                            ? '/daily-challenge'
+                            : `/${quizSlug === 'pcap' ? 'pcap-quiz' : quizSlug + '-quiz'}`;
+
+                      return (
+                        <>
+                          <div className="flex items-center justify-between mb-4">
+                            <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md ${
+                              isArena ? 'bg-red-500/10 text-red-500' : isPDF ? 'bg-purple-500/10 text-purple-500' : 'bg-blue-500/10 text-blue-500'
+                            }`}>
+                              {displayCat}
+                            </span>
+                            <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                              <Clock className="w-3 h-3" />
+                              {new Date(result.completed_at).toLocaleDateString()}
+                            </div>
+                          </div>
+
+                          <div className="flex items-end justify-between">
+                            <div>
+                              <p className="text-3xl font-black text-gray-900 dark:text-white">
+                                {Math.round((result.score / result.total_questions) * 100)}%
+                              </p>
+                              <p className="text-sm text-gray-500 dark:text-gray-400">
+                                {result.score}/{result.total_questions} Correct
+                              </p>
+                            </div>
+                            
+                            <Link
+                              href={href}
+                              className={`p-3 bg-gray-100 dark:bg-gray-800 rounded-xl transition-all duration-300 group-hover:text-white ${
+                                isArena ? 'group-hover:bg-red-600' : isPDF ? 'group-hover:bg-purple-600' : 'group-hover:bg-blue-600'
+                              }`}
+                            >
+                              <RotateCcw className="w-5 h-5" />
+                            </Link>
+                          </div>
+                        </>
+                      );
+                    })()}
 
                     <div className="mt-4 h-1.5 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                       <motion.div 
