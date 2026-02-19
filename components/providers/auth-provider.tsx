@@ -26,11 +26,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
+    // Check session storage first for instant hydration
+    const cacheKey = `mockmate_profile_${userId}`;
+    const cached = typeof window !== 'undefined' ? sessionStorage.getItem(cacheKey) : null;
+    
+    if (cached) {
+      try {
+        setProfile(JSON.parse(cached));
+      } catch (e) {
+        console.error("Error parsing cached profile:", e);
+      }
+    }
+
     const { data } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", userId)
       .single();
+    
+    if (data && typeof window !== 'undefined') {
+      sessionStorage.setItem(cacheKey, JSON.stringify(data));
+      setProfile(data);
+    }
     return data;
   };
 
@@ -61,7 +78,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           table: 'profiles',
           filter: `id=eq.${userId}`
         }, (payload) => {
-          setProfile(payload.new);
+          const newData = payload.new;
+          setProfile(newData);
+          if (typeof window !== 'undefined') {
+            sessionStorage.setItem(`mockmate_profile_${userId}`, JSON.stringify(newData));
+          }
         })
         .subscribe();
     };
@@ -74,6 +95,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (currentUser) {
         setupProfileSubscription(currentUser.id);
         
+        // Try to load from cache immediately even before polling
+        const cacheKey = `mockmate_profile_${currentUser.id}`;
+        const cached = typeof window !== 'undefined' ? sessionStorage.getItem(cacheKey) : null;
+        if (cached) {
+          try {
+            setProfile(JSON.parse(cached));
+          } catch (e) {}
+        }
+
         // Fast polling for profile creation (helps with race conditions from DB triggers)
         let attempts = 0;
         const maxAttempts = 10;
@@ -121,6 +151,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } else {
         setProfile(null);
+        // Clear all mockmate profile caches on logout
+        if (typeof window !== 'undefined') {
+          Object.keys(sessionStorage).forEach(key => {
+            if (key.startsWith('mockmate_profile_')) {
+              sessionStorage.removeItem(key);
+            }
+          });
+        }
         if (profileSubscription) {
             profileSubscription.unsubscribe();
             profileSubscription = null;

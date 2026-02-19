@@ -27,7 +27,7 @@ export function UserAuthSection() {
     const { theme } = useTheme();
     const isDark = theme === "dark";
 
-    if (loading) {
+    if (loading && !user) {
         return (
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/5 animate-pulse">
                 <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-800" />
