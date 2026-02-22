@@ -13,6 +13,7 @@ interface ModeCardProps {
   iconBgLight: string;
   iconBgDark: string;
   onClick: () => void;
+  onHover?: () => void;
   iconColorClass?: string;
   buttonColorClass?: string; // e.g. "text-blue-600 dark:text-blue-400"
 }
@@ -28,11 +29,17 @@ export function ModeCard({
   iconBgDark,
   onClick,
   iconColorClass = "text-blue-500",
-  buttonColorClass = "text-blue-600 dark:text-blue-400"
+  buttonColorClass = "text-blue-600 dark:text-blue-400",
+  onHover
 }: ModeCardProps) {
   return (
-    <button onClick={onClick} className="group relative w-full text-left h-full">
-      <InteractiveCard className="h-full flex flex-col p-8">
+    <button 
+      onClick={onClick} 
+      onMouseEnter={onHover}
+      onFocus={onHover}
+      className="group relative w-full text-left h-full focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-500 focus-visible:ring-offset-4 focus-visible:ring-offset-transparent rounded-3xl transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98]"
+    >
+      <InteractiveCard className="h-full flex flex-col p-8 overflow-hidden">
         {/* Gradient Overlay */}
         <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}></div>
 

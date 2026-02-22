@@ -32,7 +32,6 @@ jobs:
 
       - name: Lint
         run: npm run lint
-        continue-on-error: true # Don't fail CI on lint warnings initially
 
       - name: Unit tests
         run: npm test -- --run

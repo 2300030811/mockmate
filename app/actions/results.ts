@@ -9,6 +9,7 @@ import { getRawQuestions } from "@/app/actions/quiz";
 import { checkAnswer } from "@/utils/quiz-helpers";
 
 import { ActivityItem, LeaderboardItem } from "@/types/dashboard";
+import type { QuizQuestion } from "@/types";
 
 export async function saveQuizResult(data: {
   sessionId: string;
@@ -16,7 +17,7 @@ export async function saveQuizResult(data: {
   userAnswers: Record<string, string | string[] | Record<string, string> | boolean | number>;
   totalQuestions: number; // Claimed total
   nickname?: string;
-  generatedQuiz?: any[]; // Optional: For AI generated quizzes where we pass the source of truth
+  generatedQuiz?: QuizQuestion[]; // Optional: For AI generated quizzes where we pass the source of truth
 }) {
   const supabase = createClient();
   const adminDb = createAdminClient(); // Initialize Admin Client
@@ -46,7 +47,7 @@ export async function saveQuizResult(data: {
         }
     }
 
-    let questions: any[] = [];
+    let questions: QuizQuestion[] = [];
 
     // 1. Determine Source of Truth
     if (data.generatedQuiz && (data.category === "AI Generated" || data.category.startsWith("PDF:"))) {
@@ -112,6 +113,7 @@ export async function saveQuizResult(data: {
       
       if (error) throw error;
       revalidatePath("/");
+      revalidatePath("/dashboard");
       return { success: true, updated: true };
     }
 
@@ -131,6 +133,7 @@ export async function saveQuizResult(data: {
     if (error) throw error;
     
     revalidatePath("/");
+    revalidatePath("/dashboard");
     return { success: true };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "An unknown error occurred";
@@ -146,7 +149,7 @@ export async function getRecentResults(sessionId: string): Promise<ActivityItem[
         
         let query = supabase
             .from('quiz_results')
-            .select('*')
+            .select('id, category, score, total_questions, completed_at, session_id, user_id')
             .order('completed_at', { ascending: false })
             .limit(10);
         
@@ -213,11 +216,35 @@ export async function getLeaderboard(category: string, timeframe: 'all-time' | '
         query = query
             .order('score', { ascending: false })
             .order('completed_at', { ascending: false })
-            .limit(50);
+            .limit(300); // Balance between fairness and avoiding memory overhead
             
         const { data, error } = await query;
         if (error) throw error;
-        return (data as LeaderboardItem[]) || [];
+        
+        const rawResults = (data as LeaderboardItem[]) || [];
+
+        // Pre-compute percentage and time to optimize sorting
+        const withStats = rawResults.map(r => ({
+            ...r,
+            percent: r.total_questions > 0 ? r.score / r.total_questions : 0,
+            timeMs: new Date(r.completed_at).getTime()
+        }));
+
+        // Sort fairly by percentage correct
+        withStats.sort((a, b) => {
+            if (b.percent !== a.percent) {
+                return b.percent - a.percent;
+            }
+            // Tie-breaker 1: Total questions
+            if (b.total_questions !== a.total_questions) {
+                return b.total_questions - a.total_questions;
+            }
+            // Tie-breaker 2: Most recent
+            return b.timeMs - a.timeMs;
+        });
+
+        // Strip back the added properties to match the interface
+        return withStats.slice(0, 50).map(({ percent, timeMs, ...rest }) => rest);
     } catch (error: unknown) {
         console.error("❌ Failed to fetch leaderboard:", error instanceof Error ? error.message : "Unknown error");
         return [];

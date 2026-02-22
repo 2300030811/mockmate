@@ -8,7 +8,7 @@ import { getSessionId } from "@/utils/session";
 import { useAuth } from "./providers/auth-provider";
 import { toast } from "sonner";
 import { MessageSquare, Bug, Lightbulb, HelpCircle, Loader2 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface FeedbackModalProps {
   isOpen: boolean;
@@ -22,6 +22,7 @@ export function FeedbackModal({ isOpen, onClose, isDark = true }: FeedbackModalP
   const [message, setMessage] = useState("");
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,9 +43,12 @@ export function FeedbackModal({ isOpen, onClose, isDark = true }: FeedbackModalP
     setIsSubmitting(false);
 
     if (result.success) {
-      toast.success("Thank you for your feedback! We appreciate it.");
-      setMessage("");
-      onClose();
+      setIsSuccess(true);
+      setTimeout(() => {
+        setIsSuccess(false);
+        setMessage("");
+        onClose();
+      }, 2000);
     } else {
       toast.error(result.error || "Failed to submit feedback. Please try again.");
     }
@@ -59,7 +63,47 @@ export function FeedbackModal({ isOpen, onClose, isDark = true }: FeedbackModalP
       isDark={isDark}
     >
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Type Selection */}
+        <AnimatePresence mode="wait">
+          {isSuccess ? (
+            <motion.div
+              key="success-state"
+              initial={{ opacity: 0, scale: 0.9, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: -10 }}
+              className="flex flex-col items-center justify-center py-12 space-y-5"
+            >
+              <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center">
+                <motion.svg
+                  className="w-10 h-10 text-emerald-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={3}
+                >
+                  <motion.path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    d="M5 13l4 4L19 7" 
+                    initial={{ pathLength: 0 }}
+                    animate={{ pathLength: 1 }}
+                    transition={{ duration: 0.5, ease: "easeOut", delay: 0.2 }}
+                  />
+                </motion.svg>
+              </div>
+              <div className="text-center space-y-2">
+                <h3 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-cyan-400">Feedback Received!</h3>
+                <p className={`text-sm font-medium ${isDark ? 'text-white/60' : 'text-gray-500'}`}>Thank you for helping us improve MockMate.</p>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="form-state"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="space-y-5"
+            >
+              {/* Type Selection */}
         <div className="space-y-2">
           <label className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? 'text-white/50' : 'text-gray-400'}`}>
             Select Category
@@ -74,7 +118,7 @@ export function FeedbackModal({ isOpen, onClose, isDark = true }: FeedbackModalP
                 key={item.id}
                 type="button"
                 onClick={() => setType(item.id as any)}
-                className={`flex flex-col items-center gap-2 p-3 rounded-2xl border-2 transition-all duration-300 relative overflow-hidden group ${
+                className={`flex flex-col items-center gap-2 p-3 rounded-2xl border-2 transition-all duration-300 relative overflow-hidden group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 ${
                   type === item.id
                     ? isDark ? `${item.bg} border-${item.color.split('-')[1]}-400/50 shadow-lg shadow-${item.color.split('-')[1]}-400/10` : "bg-white border-blue-500 shadow-md"
                     : isDark ? "bg-white/5 border-white/5 hover:border-white/10" : "bg-gray-50 border-gray-100 hover:border-gray-200"
@@ -110,10 +154,10 @@ export function FeedbackModal({ isOpen, onClose, isDark = true }: FeedbackModalP
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Tell us what's on your mind... (min 5 characters)"
-              className={`w-full h-32 p-4 rounded-2xl border-2 outline-none transition-all resize-none text-sm leading-relaxed ${
+              className={`w-full h-32 p-4 rounded-2xl border-2 outline-none transition-all resize-none text-sm leading-relaxed focus-visible:ring-4 focus-visible:ring-emerald-500/20 ${
                 isDark 
-                  ? "bg-black/40 border-white/5 focus:border-emerald-500/50 text-white placeholder:text-white/20" 
-                  : "bg-gray-50 border-gray-100 focus:border-blue-500/50 text-gray-900 placeholder:text-gray-400"
+                  ? "bg-black/40 border-white/5 focus:border-emerald-500 text-white placeholder:text-white/20" 
+                  : "bg-gray-50 border-gray-100 focus:border-emerald-500 text-gray-900 placeholder:text-gray-400"
               }`}
             />
             <div className={`absolute bottom-3 right-3 transition-opacity duration-300 ${message.length >= 5 ? 'opacity-100' : 'opacity-0'}`}>
@@ -136,10 +180,10 @@ export function FeedbackModal({ isOpen, onClose, isDark = true }: FeedbackModalP
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="alex@example.com"
-                className={`w-full p-3.5 pl-4 rounded-xl border-2 outline-none transition-all text-sm ${
+                className={`w-full p-3.5 pl-4 rounded-xl border-2 outline-none transition-all text-sm focus-visible:ring-4 focus-visible:ring-sky-500/20 ${
                   isDark 
-                    ? "bg-black/40 border-white/5 focus:border-sky-500/50 text-white placeholder:text-white/20" 
-                    : "bg-gray-50 border-gray-100 focus:border-blue-500/50 text-gray-900 placeholder:text-gray-400"
+                    ? "bg-black/40 border-white/5 focus:border-sky-500 text-white placeholder:text-white/20" 
+                    : "bg-gray-50 border-gray-100 focus:border-sky-500 text-gray-900 placeholder:text-gray-400"
                 }`}
               />
             </div>
@@ -171,6 +215,9 @@ export function FeedbackModal({ isOpen, onClose, isDark = true }: FeedbackModalP
             )}
           </Button>
         </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </form>
     </Modal>
   );

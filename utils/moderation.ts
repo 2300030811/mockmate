@@ -1,5 +1,14 @@
 import { BASE_BLOCKLIST, CUSTOM_BLOCKLIST } from "./blocklist";
 
+// Pre-compile blocklist patterns once at module load (not on every call)
+const combinedBlocklist = [...BASE_BLOCKLIST, ...CUSTOM_BLOCKLIST];
+const compiledBlocklistPatterns = combinedBlocklist.map((word) => ({
+  word,
+  normalizedWord: word.toLowerCase().replace(/[aeiou]/g, "*"),
+  wordRegex: new RegExp(`\\b${word}\\b`, "i"),
+  fuzzyWordRegex: new RegExp(word.split("").join(" *"), "i"),
+}));
+
 /**
  * Normalizes a string by:
  * 1. Unicode normalization (NFKC)
@@ -40,14 +49,14 @@ function normalizeText(text: string): string {
   }
 
   // 3. Remove repeated characters (extra defense: fuuuuck -> fuck)
-  // We'll keep a version for pattern matching
-  const collapsed = mapped.replace(/(.)\1+/g, "$1");
+  const collapsed = mapped.replace(/(.)\\1+/g, "$1");
 
   return collapsed;
 }
 
 /**
  * Validates a nickname against profanity and formatting rules.
+ * Uses pre-compiled regex patterns for performance.
  * @param nickname The nickname to check
  * @returns { success: boolean, error?: string }
  */
@@ -75,13 +84,8 @@ export function validateNickname(nickname: string): { success: boolean; error?: 
   
   const normalized = normalizeText(trimmed);
   const normalizedWithVowelPlaceholder = normalized.replace(/[aeiou]/g, "*");
-  const combinedBlocklist = [...BASE_BLOCKLIST, ...CUSTOM_BLOCKLIST];
 
-  for (const word of combinedBlocklist) {
-    const normalizedWord = word.toLowerCase().replace(/[aeiou]/g, "*");
-    const wordRegex = new RegExp(`\\b${word}\\b`, "i");
-    const fuzzyWordRegex = new RegExp(word.split('').join(' *'), "i"); // Matches f u c k
-
+  for (const { word, normalizedWord, wordRegex, fuzzyWordRegex } of compiledBlocklistPatterns) {
     if (
       normalized.includes(word) || 
       normalizedWithVowelPlaceholder.includes(normalizedWord) ||

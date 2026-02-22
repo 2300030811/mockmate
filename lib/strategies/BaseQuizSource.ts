@@ -2,6 +2,7 @@
 import { QuizQuestion, QuizMode } from "@/types";
 import { shuffleArray } from "@/utils/quiz-helpers";
 import { QuizFetcher } from "@/lib/quiz-fetcher";
+import { getCachedQuestions, setCachedQuestions } from "@/lib/quiz-cache";
 
 export abstract class BaseQuizSource {
   protected defaultExamCount: number;
@@ -12,13 +13,24 @@ export abstract class BaseQuizSource {
     this.defaultExamCount = defaultExamCount;
   }
 
-  // Template method: Try DB -> Fallback to Remote
+  // Template method: Cache → DB → Remote (with write-back)
   async fetchRawQuestions(forceRefresh: boolean = false): Promise<QuizQuestion[]> {
+      const category = this.label.toLowerCase();
+
+      // 0. Check in-memory cache (skip if forcing refresh)
+      if (!forceRefresh) {
+        const cached = getCachedQuestions(category);
+        if (cached && cached.length > 0) {
+          return cached;
+        }
+      }
+
       // 1. Try DB (skip if forceRefresh is true)
       if (!forceRefresh) {
           try {
-              const dbQuestions = await QuizFetcher.fetchQuestionsFromDB(this.label.toLowerCase());
+              const dbQuestions = await QuizFetcher.fetchQuestionsFromDB(category);
               if (dbQuestions && dbQuestions.length > 0) {
+                  setCachedQuestions(category, dbQuestions);
                   return dbQuestions;
               }
           } catch (e) {
@@ -27,7 +39,11 @@ export abstract class BaseQuizSource {
       }
 
       // 2. Fallback to Remote
-      return this.fetchRemoteQuestions();
+      const remoteQuestions = await this.fetchRemoteQuestions();
+      if (remoteQuestions.length > 0) {
+        setCachedQuestions(category, remoteQuestions);
+      }
+      return remoteQuestions;
   }
 
   // Abstract method to be implemented by subclasses for specific remote fetching logic

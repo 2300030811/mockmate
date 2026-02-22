@@ -12,7 +12,7 @@ export default async function AdminDashboard() {
     );
   }
 
-  const { totalUsers, totalQuizzes } = data;
+  const { totalUsers, totalQuizzes, avgScore } = data;
 
   return (
     <div className="space-y-8">
@@ -46,14 +46,14 @@ export default async function AdminDashboard() {
           </div>
         </div>
 
-        {/* Engagement Rate (Placeholder) */}
-        <div className="rounded-xl border bg-card text-card-foreground shadow-sm bg-white dark:bg-gray-800 p-6 flex items-center gap-4 opacity-70">
+        {/* Average Score Card */}
+        <div className="rounded-xl border bg-card text-card-foreground shadow-sm bg-white dark:bg-gray-800 p-6 flex items-center gap-4">
            <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-full text-purple-600 dark:text-purple-400">
             <TrendingUp className="w-6 h-6" />
           </div>
            <div>
-            <p className="text-sm font-medium opacity-70">Engagement</p>
-            <div className="text-lg font-semibold">Coming Soon</div>
+            <p className="text-sm font-medium opacity-70">Average Score</p>
+            <div className="text-2xl font-bold">{avgScore}%</div>
           </div>
         </div>
       </div>

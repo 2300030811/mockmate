@@ -41,16 +41,22 @@ export function ArenaBattle({
   const currentQ = questions[currentQuestion];
   const isLowTime = timeLeft <= 5;
 
-  // Keyboard Shortcuts (1, 2, 3, 4)
+  // Keyboard Shortcuts (1, 2, 3, 4, a, b, c, d)
   useEffect(() => {
     if (userSelected) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (['1', '2', '3', '4'].includes(e.key)) {
-        const index = parseInt(e.key) - 1;
-        if (currentQ?.options[index]) {
-          handleAnswer(currentQ.options[index]);
-        }
+      const key = e.key.toLowerCase();
+      let index = -1;
+      
+      if (['1', '2', '3', '4'].includes(key)) {
+        index = parseInt(key) - 1;
+      } else if (['a', 'b', 'c', 'd'].includes(key)) {
+        index = key.charCodeAt(0) - 97; // 'a' is 97
+      }
+
+      if (index !== -1 && currentQ?.options[index]) {
+        handleAnswer(currentQ.options[index]);
       }
     };
 
@@ -163,8 +169,9 @@ export function ArenaBattle({
       <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 overflow-y-auto">
          <motion.div 
            key={currentQuestion}
-           initial={{ x: 100, opacity: 0 }}
-           animate={{ x: 0, opacity: 1 }}
+           initial={{ opacity: 0, scale: 0.95 }}
+           animate={{ opacity: 1, scale: 1 }}
+           transition={{ duration: 0.3, ease: "easeOut" }}
            className="w-full max-w-4xl space-y-12"
          >
             <div className="text-center space-y-4">

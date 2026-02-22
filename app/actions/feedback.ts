@@ -44,7 +44,7 @@ export async function submitFeedback(formData: {
         const resend = new Resend(env.RESEND_API_KEY);
         await resend.emails.send({
           from: "MockMate <onboarding@resend.dev>", // Note: Use verified domain in production
-          to: "2300030811@kluniversity.in",
+          to: env.FEEDBACK_EMAIL || "admin@mockmate.app",
           subject: `New Feedback: ${validated.type.toUpperCase()}`,
           html: `
             <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; rounded: 10px;">

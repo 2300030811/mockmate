@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Mail, Lock, Github, Chrome, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useAuth } from "@/components/providers/auth-provider";
 
 export function LoginForm() {
     const [loading, setLoading] = useState(false);
@@ -13,6 +14,7 @@ export function LoginForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const signupSuccess = searchParams.get("signup") === "success";
+    const { refresh } = useAuth();
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -28,6 +30,7 @@ export function LoginForm() {
         if (result.error) {
             setError(result.error);
         } else {
+            await refresh(); // Manually refresh client-side session from server
             router.push("/");
             router.refresh();
         }
@@ -59,8 +62,9 @@ export function LoginForm() {
                             name="email"
                             type="email"
                             required
+                            disabled={loading}
                             placeholder="your@email.com"
-                            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl py-3 pl-12 pr-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium"
+                            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl py-3 pl-12 pr-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium disabled:opacity-50"
                         />
                     </div>
                 </div>
@@ -78,8 +82,9 @@ export function LoginForm() {
                             name="password"
                             type="password"
                             required
+                            disabled={loading}
                             placeholder="••••••••"
-                            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl py-3 pl-12 pr-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium"
+                            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl py-3 pl-12 pr-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium disabled:opacity-50"
                         />
                     </div>
                 </div>
@@ -101,6 +106,7 @@ export function LoginForm() {
             <div className="grid grid-cols-2 gap-4">
                 <Button 
                     onClick={() => signInWithSocial('google')}
+                    disabled={loading}
                     variant="glass" 
                     className="flex items-center gap-2 rounded-2xl"
                 >
@@ -108,6 +114,7 @@ export function LoginForm() {
                 </Button>
                 <Button 
                     onClick={() => signInWithSocial('github')}
+                    disabled={loading}
                     variant="glass" 
                     className="flex items-center gap-2 rounded-2xl"
                 >

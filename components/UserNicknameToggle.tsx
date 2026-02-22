@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { User, Edit2, Check, X } from "lucide-react";
 import { getStoredNickname, setStoredNickname } from "@/utils/session";
 import { Button } from "./ui/Button";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 
 export function UserNicknameToggle() {
     const [nickname, setNickname] = useState<string | null>(null);
@@ -31,7 +31,7 @@ export function UserNicknameToggle() {
         <div className="relative flex items-center gap-2">
             <AnimatePresence mode="wait">
                 {!isEditing ? (
-                    <motion.div
+                    <m.div
                         key="display"
                         initial={{ opacity: 0, x: 10 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -50,9 +50,9 @@ export function UserNicknameToggle() {
                             </span>
                             <Edit2 className="w-2.5 h-2.5 opacity-40 group-hover:opacity-100" />
                         </Button>
-                    </motion.div>
+                    </m.div>
                 ) : (
-                    <motion.div
+                    <m.div
                         key="edit"
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -81,7 +81,7 @@ export function UserNicknameToggle() {
                         >
                             <X className="w-4 h-4" />
                         </button>
-                    </motion.div>
+                    </m.div>
                 )}
             </AnimatePresence>
         </div>

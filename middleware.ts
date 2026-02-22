@@ -3,29 +3,34 @@ import { Redis } from "@upstash/redis";
 import { NextFetchEvent, NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/utils/supabase/middleware";
 
+import { env } from "@/lib/env";
+
+const redis = (env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN) 
+  ? Redis.fromEnv() 
+  : null;
+
+const ratelimit = redis ? new Ratelimit({
+  redis,
+  limiter: Ratelimit.cachedFixedWindow(12, `${24 * 60 * 60}s`),
+  ephemeralCache: new Map(),
+  analytics: true,
+}) : null;
+
 export default async function middleware(
   request: NextRequest,
   event: NextFetchEvent
 ): Promise<Response | undefined> {
   const ip = request.ip ?? "127.0.0.1";
 
-  // 1. Update Supabase session
+  // 1. Update Supabase session (handles auth sync)
   const supabaseResponse = await updateSession(request);
 
   // 2. Rate limiting for production API routes
   if (
     request.nextUrl.pathname.startsWith("/api") &&
-    process.env.NODE_ENV !== "development" &&
-    process.env.UPSTASH_REDIS_REST_URL &&
-    process.env.UPSTASH_REDIS_REST_TOKEN
+    env.NODE_ENV !== "development" &&
+    ratelimit
   ) {
-    const ratelimit = new Ratelimit({
-      redis: Redis.fromEnv(),
-      limiter: Ratelimit.cachedFixedWindow(12, `${24 * 60 * 60}s`),
-      ephemeralCache: new Map(),
-      analytics: true,
-    });
-
     const { success, pending, limit, reset, remaining } = await ratelimit.limit(
       `ratelimit_middleware_${ip}`
     );

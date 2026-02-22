@@ -118,6 +118,17 @@ export function ArenaResults({
           {userScore > opponentScore ? "VICTORY" : userScore === opponentScore ? "DRAW" : "DEFEAT"}
         </h2>
         
+        {actualAccuracy === 1 && (
+           <motion.div 
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.5, type: 'spring' }}
+              className="mt-2 text-white bg-gradient-to-r from-yellow-500 to-orange-500 px-4 py-1 rounded-full font-black text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(234,179,8,0.5)] border border-yellow-300/50"
+           >
+              Perfect Combat ✨
+           </motion.div>
+        )}
+        
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 w-full max-w-5xl my-12">
            {[
              { label: "XP Gain", val: `+${totalXp}`, color: "text-emerald-400", icon: Zap },

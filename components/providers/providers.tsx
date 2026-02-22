@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "./ThemeProvider";
 
 import { AuthProvider } from "./auth-provider";
+import { MotionProvider } from "./MotionProvider";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   // Create QueryClient in useState to avoid sharing it across SSR requests
@@ -14,7 +15,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ThemeProvider>
-          {children}
+          <MotionProvider>
+            {children}
+          </MotionProvider>
         </ThemeProvider>
       </AuthProvider>
     </QueryClientProvider>

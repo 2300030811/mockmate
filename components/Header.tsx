@@ -7,28 +7,36 @@ import { useTheme } from "@/components/providers/providers";
 import { Button, buttonVariants } from "@/components/ui/Button";
 import { Home, Sun, Moon } from "lucide-react";
 import { UserAuthSection } from "./UserAuthSection";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 
 export function Header() {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === "dark";
   const [scrolled, setScrolled] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  // Hidden Routes - where we want a specialized header or no header at all
-  const isHiddenRoute = 
-    pathname?.includes("/session") || 
-    pathname?.includes("-quiz") || 
-    pathname?.includes("/interview") ||
-    pathname?.includes("/demo") ||
-    pathname?.includes("/arena") ||
-    pathname?.includes("/daily-challenge") ||
-    pathname?.includes("/system-design") ||
-    pathname?.includes("/career-path") ||
-    pathname?.includes("/resume-roaster") ||
-    pathname?.includes("/certification");
+  // Routes where the global header should be hidden (immersive/full-screen experiences)
+  const HIDDEN_ROUTE_PATTERNS = [
+    "/session",
+    "-quiz",
+    "/interview",
+    "/demo",
+    "/arena",
+    "/daily-challenge",
+    "/system-design",
+    "/career-path",
+    "/resume-roaster",
+    "/certification",
+    "/project-mode",
+  ];
+
+  const isHiddenRoute = HIDDEN_ROUTE_PATTERNS.some(
+    (pattern) => pathname?.includes(pattern)
+  );
 
   useEffect(() => {
+    setMounted(true);
     const handleScroll = () => {
       setScrolled(window.scrollY > 10);
     };
@@ -86,26 +94,28 @@ export function Header() {
             >
               <div className="w-5 h-5 relative flex items-center justify-center overflow-hidden">
                 <AnimatePresence mode="wait">
-                  {isDark ? (
-                    <motion.div
-                      key="sun"
-                      initial={{ y: 20, opacity: 0, rotate: -45 }}
-                      animate={{ y: 0, opacity: 1, rotate: 0 }}
-                      exit={{ y: -20, opacity: 0, rotate: 45 }}
-                      transition={{ duration: 0.3, ease: "backOut" }}
-                    >
-                      <Sun className="w-5 h-5 text-yellow-400" />
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key="moon"
-                      initial={{ y: 20, opacity: 0, rotate: 45 }}
-                      animate={{ y: 0, opacity: 1, rotate: 0 }}
-                      exit={{ y: -20, opacity: 0, rotate: -45 }}
-                      transition={{ duration: 0.3, ease: "backOut" }}
-                    >
-                      <Moon className="w-5 h-5 text-gray-700" />
-                    </motion.div>
+                  {mounted && (
+                    isDark ? (
+                      <m.div
+                        key="sun"
+                        initial={{ y: 20, opacity: 0, rotate: -45 }}
+                        animate={{ y: 0, opacity: 1, rotate: 0 }}
+                        exit={{ y: -20, opacity: 0, rotate: 45 }}
+                        transition={{ duration: 0.3, ease: "backOut" }}
+                      >
+                        <Sun className="w-5 h-5 text-yellow-400" />
+                      </m.div>
+                    ) : (
+                      <m.div
+                        key="moon"
+                        initial={{ y: 20, opacity: 0, rotate: 45 }}
+                        animate={{ y: 0, opacity: 1, rotate: 0 }}
+                        exit={{ y: -20, opacity: 0, rotate: -45 }}
+                        transition={{ duration: 0.3, ease: "backOut" }}
+                      >
+                        <Moon className="w-5 h-5 text-gray-700" />
+                      </m.div>
+                    )
                   )}
                 </AnimatePresence>
               </div>

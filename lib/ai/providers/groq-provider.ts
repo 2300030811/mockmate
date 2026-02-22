@@ -66,7 +66,7 @@ export class GroqProvider implements AIProvider {
     // If no custom key is provided, we will try up to 3 keys from the env
     // to handle rate limits.
     const MAX_RETRIES = customApiKey ? 1 : 3;
-    let lastError: any;
+    let lastError: unknown;
 
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
         try {
@@ -105,17 +105,17 @@ export class GroqProvider implements AIProvider {
             const questions = GeneratedQuizResponseSchema.parse(json);
             return questions;
 
-        } catch (e: any) {
+        } catch (e: unknown) {
             lastError = e;
-            const msg = e.message || String(e);
+            const msg = e instanceof Error ? e.message : String(e);
             
             // Detailed Logging for Debugging
             console.error(`❌ [GroqProvider] Attempt ${attempt + 1} Failed. Error Details:`, {
                 message: msg,
-                type: e.type,
-                code: e.code,
-                param: e.param,
-                status: e.status // HTTP status (400, 401, 429, 500 etc)
+                type: (e as Record<string, unknown>)?.type,
+                code: (e as Record<string, unknown>)?.code,
+                param: (e as Record<string, unknown>)?.param,
+                status: (e as Record<string, unknown>)?.status,
             });
 
             // If it's a 401 (Auth) or 400 (Bad Request), retrying might not help unless it's a different key
@@ -126,7 +126,7 @@ export class GroqProvider implements AIProvider {
     }
 
     // Ensure we throw a real Error object with the last message
-    const finalMsg = lastError ? (lastError.message || String(lastError)) : "Groq generation failed after retries.";
+    const finalMsg = lastError instanceof Error ? lastError.message : (lastError ? String(lastError) : "Groq generation failed after retries.");
     throw new Error(`Groq Failed: ${finalMsg}`);
   }
 }

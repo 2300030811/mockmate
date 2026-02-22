@@ -105,6 +105,10 @@ export function GenericModeSelect({ config }: GenericModeSelectProps) {
             iconBgDark={config.cards.practice.iconBgDark}
             iconColorClass={config.cards.practice.iconColorClass}
             onClick={() => setModal("practice")}
+            onHover={() => {
+                router.prefetch(`/${config.id}-quiz?mode=practice&count=all`);
+                router.prefetch(`/${config.id}-quiz?mode=practice&count=25`);
+            }}
           />
 
           <ModeCard
@@ -119,6 +123,7 @@ export function GenericModeSelect({ config }: GenericModeSelectProps) {
             iconColorClass={config.cards.exam.iconColorClass}
             buttonColorClass={config.cards.exam.buttonColorClass}
             onClick={() => setModal("exam")}
+            onHover={() => router.prefetch(`/${config.id}-quiz?mode=exam&count=${config.exam.default}`)}
           />
         </motion.div>
       </div>

@@ -12,11 +12,11 @@ interface ProjectInstructionsProps {
   sandpackStatus: string;
 }
 
-export function ProjectInstructions({ 
-  project, 
-  hintIndex, 
-  onRevealHint, 
-  sandpackStatus 
+export function ProjectInstructions({
+  project,
+  hintIndex,
+  onRevealHint,
+  sandpackStatus,
 }: ProjectInstructionsProps) {
   return (
     <div className="hidden xl:flex flex-col w-80 bg-gray-50 dark:bg-gray-900/50 border-r border-gray-200 dark:border-gray-800 shrink-0 min-h-0">
@@ -28,15 +28,21 @@ export function ProjectInstructions({
 
         <div className="p-4 bg-blue-50 dark:bg-blue-500/10 rounded-xl border border-blue-100 dark:border-blue-500/20 mb-6">
           <h4 className="font-bold text-blue-700 dark:text-blue-400 mb-2 text-xs uppercase tracking-wider flex items-center gap-2">
-            <RefreshCw size={12} /> 
+            <RefreshCw size={12} />
             Environment
           </h4>
           <div className="flex items-center justify-between text-xs text-blue-600 dark:text-blue-300">
             <span>Status</span>
-            <span className={`flex items-center gap-1.5 ${sandpackStatus === 'running' ? "text-green-500" : "text-yellow-500"}`}>
+            <span
+              className={`flex items-center gap-1.5 ${sandpackStatus === "running" ? "text-green-500" : "text-yellow-500"}`}
+            >
               <span className="relative flex h-2 w-2">
-                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${sandpackStatus === 'running' ? "bg-green-400" : "bg-yellow-400"}`}></span>
-                <span className={`relative inline-flex rounded-full h-2 w-2 ${sandpackStatus === 'running' ? "bg-green-500" : "bg-yellow-500"}`}></span>
+                <span
+                  className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${sandpackStatus === "running" ? "bg-green-400" : "bg-yellow-400"}`}
+                ></span>
+                <span
+                  className={`relative inline-flex rounded-full h-2 w-2 ${sandpackStatus === "running" ? "bg-green-500" : "bg-yellow-500"}`}
+                ></span>
               </span>
               {sandpackStatus}
             </span>
@@ -55,7 +61,7 @@ export function ProjectInstructions({
 
             <AnimatePresence mode="popLayout">
               {project.hints.slice(0, hintIndex + 1).map((hint, i) => (
-                <motion.div 
+                <motion.div
                   key={i}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -65,11 +71,11 @@ export function ProjectInstructions({
                 </motion.div>
               ))}
             </AnimatePresence>
-            
+
             {hintIndex < project.hints.length - 1 && (
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 className="w-full mt-2 text-xs"
                 onClick={onRevealHint}
               >

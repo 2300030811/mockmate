@@ -1,14 +1,15 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useRef } from "react";
 import { createClient } from "@/utils/supabase/client";
-import { User } from "@supabase/supabase-js";
+import { User, RealtimeChannel } from "@supabase/supabase-js";
+import { Profile } from "@/types";
 
 const supabase = createClient();
 
 interface AuthContextType {
   user: User | null;
-  profile: any | null;
+  profile: Profile | null;
   loading: boolean;
   refresh: () => Promise<void>;
 }
@@ -22,7 +23,7 @@ const AuthContext = createContext<AuthContextType>({
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<any | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
@@ -40,7 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data } = await supabase
       .from("profiles")
-      .select("*")
+      .select("id, nickname, avatar_icon, role, updated_at")
       .eq("id", userId)
       .single();
     
@@ -51,21 +52,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return data;
   };
 
+  const pollTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  const pollAndSetProfile = async (userId: string) => {
+    let attempts = 0;
+    const maxAttempts = 10;
+    
+    // Clear any existing poll loop
+    if (pollTimeoutRef.current) {
+        clearTimeout(pollTimeoutRef.current);
+        pollTimeoutRef.current = null;
+    }
+
+    const executePoll = async () => {
+      try {
+        const profileData = await fetchProfile(userId);
+        if (profileData) {
+          setProfile(profileData);
+          return true;
+        }
+      } catch (err) {
+        console.error("Polling profile error:", err);
+      }
+      
+      if (attempts < maxAttempts) {
+        attempts++;
+        const delay = attempts < 3 ? 200 : 800;
+        pollTimeoutRef.current = setTimeout(executePoll, delay);
+      }
+    };
+    
+    executePoll();
+  };
+
   const refresh = async () => {
     const {
       data: { user },
     } = await supabase.auth.getUser();
     setUser(user);
     if (user) {
-      const profileData = await fetchProfile(user.id);
-      setProfile(profileData);
+      pollAndSetProfile(user.id);
     } else {
       setProfile(null);
     }
   };
 
   useEffect(() => {
-    let profileSubscription: any = null;
+    let profileSubscription: RealtimeChannel | null = null;
 
     const setupProfileSubscription = (userId: string) => {
       if (profileSubscription) profileSubscription.unsubscribe();
@@ -78,7 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           table: 'profiles',
           filter: `id=eq.${userId}`
         }, (payload) => {
-          const newData = payload.new;
+          const newData = payload.new as Profile;
           setProfile(newData);
           if (typeof window !== 'undefined') {
             sessionStorage.setItem(`mockmate_profile_${userId}`, JSON.stringify(newData));
@@ -104,32 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           } catch (e) {}
         }
 
-        // Fast polling for profile creation (helps with race conditions from DB triggers)
-        let attempts = 0;
-        const maxAttempts = 10;
-        const pollProfile = async () => {
-          try {
-            const profileData = await fetchProfile(currentUser.id);
-            if (profileData) {
-              setProfile(profileData);
-              return true;
-            }
-          } catch (err) {
-            console.error("Polling profile error:", err);
-          }
-          return false;
-        };
-
-        const executePoll = async () => {
-          const found = await pollProfile();
-          if (!found && attempts < maxAttempts) {
-            attempts++;
-            const delay = attempts < 3 ? 200 : 800; // Fast first 3 attempts, then slower
-            setTimeout(executePoll, delay);
-          }
-        };
-
-        executePoll();
+        pollAndSetProfile(currentUser.id);
       }
       setLoading(false);
     });
@@ -143,12 +151,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (currentUser) {
         setupProfileSubscription(currentUser.id);
-        try {
-          const profileData = await fetchProfile(currentUser.id);
-          setProfile(profileData);
-        } catch (error) {
-          console.error("Error fetching profile in onAuthStateChange:", error);
-        }
+        pollAndSetProfile(currentUser.id);
       } else {
         setProfile(null);
         // Clear all mockmate profile caches on logout

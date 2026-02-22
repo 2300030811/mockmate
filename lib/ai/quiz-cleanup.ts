@@ -103,10 +103,11 @@ function rescueFromExplanation(options: string[], explanation: string): string |
   return null;
 }
 
-export function sanitizeQuizQuestions(questions: any[]): GeneratedQuizQuestion[] {
+export function sanitizeQuizQuestions(questions: unknown[]): GeneratedQuizQuestion[] {
   if (!Array.isArray(questions)) return [];
 
-  return questions.map(q => {
+  return questions.map((_q) => {
+    const q = _q as Record<string, unknown>;
     // Ensure basic structure
     const sanitizedQuestion: GeneratedQuizQuestion = {
       question: String(q.question || ""),

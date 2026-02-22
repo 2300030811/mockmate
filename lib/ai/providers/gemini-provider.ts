@@ -101,7 +101,7 @@ export class GeminiProvider implements AIProvider {
             cleanText = cleanText.substring(firstOpen, lastClose + 1);
         }
 
-        let json: any;
+        let json: unknown;
         try {
             json = JSON.parse(cleanText);
         } catch (e) {
@@ -110,10 +110,11 @@ export class GeminiProvider implements AIProvider {
         }
 
         // Handle wrappers
-        if (!Array.isArray(json)) {
-            const arrayKey = Object.keys(json).find(key => Array.isArray(json[key]));
+        if (!Array.isArray(json) && json && typeof json === 'object') {
+            const obj = json as Record<string, unknown>;
+            const arrayKey = Object.keys(obj).find(key => Array.isArray(obj[key]));
             if (arrayKey) {
-                json = json[arrayKey];
+                json = obj[arrayKey];
             }
         }
 

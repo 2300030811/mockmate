@@ -105,6 +105,15 @@ function normalizeQuestion(q: RawQuestion): QuizQuestion | null {
         } else {
             // Heuristic for "Given:\n...code...\nQuestion"
             const patterns = [
+                // Shape + Query + Rest
+                /Given a sample collection called [^,]+, in which all documents have the following shape:\s*({[\s\S]*?})\.\s*And the following query:\s*(db\.[\s\S]*?)\.\s*(Which[\s\S]*)/i,
+                // Documents + Rest
+                /Given the following documents in a collection:\s*({[\s\S]*?})\.\s*(Which[\s\S]*)/i,
+                // Collection + Documents + Query + Rest
+                /(?:collection named \w+ contains the following documents and query|following aggregation query):?\s*(db\.[\s\S]*?)\.\s*(What[\s\S]*)/i,
+                // Generic "Given the following query: db.xxx(...)" inline
+                /(?:Given the following query|the following query):?\s*(db\.\S+\([\s\S]*?\))\.\s*((?:No|What|Which|The|How|If)[\s\S]*)/i,
+                // Generic Given...Code...Question
                 /Given:?\n([\s\S]*?)(\n(?:What|Which|And|Assume|If|The|A)\s+.*)/i,
                 /Given the following code fragment:?\n([\s\S]*?)(\n(?:What|Which|And|Assume|If|The|A)\s+.*)/i,
                 /fragment:?\n([\s\S]*?)(\n(?:What|Which|And|Assume|If)\s+.*)/i
@@ -112,10 +121,37 @@ function normalizeQuestion(q: RawQuestion): QuizQuestion | null {
 
             for (const pattern of patterns) {
                 const match = qText.match(pattern);
-                if (match && match[1].trim().length > 10) {
-                    newQ.code = match[1].trim();
-                    newQ.question = qText.replace(match[1], "\n\n").trim();
-                    break;
+                if (match) {
+                    if (match.length === 4) {
+                        // Special case: Shape + Query + Rest
+                        newQ.code = `${match[1]}\n\n${match[2]}`;
+                        newQ.question = match[3].trim();
+                        break;
+                    } else if (match[1].trim().length > 10) {
+                        newQ.code = match[1].trim();
+                        newQ.question = qText.replace(match[1], "\n\n").trim();
+                        break;
+                    }
+                }
+            }
+
+            // Universal fallback: extract ALL db.xxx.xxx(...) inline queries
+            if (!newQ.code && typeof newQ.question === 'string') {
+                const qStr = newQ.question as string;
+                // Match all db.collection.method(...) patterns, including chained calls
+                const allDbMatches: string[] = [];
+                const dbRegex = /db\.\w+\.\w+\([^)]*(?:\([^)]*\))*[^)]*\)(?:\.\w+\([^)]*\))*/g;
+                let m: RegExpExecArray | null;
+                while ((m = dbRegex.exec(qStr)) !== null) {
+                    if (m[0].length > 12) allDbMatches.push(m[0]);
+                }
+                if (allDbMatches.length > 0) {
+                    newQ.code = allDbMatches.join('\n\n');
+                    let cleaned = qStr;
+                    for (const dbMatch of allDbMatches) {
+                        cleaned = cleaned.replace(dbMatch, '');
+                    }
+                    newQ.question = cleaned.replace(/\s{2,}/g, ' ').trim();
                 }
             }
         }

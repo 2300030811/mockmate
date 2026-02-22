@@ -14,7 +14,7 @@ interface GeneralTabProps {
 }
 
 export function GeneralTab({ profile, user, selectedIcon, setSelectedIcon, submitButton }: GeneralTabProps) {
-  const nickname = profile?.nickname || user?.user_metadata?.nickname || "User";
+  const nickname = (profile?.nickname || user?.user_metadata?.name || user?.user_metadata?.full_name || user?.user_metadata?.nickname || "User") as string;
 
   return (
     <Card className="border-none shadow-xl bg-white/50 dark:bg-gray-900/50 backdrop-blur-xl">

@@ -11,7 +11,7 @@ import { checkAnswer } from "@/utils/quiz-helpers";
 import { quizThemes } from "@/lib/quiz-themes";
 
 interface UseQuizProps {
-  category: keyof typeof quizThemes;
+  category: keyof typeof quizThemes | string;
   initialMode?: QuizMode;
   countParam?: string | null;
 }
@@ -33,13 +33,13 @@ export function useQuiz({ category, initialMode = 'practice', countParam = null 
       questions,
       mode,
       category,
-      initialTimeRemaining: (quizThemes[category]?.exam.duration || 90) * 60,
+      initialTimeRemaining: ((quizThemes as Record<string, any>)[category]?.exam?.duration || 90) * 60,
       onSubmit: (answers) => {
         if (mode === 'exam') {
           saveQuizResult({
             sessionId: getSessionId(),
             category,
-            userAnswers: answers,
+            userAnswers: answers as Record<string, string | string[] | Record<string, string> | boolean | number>,
             totalQuestions: questions.length,
             nickname: getStoredNickname() || undefined
           });
@@ -52,7 +52,7 @@ export function useQuiz({ category, initialMode = 'practice', countParam = null 
     let attempted = 0;
     
     questions.forEach((q) => {
-        const answers = engine.userAnswers[q.id];
+        const answers = engine.userAnswers[q.id.toString()];
         if (answers !== undefined) {
             attempted++;
             if (checkAnswer(q, answers)) correct++;

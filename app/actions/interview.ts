@@ -5,6 +5,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getNextKey } from "@/utils/keyManager";
 import { z } from "zod";
 import { sanitizePromptInput } from "@/utils/sanitize";
+import { rateLimit } from "@/lib/rate-limit";
 
 // Input validation schema
 const ChatMessageSchema = z.object({
@@ -29,6 +30,12 @@ export async function chatWithAI(messages: { role: string; content: string }[], 
     const validMessages = parsed.data;
 
     try {
+        // Rate limit: 60 chat messages per 10 minutes
+        const { success: withinLimit } = await rateLimit("chat");
+        if (!withinLimit) {
+          return { response: "", error: "Too many requests. Please slow down." };
+        }
+
         const systemPrompt = `You are a professional technical interviewer conducting a ${type} interview. 
     - Your goal is to assess the candidate's skills with insightful questions.
     ${type === 'technical' ? '- IMPORTANT: When you ask a coding question or ask the candidate to implement something, EXPLICITLY tell them to "type your solution in the Editor tab on the right".' : ''}

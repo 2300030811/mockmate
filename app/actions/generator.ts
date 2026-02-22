@@ -8,11 +8,10 @@ import { GeneratedQuizResponseSchema, GeneratedQuizQuestion } from "@/lib/ai/mod
 import { sanitizeQuizQuestions } from "@/lib/ai/quiz-cleanup";
 import { StorageService } from "@/lib/services/storage";
 import { OCRService } from "@/lib/services/ocr";
-
-// ⚠️ FORCE NODEJS RUNTIME
-// export const runtime = "nodejs";
-
-
+import { createClient } from "@/utils/supabase/server";
+import { rateLimit } from "@/lib/rate-limit";
+import { AppError } from "@/lib/exceptions";
+import { logger } from "@/lib/logger";
 
 /**
  * Server Action to convert an uploaded PDF file to text.
@@ -22,21 +21,29 @@ export async function convertFileAction(formData: FormData) {
     const file = formData.get("file") as File;
 
     if (!file || !(file instanceof File)) {
-      throw new Error("No file uploaded");
+      throw new AppError("No file uploaded", "BAD_REQUEST", 400);
     }
 
     // Validate file type — only accept PDFs
     const allowedTypes = ["application/pdf"];
     if (!allowedTypes.includes(file.type)) {
-      throw new Error(`Invalid file type: ${file.type}. Only PDF files are accepted.`);
+      throw new AppError(`Invalid file type: ${file.type}. Only PDF files are accepted.`, "BAD_REQUEST", 400);
     }
 
     if (file.size > 10 * 1024 * 1024) {
-      throw new Error("File too large. Please upload < 10MB.");
+      throw new AppError("File too large. Please upload < 10MB.", "PAYLOAD_TOO_LARGE", 413);
     }
 
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    const stream = file.stream();
+    const reader = stream.getReader();
+    const chunks: Uint8Array[] = [];
+    
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (value) chunks.push(value);
+    }
+    const buffer = Buffer.concat(chunks);
 
     // --- AZURE BLOB STORAGE BACKUP (Fire & Forget) ---
     // We don't await this so it doesn't slow down the user
@@ -47,7 +54,7 @@ export async function convertFileAction(formData: FormData) {
 
     // --- SCANNED FALLBACK CHECK ---
     if (OCRService.isScanned(text)) {
-      console.warn("⚠️ Text extraction failed (< 50 chars). Vision Mode needed.");
+      logger.warn("Text extraction failed (< 50 chars). Vision Mode needed.");
       return { 
         text: "",
         isScanned: true,
@@ -58,9 +65,9 @@ export async function convertFileAction(formData: FormData) {
     return { text, isScanned: false, source };
 
   } catch (error: unknown) {
-    console.error("❌ Convert Action Error:", error);
+    logger.error("Convert Action Error:", error);
     const msg = error instanceof Error ? error.message : "File conversion failed";
-    throw new Error(msg);
+    throw new AppError(msg, "CONVERT_ERROR", 500);
   }
 }
 
@@ -137,7 +144,7 @@ async function generateWithGeminiVision(apiKey: string, base64Pdf: string, count
   
   const parsed = safeJsonParse(text, GeneratedQuizResponseSchema);
   if (!parsed) {
-      throw new Error("Failed to parse AI Vision response into valid Quiz JSON.");
+      throw new AppError("Failed to parse AI Vision response into valid Quiz JSON.", "AI_ERROR", 500);
   }
 
   return parsed;
@@ -156,23 +163,35 @@ export async function generateQuizAction(
     mode: "quiz" | "flashcard" = "quiz"
 ) {
   try {
+    // Auth guard: require login unless user provides their own API key
+    let userId: string | null = null;
+    if (!customApiKey) {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new AppError("Authentication required. Please sign in or provide your own API key.", "UNAUTHORIZED", 401);
+      }
+      userId = user.id;
+    }
+
+    // Rate limit: 10 generations per hour
+    const { success: withinLimit } = await rateLimit("generate", userId);
+    if (!withinLimit) {
+      throw new AppError("Rate limit exceeded. Please wait before generating more quizzes.", "TOO_MANY_REQUESTS", 429);
+    }
+
     if ((!content || content.length < 100) && !base64Pdf) {
-      throw new Error("Content too short or file empty.");
+      throw new AppError("Content too short or file empty.", "BAD_REQUEST", 400);
     }
 
     let rawQuestions: GeneratedQuizQuestion[] = [];
 
     // 1. VISION PATH
     if (base64Pdf) {
-       console.log("👁️ Taking Vision Path (Action)");
+       logger.info("Taking Vision Path (Action)");
        const key = customApiKey || getNextKey("GOOGLE_API_KEY");
-       if (!key) throw new Error("Gemini Key required for Vision");
+       if (!key) throw new AppError("Gemini Key required for Vision", "CONFIG_ERROR", 500);
        
-       // Vision doesn't strictly support mode yet, but we can assume 'quiz' or add it later if needed.
-       // For now, let's keep Vision as Quiz-only or modify generateWithGeminiVision if requested.
-       // Given user requested flashcards, let's update Vision too or fallback?
-       // Let's pass mode to Vision function if we update it. For now, assuming text path for flashcards mostly.
-       // Actually, let's update generateWithGeminiVision signature too for consistency.
        rawQuestions = await generateWithGeminiVision(key, base64Pdf, count, difficulty, mode);
     } 
     // 2. TEXT PATH
@@ -190,7 +209,7 @@ export async function generateQuizAction(
     const sanitizedQuestions = sanitizeQuizQuestions(rawQuestions);
 
     if (!sanitizedQuestions || sanitizedQuestions.length === 0) {
-       throw new Error("Model returned no valid questions.");
+       throw new AppError("Model returned no valid questions.", "AI_ERROR", 500);
     }
 
     const allQuestions = sanitizedQuestions.map((q, index) => ({
@@ -201,11 +220,11 @@ export async function generateQuizAction(
     return allQuestions;
 
   } catch (error: unknown) {
-    console.error("🔥 Generate Action Error:", error);
+    logger.error("Generate Action Error:", error);
     if (error && typeof error === 'object' && 'issues' in error) {
-      throw new Error("AI Output Validation Failed: " + JSON.stringify((error as { issues: unknown }).issues));
+      throw new AppError("AI Output Validation Failed: " + JSON.stringify((error as { issues: unknown }).issues), "AI_VALIDATION_ERROR", 500);
     }
     const msg = error instanceof Error ? error.message : "Failed to generate quiz.";
-    throw new Error(msg);
+    throw new AppError(msg, "GENERATE_ERROR", 500);
   }
 }

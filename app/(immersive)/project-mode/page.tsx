@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Code2, ChevronRight, Zap, Target, Clock, TrendingUp, CheckCircle } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 
 import { NavigationPill } from "@/components/ui/NavigationPill";
 
@@ -31,14 +31,16 @@ export default function ProjectModeList() {
   // Sort projects by difficulty: Easy (1) -> Medium (2) -> Hard (3)
   const difficultyWeight = { "Easy": 1, "Medium": 2, "Hard": 3 };
   
-  const filteredProjects = projects.filter(project => {
-    const matchesSearch = project.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         project.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesDifficulty = activeDifficulty === "All" || project.difficulty === activeDifficulty;
-    return matchesSearch && matchesDifficulty;
-  }).sort((a, b) => {
-      return (difficultyWeight[a.difficulty] || 99) - (difficultyWeight[b.difficulty] || 99);
-  });
+  const filteredProjects = useMemo(() => {
+    return projects.filter(project => {
+      const matchesSearch = project.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                           project.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+      const matchesDifficulty = activeDifficulty === "All" || project.difficulty === activeDifficulty;
+      return matchesSearch && matchesDifficulty;
+    }).sort((a, b) => {
+        return (difficultyWeight[a.difficulty] || 99) - (difficultyWeight[b.difficulty] || 99);
+    });
+  }, [searchQuery, activeDifficulty]);
 
   return (
     <div className="min-h-screen pt-24 pb-20 px-4 bg-gradient-to-br from-gray-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950 relative">
@@ -107,106 +109,124 @@ export default function ProjectModeList() {
                     const isCompleted = completedProjects.includes(project.id);
                     
                     return (
-                        <motion.div
-                            key={project.id}
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: index * 0.05 }}
-                        >
-                            <Link href={`/project-mode/${project.id}`}>
-                                <Card className={`h-full transition-all cursor-pointer group relative overflow-hidden ${isCompleted ? 'border-green-500/50 shadow-green-500/10' : 'hover:border-blue-500/50 hover:shadow-blue-500/20 shadow-sm border-gray-100 dark:border-gray-800'}`}>
-                                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                                        <Code2 size={120} />
-                                    </div>
-                                    
-                                    <div className="p-6 relative z-10 flex flex-col h-full">
-                                        <div className="flex items-start justify-between mb-4">
-                                            <div className="flex gap-2">
-                                                <Badge 
-                                                    className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5"
-                                                    variant={
-                                                        project.difficulty === 'Easy' ? 'success' : 
-                                                        project.difficulty === 'Medium' ? 'warning' : 'destructive'
-                                                    }
-                                                >
-                                                    {project.difficulty}
-                                                </Badge>
-                                                {isCompleted && (
-                                                    <Badge variant="default" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 flex items-center gap-1 text-[10px] px-2 py-0.5">
-                                                        <CheckCircle size={10} /> Solved
-                                                    </Badge>
-                                                )}
-                                            </div>
-                                            <div className="p-1.5 rounded-lg bg-gray-50 dark:bg-white/5 group-hover:bg-blue-50 dark:group-hover:bg-blue-500/10 transition-colors">
-                                                <Target size={16} className="text-gray-400 group-hover:text-blue-500 transition-colors" />
-                                            </div>
-                                        </div>
-
-                                        <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-tight">
-                                            {project.title}
-                                        </h3>
-                                        
-                                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 line-clamp-3 leading-relaxed">
-                                            {project.description}
-                                        </p>
-
-                                        <div className="flex items-center gap-4 mb-6 text-xs text-gray-500 dark:text-gray-400">
-                                            {project.estimatedTime && (
-                                                <div className="flex items-center gap-1.5">
-                                                    <Clock size={14} className="text-blue-500" />
-                                                    <span>{project.estimatedTime}</span>
-                                                </div>
-                                            )}
-                                            {project.completionRate && (
-                                                <div className="flex items-center gap-1.5">
-                                                    <TrendingUp size={14} className="text-green-500" />
-                                                    <span>{project.completionRate}% Success</span>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className="mt-auto flex items-center justify-between border-t border-gray-100 dark:border-white/5 pt-4">
-                                            <div className="flex flex-wrap gap-2">
-                                                {project.tags.slice(0, 2).map(tag => (
-                                                    <span key={tag} className="text-[10px] font-medium bg-gray-100 dark:bg-white/10 px-2 py-1 rounded-md text-gray-600 dark:text-gray-300">
-                                                        {tag}
-                                                    </span>
-                                                ))}
-                                                {project.tags.length > 2 && (
-                                                        <span className="text-[10px] text-gray-401 flex items-center font-medium">+{project.tags.length - 2} more</span>
-                                                )}
-                                            </div>
-                                            <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-white/5 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all">
-                                                <ChevronRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </Card>
-                            </Link>
-                        </motion.div>
+                        <ProjectCard 
+                            key={project.id} 
+                            project={project} 
+                            index={index} 
+                            isCompleted={isCompleted} 
+                        />
                     );
                 })}
             </div>
         ) : (
-            <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-center py-20 bg-gray-50 dark:bg-white/5 rounded-3xl border border-dashed border-gray-200 dark:border-gray-800"
-            >
-                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
-                    <Target size={24} />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No matching challenges</h3>
-                <p className="text-gray-500 dark:text-gray-400">Try adjusting your filters or search query.</p>
-                <button 
-                    onClick={() => { setSearchQuery(""); setActiveDifficulty("All"); }}
-                    className="mt-6 text-blue-600 dark:text-blue-400 font-bold hover:underline"
-                >
-                    Clear all filters
-                </button>
-            </motion.div>
+            <EmptyState 
+                onClear={() => { setSearchQuery(""); setActiveDifficulty("All"); }} 
+            />
         )}
       </div>
     </div>
+  );
+}
+
+function ProjectCard({ project, index, isCompleted }: { project: ProjectChallenge, index: number, isCompleted: boolean }) {
+  return (
+    <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: index * 0.05 }}
+    >
+        <Link href={`/project-mode/${project.id}`}>
+            <Card className={`h-full transition-all cursor-pointer group relative overflow-hidden ${isCompleted ? 'border-green-500/50 shadow-green-500/10' : 'hover:border-blue-500/50 hover:shadow-blue-500/20 shadow-sm border-gray-100 dark:border-gray-800'}`}>
+                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <Code2 size={120} />
+                </div>
+                
+                <div className="p-6 relative z-10 flex flex-col h-full">
+                    <div className="flex items-start justify-between mb-4">
+                        <div className="flex gap-2">
+                            <Badge 
+                                className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5"
+                                variant={
+                                    project.difficulty === 'Easy' ? 'success' : 
+                                    project.difficulty === 'Medium' ? 'warning' : 'destructive'
+                                }
+                            >
+                                {project.difficulty}
+                            </Badge>
+                            {isCompleted && (
+                                <Badge variant="default" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 flex items-center gap-1 text-[10px] px-2 py-0.5">
+                                    <CheckCircle size={10} /> Solved
+                                </Badge>
+                            )}
+                        </div>
+                        <div className="p-1.5 rounded-lg bg-gray-50 dark:bg-white/5 group-hover:bg-blue-50 dark:group-hover:bg-blue-500/10 transition-colors">
+                            <Target size={16} className="text-gray-400 group-hover:text-blue-500 transition-colors" />
+                        </div>
+                    </div>
+
+                    <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-tight">
+                        {project.title}
+                    </h3>
+                    
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 line-clamp-3 leading-relaxed">
+                        {project.description}
+                    </p>
+
+                    <div className="flex items-center gap-4 mb-6 text-xs text-gray-500 dark:text-gray-400">
+                        {project.estimatedTime && (
+                            <div className="flex items-center gap-1.5">
+                                <Clock size={14} className="text-blue-500" />
+                                <span>{project.estimatedTime}</span>
+                            </div>
+                        )}
+                        {project.completionRate && (
+                            <div className="flex items-center gap-1.5">
+                                <TrendingUp size={14} className="text-green-500" />
+                                <span>{project.completionRate}% Success</span>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="mt-auto flex items-center justify-between border-t border-gray-100 dark:border-white/5 pt-4">
+                        <div className="flex flex-wrap gap-2">
+                            {project.tags.slice(0, 2).map(tag => (
+                                <span key={tag} className="text-[10px] font-medium bg-gray-100 dark:bg-white/10 px-2 py-1 rounded-md text-gray-600 dark:text-gray-300">
+                                    {tag}
+                                </span>
+                            ))}
+                            {project.tags.length > 2 && (
+                                    <span className="text-[10px] text-gray-400 flex items-center font-medium">+{project.tags.length - 2} more</span>
+                            )}
+                        </div>
+                        <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-white/5 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all">
+                            <ChevronRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
+                        </div>
+                    </div>
+                </div>
+            </Card>
+        </Link>
+    </motion.div>
+  );
+}
+
+function EmptyState({ onClear }: { onClear: () => void }) {
+  return (
+    <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="text-center py-20 bg-gray-50 dark:bg-white/5 rounded-3xl border border-dashed border-gray-200 dark:border-gray-800"
+    >
+        <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
+            <Target size={24} />
+        </div>
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No matching challenges</h3>
+        <p className="text-gray-500 dark:text-gray-400">Try adjusting your filters or search query.</p>
+        <button 
+            onClick={onClear}
+            className="mt-6 text-blue-600 dark:text-blue-400 font-bold hover:underline"
+        >
+            Clear all filters
+        </button>
+    </motion.div>
   );
 }

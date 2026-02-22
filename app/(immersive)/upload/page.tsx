@@ -11,6 +11,7 @@ import Link from "next/link";
 import { QuizUpload } from "./components/QuizUpload";
 import { QuizGame } from "./components/QuizGame";
 import { QuizResults } from "./components/QuizResults";
+import { FlashcardGame } from "./components/FlashcardGame";
 
 export default function UploadPage() {
   const router = useRouter();
@@ -102,7 +103,6 @@ export default function UploadPage() {
 
   // 1. Flashcard View
   if (quiz && quiz.length > 0 && mode === "flashcard") {
-      const { FlashcardGame } = require("./components/FlashcardGame");
       return (
           <FlashcardGame 
               cards={quiz} 

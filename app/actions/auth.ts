@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { validateNickname } from "@/utils/moderation";
+import { logger } from "@/lib/logger";
 
 import { z } from "zod";
 
@@ -21,7 +22,11 @@ const getURL = () => {
 
 const signupSchema = z.object({
   email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+    .regex(/[0-9]/, "Password must contain at least one number"),
   nickname: z.string().min(2, "Nickname must be at least 2 characters").max(20, "Nickname must be at most 20 characters").regex(/^[a-zA-Z0-9_]+$/, "Nickname can only contain letters, numbers, and underscores"),
 });
 
@@ -29,6 +34,7 @@ export async function signup(formData: { email: string; password: string; nickna
   const result = signupSchema.safeParse(formData);
   
   if (!result.success) {
+      logger.warn("Signup validation failed", result.error.errors[0].message);
       return { error: result.error.errors[0].message };
   }
   
@@ -52,6 +58,7 @@ export async function signup(formData: { email: string; password: string; nickna
   });
 
   if (error) {
+    logger.error("Supabase signup error", error.message);
     return { error: error.message };
   }
 
@@ -68,6 +75,7 @@ export async function login(formData: { email: string; password: string }) {
   const result = loginSchema.safeParse(formData);
 
   if (!result.success) {
+    logger.warn("Login validation failed", result.error.errors[0].message);
     return { error: result.error.errors[0].message };
   }
 
@@ -80,6 +88,7 @@ export async function login(formData: { email: string; password: string }) {
   });
 
   if (error) {
+    logger.warn("Supabase login error", error.message);
     return { error: error.message };
   }
 
@@ -99,6 +108,7 @@ export async function signInWithSocial(provider: 'google' | 'github') {
   });
 
   if (error) {
+    logger.error("OAuth error", error.message);
     return { error: error.message };
   }
 
@@ -122,13 +132,13 @@ export async function getCurrentUser() {
   // Fetch profile to get nickname
   const { data: profile } = await supabase
     .from('profiles')
-    .select('*')
+    .select('nickname, role, avatar_icon')
     .eq('id', user.id)
     .single();
 
   return {
     ...user,
-    nickname: profile?.nickname || user.user_metadata?.nickname || user.email?.split('@')[0],
+    nickname: profile?.nickname || user.user_metadata?.name || user.user_metadata?.full_name || user.user_metadata?.nickname || user.email?.split('@')[0],
     role: profile?.role || 'user',
   };
 }

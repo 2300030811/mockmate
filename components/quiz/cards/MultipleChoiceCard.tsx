@@ -104,12 +104,7 @@ export const MultipleChoiceCard = memo(({
             )}
 
             {question.code && (
-                <div className="rounded-xl overflow-hidden border border-white/10 my-6 shadow-2xl relative group">
-                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="px-2 py-1 bg-black/50 rounded text-xs text-white backdrop-blur">
-                            {language}
-                        </div>
-                    </div>
+                <div className="my-6">
                     <SyntaxBlock 
                         code={question.code}
                         language={language}
@@ -177,7 +172,27 @@ export const MultipleChoiceCard = memo(({
                     {letter}
                     </div>
                     
-                    <span className={`text-left text-base md:text-lg flex-1 ${textColor} relative z-10`}>{option}</span>
+                    <div className={`text-left flex-1 ${textColor} relative z-10 overflow-hidden`}>
+                        {(() => {
+                            const trimmed = option.trim();
+                            const isCodeLike = 
+                                ((trimmed.startsWith('{') || trimmed.startsWith('[')) && (trimmed.endsWith('}') || trimmed.endsWith(']'))) ||
+                                /^db\./.test(trimmed) ||
+                                /^\$/.test(trimmed) ||
+                                (trimmed.startsWith('Collection') && trimmed.includes('{_id:'));
+                            
+                            if (isCodeLike) {
+                                return (
+                                    <div className={`relative flex w-full border-l-4 ${isSelected ? (isDark ? 'border-blue-500' : 'border-blue-600') : (isDark ? 'border-white/10 group-hover:border-white/20' : 'border-gray-300 group-hover:border-gray-400')} rounded-xl overflow-hidden transition-colors shadow-inner`}>
+                                        <code className={`block font-mono text-[13px] md:text-sm p-4 w-full ${isDark ? 'bg-[#1e1e1e] text-[#d4d4d4]' : 'bg-[#f8f9fa] text-[#24292e]'} leading-relaxed whitespace-pre-wrap`}>
+                                            {trimmed.includes(', {') ? trimmed.replace(/, \{/g, ',\n{') : trimmed}
+                                        </code>
+                                    </div>
+                                );
+                            }
+                            return <span className="text-base md:text-lg">{option}</span>;
+                        })()}
+                    </div>
                     
                     {(isReviewMode || isPracticeModeHighlight) && isTheCorrectAnswer && (
                     <div className="ml-4 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center shadow-lg animate-in zoom-in spin-in-12 duration-300">

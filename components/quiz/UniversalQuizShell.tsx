@@ -10,14 +10,19 @@ import { Button } from "@/components/ui/Button";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Modal } from "@/components/ui/Modal";
 import { EmptyState, LoadingState } from "@/components/ui/States";
-import { QuizResults } from "./QuizResults";
 import { Star, ChevronLeft, ChevronRight } from "lucide-react";
+import { QuizAnswer } from "@/types";
 
 import dynamic from 'next/dynamic';
 import { QuizNavbar } from "./QuizNavbar";
 import { QuizSidebar } from "./QuizSidebar";
+import { QuizControls } from "./QuizControls";
 
 const BobAssistant = dynamic(() => import("./BobAssistant").then(mod => mod.BobAssistant), {
+  ssr: false,
+});
+
+const QuizResults = dynamic(() => import("./QuizResults").then(mod => mod.QuizResults), {
   ssr: false,
 });
 
@@ -55,7 +60,11 @@ export function UniversalQuizShell({ category, mode, count = null }: UniversalQu
 
   // Memoized setters for child components
   const toggleSidebar = useCallback(() => setSidebarOpen(prev => !prev), []);
-  const openSubmitModal = useCallback(() => setShowConfirm(true), []);
+  const openSubmitModal = useCallback(() => {
+    setShowConfirm(true);
+    // Prefetch the heavy QuizResults component when they are about to submit
+    import("./QuizResults");
+  }, []);
   const closeSubmitModal = useCallback(() => setShowConfirm(false), []);
   const closeResults = useCallback(() => setViewingResults(false), []);
 
@@ -105,7 +114,7 @@ export function UniversalQuizShell({ category, mode, count = null }: UniversalQu
   }, [currentQuestionIndex, questions.length, viewingResults, showConfirm, prevQuestion, nextQuestion]);
 
   // Memoize handlers to prevent unnecessary re-renders of children
-  const onAnswerQuestion = useCallback((ans: any) => {
+  const onAnswerQuestion = useCallback((ans: QuizAnswer) => {
     if (!questions[currentQuestionIndex]) return;
     handleAnswer(questions[currentQuestionIndex].id, ans);
   }, [handleAnswer, questions, currentQuestionIndex]);
@@ -210,35 +219,14 @@ export function UniversalQuizShell({ category, mode, count = null }: UniversalQu
           </main>
 
           {/* Sticky Footer */}
-          <div className={`p-4 border-t ${isDark ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} z-10 w-full`}>
-              <div className="max-w-4xl mx-auto flex justify-between items-center">
-                  <Button 
-                      variant="secondary"
-                      onClick={prevQuestion}
-                      disabled={currentQuestionIndex === 0}
-                      className="gap-2"
-                  >
-                      <ChevronLeft className="w-4 h-4" /> <span className="hidden sm:inline">Previous</span>
-                  </Button>
-
-                  {currentQuestionIndex < questions.length - 1 ? (
-                      <Button 
-                          variant="primary"
-                          onClick={nextQuestion}
-                          className="gap-2 px-8"
-                      >
-                          Next <ChevronRight className="w-4 h-4" />
-                      </Button>
-                  ) : (
-                      <Button 
-                          onClick={() => setShowConfirm(true)}
-                          className="bg-green-600 hover:bg-green-700 text-white px-8"
-                      >
-                          Finish
-                      </Button>
-                  )}
-              </div>
-          </div>
+          <QuizControls 
+              isDark={isDark}
+              canGoPrev={currentQuestionIndex > 0}
+              canGoNext={currentQuestionIndex < questions.length - 1}
+              onPrev={prevQuestion}
+              onNext={nextQuestion}
+              onFinish={() => setShowConfirm(true)}
+          />
         </div>
       </div>
 

@@ -3,20 +3,33 @@
 import { Groq } from "groq-sdk";
 import { getNextKey } from "@/utils/keyManager";
 import { revalidatePath } from "next/cache";
+import { sanitizePromptInput } from "@/utils/sanitize";
+import { createClient } from "@/utils/supabase/server";
+import { createAdminClient } from "@/utils/supabase/admin";
+import { DAILY_PROBLEMS } from "@/utils/daily-problems";
+import { calculateStreak } from "@/utils/streak";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function getBobChallengeHint(problemTitle: string, userCode: string, language: string) {
   try {
+     // Rate limit hint requests
+     const { success: withinLimit } = await rateLimit("challenge");
+     if (!withinLimit) {
+       return { markdown: "Bob needs a breather! You've asked too many questions. Try again in a few minutes." };
+     }
+
      const apiKey = getNextKey("GROQ_API_KEY") || process.env.GROQ_API_KEY;
      if(!apiKey) throw new Error("Groq API Service configuration missing.");
 
      const groq = new Groq({ apiKey });
 
+     const sanitizedCode = sanitizePromptInput(userCode, 10000);
      const prompt = `
         You are Bob, a senior software engineer mentoring a junior. 
-        They are stuck on the problem "${problemTitle}".
+        They are stuck on the problem "${sanitizePromptInput(problemTitle, 200)}".
         
         Current Code (${language}):
-        ${userCode}
+        <USER_CODE>${sanitizedCode}</USER_CODE>
 
         Task:
         Provide a helpful, encouraging hint. 
@@ -40,9 +53,6 @@ export async function getBobChallengeHint(problemTitle: string, userCode: string
   }
 }
 
-import { createClient } from "@/utils/supabase/server";
-import { createAdminClient } from "@/utils/supabase/admin";
-import { DAILY_PROBLEMS } from "@/utils/daily-problems";
 
 export async function submitChallenge(problemTitle: string, code: string, language: string, output: string) {
     try {
@@ -51,15 +61,17 @@ export async function submitChallenge(problemTitle: string, code: string, langua
 
         const groq = new Groq({ apiKey });
 
+        const sanitizedCode = sanitizePromptInput(code, 20000);
+        const sanitizedOutput = sanitizePromptInput(output, 5000);
         const prompt = `
             You are an automated code judge.
-            Problem: "${problemTitle}"
+            Problem: "${sanitizePromptInput(problemTitle, 200)}"
             User Code:
-            \`\`\`${language}
-            ${code}
-            \`\`\`
+            <USER_CODE>
+            ${sanitizedCode}
+            </USER_CODE>
             Execution Output:
-            ${output}
+            <USER_OUTPUT>${sanitizedOutput}</USER_OUTPUT>
 
             Evaluate the solution based on:
             1. Correctness (Does it solve the problem? Strict check.)
@@ -87,7 +99,13 @@ export async function submitChallenge(problemTitle: string, code: string, langua
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         
         if (jsonMatch) {
-            const result = JSON.parse(jsonMatch[0]);
+            let result;
+            try {
+                result = JSON.parse(jsonMatch[0]);
+            } catch (parseError) {
+                console.error("Failed to parse LLM JSON output:", parseError);
+                throw new Error("Invalid JSON from AI judge");
+            }
             
             // Server-Side Persistence for Daily Streak
             if (result.success) {
@@ -170,8 +188,6 @@ export async function getServerDailyStats() {
         
     if (!results || results.length === 0) return { streak: 0, points: 0, solvedToday: false };
     
-    // Calculate Streak
-    let streak = 0;
     const points = results.reduce((acc, curr) => acc + (curr.score || 0), 0);
     
     const today = new Date();
@@ -183,32 +199,8 @@ export async function getServerDailyStats() {
     
     const solvedToday = lastSolved.getTime() === today.getTime();
     
-    // Streak Logic (consecutive days)
-    const uniqueDays = Array.from(new Set(results.map(r => {
-        const d = new Date(r.completed_at);
-        d.setHours(0,0,0,0);
-        return d.getTime();
-    }))).sort((a, b) => b - a);
-    
-    if (uniqueDays.length > 0) {
-        const mostRecent = uniqueDays[0];
-        const diffDays = (today.getTime() - mostRecent) / (1000 * 3600 * 24);
-        
-        if (diffDays <= 1) {
-             streak = 1;
-             for (let i = 0; i < uniqueDays.length - 1; i++) {
-                 const current = uniqueDays[i];
-                 const next = uniqueDays[i+1];
-                 const dayDiff = (current - next) / (1000 * 3600 * 24);
-                 
-                 if (dayDiff === 1) {
-                     streak++;
-                 } else {
-                     break;
-                 }
-             }
-        }
-    }
+    // Use shared streak utility
+    const streak = calculateStreak(results.map(r => r.completed_at));
     
     return { streak, points, solvedToday };
 }

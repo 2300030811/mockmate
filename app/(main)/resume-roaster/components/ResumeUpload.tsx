@@ -165,9 +165,19 @@ export function ResumeUpload({
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-6 text-orange-400 font-medium italic h-6"
+            className="mt-8 w-full max-w-md flex flex-col items-center gap-3"
           >
-            {loadingMessage}
+            <div className="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden relative">
+              <div className="absolute inset-0 bg-orange-500/20 blur-sm"></div>
+              <motion.div 
+                animate={{ width: ["0%", "95%"] }}
+                transition={{ duration: 15, ease: "easeOut" }}
+                className="h-full bg-gradient-to-r from-orange-500 to-red-500 relative z-10"
+              />
+            </div>
+            <p className="text-orange-400 font-medium italic h-6 text-sm text-center">
+              {loadingMessage}
+            </p>
           </motion.div>
         )}
       </div>

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Mail, Lock, User, Github, Chrome, Loader2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/utils/supabase/client";
 
 export function SignupForm() {
     const [loading, setLoading] = useState(false);
@@ -40,7 +41,15 @@ export function SignupForm() {
         if (result.error) {
             setError(result.error);
         } else {
-            router.push("/login?signup=success");
+            const supabase = createClient();
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                // User was auto-logged in
+                router.push("/");
+                router.refresh(); // Refresh page data on successful sign-in
+            } else {
+                router.push("/login?signup=success");
+            }
         }
         setLoading(false);
     };
@@ -63,8 +72,9 @@ export function SignupForm() {
                             name="nickname"
                             type="text"
                             required
+                            disabled={loading}
                             placeholder="Enter your leaderboard name"
-                            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl py-3 pl-12 pr-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium"
+                            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl py-3 pl-12 pr-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium disabled:opacity-50"
                         />
                     </div>
                 </div>
@@ -77,8 +87,9 @@ export function SignupForm() {
                             name="email"
                             type="email"
                             required
+                            disabled={loading}
                             placeholder="your@email.com"
-                            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl py-3 pl-12 pr-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium"
+                            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl py-3 pl-12 pr-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium disabled:opacity-50"
                         />
                     </div>
                 </div>
@@ -91,8 +102,9 @@ export function SignupForm() {
                             name="password"
                             type="password"
                             required
+                            disabled={loading}
                             placeholder="••••••••"
-                            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl py-3 pl-12 pr-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium"
+                            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl py-3 pl-12 pr-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium disabled:opacity-50"
                         />
                     </div>
                 </div>
@@ -114,6 +126,7 @@ export function SignupForm() {
             <div className="grid grid-cols-2 gap-4">
                 <Button 
                     onClick={() => signInWithSocial('google')}
+                    disabled={loading}
                     variant="glass" 
                     className="flex items-center gap-2 rounded-2xl"
                 >
@@ -121,6 +134,7 @@ export function SignupForm() {
                 </Button>
                 <Button 
                     onClick={() => signInWithSocial('github')}
+                    disabled={loading}
                     variant="glass" 
                     className="flex items-center gap-2 rounded-2xl"
                 >

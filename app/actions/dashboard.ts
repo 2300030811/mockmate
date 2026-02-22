@@ -2,7 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
-
+import { calculateStreak } from "@/utils/streak";
 
 export async function getDashboardData() {
   const supabase = createClient();
@@ -16,23 +16,25 @@ export async function getDashboardData() {
   // 1. Fetch Profile
   const { data: profile } = await supabase
     .from('profiles')
-    .select('*')
+    .select('nickname, avatar_icon, role, created_at')
     .eq('id', user.id)
     .single();
 
   // 2. Fetch Quiz Results (Using Admin Client to ensure visibility)
   const { data: quizResults } = await adminDb
     .from('quiz_results')
-    .select('*')
+    .select('id, category, score, total_questions, completed_at')
     .eq('user_id', user.id)
-    .order('completed_at', { ascending: false });
+    .order('completed_at', { ascending: false })
+    .limit(5000);
 
   // 3. Fetch Career Paths
   const { data: careerPaths } = await supabase
     .from('career_paths')
-    .select('*')
+    .select('id, job_role, company, match_score, created_at')
     .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(10);
 
   // 4. Calculate Stats
   const dailyChallenges = quizResults?.filter(r => r.category === 'daily-challenge') || [];
@@ -87,34 +89,20 @@ export async function getDashboardData() {
     }
   });
 
-  // 5. Calculate Streak
-  let streak = 0;
-  if (dailyChallenges.length > 0) {
-      const today = new Date();
-      today.setHours(0,0,0,0);
-      const uniqueDays = Array.from(new Set(dailyChallenges.map(r => {
-          const d = new Date(r.completed_at);
-          d.setHours(0,0,0,0);
-          return d.getTime();
-      }))).sort((a, b) => b - a);
-
-      if (uniqueDays.length > 0) {
-          const mostRecent = uniqueDays[0];
-          const diffDays = (today.getTime() - mostRecent) / (1000 * 3600 * 24);
-          if (diffDays <= 1) {
-              streak = 1;
-              for (let i = 0; i < uniqueDays.length - 1; i++) {
-                  if ((uniqueDays[i] - uniqueDays[i+1]) / (1000 * 3600 * 24) === 1) streak++;
-                  else break;
-              }
-          }
-      }
-  }
+  // 5. Calculate Streak (using shared utility)
+  const streakTimestamps = dailyChallenges.map(r => r.completed_at);
+  const streak = calculateStreak(streakTimestamps);
 
   return {
     user: {
-      ...user,
-      profile: profile || {}
+      id: user.id,
+      email: user.email,
+      profile: {
+        nickname: profile?.nickname,
+        avatar_icon: profile?.avatar_icon,
+        role: profile?.role,
+        created_at: profile?.created_at,
+      }
     },
     stats: {
       totalTests,
@@ -129,7 +117,7 @@ export async function getDashboardData() {
     recentActivity: quizResults?.map(r => ({
       ...r,
       isArena: r.category.includes('arena'),
-      winStatus: r.category.includes(':win:') ? 'win' : r.category.includes(':loss:') ? 'loss' : r.category.includes(':tie:') ? 'tie' : null
+      winStatus: r.category.includes(':win:') ? 'win' as const : r.category.includes(':loss:') ? 'loss' as const : r.category.includes(':tie:') ? 'tie' as const : null
     })).slice(0, 5) || [],
     careerPaths: careerPaths?.slice(0, 3) || []
   };

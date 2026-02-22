@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { LayoutDashboard, Trophy, LogOut } from "lucide-react";
 import { logout } from "@/app/actions/auth";
+import { AdminMobileNav } from "./AdminMobileNav";
 
 export default async function AdminLayout({
   children,
@@ -30,8 +31,10 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Sidebar */}
+    <div className="flex flex-col md:flex-row h-screen bg-gray-50 dark:bg-gray-900">
+      <AdminMobileNav />
+
+      {/* Sidebar (Desktop) */}
       <aside className="w-72 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-r border-gray-200 dark:border-white/5 hidden md:flex flex-col relative z-20 shadow-xl">
         <div className="p-8 border-b border-gray-100 dark:border-white/5">
           <Link href="/" className="flex items-center gap-3 group">

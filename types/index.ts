@@ -105,6 +105,15 @@ export type AWSQuestion = MCQQuestion;
 
 export type QuizMode = "practice" | "exam";
 
+/** Union type for all possible user answer shapes across question types */
+export type QuizAnswer = 
+  | string 
+  | string[] 
+  | Record<string, string> 
+  | boolean 
+  | number 
+  | undefined;
+
 export interface QuizConfig {
   mode: QuizMode;
   count?: number | "all";
@@ -120,6 +129,7 @@ export interface Profile {
   id: string;
   nickname: string | null;
   avatar_icon: string | null;
+  role?: string;
   updated_at?: string;
 }
 
@@ -128,6 +138,6 @@ export interface AppUser {
   email?: string;
   user_metadata: {
     nickname?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }

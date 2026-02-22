@@ -1,13 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from "react";
-import { QuizMode } from "@/types";
+import { QuizMode, QuizAnswer } from "@/types";
 
-// Define a union type for possible user answers based on supported question types
-export type UserAnswer = 
-  | string 
-  | string[] 
-  | Record<string, string> 
-  | boolean 
-  | number;
+// UserAnswer is now an alias for QuizAnswer to avoid breaking current usages in this file
+export type UserAnswer = QuizAnswer;
 
 interface UseQuizEngineProps<T> {
   questions: T[];

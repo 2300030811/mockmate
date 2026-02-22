@@ -1,7 +1,7 @@
 
 import { memo } from 'react';
 import dynamic from 'next/dynamic';
-import { QuizQuestion, MCQQuestion, DragDropQuestion, HotspotQuestion, HotspotYesNoTableQuestion, HotspotSentenceQuestion, HotspotBoxMappingQuestion, CaseStudyQuestion, QuizMode } from "@/types";
+import { QuizQuestion, MCQQuestion, DragDropQuestion, HotspotQuestion, HotspotYesNoTableQuestion, HotspotSentenceQuestion, HotspotBoxMappingQuestion, CaseStudyQuestion, QuizMode, QuizAnswer } from "@/types";
 
 // Lazy load question components to reduce bundle size
 const MultipleChoiceCard = dynamic(() => import("./cards/MultipleChoiceCard").then(mod => mod.MultipleChoiceCard), { ssr: false });
@@ -14,8 +14,8 @@ const CaseStudyEvaluator = dynamic(() => import("./cards/CaseStudyEvaluator").th
 
 interface QuestionRendererProps {
   question: QuizQuestion;
-  userAnswer: any;
-  onAnswer: (answer: any) => void;
+  userAnswer: QuizAnswer;
+  onAnswer: (answer: QuizAnswer) => void;
   isReviewMode: boolean;
   isDark: boolean;
   category: string;
@@ -38,7 +38,7 @@ export const QuestionRenderer = memo(({
       return (
         <MultipleChoiceCard 
           question={question as MCQQuestion}
-          selectedAnswers={Array.isArray(userAnswer) ? userAnswer : userAnswer ? [userAnswer] : []}
+          selectedAnswers={Array.isArray(userAnswer) ? (userAnswer as string[]) : userAnswer ? [userAnswer as string] : []}
           onAnswer={onAnswer}
           isReviewMode={isReviewMode}
           isDark={isDark}
@@ -50,7 +50,7 @@ export const QuestionRenderer = memo(({
       return (
         <DragDropBoard 
           question={question as DragDropQuestion}
-          userAnswer={userAnswer}
+          userAnswer={userAnswer as any} // Sub-component needs updating but any is safe for now
           onAnswer={onAnswer}
           isReviewMode={isReviewMode}
           isDark={isDark}
@@ -60,7 +60,7 @@ export const QuestionRenderer = memo(({
       return (
         <HotspotYesNoTable 
           question={question as HotspotQuestion}
-          userAnswer={userAnswer}
+          userAnswer={userAnswer as Record<string, "Yes" | "No">}
           onAnswer={onAnswer}
           isReviewMode={isReviewMode}
           isDark={isDark}
@@ -70,7 +70,7 @@ export const QuestionRenderer = memo(({
       return (
         <HotspotYesNoTableNew 
           question={question as HotspotYesNoTableQuestion}
-          userAnswer={userAnswer}
+          userAnswer={userAnswer as Record<number, "Yes" | "No">}
           onAnswer={onAnswer}
           isReviewMode={isReviewMode}
           isDark={isDark}
@@ -80,7 +80,7 @@ export const QuestionRenderer = memo(({
       return (
         <HotspotSentenceCompletion 
           question={question as HotspotSentenceQuestion}
-          userAnswer={userAnswer}
+          userAnswer={userAnswer as string}
           onAnswer={onAnswer}
           isReviewMode={isReviewMode}
           isDark={isDark}
@@ -90,7 +90,7 @@ export const QuestionRenderer = memo(({
       return (
         <HotspotBoxMapping 
           question={question as HotspotBoxMappingQuestion}
-          userAnswer={userAnswer}
+          userAnswer={userAnswer as Record<number, string>}
           onAnswer={onAnswer}
           isReviewMode={isReviewMode}
           isDark={isDark}
@@ -100,7 +100,7 @@ export const QuestionRenderer = memo(({
       return (
         <CaseStudyEvaluator 
           question={question as CaseStudyQuestion}
-          userAnswer={userAnswer}
+          userAnswer={userAnswer as Record<number, "Yes" | "No">}
           onAnswer={onAnswer}
           isReviewMode={isReviewMode}
           isDark={isDark}
@@ -112,7 +112,7 @@ export const QuestionRenderer = memo(({
           return (
             <MultipleChoiceCard 
                 question={question as MCQQuestion}
-                selectedAnswers={Array.isArray(userAnswer) ? userAnswer : userAnswer ? [userAnswer] : []}
+                selectedAnswers={Array.isArray(userAnswer) ? (userAnswer as string[]) : userAnswer ? [userAnswer as string] : []}
                 onAnswer={onAnswer}
                 isReviewMode={isReviewMode}
                 isDark={isDark}

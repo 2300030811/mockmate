@@ -54,3 +54,7 @@ backup/
 # Playwright
 /playwright-report/
 /test-results/
+
+# Data dumps (should not be in repo)
+mongodb1.json
+*.dump.json

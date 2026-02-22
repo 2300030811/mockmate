@@ -2,6 +2,7 @@
 
 import type { QuizMode, QuizQuestion } from "@/types";
 import { AppError } from "@/lib/exceptions";
+import { logger } from "@/lib/logger";
 
 // ─────────────────────────────────────────────────────────
 // Quiz Type Configuration
@@ -19,15 +20,17 @@ export async function getRawQuestions(
   try {
     const source = QuizFactory.getSource(quizType);
     return await source.fetchRawQuestions();
-  } catch (error: any) {
-    console.error(
-      `Error fetching raw questions for ${quizType}:`,
-      error.message,
+  } catch (error) {
+    const message = error instanceof Error ? error.message : `Failed to fetch questions for ${quizType}`;
+    logger.error(
+      `Error fetching raw questions for ${quizType}: ${message}`,
+      error
     );
     // Return empty array or throw based on preference, existing code returned [] on error sometimes?
     // Existing code threw AppError if URL missing.
     throw new AppError(
-      error.message || `Failed to fetch questions for ${quizType}`,
+      message,
+      "FETCH_ERROR",
       500,
     );
   }
@@ -49,8 +52,8 @@ export async function fetchQuizQuestions(
   const result = quizParamsSchema.safeParse({ quizType, mode, countParam });
 
   if (!result.success) {
-    console.error("Invalid quiz parameters:", result.error);
-    throw new AppError("Invalid quiz parameters", 400);
+    logger.error("Invalid quiz parameters:", result.error);
+    throw new AppError("Invalid quiz parameters", "BAD_REQUEST", 400);
   }
 
   // Let errors propagate to useQuery

@@ -54,11 +54,12 @@ export async function startArenaMatch(category?: string) {
       questions: formattedQuestions,
       category: actualCategory
     };
-  } catch (error: any) {
-    console.error("❌ Failed to start arena match:", error.message);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to start arena match";
+    console.error("❌ Failed to start arena match:", message);
     return {
       success: false,
-      error: error.message
+      error: message
     };
   }
 }
@@ -76,11 +77,11 @@ export async function getArenaStats() {
     
     // Recent arena activity
     const arenaResults = data.recentActivity
-      .filter((r: any) => r.isArena)
+      .filter((r) => r.isArena)
       .slice(0, 3);
 
     let winStreak = 0;
-    const allArenaResults = data.recentActivity.filter((r: any) => r.isArena);
+    const allArenaResults = data.recentActivity.filter((r) => r.isArena);
     for (const res of allArenaResults) {
       if (res.winStatus === 'win' || (!res.winStatus && res.score > res.total_questions / 2)) {
         winStreak++;

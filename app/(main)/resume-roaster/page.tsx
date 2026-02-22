@@ -9,6 +9,7 @@ import { Flame } from "lucide-react";
 import { ResumeUpload } from "./components/ResumeUpload";
 import { RoastResults } from "./components/RoastResults";
 import { RoastData } from "./types";
+import { useSpeech } from "./hooks/useSpeech";
 
 const LOADING_MESSAGES = [
   "Judging your font choice...",
@@ -23,14 +24,6 @@ const LOADING_MESSAGES = [
   "Wondering why you used Comic Sans in 2026..."
 ];
 
-// Utility to cache voices
-let cachedVoices: SpeechSynthesisVoice[] = [];
-if (typeof window !== "undefined") {
-  window.speechSynthesis.onvoiceschanged = () => {
-    cachedVoices = window.speechSynthesis.getVoices();
-  };
-}
-
 export default function ResumeRoasterPage() {
   const [file, setFile] = useState<File | null>(null);
   const [jobDescription, setJobDescription] = useState("");
@@ -42,7 +35,8 @@ export default function ResumeRoasterPage() {
   const [copied, setCopied] = useState(false);
   const [selectedTone, setSelectedTone] = useState("Brutal");
   const [completedSuggestions, setCompletedSuggestions] = useState<number[]>([]);
-  const [isSpeaking, setIsSpeaking] = useState(false);
+  
+  const { isSpeaking, speak, stop } = useSpeech();
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -74,30 +68,7 @@ export default function ResumeRoasterPage() {
     return () => clearInterval(interval);
   }, [isRoasting]);
 
-  const speakRoast = useCallback(() => {
-    if (!roastData?.brutalRoast) return;
-    
-    if (isSpeaking) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
-      return;
-    }
-
-    const utterance = new SpeechSynthesisUtterance(roastData.brutalRoast);
-    
-    const voices = cachedVoices.length > 0 ? cachedVoices : window.speechSynthesis.getVoices();
-    const preferredVoice = voices.find(v => v.lang.startsWith("en") && (v.name.includes("Google") || v.name.includes("Male") || v.name.includes("Premium"))) || voices[0];
-    if (preferredVoice) utterance.voice = preferredVoice;
-    
-    utterance.rate = 1.0;
-    utterance.pitch = 0.9; 
-    
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-    
-    setIsSpeaking(true);
-    window.speechSynthesis.speak(utterance);
-  }, [roastData, isSpeaking]);
+  // Use hook speak method directly instead of repeating Logic
 
   const clearHistory = () => {
     localStorage.removeItem("last-resume-roast");
@@ -139,8 +110,8 @@ export default function ResumeRoasterPage() {
     try {
       const result = await roastResumeAction(formData, jobDescription, selectedTone);
       setRoastData(result.data);
-    } catch (err: any) {
-      setError(err.message || "Something went wrong during the roast.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Something went wrong during the roast.");
     } finally {
       setIsRoasting(false);
     }
@@ -226,7 +197,7 @@ ${roastData.suggestions.map((s) => `• ${s}`).join("\n")}
             roastData={roastData}
             selectedTone={selectedTone}
             isSpeaking={isSpeaking}
-            onSpeak={speakRoast}
+            onSpeak={() => speak(roastData.brutalRoast)}
             completedSuggestions={completedSuggestions}
             onToggleSuggestion={toggleSuggestion}
             onCopy={copyToClipboard}

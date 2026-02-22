@@ -45,14 +45,14 @@ export async function roastResumeAction(formData: FormData, jobDescription?: str
         "suggestions": ["4 actionable fixes"]
       }
 
-      Strictly return JSON only.
+      Strictly return JSON only. Never output other text, conversational fillers, or markdown code blocks like \`\`\`json. Output nothing but the raw JSON object.
     `;
 
     const chatCompletion = await groq.chat.completions.create({
       messages: [
         { 
           role: "system", 
-          content: `You are a Resume Roaster with a ${tone} tone. You always respond in strictly valid JSON format.` 
+          content: `You are a Resume Roaster with a ${tone} tone. You always and only respond in strictly valid JSON format.` 
         },
         { role: "user", content: prompt }
       ],

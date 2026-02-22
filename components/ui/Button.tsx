@@ -8,7 +8,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "bg-white text-gray-900 border border-gray-200 hover:bg-gray-100 dark:bg-gray-900 dark:text-gray-100 dark:border-gray-700 dark:hover:bg-gray-800",
-        primary: "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-500/30 border-transparent hover:from-blue-700 hover:to-purple-700 hover:shadow-blue-500/50",
+        primary: "bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-[length:200%_auto] text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_10px_15px_-3px_rgba(59,130,246,0.3)] hover:animate-gradient hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_10px_20px_-3px_rgba(59,130,246,0.5)] border-transparent",
         secondary: "bg-gray-800 text-white border border-gray-700 hover:bg-gray-700",
         ghost: "bg-transparent text-white border border-white/20 hover:bg-white/10",
         glass: "bg-white/80 border border-gray-200 text-gray-800 shadow-sm backdrop-blur-md hover:bg-white hover:shadow-md dark:bg-gray-900/80 dark:border-gray-700 dark:text-gray-100 dark:hover:bg-gray-900",

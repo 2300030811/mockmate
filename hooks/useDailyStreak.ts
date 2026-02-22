@@ -46,11 +46,11 @@ export function useDailyStreak() {
 
     if (lastDate) {
         const diff = new Date(today).getTime() - new Date(lastDate).getTime();
-        const diffDays = diff / (1000 * 3600 * 24);
+        const diffDays = Math.round(diff / (1000 * 3600 * 24));
 
-        if (diffDays > 1 && diffDays < 2) {
-            // Consecutive day (roughly) - streak is fine, waiting for completion
-        } else if (diffDays >= 2) {
+        if (diffDays === 1) {
+            // Consecutive day - streak is fine, waiting for completion
+        } else if (diffDays > 1) {
             // Streak broken
             setState(prev => ({ ...prev, streak: 0 }));
         }
@@ -85,7 +85,7 @@ export function useDailyStreak() {
              now.setHours(0,0,0,0);
              
              const diffTime = Math.abs(now.getTime() - lastDate.getTime());
-             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+             const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)); 
              
              if (diffDays === 1) {
                  calculatedStreak = prev.streak + 1;

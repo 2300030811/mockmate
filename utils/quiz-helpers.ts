@@ -1,5 +1,5 @@
 
-import { QuizQuestion } from "@/types";
+import { QuizQuestion, QuizAnswer } from "@/types";
 
 export const parseExplanationForHotspot = (explanation: string | undefined): Record<string, string> | null => {
   if (!explanation) return null;
@@ -84,7 +84,7 @@ export const selectExamQuestionsAzureStyle = (questions: QuizQuestion[], targetT
     return final;
 };
 
-export function checkAnswer(q: QuizQuestion, uAns: any): boolean {
+export function checkAnswer(q: QuizQuestion, uAns: QuizAnswer): boolean {
     if (uAns === undefined) return false;
 
     if (q.type === 'mcq' || !q.type) { // Default to MCQ if no type
@@ -123,7 +123,7 @@ export function checkAnswer(q: QuizQuestion, uAns: any): boolean {
  * Universal MCQ Correct Answer Parser.
  * Normalizes various answer formats (letter, string, comma-separated) into a letter array [A, B, C...].
  */
-export const getCorrectAnswers = (question: { answer: any; options: string[] }): string[] => {
+export const getCorrectAnswers = (question: { answer: string | string[] | Record<string, string>; options: string[] }): string[] => {
   const rawAnswer = question.answer;
   if (!rawAnswer) return [];
 
@@ -160,6 +160,7 @@ export const getLanguageForCategory = (category: string | undefined): string => 
   switch(category?.toLowerCase()) {
       case 'pcap': return 'python';
       case 'oracle': return 'java';
+      case 'mongodb': return 'javascript';
       default: return 'javascript';
   }
 };

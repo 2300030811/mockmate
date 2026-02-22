@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createClient } from "@/utils/supabase/client";
 import { 
     User, 
     LogOut, 
@@ -12,7 +13,7 @@ import {
 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import { Button, buttonVariants } from "./ui/Button";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { UserNicknameToggle } from "./UserNicknameToggle";
 import { useAuth } from "@/components/providers/auth-provider";
@@ -38,7 +39,7 @@ export function UserAuthSection() {
 
     if (!user) {
         return (
-            <motion.div 
+            <m.div 
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 className="flex items-center gap-1"
@@ -68,14 +69,14 @@ export function UserAuthSection() {
                     onClose={() => setFeedbackOpen(false)} 
                     isDark={isDark}
                 />
-            </motion.div>
+            </m.div>
         );
     }
 
     const avatarIconName = profile?.avatar_icon || "User";
     const AvatarIcon = getAvatarIcon(avatarIconName);
 
-    const nickname = profile?.nickname || user.user_metadata?.nickname || user.email?.split('@')[0];
+    const nickname = profile?.nickname || user.user_metadata?.name || user.user_metadata?.full_name || user.user_metadata?.nickname || user.email?.split('@')[0];
 
     return (
         <div className="relative">
@@ -88,12 +89,12 @@ export function UserAuthSection() {
                 <div className="w-5 h-5 bg-gradient-to-br from-emerald-400 to-teal-600 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:scale-110 transition-transform">
                     <AvatarIcon className="w-3 h-3 text-white" />
                 </div>
-                <motion.span 
+                <m.span 
                     layout
                     className="max-w-[100px] truncate font-bold text-xs uppercase tracking-wider dark:text-white"
                 >
                     {nickname}
-                </motion.span>
+                </m.span>
                 <ChevronDown className={`w-3 h-3 transition-transform duration-500 ease-in-out ${menuOpen ? 'rotate-180' : ''}`} />
             </Button>
 
@@ -104,7 +105,7 @@ export function UserAuthSection() {
                             className="fixed inset-0 z-40" 
                             onClick={() => setMenuOpen(false)}
                         ></div>
-                        <motion.div
+                        <m.div
                             initial={{ opacity: 0, scale: 0.95, y: 10, x: -10 }}
                             animate={{ opacity: 1, scale: 1, y: 0, x: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 10, x: -10 }}
@@ -161,6 +162,8 @@ export function UserAuthSection() {
                             <button 
                                 onClick={async () => {
                                     setMenuOpen(false);
+                                    const supabase = createClient();
+                                    await supabase.auth.signOut();
                                     await logout();
                                 }}
                                 className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-colors text-left"
@@ -168,7 +171,7 @@ export function UserAuthSection() {
                                 <LogOut className="w-4 h-4" />
                                 Sign Out
                             </button>
-                        </motion.div>
+                        </m.div>
                     </>
                 )}
             </AnimatePresence>

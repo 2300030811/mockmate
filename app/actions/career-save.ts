@@ -19,9 +19,10 @@ export async function saveCareerPath(sessionId: string, result: CareerAnalysisRe
 
     if (error) throw error;
     return { success: true };
-  } catch (error: any) {
-    console.error("❌ Failed to save career path:", error.message);
-    return { success: false, error: error.message };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("❌ Failed to save career path:", message);
+    return { success: false, error: message };
   }
 }
 
@@ -30,15 +31,15 @@ export async function getRecentCareerPaths(sessionId: string) {
     try {
         const { data, error } = await supabase
             .from('career_paths')
-            .select('*')
+            .select('id, job_role, company, match_score, created_at, data')
             .eq('session_id', sessionId)
             .order('created_at', { ascending: false })
             .limit(5);
         
         if (error) throw error;
         return data;
-    } catch (error: any) {
-        console.error("❌ Failed to fetch career paths:", error.message);
+    } catch (error) {
+        console.error("❌ Failed to fetch career paths:", error instanceof Error ? error.message : error);
         return [];
     }
 }

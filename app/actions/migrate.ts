@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { QuizFactory } from "@/lib/strategies/QuizFactory";
+import { clearQuizCache } from "@/lib/quiz-cache";
 
 const CATEGORIES = ["aws", "azure", "salesforce", "mongodb", "pcap", "oracle"];
 
@@ -39,11 +40,15 @@ export async function seedDatabase() {
       }
 
       results.push({ category, status: "success", count: questions.length });
-    } catch (error: any) {
-      console.error(`❌ Failed to seed ${category}:`, error.message);
-      results.push({ category, status: "error", error: error.message });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      console.error(`❌ Failed to seed ${category}:`, message);
+      results.push({ category, status: "error", error: message });
     }
   }
+
+  // Clear in-memory cache so fresh data is served
+  clearQuizCache();
 
   return results;
 }

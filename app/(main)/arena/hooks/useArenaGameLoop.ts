@@ -18,6 +18,7 @@ export function useArenaGameLoop(selectedCategory: string, lobbyStats: StatItem[
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [userScore, setUserScore] = useState(0);
   const [opponentScore, setOpponentScore] = useState(0);
+  const [opponentQuestionsAnswered, setOpponentQuestionsAnswered] = useState(0);
   const [opponentProgress, setOpponentProgress] = useState(0);
   const [timeLeft, setTimeLeft] = useState(30);
   const [userSelected, setUserSelected] = useState<string | null>(null);
@@ -49,6 +50,7 @@ export function useArenaGameLoop(selectedCategory: string, lobbyStats: StatItem[
             setCurrentQuestion(0);
             setUserScore(0);
             setOpponentScore(0);
+            setOpponentQuestionsAnswered(0);
             setOpponentProgress(0);
             setTimeLeft(30);
             setBattleResults([]);
@@ -137,20 +139,21 @@ export function useArenaGameLoop(selectedCategory: string, lobbyStats: StatItem[
 
         // Opponent scoring logic
         const scoreProb = 0.85 + (difficultyMult * 0.05);
-        if (Math.random() > scoreProb && opponentScore < questions.length) {
+        if (Math.random() > scoreProb && opponentQuestionsAnswered < questions.length) {
             // Only score if they have progress "banked"
             const maxScoreForProgress = Math.floor(opponentProgress / (100 / questions.length)) + 1;
-            if (opponentScore < maxScoreForProgress) {
+            if (opponentQuestionsAnswered < maxScoreForProgress) {
                 // Opponent scoring should also look realistic (around 100-130 pts)
                 const opponentPoints = Math.floor(100 + (Math.random() * 30));
                 setOpponentScore(s => s + opponentPoints);
+                setOpponentQuestionsAnswered(q => q + 1);
             }
         }
       }, 1000);
 
       return () => clearInterval(timer);
     }
-  }, [gameState, opponentScore, questions.length, lobbyStats, opponentProgress]);
+  }, [gameState, opponentQuestionsAnswered, questions.length, lobbyStats, opponentProgress]);
 
   useEffect(() => {
     if (opponentProgress >= 100 && gameState === 'battle') {

@@ -25,6 +25,11 @@ import { Toolbar } from "./components/Toolbar";
 import { PropertyPanel } from "./components/PropertyPanel";
 import { CanvasHeader } from "./components/CanvasHeader";
 import { SystemDesignTutorial } from "./components/SystemDesignTutorial";
+import { ReviewModal } from "./components/ReviewModal";
+import { HelpModal } from "./components/HelpModal";
+import { MiniMap } from "./components/MiniMap";
+import { StatsHUD } from "./components/StatsHUD";
+import { GroupComponent } from "./components/GroupComponent";
 
 // --- Helper ---
 const isInputActive = () => {
@@ -133,6 +138,14 @@ export default function SystemDesignCanvas() {
     const next = redoHistory();
     if (next) { setNodes(next.nodes); setConnections(next.connections); setGroups(next.groups); }
   }, [redoHistory]);
+
+  const handleConnectionClick = useCallback((id: string) => {
+    selectElement(id, "connection");
+  }, [selectElement]);
+
+  const handleGroupSelect = useCallback((id: string, type: "group") => {
+    selectElement(id, type);
+  }, [selectElement]);
 
   const updateNodePos = useCallback((id: string, x: number, y: number) => {
     setNodes(prev => {
@@ -398,17 +411,12 @@ export default function SystemDesignCanvas() {
            >
               {/* Groups Layer */}
               {groups.map(g => (
-                 <motion.div
+                 <GroupComponent
                     key={g.id}
-                    className={`absolute rounded-3xl border-2 transition-all duration-200 ${selectedId === g.id ? 'border-indigo-500/50 bg-indigo-500/10' : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.04]'}`}
-                    style={{ x: g.x, y: g.y, width: g.w, height: g.h }}
-                    onClick={(e) => { e.stopPropagation(); selectElement(g.id, "group"); }}
-                 >
-                    <div className="p-4 flex items-center gap-2">
-                       <Layout size={12} className="text-gray-600" />
-                       <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">{g.name}</span>
-                    </div>
-                 </motion.div>
+                    group={g}
+                    isSelected={selectedId === g.id}
+                    onSelect={handleGroupSelect}
+                 />
               ))}
 
               {/* Connections Layer (Memoized inside) */}
@@ -428,7 +436,7 @@ export default function SystemDesignCanvas() {
                        fromNode={nodes.find(n => n.id === c.from)} 
                        toNode={nodes.find(n => n.id === c.to)} 
                        isSelected={selectedId === c.id}
-                       onClick={(id) => { selectElement(id, "connection"); }}
+                       onClick={handleConnectionClick}
                     />
                  ))}
               </svg>
@@ -450,30 +458,13 @@ export default function SystemDesignCanvas() {
 
            {/* --- Overlays & HUD --- */}
            
-           {/* Mini-map */}
-           <div className="absolute bottom-8 right-8 w-56 h-36 bg-black/60 border border-white/10 rounded-2xl backdrop-blur-xl overflow-hidden pointer-events-none z-30 shadow-2xl transition-opacity hover:opacity-100 opacity-60">
-              <div className="absolute top-2 left-3 text-[8px] font-black text-gray-500 uppercase tracking-widest">Navigator</div>
-              <svg viewBox={`${-pan.x/scale - 200} ${-pan.y/scale - 150} ${2500} ${1500}`} className="w-full h-full opacity-40 py-4">
-                 {groups.map(g => <rect key={g.id} x={g.x} y={g.y} width={g.w} height={g.h} fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)" />)}
-                 {nodes.map(n => <rect key={n.id} x={n.x} y={n.y} width={96} height={96} rx="20" fill="#6366f1" />)}
-                 <rect x={-pan.x/scale} y={-pan.y/scale} width={(windowSize.width || 1200) / scale} height={(windowSize.height || 800) / scale} stroke="#6366f1" strokeWidth="15" fill="none" />
-              </svg>
-           </div>
+           <MiniMap 
+             pan={pan} scale={scale} groups={groups} nodes={nodes} windowSize={windowSize} 
+           />
 
-           {/* Quick Stats Overlay (HUD) */}
-           <div className="absolute bottom-8 left-8 p-3 bg-black/40 backdrop-blur-md rounded-xl border border-white/5 z-30 flex items-center gap-5">
-              <div className="flex flex-col">
-                 <span className="text-[9px] font-black text-gray-600 uppercase">Nodes</span>
-                 <span className="text-xs font-bold text-gray-300">{nodes.length}</span>
-              </div>
-              <div className="w-px h-6 bg-white/5" />
-              <div className="flex flex-col">
-                 <span className="text-[9px] font-black text-gray-600 uppercase">Links</span>
-                 <span className="text-xs font-bold text-gray-300">{connections.length}</span>
-              </div>
-              <div className="w-px h-6 bg-white/5" />
-              <button onClick={() => setShowHelp(true)} className="p-1.5 hover:bg-white/5 rounded-lg text-gray-500 transition-colors"><HelpCircle size={14} /></button>
-           </div>
+           <StatsHUD 
+             nodesLength={nodes.length} connectionsLength={connections.length} setShowHelp={setShowHelp} 
+           />
         </main>
 
         <PropertyPanel 
@@ -487,72 +478,22 @@ export default function SystemDesignCanvas() {
       </div>
 
        {/* Modals & Overlays */}
-       <AnimatePresence>
-           {reviewResult && (
-              <motion.aside initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} className={`fixed right-0 top-0 h-full w-full md:w-[600px] border-l z-50 pt-14 md:pt-0 overflow-hidden flex flex-col shadow-[0_0_100px_rgba(0,0,0,0.5)] transition-colors duration-500 ${theme === "light" ? "bg-white border-gray-200" : "bg-[#0A0A0A] border-white/10"}`}>
-                  <div className={`h-16 px-8 border-b flex items-center justify-between shrink-0 backdrop-blur-md ${theme === "light" ? "bg-gray-50/80 border-gray-200" : "bg-gray-950/80 border-white/10"}`}>
-                     <div className="flex items-center gap-3">
-                        <div className="w-2.5 h-2.5 bg-indigo-500 rounded-full animate-pulse shadow-[0_0_15px_#6366f1]" />
-                        <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${theme === "light" ? "text-indigo-600" : "text-indigo-400"}`}>Architectural Intelligence</span>
-                     </div>
-                     <button onClick={() => setReviewResult(null)} className="p-2 hover:bg-black/5 rounded-full transition-colors"><Minimize2 size={18} /></button>
-                  </div>
-                  <div className="flex-1 overflow-y-auto custom-scrollbar p-10 pb-20">
-                     <div className={`prose prose-sm max-w-none prose-p:leading-relaxed prose-headings:font-black ${theme === "light" ? "prose-slate" : "prose-invert"}`}>
-                        <ReactMarkdown>{reviewResult}</ReactMarkdown>
-                     </div>
-                  </div>
-                  <div className={`p-8 border-t flex flex-col gap-4 ${theme === "light" ? "bg-gray-50 border-gray-200" : "bg-gray-950/50 border-white/10"}`}>
-                     <div className="flex gap-4">
-                        <div className="flex-1 p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10"><p className="text-[10px] font-black text-indigo-500 uppercase mb-1">Score</p><p className={`text-2xl font-black ${theme === "light" ? "text-gray-900" : "text-white"}`}>84<span className="text-sm opacity-30">/100</span></p></div>
-                        <div className="flex-1 p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10"><p className="text-[10px] font-black text-emerald-500 uppercase mb-1">Status</p><p className={`text-2xl font-black ${theme === "light" ? "text-gray-900" : "text-white"}`}>SECURE</p></div>
-                     </div>
-                     <button onClick={() => setReviewResult(null)} className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-black uppercase tracking-widest rounded-2xl shadow-xl transition-all">Dismiss Analysis</button>
-                  </div>
-              </motion.aside>
-           )}
+       <ReviewModal 
+          reviewResult={reviewResult} 
+          onClose={useCallback(() => setReviewResult(null), [])} 
+          theme={theme} 
+       />
 
-           {showHelp && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6" onClick={() => setShowHelp(false)}>
-                 <motion.div initial={{ scale: 0.9, y: 30 }} animate={{ scale: 1, y: 0 }} className="bg-gray-950 border border-white/10 rounded-[2rem] p-10 max-w-2xl w-full shadow-2xl relative overflow-hidden" onClick={e => e.stopPropagation()}>
-                    <div className="flex items-center gap-5 mb-10">
-                       <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg"><Info size={32} /></div>
-                       <div><h2 className="text-3xl font-black text-white">System Guide</h2><p className="text-gray-400">Master the architecture modeling workspace.</p></div>
-                       <button onClick={() => setShowHelp(false)} className="ml-auto p-2 hover:bg-white/5 rounded-full"><X size={24} /></button>
-                    </div>
-                    <div className="grid grid-cols-2 gap-10 mb-10">
-                       <div className="space-y-4">
-                          <p className="text-xs font-black uppercase text-indigo-400">Navigation</p>
-                          <ul className="space-y-3 text-sm text-gray-400 font-medium">
-                             <li className="flex gap-3"><kbd className="bg-white/10 px-2 rounded font-mono">Space</kbd> + Drag to Pan</li>
-                             <li className="flex gap-3"><kbd className="bg-white/10 px-2 rounded font-mono">Ctrl</kbd> + Scroll to Zoom</li>
-                             <li className="flex gap-3"><kbd className="bg-white/10 px-2 rounded font-mono">M-Click</kbd> Recenter</li>
-                          </ul>
-                       </div>
-                       <div className="space-y-4">
-                          <p className="text-xs font-black uppercase text-indigo-400">Quick Actions</p>
-                          <ul className="space-y-3 text-sm text-gray-400 font-medium">
-                             <li className="flex gap-3"><kbd className="bg-white/10 px-2 rounded font-mono">Del</kbd> Remove Selection</li>
-                             <li className="flex gap-3"><kbd className="bg-white/10 px-2 rounded font-mono">Ctrl+Z</kbd> Undo Changes</li>
-                             <li className="flex gap-3"><kbd className="bg-white/10 px-2 rounded font-mono">Ctrl+P</kbd> Start Tutorial</li>
-                          </ul>
-                       </div>
-                    </div>
-                    <div className="flex gap-3">
-                        <button onClick={() => setShowHelp(false)} className="flex-1 py-5 bg-white/5 text-white font-black uppercase tracking-widest rounded-2xl hover:bg-white/10 transition-all">Dismiss</button>
-                        <button onClick={() => { setShowHelp(false); setShowTutorial(true); }} className="flex-1 py-5 bg-white text-black font-black uppercase tracking-widest rounded-2xl hover:bg-gray-200 transition-all flex items-center justify-center gap-2">
-                           <Sparkles size={16} /> Tutorial
-                        </button>
-                    </div>
-                 </motion.div>
-              </motion.div>
-           )}
+       <HelpModal 
+          isOpen={showHelp} 
+          onClose={useCallback(() => setShowHelp(false), [])} 
+          onOpenTutorial={useCallback(() => setShowTutorial(true), [])} 
+       />
 
-           <SystemDesignTutorial 
-              isOpen={showTutorial} 
-              onClose={() => setShowTutorial(false)} 
-           />
-        </AnimatePresence>
+       <SystemDesignTutorial 
+          isOpen={showTutorial} 
+          onClose={useCallback(() => setShowTutorial(false), [])} 
+       />
 
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }

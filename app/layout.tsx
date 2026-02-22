@@ -6,8 +6,9 @@ import { Providers } from "@/components/providers/providers";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+import { env } from "@/lib/env";
 
+const baseUrl = env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 export const metadata: Metadata = {
   title: "Mockmate - AI-Powered Certification Quizzes & Mock Interviews",
   description:

@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
-
+import FocusTrap from "focus-trap-react";
+import { RemoveScroll } from "react-remove-scroll";
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -42,27 +43,35 @@ export const Modal: React.FC<ModalProps> = ({
   return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[9999] flex items-start justify-center p-4 overflow-y-auto">
-          <div className="min-h-screen py-24 flex items-start justify-center w-full">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-md"
-              onClick={onClose}
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 30 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 30 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className={cn(
-                "relative z-[10000] w-full max-w-lg rounded-3xl p-6 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden",
-                isDark
-                  ? "bg-gray-900/95 border border-white/10 text-white backdrop-blur-xl"
-                  : "bg-white/95 text-gray-900 border border-gray-200 backdrop-blur-xl"
-              )}
-            >
+        <RemoveScroll>
+          <FocusTrap focusTrapOptions={{ initialFocus: false, fallbackFocus: '.modal-content-area' }}>
+            <div className="fixed inset-0 z-[9999] flex items-start justify-center p-4 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby="modal-description">
+              <div className="min-h-screen py-24 flex items-start justify-center w-full">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black/60 backdrop-blur-md"
+                  onClick={onClose}
+                  aria-hidden="true"
+                />
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: 30 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 30 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  className={cn(
+                    "modal-content-area relative z-[10000] w-full max-w-lg rounded-3xl p-6 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden",
+                    isDark
+                      ? "bg-gray-900/95 border border-white/10 text-white backdrop-blur-xl"
+                      : "bg-white/95 text-gray-900 border border-gray-200 backdrop-blur-xl"
+                  )}
+                  tabIndex={-1}
+                >
+                  {/* Provide Visually Hidden Title for Screen Readers if missing */}
+                  <span id="modal-title" className="sr-only">{title || 'Modal Dialog'}</span>
+                  {description && <span id="modal-description" className="sr-only">{description}</span>}
+
               {/* Header section - Fixed */}
               <div className="flex items-start justify-between mb-4 flex-none">
                 {(title || description) && (
@@ -101,6 +110,8 @@ export const Modal: React.FC<ModalProps> = ({
             </motion.div>
           </div>
         </div>
+          </FocusTrap>
+        </RemoveScroll>
       )}
     </AnimatePresence>,
     document.body
