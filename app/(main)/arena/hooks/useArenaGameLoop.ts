@@ -99,7 +99,7 @@ export function useArenaGameLoop(selectedCategory: string, lobbyStats: StatItem[
       } else {
         setGameState('results');
       }
-    }, 1200);
+    }, 800);
   }, [currentQuestion, questions, userSelected]);
 
   // Battle Logic Effect
