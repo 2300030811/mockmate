@@ -6,6 +6,7 @@ import { ThemeProvider } from "./ThemeProvider";
 
 import { AuthProvider } from "./auth-provider";
 import { MotionProvider } from "./MotionProvider";
+import { AudioProvider } from "./AudioProvider";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   // Create QueryClient in useState to avoid sharing it across SSR requests
@@ -14,11 +15,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <ThemeProvider>
-          <MotionProvider>
-            {children}
-          </MotionProvider>
-        </ThemeProvider>
+        <AudioProvider>
+          <ThemeProvider>
+            <MotionProvider>
+              {children}
+            </MotionProvider>
+          </ThemeProvider>
+        </AudioProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
