@@ -10,6 +10,7 @@ import { useEffect, useState, useMemo } from "react";
 
 import { NavigationPill } from "@/components/ui/NavigationPill";
 import React from "react";
+import { logger } from "@/lib/logger";
 
 // Sort projects by difficulty: Easy (1) -> Medium (2) -> Hard (3)
 const DIFFICULTY_WEIGHT: Record<string, number> = { "Easy": 1, "Medium": 2, "Hard": 3 };
@@ -25,7 +26,7 @@ export default function ProjectModeList() {
             try {
                 setCompletedProjects(JSON.parse(saved));
             } catch (e) {
-                console.error("Failed to parse completed projects", e);
+                logger.error("Failed to parse completed projects", e);
             }
         }
     }, []);
@@ -212,6 +213,7 @@ const ProjectCard = React.memo(({ project, index, isCompleted }: ProjectCardProp
         </motion.div>
     );
 });
+ProjectCard.displayName = "ProjectCard";
 
 function EmptyState({ onClear }: { onClear: () => void }) {
     return (
