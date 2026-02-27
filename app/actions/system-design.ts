@@ -3,6 +3,8 @@
 import { Groq } from "groq-sdk";
 import { getNextKey } from "@/utils/keyManager";
 import { Node, Connection } from "../(main)/system-design/types";
+import { sanitizePromptInput } from "@/utils/sanitize";
+import { logger } from "@/lib/logger";
 
 export async function reviewSystemDesignAction(components: Node[], connections: Connection[]) {
   try {
@@ -16,10 +18,10 @@ export async function reviewSystemDesignAction(components: Node[], connections: 
       Analyze the following architecture and provide a professional critique.
       
       COMPONENTS:
-      ${JSON.stringify(components, null, 2)}
+      ${sanitizePromptInput(JSON.stringify(components, null, 2), 10000)}
       
       CONNECTIONS:
-      ${JSON.stringify(connections, null, 2)}
+      ${sanitizePromptInput(JSON.stringify(connections, null, 2), 10000)}
       
       TASK:
       1. Provide a "High-Level Evaluation" (is it scalable, resilient, etc?).
@@ -41,7 +43,7 @@ export async function reviewSystemDesignAction(components: Node[], connections: 
     return { markdown: chatCompletion.choices[0]?.message?.content || "Failed to generate review." };
 
   } catch (error: unknown) {
-    console.error("❌ System Design Review Error (Groq):", error);
+    logger.error("System Design Review Error (Groq):", error);
     const msg = error instanceof Error ? error.message : "Failed to review system design.";
     throw new Error(msg);
   }

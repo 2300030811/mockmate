@@ -13,28 +13,30 @@ export async function getDashboardData() {
     return null;
   }
 
-  // 1. Fetch Profile
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('nickname, avatar_icon, role, created_at')
-    .eq('id', user.id)
-    .single();
+  // Parallel fetch: Profile, Quiz Results, Career Paths
+  const [profileResult, quizResultsResult, careerPathsResult] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('nickname, avatar_icon, role, created_at')
+      .eq('id', user.id)
+      .single(),
+    adminDb
+      .from('quiz_results')
+      .select('id, category, score, total_questions, completed_at')
+      .eq('user_id', user.id)
+      .order('completed_at', { ascending: false })
+      .limit(500),
+    supabase
+      .from('career_paths')
+      .select('id, job_role, company, match_score, created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(10),
+  ]);
 
-  // 2. Fetch Quiz Results (Using Admin Client to ensure visibility)
-  const { data: quizResults } = await adminDb
-    .from('quiz_results')
-    .select('id, category, score, total_questions, completed_at')
-    .eq('user_id', user.id)
-    .order('completed_at', { ascending: false })
-    .limit(5000);
-
-  // 3. Fetch Career Paths
-  const { data: careerPaths } = await supabase
-    .from('career_paths')
-    .select('id, job_role, company, match_score, created_at')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(10);
+  const profile = profileResult.data;
+  const quizResults = quizResultsResult.data;
+  const careerPaths = careerPathsResult.data;
 
   // 4. Calculate Stats
   const dailyChallenges = quizResults?.filter(r => r.category === 'daily-challenge') || [];

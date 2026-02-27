@@ -2,6 +2,8 @@
 
 import { Groq } from "groq-sdk";
 import { getNextKey } from "@/utils/keyManager";
+import { sanitizePromptInput } from "@/utils/sanitize";
+import { logger } from "@/lib/logger";
 
 export async function generateRoadmapAction(goal: string, experience: string) {
   try {
@@ -12,8 +14,8 @@ export async function generateRoadmapAction(goal: string, experience: string) {
 
      const prompt = `
         You are an expert technical career coach.
-        The user wants to achieve this goal: "${goal}"
-        Current experience level: "${experience}"
+        The user wants to achieve this goal: "${sanitizePromptInput(goal, 500)}"
+        Current experience level: "${sanitizePromptInput(experience, 200)}"
 
         TASK:
         Create a detailed, step-by-step certification and learning roadmap.
@@ -36,7 +38,7 @@ export async function generateRoadmapAction(goal: string, experience: string) {
 
      return { markdown: chatCompletion.choices[0]?.message?.content || "Failed to generate roadmap." };
   } catch (error) {
-     console.error("Roadmap Error (Groq):", error);
+     logger.error("Roadmap Error (Groq):", error);
      return { markdown: "I encountered an error while mapping your path. Please try again with a more specific goal!" };
   }
 }

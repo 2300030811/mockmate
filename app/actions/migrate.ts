@@ -3,10 +3,13 @@
 import { createClient } from "@/utils/supabase/server";
 import { QuizFactory } from "@/lib/strategies/QuizFactory";
 import { clearQuizCache } from "@/lib/quiz-cache";
+import { requireAdmin } from "@/lib/auth-utils";
 
 const CATEGORIES = ["aws", "azure", "salesforce", "mongodb", "pcap", "oracle"];
 
 export async function seedDatabase() {
+  if (!await requireAdmin()) throw new Error("Admin access required.");
+
   const supabase = createClient();
   const results = [];
 

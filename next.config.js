@@ -9,6 +9,12 @@ const nextConfig = {
   // Packages that should only run in Node.js (not bundled for Edge)
   experimental: {
     serverComponentsExternalPackages: ['pdf-parse', '@azure/storage-blob', '@azure/ai-form-recognizer', 'groq-sdk'],
+    serverActions: {
+      // Extra allowed origins for reverse-proxy / preview deployments
+      allowedOrigins: process.env.NEXT_PUBLIC_APP_URL
+        ? [new URL(process.env.NEXT_PUBLIC_APP_URL).host]
+        : [],
+    },
   },
 
   eslint: {

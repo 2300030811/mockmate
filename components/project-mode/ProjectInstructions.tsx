@@ -4,6 +4,7 @@ import { ProjectChallenge } from "@/lib/projects/data";
 import { RefreshCw, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { motion, AnimatePresence } from "framer-motion";
+import React from "react";
 
 interface ProjectInstructionsProps {
   project: ProjectChallenge;
@@ -12,7 +13,7 @@ interface ProjectInstructionsProps {
   sandpackStatus: string;
 }
 
-export function ProjectInstructions({
+export const ProjectInstructions = React.memo(function ProjectInstructions({
   project,
   hintIndex,
   onRevealHint,
@@ -34,17 +35,32 @@ export function ProjectInstructions({
           <div className="flex items-center justify-between text-xs text-blue-600 dark:text-blue-300">
             <span>Status</span>
             <span
-              className={`flex items-center gap-1.5 ${sandpackStatus === "running" ? "text-green-500" : "text-yellow-500"}`}
+              className={`flex items-center gap-1.5 font-bold uppercase ${sandpackStatus === "running"
+                  ? "text-green-500"
+                  : sandpackStatus === "idle"
+                    ? "text-blue-500"
+                    : "text-amber-500"
+                }`}
             >
               <span className="relative flex h-2 w-2">
                 <span
-                  className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${sandpackStatus === "running" ? "bg-green-400" : "bg-yellow-400"}`}
+                  className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${sandpackStatus === "running"
+                      ? "bg-green-400"
+                      : sandpackStatus === "idle"
+                        ? "bg-blue-400"
+                        : "bg-amber-400"
+                    }`}
                 ></span>
                 <span
-                  className={`relative inline-flex rounded-full h-2 w-2 ${sandpackStatus === "running" ? "bg-green-500" : "bg-yellow-500"}`}
+                  className={`relative inline-flex rounded-full h-2 w-2 ${sandpackStatus === "running"
+                      ? "bg-green-500"
+                      : sandpackStatus === "idle"
+                        ? "bg-blue-500"
+                        : "bg-amber-500"
+                    }`}
                 ></span>
               </span>
-              {sandpackStatus}
+              {sandpackStatus === "idle" ? "Ready" : sandpackStatus}
             </span>
           </div>
         </div>
@@ -55,12 +71,12 @@ export function ProjectInstructions({
             <div className="flex items-center justify-between mb-4">
               <h4 className="font-bold text-sm text-gray-900 dark:text-gray-100 flex items-center gap-2">
                 <Lightbulb size={16} className="text-yellow-500" />
-                Hints ({hintIndex + 1}/{project.hints.length})
+                Hints {hintIndex + 1 > 0 ? `(${hintIndex + 1} Revealed)` : "(Not Revealed)"}
               </h4>
             </div>
 
             <AnimatePresence mode="popLayout">
-              {project.hints.slice(0, hintIndex + 1).map((hint, i) => (
+              {project.hints && project.hints.length > 0 && hintIndex >= 0 && project.hints.slice(0, hintIndex + 1).map((hint, i) => (
                 <motion.div
                   key={i}
                   initial={{ opacity: 0, y: 10 }}
@@ -87,4 +103,4 @@ export function ProjectInstructions({
       </div>
     </div>
   );
-}
+});

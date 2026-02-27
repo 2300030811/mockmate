@@ -3,23 +3,10 @@
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { logger } from "@/lib/logger";
+import { requireAdmin } from "@/lib/auth-utils";
 
-/**
- * Checks if the current user is an admin.
- */
-async function isAdmin() {
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return false;
-
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-    
-    return profile?.role === 'admin';
-}
+// Use shared requireAdmin from lib/auth-utils
+const isAdmin = requireAdmin;
 
 export async function getAdminStats() {
     if (!await isAdmin()) {

@@ -73,7 +73,7 @@ export class GroqProvider implements AIProvider {
             const currentKey = customApiKey || getNextKey("GROQ_API_KEY");
             if (!currentKey) throw new Error("Groq API Key missing");
 
-            const groq = new Groq({ apiKey: currentKey, dangerouslyAllowBrowser: true }); // Enable browser usage if needed (though this is server action)
+            const groq = new Groq({ apiKey: currentKey });
 
             console.log(`🤖 [GroqProvider] Attempt ${attempt + 1}/${MAX_RETRIES} using key ending in ...${currentKey.slice(-4)}`);
 

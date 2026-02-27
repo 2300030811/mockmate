@@ -2,6 +2,8 @@
 
 import { Groq } from "groq-sdk";
 import { getNextKey } from "@/utils/keyManager";
+import { sanitizePromptInput } from "@/utils/sanitize";
+import { logger } from "@/lib/logger";
 
 export async function summarizeInterviewAction(history: { role: string; content: string }[], type: string) {
   try {
@@ -12,10 +14,10 @@ export async function summarizeInterviewAction(history: { role: string; content:
 
      const prompt = `
         You are a Senior Technical Recruiter.
-        Analyze this interview transcript for a "${type}" role:
+        Analyze this interview transcript for a "${sanitizePromptInput(type, 100)}" role:
         
         TRANSCRIPT:
-        ${history.map(m => `${m.role.toUpperCase()}: ${m.content}`).join('\n')}
+        ${sanitizePromptInput(history.map(m => `${m.role.toUpperCase()}: ${m.content}`).join('\n'), 20000)}
 
         TASK:
         Provide a structured feedback report:
@@ -38,7 +40,7 @@ export async function summarizeInterviewAction(history: { role: string; content:
 
      return { markdown: chatCompletion.choices[0]?.message?.content || "Failed to generate summary." };
   } catch (error) {
-     console.error("Summary Error (Groq):", error);
+     logger.error("Summary Error (Groq):", error);
      return { markdown: "I couldn't generate a summary right now, but you handled several difficult questions well. Keep practicing!" };
   }
 }

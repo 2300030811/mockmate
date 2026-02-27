@@ -3,6 +3,7 @@
 import Groq from "groq-sdk";
 import { getNextKey } from "@/utils/keyManager";
 import { sanitizePromptInput } from "@/utils/sanitize";
+import { logger } from "@/lib/logger";
 
 interface BobResponse {
   success: boolean;
@@ -53,7 +54,7 @@ User Question: ${sanitizePromptInput(question, 2000)}`,
 
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    console.error("askBob failed:", message);
+    logger.error("askBob failed:", message);
     return { success: false, message: "Something went wrong. Please try again later." };
   }
 }

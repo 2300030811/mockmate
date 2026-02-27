@@ -4,6 +4,8 @@ import { Groq } from "groq-sdk";
 import { getNextKey } from "@/utils/keyManager";
 import { OCRService } from "@/lib/services/ocr";
 import { RoastData } from "../(main)/resume-roaster/types";
+import { sanitizePromptInput } from "@/utils/sanitize";
+import { logger } from "@/lib/logger";
 
 export async function roastResumeAction(formData: FormData, jobDescription?: string, tone: string = "Brutal"): Promise<{ data: RoastData; raw: string }> {
   try {
@@ -28,9 +30,9 @@ export async function roastResumeAction(formData: FormData, jobDescription?: str
     const groq = new Groq({ apiKey });
 
     const prompt = `
-      RESUME: ${resumeText}
-      ${jobDescription ? `JOB: ${jobDescription}` : ""}
-      TONE: ${tone}
+      RESUME: ${sanitizePromptInput(resumeText, 30000)}
+      ${jobDescription ? `JOB: ${sanitizePromptInput(jobDescription, 2000)}` : ""}
+      TONE: ${sanitizePromptInput(tone, 50)}
 
       TASK: Provide a ${tone} roast in JSON. Reference specific text from the resume to prove you read it.
       
@@ -70,7 +72,7 @@ export async function roastResumeAction(formData: FormData, jobDescription?: str
         raw: content
       };
     } catch (e) {
-      console.warn("JSON Parse failed, attempting regex extraction", e);
+      logger.warn("JSON Parse failed, attempting regex extraction", e);
       const match = content.match(/\{[\s\S]*\}/);
       if (match) {
         return { data: JSON.parse(match[0]) as RoastData, raw: content };
@@ -79,7 +81,7 @@ export async function roastResumeAction(formData: FormData, jobDescription?: str
     }
 
   } catch (error: unknown) {
-    console.error("❌ Resume Roast Error (Groq):", error);
+    logger.error("Resume Roast Error (Groq):", error);
     const msg = error instanceof Error ? error.message : "Failed to roast resume.";
     throw new Error(msg);
   }

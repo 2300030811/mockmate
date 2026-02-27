@@ -61,7 +61,13 @@ DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
 
 CREATE POLICY "Public profiles are viewable by everyone" ON profiles FOR SELECT USING (true);
 CREATE POLICY "Users can insert their own profile" ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
-CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
+-- SECURITY FIX: Prevent users from escalating their own role
+CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE
+  USING (auth.uid() = id)
+  WITH CHECK (
+    auth.uid() = id
+    AND role = (SELECT role FROM profiles WHERE id = auth.uid())
+  );
 
 -- --- QUIZ RESULTS (Leaderboard) ---
 DROP POLICY IF EXISTS "Allow public insert to quiz_results" ON quiz_results;
@@ -92,9 +98,11 @@ CREATE POLICY "Admins can manage quizzes" ON quizzes FOR ALL USING (
 DROP POLICY IF EXISTS "Allow public insert to career_paths" ON career_paths;
 DROP POLICY IF EXISTS "Allow users to see their own career paths" ON career_paths;
 
--- Career paths are sensitive, only allow user to see their own (or session-based)
+-- Career paths are sensitive, only allow authenticated users to see their own
+-- SECURITY FIX: Removed spoofable x-session-id header check.
+-- Anonymous career paths are accessible only via server actions (service role).
 CREATE POLICY "Allow users to see their own career paths" ON career_paths FOR SELECT USING (
-  (auth.uid() = user_id) OR (session_id = current_setting('request.headers')::json->>'x-session-id')
+  auth.uid() = user_id
 );
 
 -- Only allow inserts via Server Actions (Service Role). 
@@ -140,9 +148,27 @@ CREATE INDEX IF NOT EXISTS idx_quiz_results_session_id ON quiz_results(session_i
 CREATE INDEX IF NOT EXISTS idx_quiz_results_category ON quiz_results(category);
 CREATE INDEX IF NOT EXISTS idx_quiz_results_completed_at ON quiz_results(completed_at DESC);
 CREATE INDEX IF NOT EXISTS idx_quiz_results_leaderboard ON quiz_results(category, score DESC, completed_at DESC);
+CREATE INDEX IF NOT EXISTS idx_career_paths_user_id ON career_paths(user_id);
 
 -- ==========================================
--- 5. REFRESH
+-- 5. AUTOMATION (updated_at trigger for profiles)
+-- ==========================================
+
+CREATE OR REPLACE FUNCTION public.update_updated_at_column()
+RETURNS trigger AS $$
+BEGIN
+  NEW.updated_at = timezone('utc'::text, now());
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS set_profiles_updated_at ON profiles;
+CREATE TRIGGER set_profiles_updated_at
+  BEFORE UPDATE ON profiles
+  FOR EACH ROW EXECUTE PROCEDURE public.update_updated_at_column();
+
+-- ==========================================
+-- 6. REFRESH
 -- ==========================================
 
 NOTIFY pgrst, 'reload schema';

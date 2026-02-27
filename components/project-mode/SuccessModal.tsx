@@ -7,18 +7,21 @@ import {
   ChevronUp,
   ExternalLink,
   Code2,
+  BrainCircuit,
+  X,
+  Trophy,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { AnimatePresence, motion } from "framer-motion";
-import { Trophy } from "lucide-react";
 import { useState } from "react";
 
 interface SuccessModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onReviewSolution: () => void;
   project: ProjectChallenge;
   stats?: {
     timeTaken: number;
@@ -35,6 +38,7 @@ const formatTime = (seconds: number) => {
 export function SuccessModal({
   isOpen,
   onClose,
+  onReviewSolution,
   project,
   stats,
 }: SuccessModalProps) {
@@ -43,13 +47,20 @@ export function SuccessModal({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
           <motion.div
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            className="bg-white dark:bg-gray-900 rounded-[2.5rem] p-8 lg:p-10 max-w-2xl w-full shadow-2xl border border-gray-100 dark:border-gray-800 my-8"
+            className="bg-white dark:bg-gray-900 rounded-[2.5rem] p-8 lg:p-10 max-w-2xl w-full shadow-2xl border border-gray-100 dark:border-gray-800 my-8 relative"
           >
+            <button
+              onClick={onClose}
+              className="absolute top-6 right-6 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors"
+            >
+              <X size={20} />
+            </button>
+
             <div className="text-center">
               <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
                 <Trophy className="text-green-600 dark:text-green-400 w-10 h-10" />
@@ -157,10 +168,11 @@ export function SuccessModal({
                 </Button>
               </Link>
               <button
-                onClick={onClose}
-                className="w-full h-14 rounded-2xl text-sm font-bold text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-all bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/10"
+                onClick={onReviewSolution}
+                className="w-full h-14 rounded-2xl text-sm font-bold text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 transition-all bg-purple-50 hover:bg-purple-100 dark:bg-purple-500/10 dark:hover:bg-purple-500/20 flex items-center justify-center gap-2"
               >
-                Review My Solution
+                <BrainCircuit size={18} />
+                Get AI Code Review
               </button>
             </div>
           </motion.div>
