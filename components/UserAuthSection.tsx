@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { createClient } from "@/utils/supabase/client";
+import { useState, useTransition } from "react";
+import { Loader2 } from "lucide-react";
 import {
     User,
     LogOut,
@@ -159,11 +159,11 @@ export function UserAuthSection() {
                             <div className="h-px bg-gray-100 dark:bg-white/5 my-2 mx-2"></div>
 
                             <button
-                                onClick={async () => {
+                                onClick={() => {
                                     setMenuOpen(false);
-                                    const supabase = createClient();
-                                    await supabase.auth.signOut();
-                                    await logout();
+                                    // Bypassing client-side signOut which hangs on blocked networks (like Indian ISPs).
+                                    // Directly calling Server Action which proxies to Supabase via Vercel.
+                                    logout();
                                 }}
                                 className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-colors text-left"
                             >
