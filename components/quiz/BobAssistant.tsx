@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { useTheme } from "@/components/providers/providers";
 import { motion, AnimatePresence } from "framer-motion";
 import { useChat } from "ai/react";
 import type { QuizQuestion } from "@/types";
@@ -22,8 +21,6 @@ interface BobAssistantProps {
 
 export function BobAssistant({ question, customContext, initialMessage, isOpen: controlledIsOpen, onClose: controlledOnClose }: BobAssistantProps) {
   const [internalIsOpen, setInternalIsOpen] = useState(false);
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -36,7 +33,7 @@ export function BobAssistant({ question, customContext, initialMessage, isOpen: 
 
   const isControlled = controlledIsOpen !== undefined;
   const isOpen = isControlled ? controlledIsOpen : internalIsOpen;
-  
+
   const handleClose = useCallback(() => {
     if (isControlled && controlledOnClose) {
       controlledOnClose();
@@ -53,7 +50,7 @@ export function BobAssistant({ question, customContext, initialMessage, isOpen: 
     if (question) {
       return `
 Question: ${question.question}
-Options: ${ 'options' in question ? question.options?.join(", ") : "N/A"}
+Options: ${'options' in question ? question.options?.join(", ") : "N/A"}
 Correct Answer: ${Array.isArray(question.answer) ? question.answer.join(", ") : (typeof question.answer === 'object' ? JSON.stringify(question.answer) : question.answer)}
 Explanation (if any): ${question.explanation}
 Code (if any): ${question.code}
@@ -68,10 +65,10 @@ Code (if any): ${question.code}
       data: { context }
     },
     initialMessages: [
-      { 
-        id: 'welcome', 
-        role: 'assistant', 
-        content: initialMessage || (question ? "Hi! I'm Bob. I can explain this question simply. What do you need help with?" : "Hi! I'm Bob. How can I help you today?") 
+      {
+        id: 'welcome',
+        role: 'assistant',
+        content: initialMessage || (question ? "Hi! I'm Bob. I can explain this question simply. What do you need help with?" : "Hi! I'm Bob. How can I help you today?")
       }
     ],
     onError: (err: unknown) => {
@@ -82,10 +79,10 @@ Code (if any): ${question.code}
   useEffect(() => {
     if (question) {
       setMessages([
-        { 
-          id: `welcome-${question.id}`, 
-          role: 'assistant', 
-          content: "Hi! I'm Bob. I can explain this question simply. What do you need help with?" 
+        {
+          id: `welcome-${question.id}`,
+          role: 'assistant',
+          content: "Hi! I'm Bob. I can explain this question simply. What do you need help with?"
         }
       ]);
       setInput("");
@@ -100,10 +97,10 @@ Code (if any): ${question.code}
 
   const clearChat = useCallback(() => {
     setMessages([
-      { 
-        id: 'reset', 
-        role: 'assistant', 
-        content: "Chat cleared. How can I help you now?" 
+      {
+        id: 'reset',
+        role: 'assistant',
+        content: "Chat cleared. How can I help you now?"
       }
     ]);
   }, [setMessages]);
@@ -135,7 +132,7 @@ Code (if any): ${question.code}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={handleClose}
-              className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm md:bg-transparent md:backdrop-blur-none md:pointer-events-none" 
+              className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm md:bg-transparent md:backdrop-blur-none md:pointer-events-none"
             />
 
             <motion.div
@@ -149,36 +146,30 @@ Code (if any): ${question.code}
                 md:w-[450px] 
                 h-[60vh] md:h-[600px] 
                 rounded-3xl 
-                shadow-2xl flex flex-col overflow-hidden border pointer-events-auto ${
-              isDark 
-                ? "bg-gray-900 border-gray-700" 
-                : "bg-white border-white"
-              }`}
+                shadow-2xl flex flex-col overflow-hidden border pointer-events-auto 
+                bg-white dark:bg-gray-900 border-white dark:border-gray-700
+              `}
             >
-              <BobHeader 
-                isDark={isDark} 
-                onClose={handleClose} 
-                onClear={clearChat} 
+              <BobHeader
+                onClose={handleClose}
+                onClear={clearChat}
               />
 
-              <BobMessages 
-                messages={messages} 
-                isDark={isDark} 
-                isLoading={isLoading} 
-                scrollRef={scrollRef} 
+              <BobMessages
+                messages={messages}
+                isLoading={isLoading}
+                scrollRef={scrollRef}
               />
 
               {!isLoading && messages.length > 0 && messages[messages.length - 1].role === 'assistant' && (
-                <BobPrompts 
-                  isDark={isDark} 
-                  onPromptClick={handlePromptClick} 
+                <BobPrompts
+                  onPromptClick={handlePromptClick}
                 />
               )}
 
-              <BobInput 
-                input={input} 
-                isDark={isDark} 
-                isLoading={isLoading} 
+              <BobInput
+                input={input}
+                isLoading={isLoading}
                 placeholder={question ? "Ask Bob about this question..." : "Ask Bob a question..."}
                 onInputChange={handleInputChange}
                 onSubmit={handleSubmit}

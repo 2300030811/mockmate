@@ -4,15 +4,18 @@ import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import SyntaxHighlighter from 'react-syntax-highlighter/dist/esm/prism';
 import { atomDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { useTheme } from '@/components/providers/providers';
 
 interface MemoizedMarkdownProps {
   content: string;
-  isDark: boolean;
 }
 
-export const MemoizedMarkdown = React.memo(({ content, isDark }: MemoizedMarkdownProps) => {
+export const MemoizedMarkdown = React.memo(({ content }: MemoizedMarkdownProps) => {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
   return (
-    <div className={`prose prose-sm max-w-none ${isDark ? "prose-invert" : ""}`}>
+    <div className="prose prose-sm max-w-none dark:prose-invert">
       <ReactMarkdown
         components={{
           code({ node, className, children, ...props }: React.ComponentPropsWithoutRef<'code'> & { node?: unknown }) {
@@ -44,8 +47,7 @@ export const MemoizedMarkdown = React.memo(({ content, isDark }: MemoizedMarkdow
       </ReactMarkdown>
     </div>
   );
-}, (prevProps, nextProps) => {
-  return prevProps.content === nextProps.content && prevProps.isDark === nextProps.isDark;
 });
 
 MemoizedMarkdown.displayName = 'MemoizedMarkdown';
+

@@ -1,4 +1,5 @@
 
+import { memo } from "react";
 import { ClockIcon, HomeIcon, Zap } from "lucide-react";
 import { UserAuthSection } from "@/components/UserAuthSection";
 
@@ -18,7 +19,7 @@ interface SessionHeaderProps {
   onHomeClick: () => void;
 }
 
-export function SessionHeader({
+export const SessionHeader = memo(function SessionHeader({
   type,
   azureConfig,
   isAISpeaking,
@@ -112,4 +113,4 @@ export function SessionHeader({
         </div>
       </header>
   );
-}
+});

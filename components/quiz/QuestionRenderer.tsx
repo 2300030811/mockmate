@@ -17,7 +17,6 @@ interface QuestionRendererProps {
   userAnswer: QuizAnswer;
   onAnswer: (answer: QuizAnswer) => void;
   isReviewMode: boolean;
-  isDark: boolean;
   category: string;
   mode: QuizMode;
 }
@@ -27,102 +26,94 @@ export const QuestionRenderer = memo(({
   userAnswer,
   onAnswer,
   isReviewMode,
-  isDark,
   category,
   mode
 }: QuestionRendererProps) => {
-  
+
   switch (question.type) {
     case 'mcq':
     case 'MSQ':
       return (
-        <MultipleChoiceCard 
+        <MultipleChoiceCard
           question={question as MCQQuestion}
           selectedAnswers={Array.isArray(userAnswer) ? (userAnswer as string[]) : userAnswer ? [userAnswer as string] : []}
           onAnswer={onAnswer}
           isReviewMode={isReviewMode}
-          isDark={isDark}
           category={category}
           mode={mode}
         />
       );
     case 'drag_drop':
       return (
-        <DragDropBoard 
+        <DragDropBoard
           question={question as DragDropQuestion}
           userAnswer={userAnswer as any} // Sub-component needs updating but any is safe for now
           onAnswer={onAnswer}
           isReviewMode={isReviewMode}
-          isDark={isDark}
         />
       );
     case 'hotspot':
       return (
-        <HotspotYesNoTable 
+        <HotspotYesNoTable
           question={question as HotspotQuestion}
           userAnswer={userAnswer as Record<string, "Yes" | "No">}
           onAnswer={onAnswer}
           isReviewMode={isReviewMode}
-          isDark={isDark}
         />
       );
     case 'hotspot_yesno_table':
       return (
-        <HotspotYesNoTableNew 
+        <HotspotYesNoTableNew
           question={question as HotspotYesNoTableQuestion}
           userAnswer={userAnswer as Record<number, "Yes" | "No">}
           onAnswer={onAnswer}
           isReviewMode={isReviewMode}
-          isDark={isDark}
         />
       );
     case 'hotspot_sentence':
       return (
-        <HotspotSentenceCompletion 
+        <HotspotSentenceCompletion
           question={question as HotspotSentenceQuestion}
           userAnswer={userAnswer as string}
           onAnswer={onAnswer}
           isReviewMode={isReviewMode}
-          isDark={isDark}
         />
       );
     case 'hotspot_box_mapping':
       return (
-        <HotspotBoxMapping 
+        <HotspotBoxMapping
           question={question as HotspotBoxMappingQuestion}
           userAnswer={userAnswer as Record<number, string>}
           onAnswer={onAnswer}
           isReviewMode={isReviewMode}
-          isDark={isDark}
         />
       );
     case 'case_table':
       return (
-        <CaseStudyEvaluator 
+        <CaseStudyEvaluator
           question={question as CaseStudyQuestion}
           userAnswer={userAnswer as Record<number, "Yes" | "No">}
           onAnswer={onAnswer}
           isReviewMode={isReviewMode}
-          isDark={isDark}
         />
       );
     default:
       // Fallback for generic Questions, defaulting to MCQ card if it looks like one
       if ((question as any).options) {
-          return (
-            <MultipleChoiceCard 
-                question={question as MCQQuestion}
-                selectedAnswers={Array.isArray(userAnswer) ? (userAnswer as string[]) : userAnswer ? [userAnswer as string] : []}
-                onAnswer={onAnswer}
-                isReviewMode={isReviewMode}
-                isDark={isDark}
-                category={category}
-                mode={mode}
-            />
-          );
+        return (
+          <MultipleChoiceCard
+            question={question as MCQQuestion}
+            selectedAnswers={Array.isArray(userAnswer) ? (userAnswer as string[]) : userAnswer ? [userAnswer as string] : []}
+            onAnswer={onAnswer}
+            isReviewMode={isReviewMode}
+            category={category}
+            mode={mode}
+          />
+        );
       }
       return <div>Unsupported question type: {(question as any).type || 'unknown'}</div>;
   }
 });
 
 QuestionRenderer.displayName = "QuestionRenderer";
+

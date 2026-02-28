@@ -72,7 +72,7 @@ export default function CareerPathPage() {
     <div className="min-h-screen relative transition-colors duration-500 bg-gradient-to-br from-gray-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950 pt-24 px-4 sm:px-6">
        
       {/* Navigation Pill */}
-      <NavigationPill />
+      <NavigationPill variant="dark" />
        
        <HomeBackground />
 

@@ -14,7 +14,6 @@ interface ModalProps {
   description?: string;
   children?: React.ReactNode;
   footer?: React.ReactNode;
-  isDark?: boolean;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -24,7 +23,6 @@ export const Modal: React.FC<ModalProps> = ({
   description,
   children,
   footer,
-  isDark = false,
 }) => {
   const [mounted, setMounted] = useState(false);
 
@@ -62,9 +60,8 @@ export const Modal: React.FC<ModalProps> = ({
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
                   className={cn(
                     "modal-content-area relative z-[10000] w-full max-w-lg rounded-3xl p-6 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden",
-                    isDark
-                      ? "bg-gray-900/95 border border-white/10 text-white backdrop-blur-xl"
-                      : "bg-white/95 text-gray-900 border border-gray-200 backdrop-blur-xl"
+                    "bg-white/95 text-gray-900 border border-gray-200 backdrop-blur-xl",
+                    "dark:bg-gray-900/95 dark:border-white/10 dark:text-white"
                   )}
                   tabIndex={-1}
                 >
@@ -72,44 +69,44 @@ export const Modal: React.FC<ModalProps> = ({
                   <span id="modal-title" className="sr-only">{title || 'Modal Dialog'}</span>
                   {description && <span id="modal-description" className="sr-only">{description}</span>}
 
-              {/* Header section - Fixed */}
-              <div className="flex items-start justify-between mb-4 flex-none">
-                {(title || description) && (
-                  <div>
-                    {title && (
-                      <h3 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-emerald-400 to-cyan-400">
-                        {title}
-                      </h3>
+                  {/* Header section - Fixed */}
+                  <div className="flex items-start justify-between mb-4 flex-none">
+                    {(title || description) && (
+                      <div>
+                        {title && (
+                          <h3 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-emerald-400 to-cyan-400">
+                            {title}
+                          </h3>
+                        )}
+                        {description && (
+                          <p className="mt-1 text-sm opacity-60 leading-relaxed max-w-[90%] font-medium">
+                            {description}
+                          </p>
+                        )}
+                      </div>
                     )}
-                    {description && (
-                      <p className="mt-1 text-sm opacity-60 leading-relaxed max-w-[90%] font-medium">
-                        {description}
-                      </p>
-                    )}
+                    <button
+                      onClick={onClose}
+                      className="p-2 rounded-full hover:bg-white/10 transition-colors opacity-50 hover:opacity-100"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
                   </div>
-                )}
-                <button
-                  onClick={onClose}
-                  className="p-2 rounded-full hover:bg-white/10 transition-colors opacity-50 hover:opacity-100"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
 
-              {/* Scrollable Content section */}
-              <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-0">
-                <div className="py-1">{children}</div>
-              </div>
+                  {/* Scrollable Content section */}
+                  <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-0">
+                    <div className="py-1">{children}</div>
+                  </div>
 
-              {/* Footer section - Fixed (if used) */}
-              {footer && (
-                <div className="mt-6 flex justify-end gap-3 flex-none border-t border-white/5 pt-4">
-                  {footer}
-                </div>
-              )}
-            </motion.div>
-          </div>
-        </div>
+                  {/* Footer section - Fixed (if used) */}
+                  {footer && (
+                    <div className="mt-6 flex justify-end gap-3 flex-none border-t border-white/5 pt-4">
+                      {footer}
+                    </div>
+                  )}
+                </motion.div>
+              </div>
+            </div>
           </FocusTrap>
         </RemoveScroll>
       )}

@@ -21,7 +21,6 @@ interface QuizResultsProps {
   };
   questionsLength: number;
   userAnswers: Record<string | number, QuizAnswer>;
-  isDark: boolean;
   onReview: () => void;
   onRetake: () => void;
 }
@@ -32,7 +31,6 @@ export const QuizResults: React.FC<QuizResultsProps> = ({
   stats,
   questionsLength,
   userAnswers,
-  isDark,
   onReview,
   onRetake
 }) => {
@@ -47,7 +45,7 @@ export const QuizResults: React.FC<QuizResultsProps> = ({
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay, type: "spring", stiffness: 200, damping: 20 }}
-      className={`p-4 rounded-2xl ${isDark ? 'bg-white/5 border border-white/5' : 'bg-gray-50 border border-gray-100'}`}
+      className="p-4 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5"
     >
       <p className="text-sm opacity-60 mb-1">{label}</p>
       <p className={`text-3xl font-bold ${colorClass || ""}`}>{value}</p>
@@ -55,11 +53,11 @@ export const QuizResults: React.FC<QuizResultsProps> = ({
   );
 
   return (
-    <div className={`min-h-screen flex items-center justify-center p-4 ${isDark ? 'bg-gray-950' : 'bg-gray-50'}`}>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-950">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`max-w-3xl w-full border rounded-3xl p-8 md:p-12 text-center shadow-2xl ${isDark ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}
+        className="max-w-3xl w-full border rounded-3xl p-8 md:p-12 text-center shadow-2xl bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800"
       >
         <motion.div
           initial={{ scale: 0.5, opacity: 0 }}
@@ -95,3 +93,4 @@ export const QuizResults: React.FC<QuizResultsProps> = ({
     </div>
   );
 };
+

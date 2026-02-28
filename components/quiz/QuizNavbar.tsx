@@ -17,20 +17,19 @@ interface QuizNavbarProps {
 }
 
 const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 };
 
-const QuizTimer = memo(({ seconds, isDark }: { seconds: number, isDark: boolean }) => {
-    return (
-        <div className={`flex items-center gap-2 font-mono text-xl ${
-            seconds < 300 ? 'text-red-500 animate-pulse' : isDark ? 'text-white' : 'text-gray-900'
-        }`}>
-            <Clock className="w-5 h-5" />
-            {formatTime(seconds)}
-        </div>
-    );
+const QuizTimer = memo(({ seconds }: { seconds: number }) => {
+  return (
+    <div className={`flex items-center gap-2 font-mono text-xl ${seconds < 300 ? 'text-red-500 animate-pulse' : 'text-gray-900 dark:text-white'
+      }`}>
+      <Clock className="w-5 h-5" />
+      {formatTime(seconds)}
+    </div>
+  );
 });
 
 QuizTimer.displayName = "QuizTimer";
@@ -49,29 +48,23 @@ export const QuizNavbar = memo(({
   const categoryName = category.toUpperCase();
 
   return (
-    <nav className={`h-16 flex-none shadow-md z-50 flex items-center justify-between px-4 lg:px-8 ${
-      isDark 
-        ? 'bg-gray-900/80 backdrop-blur-sm border-b border-gray-800' 
-        : 'bg-white/80 backdrop-blur-sm border-b border-gray-200'
-    }`}>
+    <nav className="h-16 flex-none shadow-md z-50 flex items-center justify-between px-4 lg:px-8 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800">
       <div className="flex items-center gap-4">
-        <Button 
-          onClick={() => setSidebarOpen(!sidebarOpen)} 
+        <Button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
           variant="ghost"
           size="icon"
-          className={`lg:hidden ${isDark ? 'text-gray-200' : 'text-gray-900'}`}
+          className="lg:hidden text-gray-900 dark:text-gray-200"
         >
           <Menu className="w-6 h-6" />
         </Button>
-        <div 
+        <div
           onClick={() => router.push(`/${category}-quiz/mode`)}
           className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
           title={`Back to ${categoryName} Menu`}
         >
           <Layout className="w-6 h-6 text-blue-500" />
-          <h1 className={`text-lg font-bold hidden sm:block ${
-            isDark ? 'text-white' : 'text-gray-900'
-          }`}>
+          <h1 className="text-lg font-bold hidden sm:block text-gray-900 dark:text-white">
             {categoryName} {mode === "exam" ? "Exam Mode" : "Practice"}
           </h1>
         </div>
@@ -79,8 +72,8 @@ export const QuizNavbar = memo(({
 
       <div className="flex items-center gap-4">
         <div className="hidden md:flex items-center">
-            <UserAuthSection />
-            <div className="w-px h-6 bg-gray-200 dark:bg-white/10 mx-4"></div>
+          <UserAuthSection />
+          <div className="w-px h-6 bg-gray-200 dark:bg-white/10 mx-4"></div>
         </div>
 
         <Button
@@ -91,9 +84,9 @@ export const QuizNavbar = memo(({
         >
           {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
         </Button>
-        
+
         {mode === "exam" && (
-          <QuizTimer seconds={timeRemaining} isDark={isDark} />
+          <QuizTimer seconds={timeRemaining} />
         )}
       </div>
     </nav>
@@ -101,3 +94,4 @@ export const QuizNavbar = memo(({
 });
 
 QuizNavbar.displayName = "QuizNavbar";
+

@@ -152,7 +152,7 @@ ${roastData.suggestions.map((s) => `• ${s}`).join("\n")}
 
   return (
     <div className="min-h-screen bg-gray-950 text-white selection:bg-orange-500/30">
-      <NavigationPill className="absolute top-4 left-4 sm:top-6 sm:left-6 z-50 scale-75 origin-top-left sm:scale-100" />
+      <NavigationPill className="absolute top-4 left-4 sm:top-6 sm:left-6 z-50 scale-75 origin-top-left sm:scale-100" variant="dark" />
       
       {/* Background Decorations */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">

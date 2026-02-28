@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback, Suspense } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import { chatWithAI, getSpeechToken } from "@/app/actions/interview";
 import { summarizeInterviewAction } from "@/app/actions/interview-summary";
-import ReactMarkdown from "react-markdown";
 import * as SpeechSDK from "microsoft-cognitiveservices-speech-sdk";
-import { Activity, Award, Code2, Video, Zap } from "lucide-react";
+import { Activity, Code2, Video } from "lucide-react";
 
 // Components
 import { SessionHeader } from "./components/SessionHeader";
@@ -97,6 +96,26 @@ function InterviewSessionContent() {
   // Refs for VAD
   const volumeDataRef = useRef<number[]>(new Array(30).fill(0));
   const silenceStartRef = useRef<number | null>(null);
+  const isUserActiveRef = useRef(false);
+
+  // Refs for proper cleanup of timers
+  const pendingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const elapsedTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const ttsKeepAliveRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Stable callback for volume changes — avoids re-creating AudioContext in AudioVisualizer
+  const handleVolumeChange = useCallback((vol: number) => {
+    volumeDataRef.current.shift();
+    volumeDataRef.current.push(vol);
+  }, []);
+
+  // Stable callback for navigating home
+  const handleHomeClick = useCallback(() => router.push("/"), [router]);
+
+  // Stable callback for stats updates from SessionInsights
+  const handleStatsUpdate = useCallback((stats: { wpm: number; sentiment: string; keyConcepts: string[]; confidenceScore: number }) => {
+    setSessionStats(stats);
+  }, []);
 
   // Keep ref in sync
   useEffect(() => {
@@ -108,13 +127,54 @@ function InterviewSessionContent() {
     const timer = setInterval(() => {
       setElapsedSeconds((prev) => prev + 1);
     }, 1000);
+    elapsedTimerRef.current = timer;
     return () => clearInterval(timer);
   }, []);
 
   const handleEndSession = async () => {
+    // Cancel all speech and audio resources eagerly
     if (typeof window !== "undefined" && window.speechSynthesis) {
        window.speechSynthesis.cancel();
     }
+    // Clear pending timeouts
+    if (pendingTimeoutRef.current) {
+       clearTimeout(pendingTimeoutRef.current);
+       pendingTimeoutRef.current = null;
+    }
+    // Clear TTS keepalive
+    if (ttsKeepAliveRef.current) {
+       clearInterval(ttsKeepAliveRef.current);
+       ttsKeepAliveRef.current = null;
+    }
+    // Stop elapsed timer
+    if (elapsedTimerRef.current) {
+       clearInterval(elapsedTimerRef.current);
+       elapsedTimerRef.current = null;
+    }
+    // Stop media stream tracks (camera + mic)
+    if (streamRef.current) {
+       streamRef.current.getTracks().forEach((track) => track.stop());
+       streamRef.current = null;
+    }
+    // Stop speech recognizers
+    if (azureRecognizerRef.current) {
+       try { azureRecognizerRef.current.stopContinuousRecognitionAsync(); } catch (e) {}
+       try { azureRecognizerRef.current.close(); } catch (e) {}
+       azureRecognizerRef.current = null;
+    }
+    if (recognitionRef.current) {
+       try { recognitionRef.current.stop(); } catch (e) {}
+       recognitionRef.current = null;
+    }
+    // Cancel animation frames
+    if (animationFrameRef.current) {
+       cancelAnimationFrame(animationFrameRef.current);
+       animationFrameRef.current = null;
+    }
+    setIsListening(false);
+    setIsAISpeaking(false);
+    setCameraActive(false);
+
     if (messages.length < 2) {
        router.push("/demo");
        return;
@@ -155,15 +215,36 @@ function InterviewSessionContent() {
       isMountedRef.current = false;
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
       }
       if (recognitionRef.current) {
         try { recognitionRef.current.stop(); } catch (e) {}
+        recognitionRef.current = null;
       }
       if (azureRecognizerRef.current) {
         try { azureRecognizerRef.current.stopContinuousRecognitionAsync(); } catch (e) {}
+        try { azureRecognizerRef.current.close(); } catch (e) {}
+        azureRecognizerRef.current = null;
       }
       if (typeof window !== "undefined" && window.speechSynthesis) {
         window.speechSynthesis.cancel();
+      }
+      // Clear all pending timers
+      if (pendingTimeoutRef.current) {
+        clearTimeout(pendingTimeoutRef.current);
+        pendingTimeoutRef.current = null;
+      }
+      if (ttsKeepAliveRef.current) {
+        clearInterval(ttsKeepAliveRef.current);
+        ttsKeepAliveRef.current = null;
+      }
+      if (elapsedTimerRef.current) {
+        clearInterval(elapsedTimerRef.current);
+        elapsedTimerRef.current = null;
+      }
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
       }
     };
   }, []);
@@ -183,7 +264,9 @@ function InterviewSessionContent() {
       setCameraActive(true);
       setDebugStatus("Ready");
 
-      setTimeout(() => handleAIResponse([]), 500);
+      pendingTimeoutRef.current = setTimeout(() => {
+        if (isMountedRef.current) handleAIResponse([]);
+      }, 500);
     } catch (err: any) {
       console.warn("Camera failed, trying audio only:", err);
       try {
@@ -193,7 +276,9 @@ function InterviewSessionContent() {
         streamRef.current = audioStream;
         setCameraActive(false);
         setDebugStatus("Ready (Audio Only)");
-        setTimeout(() => handleAIResponse([]), 500);
+        pendingTimeoutRef.current = setTimeout(() => {
+          if (isMountedRef.current) handleAIResponse([]);
+        }, 500);
       } catch (e: any) {
         setDebugStatus("Permission Denied");
         setPermissionError(
@@ -299,7 +384,11 @@ function InterviewSessionContent() {
       const avgVolume = recentVolume.reduce((a, b) => a + b, 0) / (recentVolume.length || 1);
       const isCurrentlySpeaking = avgVolume > 15; // Threshold for active voice
 
-      setIsUserActive(isCurrentlySpeaking);
+      // Only trigger state update when value actually changes (avoid 60 updates/sec)
+      if (isCurrentlySpeaking !== isUserActiveRef.current) {
+        isUserActiveRef.current = isCurrentlySpeaking;
+        setIsUserActive(isCurrentlySpeaking);
+      }
 
       if (isCurrentlySpeaking) {
         silenceStartRef.current = null;
@@ -320,15 +409,25 @@ function InterviewSessionContent() {
       }
     };
 
-    const animId = requestAnimationFrame(checkSilence);
-    return () => cancelAnimationFrame(animId);
+    animationFrameRef.current = requestAnimationFrame(checkSilence);
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+    };
   }, [isListening, isProcessing, isAISpeaking, transcript, finalTranscript]);
 
   const stopListening = () => {
     if (azureRecognizerRef.current) {
-        azureRecognizerRef.current.stopContinuousRecognitionAsync(() => {
+        const recognizer = azureRecognizerRef.current;
+        azureRecognizerRef.current = null;
+        recognizer.stopContinuousRecognitionAsync(() => {
+            try { recognizer.close(); } catch (e) {}
             setIsListening(false);
-            azureRecognizerRef.current = null;
+        }, () => {
+            try { recognizer.close(); } catch (e) {}
+            setIsListening(false);
         });
     } else if (recognitionRef.current) {
       recognitionRef.current.stop();
@@ -415,19 +514,45 @@ function InterviewSessionContent() {
     if (preferred) utterance.voice = preferred;
 
     utterance.onend = () => {
+      // Clear TTS keepalive
+      if (ttsKeepAliveRef.current) {
+        clearInterval(ttsKeepAliveRef.current);
+        ttsKeepAliveRef.current = null;
+      }
+      if (!isMountedRef.current) return;
       setIsAISpeaking(false);
       setIsUserActive(false);
       setDebugStatus("Your Turn");
       // Auto-start listening again for fluid conversation
-      // Give a small buffer
-      setTimeout(() => startListening(), 500);
+      // Give a small buffer — tracked so we can cancel on unmount
+      pendingTimeoutRef.current = setTimeout(() => {
+        if (isMountedRef.current) startListening();
+      }, 500);
     };
 
     utterance.onerror = () => {
+      if (ttsKeepAliveRef.current) {
+        clearInterval(ttsKeepAliveRef.current);
+        ttsKeepAliveRef.current = null;
+      }
+      if (!isMountedRef.current) return;
       setIsAISpeaking(false);
     };
 
     window.speechSynthesis.speak(utterance);
+
+    // Chrome pauses speechSynthesis after ~15s. Keep it alive.
+    ttsKeepAliveRef.current = setInterval(() => {
+      if (window.speechSynthesis.speaking) {
+        window.speechSynthesis.pause();
+        window.speechSynthesis.resume();
+      } else {
+        if (ttsKeepAliveRef.current) {
+          clearInterval(ttsKeepAliveRef.current);
+          ttsKeepAliveRef.current = null;
+        }
+      }
+    }, 10000);
   };
 
   const handleSubmit = (textOverride?: string) => {
@@ -469,7 +594,7 @@ function InterviewSessionContent() {
         setMobileTab={setMobileTab}
         isSummarizing={isSummarizing}
         onEndSession={handleEndSession}
-        onHomeClick={() => router.push("/")}
+        onHomeClick={handleHomeClick}
       />
 
       {/* --- Main Content --- */}
@@ -547,10 +672,7 @@ function InterviewSessionContent() {
                     stream={streamRef.current}
                     isListening={isListening}
                     isUserActive={isUserActive}
-                    onVolumeChange={(vol) => {
-                        volumeDataRef.current.shift();
-                        volumeDataRef.current.push(vol);
-                    }}
+                    onVolumeChange={handleVolumeChange}
                     videoRef={videoRef}
                 />
             )}
@@ -573,7 +695,7 @@ function InterviewSessionContent() {
                     finalTranscript={finalTranscript}
                     messages={messages}
                     elapsedSeconds={elapsedSeconds}
-                    onStatsUpdate={setSessionStats}
+                    onStatsUpdate={handleStatsUpdate}
                 />
             )}
           </div>

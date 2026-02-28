@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, memo } from "react";
 import ReactMarkdown from "react-markdown";
 
 interface SessionChatProps {
@@ -7,7 +7,7 @@ interface SessionChatProps {
     mobileTab: 'chat' | 'code';
 }
 
-export function SessionChat({ messages, isProcessing, mobileTab }: SessionChatProps) {
+export const SessionChat = memo(function SessionChat({ messages, isProcessing, mobileTab }: SessionChatProps) {
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     // Scroll to bottom
@@ -67,4 +67,4 @@ export function SessionChat({ messages, isProcessing, mobileTab }: SessionChatPr
           </div>
         </div>
     );
-}
+});

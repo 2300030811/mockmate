@@ -4,50 +4,52 @@ import { memo, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { vscDarkPlus, vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Check, Copy } from 'lucide-react';
+import { useTheme } from '@/components/providers/providers';
 
 // Dynamically import the syntax highlighter and its languages to massively 
 // reduce the main JavaScript bundle size and improve initial page load.
 const LazyHighlighter = dynamic(
-  async () => {
-    const { PrismLight } = await import('react-syntax-highlighter');
-    
-    // Parallel import language syntaxes
-    const [python, java, javascript, json, sql] = await Promise.all([
-      import('react-syntax-highlighter/dist/esm/languages/prism/python').then(m => m.default),
-      import('react-syntax-highlighter/dist/esm/languages/prism/java').then(m => m.default),
-      import('react-syntax-highlighter/dist/esm/languages/prism/javascript').then(m => m.default),
-      import('react-syntax-highlighter/dist/esm/languages/prism/json').then(m => m.default),
-      import('react-syntax-highlighter/dist/esm/languages/prism/sql').then(m => m.default),
-    ]);
-    
-    PrismLight.registerLanguage('python', python);
-    PrismLight.registerLanguage('java', java);
-    PrismLight.registerLanguage('javascript', javascript);
-    PrismLight.registerLanguage('json', json);
-    PrismLight.registerLanguage('sql', sql);
+    async () => {
+        const { PrismLight } = await import('react-syntax-highlighter');
 
-    return { default: PrismLight };
-  },
-  { 
-    ssr: false, 
-    loading: () => (
-      <div className="p-8 animate-pulse bg-[#f3f4f6] dark:bg-[#1e1e1e] font-mono text-sm text-gray-500 dark:text-gray-400">
-        Loading Code Snippet...
-      </div>
-    ) 
-  }
+        // Parallel import language syntaxes
+        const [python, java, javascript, json, sql] = await Promise.all([
+            import('react-syntax-highlighter/dist/esm/languages/prism/python').then(m => m.default),
+            import('react-syntax-highlighter/dist/esm/languages/prism/java').then(m => m.default),
+            import('react-syntax-highlighter/dist/esm/languages/prism/javascript').then(m => m.default),
+            import('react-syntax-highlighter/dist/esm/languages/prism/json').then(m => m.default),
+            import('react-syntax-highlighter/dist/esm/languages/prism/sql').then(m => m.default),
+        ]);
+
+        PrismLight.registerLanguage('python', python);
+        PrismLight.registerLanguage('java', java);
+        PrismLight.registerLanguage('javascript', javascript);
+        PrismLight.registerLanguage('json', json);
+        PrismLight.registerLanguage('sql', sql);
+
+        return { default: PrismLight };
+    },
+    {
+        ssr: false,
+        loading: () => (
+            <div className="p-8 animate-pulse bg-[#f3f4f6] dark:bg-[#1e1e1e] font-mono text-sm text-gray-500 dark:text-gray-400">
+                Loading Code Snippet...
+            </div>
+        )
+    }
 );
 
 interface SyntaxBlockProps {
     code: string;
     language: string;
-    isDark?: boolean;
 }
 
 const SUPPORTED_LANGUAGES = new Set(['java', 'python', 'json', 'sql', 'javascript']);
 
-export const SyntaxBlock = memo(function SyntaxBlock({ code, language, isDark = true }: SyntaxBlockProps) {
+export const SyntaxBlock = memo(function SyntaxBlock({ code, language }: SyntaxBlockProps) {
     const [copied, setCopied] = useState(false);
+    const { theme } = useTheme();
+    const isDark = theme === 'dark';
 
     const handleCopy = () => {
         navigator.clipboard.writeText(code);
@@ -79,28 +81,28 @@ export const SyntaxBlock = memo(function SyntaxBlock({ code, language, isDark = 
     return (
         <div className="relative rounded-xl overflow-hidden shadow-xl border border-gray-200 dark:border-white/10">
             {/* Window Header */}
-            <div className={`flex items-center px-4 py-3 ${isDark ? 'bg-[#1e1e1e] border-b border-white/5' : 'bg-gray-100 border-b border-gray-200'} gap-2`}>
+            <div className="flex items-center px-4 py-3 bg-gray-100 dark:bg-[#1e1e1e] border-b border-gray-200 dark:border-white/5 gap-2">
                 <div className="flex items-center justify-center gap-1.5">
                     <div className="w-3 h-3 rounded-full bg-red-500 shadow-sm" />
                     <div className="w-3 h-3 rounded-full bg-yellow-500 shadow-sm" />
                     <div className="w-3 h-3 rounded-full bg-green-500 shadow-sm" />
                 </div>
                 <div className="ml-auto flex items-center gap-3">
-                    <div className={`text-[10px] sm:text-xs font-mono uppercase tracking-wider ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
+                    <div className="text-[10px] sm:text-xs font-mono uppercase tracking-wider text-gray-400 dark:text-white/40">
                         {lang}
                     </div>
                     <button
                         onClick={handleCopy}
-                        className={`p-1.5 rounded-md hover:bg-black/10 dark:hover:bg-white/10 transition-colors ${isDark ? 'text-white/40 hover:text-white' : 'text-gray-400 hover:text-gray-900'}`}
+                        className="p-1.5 rounded-md hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white"
                         title="Copy code"
                     >
                         {copied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
                     </button>
                 </div>
             </div>
-            
-            <LazyHighlighter 
-                language={lang} 
+
+            <LazyHighlighter
+                language={lang}
                 style={isDark ? vscDarkPlus : vs}
                 customStyle={customStyle}
                 showLineNumbers={true}

@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuiz } from "@/hooks/useQuiz";
 import { QuizMode } from "@/types";
-import { useTheme } from "@/components/providers/providers";
 import { QuestionRenderer } from "./QuestionRenderer";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
@@ -33,25 +32,23 @@ interface UniversalQuizShellProps {
 }
 
 export function UniversalQuizShell({ category, mode, count = null }: UniversalQuizShellProps) {
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
 
   const {
-      questions,
-      loading,
-      error,
-      currentQuestionIndex,
-      setCurrentQuestionIndex,
-      userAnswers,
-      markedQuestions,
-      handleAnswer,
-      toggleMark,
-      nextQuestion,
-      prevQuestion,
-      handleSubmit,
-      timeRemaining,
-      isSubmitted,
-      calculateScore,
+    questions,
+    loading,
+    error,
+    currentQuestionIndex,
+    setCurrentQuestionIndex,
+    userAnswers,
+    markedQuestions,
+    handleAnswer,
+    toggleMark,
+    nextQuestion,
+    prevQuestion,
+    handleSubmit,
+    timeRemaining,
+    isSubmitted,
+    calculateScore,
   } = useQuiz({ category, initialMode: mode, countParam: count });
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -92,20 +89,20 @@ export function UniversalQuizShell({ category, mode, count = null }: UniversalQu
       // Don't trigger if user is typing in BobAssistant or any other input
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
-      switch(e.key) {
+      switch (e.key) {
         case 'ArrowLeft':
-            if (currentQuestionIndex > 0) prevQuestion();
-            break;
+          if (currentQuestionIndex > 0) prevQuestion();
+          break;
         case 'ArrowRight':
-            if (currentQuestionIndex < questions.length - 1) nextQuestion();
-            break;
+          if (currentQuestionIndex < questions.length - 1) nextQuestion();
+          break;
         case 'Enter':
-            if (currentQuestionIndex < questions.length - 1) {
-              nextQuestion();
-            } else {
-              setShowConfirm(true);
-            }
-            break;
+          if (currentQuestionIndex < questions.length - 1) {
+            nextQuestion();
+          } else {
+            setShowConfirm(true);
+          }
+          break;
       }
     };
 
@@ -120,26 +117,25 @@ export function UniversalQuizShell({ category, mode, count = null }: UniversalQu
   }, [handleAnswer, questions, currentQuestionIndex]);
 
   if (loading) {
-    return <LoadingState message={`Loading ${category.toUpperCase()} Quiz...`} isDark={isDark} />;
+    return <LoadingState message={`Loading ${category.toUpperCase()} Quiz...`} />;
   }
 
   if (error) {
-    return <EmptyState title="Error Loading Quiz" message={(error as Error).message || "An unexpected error occurred while fetching questions."} isDark={isDark} />;
+    return <EmptyState title="Error Loading Quiz" message={(error as Error).message || "An unexpected error occurred while fetching questions."} />;
   }
 
   if (!questions.length) {
-    return <EmptyState title="No Questions Found" message="We couldn't load the questions for this category. Please try again later." isDark={isDark} />;
+    return <EmptyState title="No Questions Found" message="We couldn't load the questions for this category. Please try again later." />;
   }
 
   if (viewingResults) {
     return (
-      <QuizResults 
+      <QuizResults
         category={category}
         mode={mode}
         stats={calculateScore()}
         questionsLength={questions.length}
         userAnswers={userAnswers}
-        isDark={isDark}
         onReview={closeResults}
         onRetake={() => window.location.reload()} // Simple reload for retake
       />
@@ -149,11 +145,11 @@ export function UniversalQuizShell({ category, mode, count = null }: UniversalQu
   const currentQ = questions[currentQuestionIndex];
   const progressPercentage = ((currentQuestionIndex + 1) / questions.length) * 100;
   // Count answered questions for the prompt
-  const answeredCount = Object.keys(userAnswers).length; 
+  const answeredCount = Object.keys(userAnswers).length;
 
   return (
-    <div className={`h-screen w-full flex flex-col overflow-hidden ${isDark ? 'bg-gray-950 text-white' : 'bg-white text-gray-900'}`}>
-      <QuizNavbar 
+    <div className="h-screen w-full flex flex-col overflow-hidden bg-white dark:bg-gray-950 text-gray-900 dark:text-white">
+      <QuizNavbar
         category={category}
         mode={mode}
         timeRemaining={timeRemaining}
@@ -162,7 +158,7 @@ export function UniversalQuizShell({ category, mode, count = null }: UniversalQu
       />
 
       <div className="flex-1 flex overflow-hidden relative">
-        <QuizSidebar 
+        <QuizSidebar
           isOpen={sidebarOpen}
           setIsOpen={setSidebarOpen}
           questions={questions}
@@ -177,16 +173,16 @@ export function UniversalQuizShell({ category, mode, count = null }: UniversalQu
         <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative">
           <main ref={mainRef} className="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth z-0">
             <div className="max-w-4xl mx-auto">
-              
+
               {/* Header with Progress & Mark */}
               <div className="flex justify-between items-center mb-8">
                 <div className="flex-1 max-w-md">
                   <p className="text-sm font-medium opacity-50 mb-2">Question {currentQuestionIndex + 1} of {questions.length}</p>
                   <ProgressBar value={progressPercentage} className="h-2" />
                 </div>
-                <Button 
+                <Button
                   onClick={() => toggleMark(currentQ.id)}
-                  variant="ghost" 
+                  variant="ghost"
                   size="icon"
                   className={`ml-4 ${markedQuestions.includes(currentQ.id) ? "text-yellow-500" : "opacity-40 hover:opacity-100"}`}
                 >
@@ -196,51 +192,49 @@ export function UniversalQuizShell({ category, mode, count = null }: UniversalQu
 
               {/* Question Content */}
               <AnimatePresence mode="wait">
-                  <motion.div
-                      key={currentQ.id}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      transition={{ duration: 0.2 }}
-                      className="pb-24" // Padding for footer
-                  >
-                      <QuestionRenderer 
-                          category={category}
-                          question={currentQ}
-                          userAnswer={userAnswers[currentQ.id]}
-                          onAnswer={onAnswerQuestion}
-                          isReviewMode={isSubmitted}
-                          isDark={isDark}
-                          mode={mode}
-                      />
-                  </motion.div>
+                <motion.div
+                  key={currentQ.id}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                  className="pb-24" // Padding for footer
+                >
+                  <QuestionRenderer
+                    category={category}
+                    question={currentQ}
+                    userAnswer={userAnswers[currentQ.id]}
+                    onAnswer={onAnswerQuestion}
+                    isReviewMode={isSubmitted}
+
+                    mode={mode}
+                  />
+                </motion.div>
               </AnimatePresence>
             </div>
           </main>
 
           {/* Sticky Footer */}
-          <QuizControls 
-              isDark={isDark}
-              canGoPrev={currentQuestionIndex > 0}
-              canGoNext={currentQuestionIndex < questions.length - 1}
-              onPrev={prevQuestion}
-              onNext={nextQuestion}
-              onFinish={() => setShowConfirm(true)}
+          <QuizControls
+            canGoPrev={currentQuestionIndex > 0}
+            canGoNext={currentQuestionIndex < questions.length - 1}
+            onPrev={prevQuestion}
+            onNext={nextQuestion}
+            onFinish={() => setShowConfirm(true)}
           />
         </div>
       </div>
 
-      <Modal 
-        isOpen={showConfirm} 
+      <Modal
+        isOpen={showConfirm}
         onClose={closeSubmitModal}
         title="Submit Results?"
         description={`You have answered ${answeredCount} out of ${questions.length} questions.`}
-        isDark={isDark}
         footer={
-            <div className="flex gap-4 w-full">
-                <Button onClick={closeSubmitModal} variant="ghost" className="flex-1">Continue</Button>
-                <Button onClick={() => { closeSubmitModal(); handleSubmit(); }} variant="primary" className="flex-1">Submit</Button>
-            </div>
+          <div className="flex gap-4 w-full">
+            <Button onClick={closeSubmitModal} variant="ghost" className="flex-1">Continue</Button>
+            <Button onClick={() => { closeSubmitModal(); handleSubmit(); }} variant="primary" className="flex-1">Submit</Button>
+          </div>
         }
       />
 

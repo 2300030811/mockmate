@@ -4,13 +4,13 @@
 import { HotspotBoxMappingQuestion } from "@/types";
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, X } from 'lucide-react';
+import { useTheme } from '@/components/providers/providers';
 
 interface HotspotBoxMappingProps {
   question: HotspotBoxMappingQuestion;
   userAnswer?: Record<number, string>; // Map box index to selected option
   onAnswer: (answer: Record<number, string>) => void;
   isReviewMode?: boolean;
-  isDark?: boolean;
 }
 
 export function HotspotBoxMapping({
@@ -18,9 +18,10 @@ export function HotspotBoxMapping({
   userAnswer = {},
   onAnswer,
   isReviewMode = false,
-  isDark = true,
 }: HotspotBoxMappingProps) {
-  
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
   const handleSelect = (boxIndex: number, option: string) => {
     if (isReviewMode) return;
     onAnswer({
@@ -45,7 +46,7 @@ export function HotspotBoxMapping({
             const isCorrect = selectedOption === correctOption;
 
             return (
-              <motion.div 
+              <motion.div
                 key={boxIndex}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -107,11 +108,11 @@ export function HotspotBoxMapping({
                         whileTap={!isReviewMode ? { scale: 0.95 } : {}}
                         layout
                       >
-                         <span className="flex items-center gap-2">
-                            {option}
-                             {isReviewMode && isTheCorrectOption && <Check className="w-4 h-4 ml-1" />}
-                             {isReviewMode && isSelected && !isTheCorrectOption && <X className="w-4 h-4 ml-1" />}
-                         </span>
+                        <span className="flex items-center gap-2">
+                          {option}
+                          {isReviewMode && isTheCorrectOption && <Check className="w-4 h-4 ml-1" />}
+                          {isReviewMode && isSelected && !isTheCorrectOption && <X className="w-4 h-4 ml-1" />}
+                        </span>
                       </motion.button>
                     );
                   })}
@@ -119,15 +120,15 @@ export function HotspotBoxMapping({
 
                 {/* Show correct answer if wrong */}
                 <AnimatePresence>
-                    {isReviewMode && !isCorrect && selectedOption && (
-                    <motion.div 
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        className="mt-3 text-sm text-green-500 flex items-center gap-2"
+                  {isReviewMode && !isCorrect && selectedOption && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="mt-3 text-sm text-green-500 flex items-center gap-2"
                     >
-                        <Check className="w-4 h-4" /> Correct answer: <span className="font-bold">{correctOption}</span>
+                      <Check className="w-4 h-4" /> Correct answer: <span className="font-bold">{correctOption}</span>
                     </motion.div>
-                    )}
+                  )}
                 </AnimatePresence>
               </motion.div>
             );
@@ -136,17 +137,17 @@ export function HotspotBoxMapping({
 
         {/* Explanation */}
         {isReviewMode && question.explanation && (
-           <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className={`mt-8 p-6 border rounded-3xl ${isDark ? 'bg-blue-500/10 border-blue-500/20' : 'bg-blue-50 border-blue-100'}`}
-           >
-             <div className="flex items-center gap-2 mb-2 text-blue-500 font-bold">
-                <div className="p-1 rounded bg-blue-500/20"><Check className="w-4 h-4" /></div>
-                Explanation
-             </div>
-             <p className={`text-base md:text-lg ${isDark ? 'text-white/80' : 'text-gray-700'}`}>{question.explanation}</p>
-           </motion.div>
+          >
+            <div className="flex items-center gap-2 mb-2 text-blue-500 font-bold">
+              <div className="p-1 rounded bg-blue-500/20"><Check className="w-4 h-4" /></div>
+              Explanation
+            </div>
+            <p className={`text-base md:text-lg ${isDark ? 'text-white/80' : 'text-gray-700'}`}>{question.explanation}</p>
+          </motion.div>
         )}
       </div>
     </div>

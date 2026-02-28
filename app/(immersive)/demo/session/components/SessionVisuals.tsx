@@ -1,6 +1,6 @@
 import { CameraOffIcon, HeartPulse } from "lucide-react";
 import { AudioVisualizer } from "./AudioVisualizer";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface SessionVisualsProps {
@@ -14,7 +14,7 @@ interface SessionVisualsProps {
     videoRef: React.RefObject<HTMLVideoElement>;
 }
 
-export function SessionVisuals({
+export const SessionVisuals = memo(function SessionVisuals({
     isAISpeaking,
     isProcessing,
     cameraActive,
@@ -162,4 +162,4 @@ export function SessionVisuals({
             </div>
         </div>
     );
-}
+});

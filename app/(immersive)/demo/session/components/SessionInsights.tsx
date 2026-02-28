@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, memo } from "react";
 import { Activity, Zap, TrendingUp, Award, BrainCircuit, Terminal } from "lucide-react";
 
 interface SessionInsightsProps {
@@ -10,7 +10,7 @@ interface SessionInsightsProps {
     onStatsUpdate?: (stats: { wpm: number; sentiment: string; keyConcepts: string[]; confidenceScore: number }) => void;
 }
 
-export function SessionInsights({ transcript, finalTranscript, messages, elapsedSeconds, onStatsUpdate }: SessionInsightsProps) {
+export const SessionInsights = memo(function SessionInsights({ transcript, finalTranscript, messages, elapsedSeconds, onStatsUpdate }: SessionInsightsProps) {
     const [analytics, setAnalytics] = useState({
         wpm: 0,
         sentiment: "Neutral",
@@ -18,8 +18,16 @@ export function SessionInsights({ transcript, finalTranscript, messages, elapsed
         confidenceScore: 0
     });
 
-    // --- REAL ANALYTICS ENGINE ---
+    // Use a ref to accumulate keyConcepts across renders without causing re-render loops
+    const keyConceptsRef = useRef<string[]>([]);
+    const onStatsUpdateRef = useRef(onStatsUpdate);
+    onStatsUpdateRef.current = onStatsUpdate;
+    const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // --- REAL ANALYTICS ENGINE (debounced to avoid recomputing on every elapsed-second tick) ---
     useEffect(() => {
+        if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = setTimeout(() => {
         // 1. Calculate WPM (Words Per Minute)
         // We estimate user words based on transcript and total user messages
         const userMsgs = messages.filter(m => m.role === "user");
@@ -47,7 +55,9 @@ export function SessionInsights({ transcript, finalTranscript, messages, elapsed
         ];
         
         const found = concepts.filter(c => lastText.includes(c));
-        const allFound = Array.from(new Set([...analytics.keyConcepts, ...found]));
+        // Read from ref instead of state to avoid infinite loop
+        const allFound = Array.from(new Set([...keyConceptsRef.current, ...found]));
+        keyConceptsRef.current = allFound;
 
         // 3. Sentiment & Confidence
         const positiveWords = ["excellent", "great", "sure", "confident", "solved", "optimized", "implemented", "learned", "understand"];
@@ -71,24 +81,25 @@ export function SessionInsights({ transcript, finalTranscript, messages, elapsed
 
         const totalConfidence = wpmScore + conceptScore + sentimentScore;
 
-        // Only update if changed meaningfully to avoid flicker
-        setAnalytics(prev => ({
+        const newStats = {
             wpm: wpm || 0,
             sentiment,
             keyConcepts: allFound,
             confidenceScore: Math.round(totalConfidence)
-        }));
+        };
 
-        if (onStatsUpdate) {
-            onStatsUpdate({
-                wpm: wpm || 0,
-                sentiment,
-                keyConcepts: allFound,
-                confidenceScore: Math.round(totalConfidence)
-            });
+        setAnalytics(newStats);
+
+        if (onStatsUpdateRef.current) {
+            onStatsUpdateRef.current(newStats);
         }
 
-    }, [transcript, finalTranscript, messages, elapsedSeconds, analytics.keyConcepts, onStatsUpdate]);
+        }, 300); // 300ms debounce
+
+        return () => {
+            if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+        };
+    }, [transcript, finalTranscript, messages, elapsedSeconds]);
 
 
     return (
@@ -178,4 +189,4 @@ export function SessionInsights({ transcript, finalTranscript, messages, elapsed
             </div>
         </div>
     );
-}
+});

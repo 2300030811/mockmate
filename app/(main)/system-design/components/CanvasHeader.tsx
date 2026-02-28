@@ -60,7 +60,7 @@ export const CanvasHeader = memo(({
   return (
     <header id="sd-header" className="h-14 px-4 border-b border-white/5 bg-[#080808]/90 backdrop-blur-md flex items-center justify-between z-40 shrink-0 shadow-lg">
       <div className="flex items-center gap-4">
-        <NavigationPill className="scale-90 origin-left" />
+        <NavigationPill className="scale-90 origin-left" variant="dark" />
         <div className="w-px h-6 bg-white/10 hidden md:block"></div>
         <div className="flex items-center gap-3">
            <div className="p-1.5 bg-indigo-500/10 rounded-lg border border-indigo-500/20 shadow-sm"><Layers size={16} className="text-indigo-400" /></div>

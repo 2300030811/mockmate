@@ -50,7 +50,7 @@ export default function CertificationSelect() {
           : "bg-gradient-to-br from-gray-50 via-white to-blue-50"
       }`}
     >
-      <NavigationPill showBack={false} className="absolute top-4 left-4 sm:top-6 sm:left-6 z-50 scale-75 origin-top-left sm:scale-100" />
+      <NavigationPill showBack={false} className="absolute top-4 left-4 sm:top-6 sm:left-6 z-50 scale-75 origin-top-left sm:scale-100" variant="dark" />
 
       {/* Animated Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">

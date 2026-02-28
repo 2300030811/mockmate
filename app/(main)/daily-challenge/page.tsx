@@ -196,10 +196,10 @@ export default function DailyChallengePage() {
          <header className="h-14 px-4 md:px-6 border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/50 backdrop-blur-md flex items-center justify-between z-30 shrink-0 transition-colors duration-300">
             <div className="flex items-center gap-3">
                <div className="md:hidden">
-                  <NavigationPill showBack={true} showHome={false} className="relative z-50 scale-75 origin-left" />
+                  <NavigationPill showBack={true} showHome={false} className="relative z-50 scale-75 origin-left" variant="dark" />
                </div>
                <div className="hidden md:block">
-                  <NavigationPill className="relative z-50 scale-90 origin-left" />
+                  <NavigationPill className="relative z-50 scale-90 origin-left" variant="dark" />
                </div>
                <div className="w-px h-5 bg-gray-300 dark:bg-gray-800"></div>
                <div>
