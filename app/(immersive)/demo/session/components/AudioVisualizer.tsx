@@ -63,8 +63,8 @@ export function AudioVisualizer({
       return;
     }
 
-    const bufferLength = audioCtx.createAnalyser ? analyserRef.current!.frequencyBinCount : 128;
-    const dataArray = new Uint8Array(analyserRef.current!.frequencyBinCount);
+    const bufferLength = analyserRef.current!.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
 
     const draw = () => {
       if (!analyserRef.current || !canvasRef.current) return;
