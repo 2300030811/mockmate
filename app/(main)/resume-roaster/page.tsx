@@ -10,6 +10,7 @@ import { ResumeUpload } from "./components/ResumeUpload";
 import { RoastResults } from "./components/RoastResults";
 import { RoastData } from "./types";
 import { useSpeech } from "./hooks/useSpeech";
+import { useMemeAudio } from "./hooks/useMemeAudio";
 
 const LOADING_MESSAGES = [
   "Judging your font choice...",
@@ -35,8 +36,9 @@ export default function ResumeRoasterPage() {
   const [copied, setCopied] = useState(false);
   const [selectedTone, setSelectedTone] = useState("Brutal");
   const [completedSuggestions, setCompletedSuggestions] = useState<number[]>([]);
-  
+
   const { isSpeaking, speak, stop } = useSpeech();
+  const { playBeforeUpload, playWhileLoading, playAfterLoading, stopAudio } = useMemeAudio();
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -48,7 +50,8 @@ export default function ResumeRoasterPage() {
         localStorage.removeItem("last-resume-roast");
       }
     }
-  }, []);
+    return () => stopAudio(); // Cleanup on unmount
+  }, [stopAudio]);
 
   // Save to localStorage when roastData changes
   useEffect(() => {
@@ -59,16 +62,14 @@ export default function ResumeRoasterPage() {
 
   // Cycle loading messages
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: any;
     if (isRoasting) {
       interval = setInterval(() => {
-        setLoadingMessageIndex((prev) => (prev + 1) % LOADING_MESSAGES.length);
+        setLoadingMessageIndex((prev: number) => (prev + 1) % LOADING_MESSAGES.length);
       }, 3000);
     }
     return () => clearInterval(interval);
   }, [isRoasting]);
-
-  // Use hook speak method directly instead of repeating Logic
 
   const clearHistory = () => {
     localStorage.removeItem("last-resume-roast");
@@ -78,8 +79,8 @@ export default function ResumeRoasterPage() {
   };
 
   const toggleSuggestion = (idx: number) => {
-    setCompletedSuggestions(prev => 
-      prev.includes(idx) ? prev.filter(i => i !== idx) : [...prev, idx]
+    setCompletedSuggestions((prev: number[]) =>
+      prev.includes(idx) ? prev.filter((i: number) => i !== idx) : [...prev, idx]
     );
   };
 
@@ -92,17 +93,19 @@ export default function ResumeRoasterPage() {
       }
       setFile(selectedFile);
       setError(null);
+      playBeforeUpload();
     }
   };
 
   const handleRoast = async () => {
     if (!file) return;
-    
+
     setIsRoasting(true);
     setError(null);
     setRoastData(null);
     setLoadingMessageIndex(0);
     setCompletedSuggestions([]);
+    playWhileLoading();
 
     const formData = new FormData();
     formData.append("file", file);
@@ -110,8 +113,10 @@ export default function ResumeRoasterPage() {
     try {
       const result = await roastResumeAction(formData, jobDescription, selectedTone);
       setRoastData(result.data);
+      playAfterLoading(result.data.professionalScore);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong during the roast.");
+      stopAudio();
     } finally {
       setIsRoasting(false);
     }
@@ -153,7 +158,7 @@ ${roastData.suggestions.map((s) => `• ${s}`).join("\n")}
   return (
     <div className="min-h-screen bg-gray-950 text-white selection:bg-orange-500/30">
       <NavigationPill className="absolute top-4 left-4 sm:top-6 sm:left-6 z-50 scale-75 origin-top-left sm:scale-100" variant="dark" />
-      
+
       {/* Background Decorations */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-orange-600/10 blur-[120px] rounded-full animate-pulse" />
@@ -162,7 +167,7 @@ ${roastData.suggestions.map((s) => `• ${s}`).join("\n")}
 
       <div className="relative z-10 max-w-6xl mx-auto px-4 py-20">
         {/* Header */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-16"
@@ -180,7 +185,7 @@ ${roastData.suggestions.map((s) => `• ${s}`).join("\n")}
         </motion.div>
 
         {!roastData ? (
-          <ResumeUpload 
+          <ResumeUpload
             file={file}
             onFileChange={handleFileChange}
             jobDescription={jobDescription}
@@ -193,7 +198,7 @@ ${roastData.suggestions.map((s) => `• ${s}`).join("\n")}
             loadingMessage={LOADING_MESSAGES[loadingMessageIndex]}
           />
         ) : (
-          <RoastResults 
+          <RoastResults
             roastData={roastData}
             selectedTone={selectedTone}
             isSpeaking={isSpeaking}

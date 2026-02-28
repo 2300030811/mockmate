@@ -3,10 +3,10 @@ import { z } from "zod";
 const envSchema = z.object({
   // Server-side
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-  
+
   // Supabase (Required)
-  NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
+  NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional().or(z.literal("")),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1).optional().or(z.literal("")),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(), // Optional for some client environments but recommended
 
   // Upstash (Required for Rate Limiting)
@@ -16,10 +16,10 @@ const envSchema = z.object({
   // Azure
   AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT: z.string().optional(),
   AZURE_DOCUMENT_INTELLIGENCE_KEY: z.string().optional(),
-  
+
   AZURE_SPEECH_KEY: z.string().optional(),
   AZURE_SPEECH_REGION: z.string().optional(),
-  
+
   AZURE_STORAGE_CONNECTION_STRING: z.string().optional(),
 
   // AI
@@ -62,9 +62,9 @@ export const env = _env.data;
  * Helper to ensure a server key exists or throw helpful error
  */
 export function requireEnv(key: keyof z.infer<typeof envSchema>) {
-    const value = env[key];
-    if (!value) {
-        throw new Error(`Missing required environment variable: ${key}`);
-    }
-    return value;
+  const value = env[key];
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${key}`);
+  }
+  return value;
 }
