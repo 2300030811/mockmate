@@ -32,12 +32,12 @@ const signupSchema = z.object({
 
 export async function signup(formData: { email: string; password: string; nickname: string }) {
   const result = signupSchema.safeParse(formData);
-  
+
   if (!result.success) {
-      logger.warn("Signup validation failed", result.error.errors[0].message);
-      return { error: result.error.errors[0].message };
+    logger.warn("Signup validation failed", result.error.errors[0].message);
+    return { error: result.error.errors[0].message };
   }
-  
+
   const { email, password, nickname } = result.data;
   const supabase = createClient();
 
@@ -99,7 +99,7 @@ export async function login(formData: { email: string; password: string }) {
 export async function signInWithSocial(provider: 'google' | 'github') {
   const supabase = createClient();
   const redirectUrl = `${getURL()}auth/callback`;
-  
+
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
@@ -140,5 +140,6 @@ export async function getCurrentUser() {
     ...user,
     nickname: profile?.nickname || user.user_metadata?.name || user.user_metadata?.full_name || user.user_metadata?.nickname || user.email?.split('@')[0],
     role: profile?.role || 'user',
+    avatar_icon: profile?.avatar_icon,
   };
 }

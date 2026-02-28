@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState, useRef } from "r
 import { createClient } from "@/utils/supabase/client";
 import { User, RealtimeChannel } from "@supabase/supabase-js";
 import { Profile } from "@/types";
+import { getCurrentUser } from "@/app/actions/auth";
 
 const supabase = createClient();
 
@@ -113,19 +114,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refresh = async () => {
     try {
-      const {
-        data: { user },
-      } = await withTimeout(supabase.auth.getUser(), 5000);
-      setUser(user);
-      if (user) {
-        pollAndSetProfile(user.id);
+      // Instead of relying on client-side Supabase network calls which fail in India,
+      // we funnel everything through Server Actions (Vercel) to successfully proxy the request.
+      const serverUser = await withTimeout(getCurrentUser(), 8000);
+
+      if (serverUser) {
+        setUser(serverUser as any); // Safely map to UI context
+        const profileObj = {
+          id: serverUser.id,
+          nickname: serverUser.nickname,
+          role: serverUser.role,
+          avatar_icon: serverUser.avatar_icon
+        };
+        setProfile(profileObj as Profile);
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem(`mockmate_profile_${serverUser.id}`, JSON.stringify(profileObj));
+        }
       } else {
+        setUser(null);
         setProfile(null);
       }
     } catch (error) {
-      console.warn("Auth refresh failed or timed out:", error);
-      // We purposefully do not set user to null here since they might just be offline temporarily,
-      // but we do log the warning.
+      console.warn("Auth refresh via Server Action failed or timed out:", error);
     }
   };
 
@@ -152,34 +162,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .subscribe();
     };
 
-    // Check active sessions and sets the user (with timeout for ISP blocks)
-    withTimeout(supabase.auth.getSession(), 5000)
-      .then(async ({ data: { session } }) => {
-        const currentUser = session?.user ?? null;
-        setUser(currentUser);
+    const initializeAuth = async () => {
+      // Step 1: Attempt offline/local cookie read for instant hydration
+      try {
+        const { data: { session } } = await withTimeout(supabase.auth.getSession(), 2000);
+        const currentUser = session?.user;
 
         if (currentUser) {
-          setupProfileSubscription(currentUser.id);
-
-          // Try to load from cache immediately even before polling
-          const cacheKey = `mockmate_profile_${currentUser.id}`;
-          const cached = typeof window !== 'undefined' ? sessionStorage.getItem(cacheKey) : null;
+          setUser(currentUser);
+          const cached = typeof window !== 'undefined' ? sessionStorage.getItem(`mockmate_profile_${currentUser.id}`) : null;
           if (cached) {
-            try {
-              setProfile(JSON.parse(cached));
-            } catch (e) { }
+            try { setProfile(JSON.parse(cached)); } catch (e) { }
           }
-
-          pollAndSetProfile(currentUser.id);
         }
+      } catch (err) {
+        console.warn("Local cookie check timed out - network might be blocking cookie refresh checks.", err);
+      }
+
+      // Step 2: Ensure valid user via Server Action (Bypasses Supabase direct client calls)
+      try {
+        const serverUser = await withTimeout(getCurrentUser(), 8000);
+        if (serverUser) {
+          setUser(serverUser as any);
+          setupProfileSubscription(serverUser.id);
+          const p = {
+            id: serverUser.id,
+            nickname: serverUser.nickname,
+            role: serverUser.role,
+            avatar_icon: serverUser.avatar_icon
+          };
+          setProfile(p as Profile);
+          if (typeof window !== 'undefined') sessionStorage.setItem(`mockmate_profile_${serverUser.id}`, JSON.stringify(p));
+        } else {
+          // Sever returned no user
+          setUser(null);
+          setProfile(null);
+        }
+      } catch (err) {
+        console.warn("Server action auth verification failed", err);
+      } finally {
         setLoading(false);
-      })
-      .catch((error) => {
-        console.warn("Auth session check failed or timed out:", error);
-        setUser(null);
-        setProfile(null);
-        setLoading(false);
-      });
+      }
+    };
+
+    initializeAuth();
 
     // Listen for changes on auth state (sign in, sign out, etc.)
     const {
@@ -190,7 +216,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (currentUser) {
         setupProfileSubscription(currentUser.id);
-        pollAndSetProfile(currentUser.id);
+        refresh(); // use the new server action refresh to grab everything robustly
       } else {
         setProfile(null);
         // Clear all mockmate profile caches on logout
