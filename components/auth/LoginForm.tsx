@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { login, signInWithSocial } from "@/app/actions/auth";
+import { useState, useCallback } from "react";
+import { login } from "@/app/actions/auth";
 import { Button } from "@/components/ui/Button";
-import { Mail, Lock, Github, Chrome, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Mail, Loader2, AlertCircle, CheckCircle2, MailCheck } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/providers/auth-provider";
+import { AlertBanner, PasswordInput, SocialButtons, inputClassName } from "./shared";
 
 export function LoginForm() {
     const [loading, setLoading] = useState(false);
@@ -14,9 +15,10 @@ export function LoginForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const signupSuccess = searchParams.get("signup") === "success";
+    const verified = searchParams.get("verified") === "true";
     const { refresh } = useAuth();
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
@@ -26,32 +28,49 @@ export function LoginForm() {
         const password = formData.get("password") as string;
 
         const result = await login({ email, password });
-        
+
         if (result.error) {
-            setError(result.error);
+            setError(
+                result.error.toLowerCase().includes("email not confirmed")
+                    ? "Your email is not verified yet. Please check your inbox for the verification link."
+                    : result.error
+            );
         } else {
-            await refresh(); // Manually refresh client-side session from server
+            await refresh();
             router.push("/");
             router.refresh();
         }
         setLoading(false);
-    };
+    }, [refresh, router]);
+
+    const forgotLink = (
+        <button type="button" className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline">
+            Forgot?
+        </button>
+    );
 
     return (
         <div className="space-y-6">
             <form onSubmit={handleSubmit} className="space-y-4">
-                {signupSuccess && !error && (
-                    <div className="flex items-center gap-2 p-3 bg-green-500/10 border border-green-500/20 rounded-xl text-green-600 dark:text-green-400 text-sm">
-                        <CheckCircle2 className="w-4 h-4 shrink-0" />
-                        <p>Registration successful! Please log in.</p>
-                    </div>
+                {verified && !error && (
+                    <AlertBanner variant="success" Icon={CheckCircle2}>
+                        <p>Email verified successfully! You can now log in.</p>
+                    </AlertBanner>
+                )}
+
+                {signupSuccess && !error && !verified && (
+                    <AlertBanner variant="info" Icon={MailCheck}>
+                        <p className="font-semibold">Account created! Check your email.</p>
+                        <p className="text-xs mt-1 opacity-80">
+                            We sent a verification link to your email. Click it to verify your account, then log in here.
+                        </p>
+                    </AlertBanner>
                 )}
 
                 {error && (
-                    <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-600 dark:text-red-400 text-sm">
-                        <AlertCircle className="w-4 h-4 shrink-0" />
+                    <AlertBanner variant="error" Icon={AlertCircle}>
                         <p>{error}</p>
-                    </div>
+                    </AlertBanner>
                 )}
 
                 <div className="space-y-2">
@@ -64,63 +83,19 @@ export function LoginForm() {
                             required
                             disabled={loading}
                             placeholder="your@email.com"
-                            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl py-3 pl-12 pr-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium disabled:opacity-50"
+                            className={inputClassName}
                         />
                     </div>
                 </div>
 
-                <div className="space-y-2">
-                    <div className="flex justify-between items-center px-1">
-                        <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Password</label>
-                        <button type="button" className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline">
-                            Forgot?
-                        </button>
-                    </div>
-                    <div className="relative group">
-                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
-                        <input
-                            name="password"
-                            type="password"
-                            required
-                            disabled={loading}
-                            placeholder="••••••••"
-                            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl py-3 pl-12 pr-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium disabled:opacity-50"
-                        />
-                    </div>
-                </div>
+                <PasswordInput disabled={loading} extra={forgotLink} />
 
                 <Button type="submit" disabled={loading} className="w-full h-12 rounded-2xl">
                     {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Log In"}
                 </Button>
             </form>
 
-            <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-200 dark:border-gray-800"></div>
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-white dark:bg-gray-900 px-4 text-gray-500">Or continue with</span>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-                <Button 
-                    onClick={() => signInWithSocial('google')}
-                    disabled={loading}
-                    variant="glass" 
-                    className="flex items-center gap-2 rounded-2xl"
-                >
-                    <Chrome className="w-4 h-4" /> Google
-                </Button>
-                <Button 
-                    onClick={() => signInWithSocial('github')}
-                    disabled={loading}
-                    variant="glass" 
-                    className="flex items-center gap-2 rounded-2xl"
-                >
-                    <Github className="w-4 h-4" /> GitHub
-                </Button>
-            </div>
+            <SocialButtons disabled={loading} />
 
             <p className="text-center text-sm text-gray-600 dark:text-gray-400">
                 Don&apos;t have an account?{" "}
