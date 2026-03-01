@@ -48,19 +48,20 @@ export function Header() {
 
   const isHomePage = pathname === "/" || pathname === "";
 
+  const isForceDarkRoute = pathname?.startsWith("/dashboard");
+
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 pointer-events-none ${
-        scrolled ? "py-2" : "py-4 sm:py-6"
-      }`}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 pointer-events-none ${scrolled ? "py-2" : "py-4 sm:py-6"
+        } ${isForceDarkRoute ? "dark" : ""}`}
     >
       <div className={`max-w-5xl mx-auto px-4 sm:px-6 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] pointer-events-auto ${scrolled ? "scale-[0.98] -translate-y-1" : "scale-100"}`}>
-        <nav 
+        <nav
           className={`
             flex items-center justify-between gap-2 p-1 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] rounded-full border shadow-sm
             bg-white/40 dark:bg-gray-900/40 backdrop-blur-md border-gray-200/30 dark:border-white/5
-            ${scrolled 
-              ? "bg-white/90 dark:bg-gray-950/90 backdrop-blur-2xl border-gray-200/50 dark:border-white/10 shadow-2xl shadow-black/5 dark:shadow-black/20" 
+            ${scrolled
+              ? "bg-white/90 dark:bg-gray-950/90 backdrop-blur-2xl border-gray-200/50 dark:border-white/10 shadow-2xl shadow-black/5 dark:shadow-black/20"
               : "hover:bg-white/60 dark:hover:bg-gray-900/60"
             }
           `}
@@ -68,12 +69,12 @@ export function Header() {
           {/* Left: Auth & Nav Cluster */}
           <div className="flex items-center">
             <UserAuthSection />
-            
+
             {!isHomePage && (
               <div className="flex items-center">
                 <div className="w-px h-4 bg-gray-200 dark:bg-gray-800 mx-1 opacity-30"></div>
-                <Link 
-                  href="/" 
+                <Link
+                  href="/"
                   className={buttonVariants({ variant: "glass", size: "sm", className: "border-0 shadow-none bg-transparent hover:bg-black/5 dark:hover:bg-white/5 rounded-full group gap-2 px-3" })}
                 >
                   <Home className="w-4 h-4 transition-transform group-hover:-translate-y-0.5 text-blue-500" />

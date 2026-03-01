@@ -73,15 +73,36 @@ function getUpstashLimiter(tier: RateLimitTier): Ratelimit | null {
 }
 
 // ── Get caller identifier ───────────────────────────────────────────────
+import { cookies } from "next/headers";
+
 function getCallerIdentifier(userId?: string | null): string {
   if (userId) return `user:${userId}`;
 
-  // Fall back to IP from headers
+  // Fallback 1: Try a stored session ID from cookies if they have interacted with the site before
+  try {
+    const cookieStore = cookies();
+    const guestSession = cookieStore.get('guest_session')?.value;
+    if (guestSession) return `guest_session:${guestSession}`;
+  } catch (e) {
+    // Ignore cookie errors
+  }
+
+  // Fallback 2: IP Address with robust proxy parsing
   try {
     const headersList = headers();
-    const forwarded = headersList.get("x-forwarded-for");
+
+    // Check multiple common headers for proxies/CDNs (Cloudflare, Vercel, generic)
+    const forwardedFor = headersList.get("x-forwarded-for");
     const realIp = headersList.get("x-real-ip");
-    return `ip:${forwarded?.split(",")[0]?.trim() || realIp || "unknown"}`;
+    const cfConnectingIp = headersList.get("cf-connecting-ip");
+    const vercelIp = headersList.get("x-vercel-forwarded-for");
+
+    // Grab the first valid IP found
+    const ipStr = cfConnectingIp || vercelIp || realIp || (forwardedFor?.split(",")[0]?.trim());
+
+    if (ipStr) return `ip:${ipStr}`;
+
+    return "ip:unknown";
   } catch {
     return "ip:unknown";
   }

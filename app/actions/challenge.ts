@@ -18,6 +18,11 @@ export async function getBobChallengeHint(problemTitle: string, userCode: string
             return { markdown: "Bob needs a breather! You've asked too many questions. Try again in a few minutes." };
         }
 
+        const problem = DAILY_PROBLEMS.find(p => p.title === problemTitle);
+        if (!problem) {
+            return { markdown: "I couldn't find that problem. Stop messing with the system!" };
+        }
+
         const apiKey = getNextKey("GROQ_API_KEY") || process.env.GROQ_API_KEY;
         if (!apiKey) throw new Error("Groq API Service configuration missing.");
 
@@ -64,6 +69,16 @@ export async function submitChallenge(problemTitle: string, code: string, langua
                 score: 0,
                 efficiency: "N/A",
                 feedback: "Bob's judging queue is full! Please wait a while before submitting again."
+            };
+        }
+
+        const problem = DAILY_PROBLEMS.find(p => p.title === problemTitle);
+        if (!problem) {
+            return {
+                success: false,
+                score: 0,
+                efficiency: "N/A",
+                feedback: "Invalid problem selected. Please try a valid daily challenge."
             };
         }
 
@@ -152,7 +167,7 @@ export async function submitChallenge(problemTitle: string, code: string, langua
                         const { error: insertError } = await adminDb.from('quiz_results').insert({
                             nickname: userNickname,
                             user_id: user.id,
-                            session_id: '00000000-0000-4000-8000-000000000000', // Valid UUID for server actions
+                            session_id: `user_session_${user.id}`, // Replaced dummy ID with user-bound ID
                             category: 'daily-challenge',
                             score: points,
                             total_questions: points,
@@ -249,7 +264,7 @@ export async function syncDailyChallenge(points: number) {
         const { error } = await adminDb.from('quiz_results').insert({
             user_id: user.id,
             nickname: userNickname,
-            session_id: '00000000-0000-4000-8000-000000000000', // Valid UUID for sync
+            session_id: `user_session_${user.id}`, // Replaced dummy ID with user-bound ID
             category: 'daily-challenge',
             score: points,
             total_questions: points,

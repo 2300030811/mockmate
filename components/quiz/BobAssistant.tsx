@@ -80,7 +80,7 @@ Code (if any): ${question.code}
     if (question) {
       setMessages([
         {
-          id: `welcome-${question.id}`,
+          id: `welcome - ${question.id}`,
           role: 'assistant',
           content: "Hi! I'm Bob. I can explain this question simply. What do you need help with?"
         }

@@ -2,7 +2,6 @@ import { Groq } from 'groq-sdk';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { BOB_SYSTEM_PROMPT } from '@/lib/constants';
 import { getNextKey } from "@/utils/keyManager";
-import { createClient } from "@/utils/supabase/server";
 
 export const runtime = 'nodejs';
 
@@ -21,27 +20,24 @@ interface RequestData {
 export async function POST(req: Request) {
   try {
     const { messages, data }: RequestData = await req.json();
-    
-    // --- SECURITY: Auth Check ---
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return new Response("Unauthorized", { status: 401 });
-    }
+
+    // --- SECURITY: Auth Check (Removed to allow guests) ---
+    // Note: Guests are still protected by our strict IP/Rate-Limiting firewall logic.
+    // We intentionally allow anonymous users to try the AI.
 
     const context = data?.context || '';
 
     const systemPrompt = `${BOB_SYSTEM_PROMPT}\n\nCONTEXT FROM CURRENT QUESTION:\n${context}`;
 
     // --- STRATEGY: Groq (Llama 3) -> Gemini (Flash) ---
-    
+
     // 1. ATTEMPT GROQ
     const groqKey = getNextKey("GROQ_API_KEY");
     if (groqKey) {
       try {
         console.log("🦁 Bob is using Groq...");
         const groq = new Groq({ apiKey: groqKey });
-        
+
         const completion = await groq.chat.completions.create({
           model: 'llama-3.3-70b-versatile',
           stream: true,
@@ -88,7 +84,7 @@ export async function POST(req: Request) {
       try {
         console.log("🦁 Bob is using Gemini...");
         const genAI = new GoogleGenerativeAI(geminiKey);
-        const model = genAI.getGenerativeModel({ 
+        const model = genAI.getGenerativeModel({
           model: "gemini-2.0-flash",
           systemInstruction: systemPrompt
         });
@@ -137,7 +133,7 @@ export async function POST(req: Request) {
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
     console.error("🔥 Bob Chat Error:", message);
-    return new Response(JSON.stringify({ error: message }), { 
+    return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });

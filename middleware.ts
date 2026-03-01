@@ -5,13 +5,13 @@ import { updateSession } from "@/utils/supabase/middleware";
 
 import { env } from "@/lib/env";
 
-const redis = (env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN) 
-  ? Redis.fromEnv() 
+const redis = (env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN)
+  ? Redis.fromEnv()
   : null;
 
 const ratelimit = redis ? new Ratelimit({
   redis,
-  limiter: Ratelimit.cachedFixedWindow(12, `${24 * 60 * 60}s`),
+  limiter: Ratelimit.slidingWindow(100, "60s"),
   ephemeralCache: new Map(),
   analytics: true,
 }) : null;
@@ -50,13 +50,13 @@ export default async function middleware(
 
 export const config = {
   matcher: [
-      "/api/:path*",
-      "/aws-quiz/:path*",
-      "/azure-quiz/:path*",
-      "/mongodb-quiz/:path*",
-      "/salesforce-quiz/:path*",
-      "/pcap-quiz/:path*",
-      "/oracle-quiz/:path*",
-      "/career-path/:path*"
+    "/api/:path*",
+    "/aws-quiz/:path*",
+    "/azure-quiz/:path*",
+    "/mongodb-quiz/:path*",
+    "/salesforce-quiz/:path*",
+    "/pcap-quiz/:path*",
+    "/oracle-quiz/:path*",
+    "/career-path/:path*"
   ],
 };

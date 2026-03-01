@@ -25,6 +25,8 @@ const QuizResults = dynamic(() => import("./QuizResults").then(mod => mod.QuizRe
   ssr: false,
 });
 
+import { useQuizKeyboardShortcuts } from "@/hooks/useQuizKeyboardShortcuts";
+
 interface UniversalQuizShellProps {
   category: "aws" | "azure" | "salesforce" | "mongodb" | "pcap" | "oracle";
   mode: QuizMode;
@@ -82,33 +84,15 @@ export function UniversalQuizShell({ category, mode, count = null }: UniversalQu
   }, [isSubmitted]);
 
   // Global Keyboard Navigation
-  useEffect(() => {
-    if (viewingResults || showConfirm) return;
-
-    const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger if user is typing in BobAssistant or any other input
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-
-      switch (e.key) {
-        case 'ArrowLeft':
-          if (currentQuestionIndex > 0) prevQuestion();
-          break;
-        case 'ArrowRight':
-          if (currentQuestionIndex < questions.length - 1) nextQuestion();
-          break;
-        case 'Enter':
-          if (currentQuestionIndex < questions.length - 1) {
-            nextQuestion();
-          } else {
-            setShowConfirm(true);
-          }
-          break;
-      }
-    };
-
-    window.addEventListener('keydown', handleGlobalKeyDown);
-    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [currentQuestionIndex, questions.length, viewingResults, showConfirm, prevQuestion, nextQuestion]);
+  useQuizKeyboardShortcuts({
+    currentQuestionIndex,
+    totalQuestions: questions.length,
+    viewingResults,
+    showConfirm,
+    prevQuestion,
+    nextQuestion,
+    onSubmit: () => setShowConfirm(true),
+  });
 
   // Memoize handlers to prevent unnecessary re-renders of children
   const onAnswerQuestion = useCallback((ans: QuizAnswer) => {

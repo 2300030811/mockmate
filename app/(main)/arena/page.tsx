@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
-import { 
-  Trophy, 
-  Flame, 
+import {
+  Trophy,
+  Flame,
   Activity,
 } from "lucide-react";
 import { NavigationPill } from "@/components/ui/NavigationPill";
@@ -76,24 +76,24 @@ export default function ArenaPage() {
 
   return (
     <div className="h-screen bg-[#050505] text-white flex flex-col overflow-hidden selection:bg-red-500/30 font-sans">
-      
+
       {/* Background Effect */}
       <div className="fixed inset-0 pointer-events-none">
-         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(220,38,38,0.08)_0%,rgba(0,0,0,1)_80%)] opacity-60" />
-         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-5" />
-         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent h-24 animate-[scan_4s_linear_infinite]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(220,38,38,0.08)_0%,rgba(0,0,0,1)_80%)] opacity-60" />
+        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-5" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent h-24 animate-[scan_4s_linear_infinite]" />
       </div>
 
-      <NavigationPill className="absolute top-7 left-6 z-[100] text-white scale-75 sm:scale-90 origin-top-left" />
+      <NavigationPill variant="dark" className="absolute top-7 left-6 z-[100] text-white scale-75 sm:scale-90 origin-top-left" />
 
       <AnimatePresence mode="wait">
         {gameState === 'lobby' && (
-          <ArenaLobby 
-            stats={lobbyStats} 
+          <ArenaLobby
+            stats={lobbyStats}
             recentMatches={recentMatches}
             selectedCategory={selectedCategory}
             onCategoryChange={setSelectedCategory}
-            onStart={startMatchmaking} 
+            onStart={startMatchmaking}
             userAvatar={avatarIcon}
           />
         )}
@@ -103,7 +103,7 @@ export default function ArenaPage() {
         )}
 
         {gameState === 'battle' && (
-          <ArenaBattle 
+          <ArenaBattle
             opponent={opponent}
             questions={questions}
             currentQuestion={currentQuestion}
@@ -120,7 +120,7 @@ export default function ArenaPage() {
         )}
 
         {gameState === 'results' && (
-          <ArenaResults 
+          <ArenaResults
             userScore={userScore}
             opponentScore={opponentScore}
             battleResults={battleResults}
