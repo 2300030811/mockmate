@@ -50,14 +50,13 @@ export default async function middleware(
 
 export const config = {
   matcher: [
-    "/api/:path*",
-    "/aws-quiz/:path*",
-    "/azure-quiz/:path*",
-    "/mongodb-quiz/:path*",
-    "/salesforce-quiz/:path*",
-    "/pcap-quiz/:path*",
-    "/oracle-quiz/:path*",
-    "/career-path/:path*",
-    "/demo/session"
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimisation files)
+     * - favicon.ico, sitemap.xml, robots.txt (metadata files)
+     * - public assets
+     */
+    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|placeholders|Memes).*)",
   ],
 };

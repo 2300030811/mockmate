@@ -8,7 +8,15 @@ import { getStreakMultiplier, calculateLevel } from "@/lib/scoring";
 
 async function fetchDashboardData(userId: string, userEmail: string | undefined) {
   const supabase = createClient();
-  const adminDb = createAdminClient();
+
+  // adminDb may throw if SUPABASE_SERVICE_ROLE_KEY is missing — fall back to anon client
+  let adminDb;
+  try {
+    adminDb = createAdminClient();
+  } catch (err) {
+    console.warn("[Dashboard] Admin client unavailable, falling back to anon client:", err instanceof Error ? err.message : err);
+    adminDb = supabase;
+  }
 
   // Parallel fetch: Profile (with stats), Quiz Results, Career Paths
   const [profileResult, quizResultsResult, careerPathsResult] = await Promise.all([
@@ -125,27 +133,33 @@ async function fetchDashboardData(userId: string, userEmail: string | undefined)
  * Cache is per-user with a 60-second TTL and tagged for on-demand revalidation.
  */
 export async function getDashboardData() {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  try {
+    const supabase = createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-  if (!user) {
+    if (authError || !user) {
+      console.error("[Dashboard] Auth failed:", authError?.message || "No user");
+      return null;
+    }
+
+    const getCachedDashboard = unstable_cache(
+      async () => {
+        // Rate limit inside cache miss — only burns a token when data is actually fetched
+        const rl = await rateLimit("default", user.id);
+        if (!rl.success) {
+          throw new Error(rl.message || "Too many requests. Please wait before refreshing.");
+        }
+        return fetchDashboardData(user.id, user.email);
+      },
+      [`dashboard-${user.id}`],
+      { revalidate: 60, tags: [`dashboard-${user.id}`] }
+    );
+
+    return getCachedDashboard();
+  } catch (err) {
+    console.error("[Dashboard] Unexpected error:", err instanceof Error ? err.message : err);
     return null;
   }
-
-  const getCachedDashboard = unstable_cache(
-    async () => {
-      // Rate limit inside cache miss — only burns a token when data is actually fetched
-      const rl = await rateLimit("default", user.id);
-      if (!rl.success) {
-        throw new Error(rl.message || "Too many requests. Please wait before refreshing.");
-      }
-      return fetchDashboardData(user.id, user.email);
-    },
-    [`dashboard-${user.id}`],
-    { revalidate: 60, tags: [`dashboard-${user.id}`] }
-  );
-
-  return getCachedDashboard();
 }
 
 /**

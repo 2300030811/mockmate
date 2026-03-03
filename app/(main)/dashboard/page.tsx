@@ -10,13 +10,22 @@ export const metadata = {
 };
 
 async function DashboardLoader() {
-  const data = await getDashboardData();
+  try {
+    const data = await getDashboardData();
 
-  if (!data) {
-    redirect("/login?redirect=/dashboard");
+    if (!data) {
+      redirect("/login?redirect=/dashboard");
+    }
+
+    return <DashboardContent data={data} />;
+  } catch (error) {
+    // If redirect() was called, re-throw it (Next.js uses throw for redirects)
+    if (error instanceof Error && error.message === "NEXT_REDIRECT") {
+      throw error;
+    }
+    // For any other error, let the error boundary handle it
+    throw error;
   }
-
-  return <DashboardContent data={data} />;
 }
 
 export default function DashboardPage() {
