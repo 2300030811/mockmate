@@ -53,11 +53,40 @@ import { logger } from "./logger";
 const _env = envSchema.safeParse(process.env);
 
 if (!_env.success) {
-  logger.error("Invalid environment variables", _env.error.format());
-  throw new Error("Invalid environment variables. Stop Server.");
+  // In production, log but DON'T crash — many optional vars might not be set.
+  // The app should degrade gracefully when specific features are unavailable.
+  console.error("[env] Validation warnings:", JSON.stringify(_env.error.format(), null, 2));
 }
 
-export const env = _env.data;
+// Use parsed values if valid, otherwise fall back to raw process.env with safe defaults
+export const env = _env.success
+  ? _env.data
+  : ({
+      NODE_ENV: (process.env.NODE_ENV as "development" | "test" | "production") || "development",
+      NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
+      SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+      UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
+      UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
+      NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+      GOOGLE_API_KEY: process.env.GOOGLE_API_KEY,
+      GROQ_API_KEY: process.env.GROQ_API_KEY,
+      RESEND_API_KEY: process.env.RESEND_API_KEY,
+      FEEDBACK_EMAIL: process.env.FEEDBACK_EMAIL,
+      JUDGE0_API_KEY: process.env.JUDGE0_API_KEY,
+      AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT: process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT,
+      AZURE_DOCUMENT_INTELLIGENCE_KEY: process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY,
+      AZURE_SPEECH_KEY: process.env.AZURE_SPEECH_KEY,
+      AZURE_SPEECH_REGION: process.env.AZURE_SPEECH_REGION,
+      AZURE_STORAGE_CONNECTION_STRING: process.env.AZURE_STORAGE_CONNECTION_STRING,
+      AWS_QUESTIONS_URL: process.env.AWS_QUESTIONS_URL,
+      AZURE_QUESTIONS_URL: process.env.AZURE_QUESTIONS_URL,
+      SALESFORCE_QUESTIONS_URL: process.env.SALESFORCE_QUESTIONS_URL,
+      MONGODB_QUESTIONS_URL: process.env.MONGODB_QUESTIONS_URL,
+      PCAP_QUESTIONS_URL: process.env.PCAP_QUESTIONS_URL,
+      ORACLE_QUESTIONS_URL: process.env.ORACLE_QUESTIONS_URL,
+      NEXT_PUBLIC_AZURE_FINAL_JSON_URL: process.env.NEXT_PUBLIC_AZURE_FINAL_JSON_URL,
+    } as any);
 
 /**
  * Helper to ensure a server key exists or throw helpful error

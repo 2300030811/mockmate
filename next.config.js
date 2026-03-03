@@ -13,9 +13,17 @@ const nextConfig = {
 
     serverActions: {
       // Extra allowed origins for reverse-proxy / preview deployments
-      allowedOrigins: process.env.NEXT_PUBLIC_APP_URL
-        ? [new URL(process.env.NEXT_PUBLIC_APP_URL).host]
-        : [],
+      allowedOrigins: (() => {
+        try {
+          const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+          if (appUrl) return [new URL(appUrl.startsWith('http') ? appUrl : `https://${appUrl}`).host];
+        } catch {}
+        try {
+          const vercelUrl = process.env.NEXT_PUBLIC_VERCEL_URL;
+          if (vercelUrl) return [vercelUrl];
+        } catch {}
+        return [];
+      })(),
     },
   },
 

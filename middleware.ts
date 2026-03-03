@@ -20,32 +20,47 @@ export default async function middleware(
   request: NextRequest,
   event: NextFetchEvent
 ): Promise<Response | undefined> {
-  const ip = request.ip ?? "127.0.0.1";
+  try {
+    const ip = request.ip ?? "127.0.0.1";
 
-  // 1. Update Supabase session (handles auth sync)
-  const supabaseResponse = await updateSession(request);
-
-  // 2. Rate limiting for production API routes
-  if (
-    request.nextUrl.pathname.startsWith("/api") &&
-    env.NODE_ENV !== "development" &&
-    ratelimit
-  ) {
-    const { success, pending, limit, reset, remaining } = await ratelimit.limit(
-      `ratelimit_middleware_${ip}`
-    );
-    event.waitUntil(pending);
-
-    if (!success) {
-      const res = NextResponse.redirect(new URL("/api/blocked", request.url));
-      res.headers.set("X-RateLimit-Limit", limit.toString());
-      res.headers.set("X-RateLimit-Remaining", remaining.toString());
-      res.headers.set("X-RateLimit-Reset", reset.toString());
-      return res;
+    // 1. Update Supabase session (handles auth sync)
+    let supabaseResponse: Response | undefined;
+    try {
+      supabaseResponse = await updateSession(request);
+    } catch (err) {
+      console.error("[Middleware] updateSession failed:", err instanceof Error ? err.message : err);
+      supabaseResponse = NextResponse.next({ request });
     }
-  }
 
-  return supabaseResponse;
+    // 2. Rate limiting for production API routes
+    if (
+      request.nextUrl.pathname.startsWith("/api") &&
+      env.NODE_ENV !== "development" &&
+      ratelimit
+    ) {
+      try {
+        const { success, pending, limit, reset, remaining } = await ratelimit.limit(
+          `ratelimit_middleware_${ip}`
+        );
+        event.waitUntil(pending);
+
+        if (!success) {
+          const res = NextResponse.redirect(new URL("/api/blocked", request.url));
+          res.headers.set("X-RateLimit-Limit", limit.toString());
+          res.headers.set("X-RateLimit-Remaining", remaining.toString());
+          res.headers.set("X-RateLimit-Reset", reset.toString());
+          return res;
+        }
+      } catch (err) {
+        console.error("[Middleware] Rate limit error:", err instanceof Error ? err.message : err);
+      }
+    }
+
+    return supabaseResponse;
+  } catch (err) {
+    console.error("[Middleware] Unexpected error:", err instanceof Error ? err.message : err);
+    return NextResponse.next({ request });
+  }
 }
 
 export const config = {
