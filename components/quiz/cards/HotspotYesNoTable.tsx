@@ -2,7 +2,7 @@
 "use client";
 
 import { HotspotQuestion } from '@/types';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Check, X } from 'lucide-react';
 import { useTheme } from '@/components/providers/providers';
 
@@ -61,7 +61,7 @@ export function HotspotYesNoTable({
             const isCorrect = currentVal === correctVal;
 
             return (
-              <motion.div
+              <m.div
                 key={rowKey}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -107,13 +107,13 @@ export function HotspotYesNoTable({
                     No
                   </button>
                 </div>
-              </motion.div>
+              </m.div>
             );
           })}
         </div>
 
         {isReviewMode && question.explanation && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className={`mt-8 p-6 border rounded-3xl ${isDark ? 'bg-blue-500/10 border-blue-500/20' : 'bg-blue-50 border-blue-100'}`}
@@ -123,7 +123,7 @@ export function HotspotYesNoTable({
               Explanation
             </div>
             <p className={`text-base md:text-lg ${isDark ? 'text-white/80' : 'text-gray-700'}`}>{question.explanation}</p>
-          </motion.div>
+          </m.div>
         )}
       </div>
     </div>

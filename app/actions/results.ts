@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin"; // Import Admin Client
 import { revalidatePath } from "next/cache";
 import { validateNickname } from "@/utils/moderation";
+import { withRetry } from "@/lib/retry";
 
 import { getRawQuestions } from "@/app/actions/quiz";
 import { checkAnswer } from "@/utils/quiz-helpers";
@@ -11,6 +12,15 @@ import { checkAnswer } from "@/utils/quiz-helpers";
 import { ActivityItem, LeaderboardItem } from "@/types/dashboard";
 import type { QuizQuestion } from "@/types";
 import { Redis } from "@upstash/redis";
+import {
+  calculateQuizXP,
+  calculateArenaXP,
+  calculateLevel,
+  calculateEloChange,
+  computeNewStreak,
+  getStreakMultiplier,
+  ELO_CONFIG,
+} from "@/lib/scoring";
 
 // Initialize Redis if configured
 const redis = (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
@@ -29,7 +39,10 @@ export async function saveQuizResult(data: {
     const adminDb = createAdminClient(); // Initialize Admin Client
 
     try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await withRetry(
+          () => supabase.auth.getUser(),
+          { retries: 1, baseDelay: 1000, label: "Save result auth" }
+        ).then(r => r).catch(() => ({ data: { user: null } }));
         const userId = user?.id || null;
 
         // Resolve nickname (Required by DB constraint)
@@ -124,7 +137,8 @@ export async function saveQuizResult(data: {
         }
 
         // Use Admin Client to INSERT
-        const { error } = await adminDb
+        const { error } = await withRetry(
+          () => Promise.resolve(adminDb
             .from('quiz_results')
             .insert({
                 session_id: data.sessionId,
@@ -134,9 +148,82 @@ export async function saveQuizResult(data: {
                 total_questions: questions.length, // Ensure strict consistency with server-side count
                 nickname: finalNickname,
                 completed_at: new Date().toISOString()
-            });
+            })),
+          { retries: 2, baseDelay: 1000, label: "Insert quiz result" }
+        );
 
         if (error) throw error;
+
+        // ── Sync XP, Streak, Elo on profiles ──
+        if (userId) {
+          try {
+            // Fetch current profile stats
+            const { data: profile } = await adminDb
+              .from("profiles")
+              .select("xp, streak, elo, last_activity_at")
+              .eq("id", userId)
+              .single();
+
+            const currentXP = profile?.xp ?? 0;
+            const currentStreak = profile?.streak ?? 0;
+            const currentElo = profile?.elo ?? ELO_CONFIG.DEFAULT_ELO;
+            const lastActivity = profile?.last_activity_at ?? null;
+
+            // Compute new streak
+            const newStreak = computeNewStreak(currentStreak, lastActivity);
+            const multiplier = getStreakMultiplier(newStreak);
+
+            // Determine if this is an arena match
+            const isArena = data.category.includes("arena");
+            const winStatus = data.category.includes(":win:")
+              ? ("win" as const)
+              : data.category.includes(":loss:")
+                ? ("loss" as const)
+                : data.category.includes(":tie:")
+                  ? ("tie" as const)
+                  : null;
+
+            let xpEarned = 0;
+            let eloChange = 0;
+
+            if (isArena && winStatus) {
+              const accuracy =
+                questions.length > 0 ? scoreToSave / questions.length : 0;
+              xpEarned = calculateArenaXP(
+                scoreToSave,
+                accuracy,
+                winStatus,
+                newStreak,
+              );
+              eloChange = calculateEloChange(
+                scoreToSave,
+                questions.length - scoreToSave, // approximate opponent score
+                winStatus,
+              );
+            } else if (data.category !== "daily-challenge") {
+              xpEarned = calculateQuizXP(scoreToSave, newStreak);
+            }
+
+            const newXP = currentXP + xpEarned;
+            const newLevel = calculateLevel(newXP);
+            const newElo = Math.max(0, currentElo + eloChange);
+
+            await adminDb
+              .from("profiles")
+              .update({
+                xp: newXP,
+                level: newLevel,
+                streak: newStreak,
+                elo: newElo,
+                last_activity_at: new Date().toISOString(),
+                streak_updated_at: new Date().toISOString(),
+              })
+              .eq("id", userId);
+          } catch (syncErr) {
+            // Non-fatal — the quiz result was saved, stats sync can be retried
+            console.error("⚠️ Failed to sync profile stats:", syncErr);
+          }
+        }
 
         revalidatePath("/");
         revalidatePath("/dashboard");
@@ -165,7 +252,10 @@ export async function getRecentResults(sessionId: string): Promise<ActivityItem[
             query = query.eq('session_id', sessionId);
         }
 
-        const { data, error } = await query;
+        const { data, error } = await withRetry(
+          () => Promise.resolve(query),
+          { retries: 2, baseDelay: 1000, label: "Fetch results" }
+        );
 
         if (error) throw error;
         return (data as ActivityItem[]) || [];
@@ -236,7 +326,7 @@ export async function getLeaderboard(category: string, timeframe: 'all-time' | '
         query = query
             .order('score', { ascending: false })
             .order('completed_at', { ascending: false })
-            .limit(300); // Balance between fairness and avoiding memory overhead
+            .limit(100); // Fetch top 100, then sort fairly by percentage to display top 50
 
         const { data, error } = await query;
         if (error) throw error;

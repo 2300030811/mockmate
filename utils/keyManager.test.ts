@@ -26,20 +26,16 @@ describe("KeyManager", () => {
     expect(km.hasKeys()).toBe(true);
   });
 
-  it("randomly selects from comma-separated keys", () => {
+  it("cycles through comma-separated keys in round-robin order", () => {
     process.env.MULTI_KEY = "key1,key2,key3";
     const km = new KeyManager("MULTI_KEY");
     
-    const selectedKeys = new Set<string>();
-    // Run enough times to likely hit all keys
-    for (let i = 0; i < 100; i++) {
-      selectedKeys.add(km.getKey());
-    }
-    
-    expect(selectedKeys.has("key1")).toBe(true);
-    expect(selectedKeys.has("key2")).toBe(true);
-    expect(selectedKeys.has("key3")).toBe(true);
-    expect(selectedKeys.size).toBe(3); // No unexpected keys
+    // Round-robin: should cycle key1 -> key2 -> key3 -> key1 -> ...
+    expect(km.getKey()).toBe("key1");
+    expect(km.getKey()).toBe("key2");
+    expect(km.getKey()).toBe("key3");
+    expect(km.getKey()).toBe("key1");
+    expect(km.getKey()).toBe("key2");
   });
 
   it("trims whitespace from keys", () => {

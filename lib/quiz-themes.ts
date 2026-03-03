@@ -20,6 +20,7 @@ export const quizThemes = {
       default: 65,
       options: [30, 50, 65]
     },
+    questionTypes: ["MCQ", "Multiple Select"],
     practice: {
       default: "all" as number | "all",
       options: [30, 50, 65, 100],
@@ -64,6 +65,7 @@ export const quizThemes = {
       default: 40,
       options: [30, 40, 50]
     },
+    questionTypes: ["MCQ", "Multiple Select", "Hotspot", "Drag & Drop", "Case Study"],
     practice: {
       default: "all" as number | "all",
       options: [30, 50, 65, 100],
@@ -108,6 +110,7 @@ export const quizThemes = {
       default: 60,
       options: [30, 45, 60]
     },
+    questionTypes: ["MCQ", "Multiple Select"],
     practice: {
       default: "all" as number | "all",
       options: [30, 60, 100],
@@ -152,6 +155,7 @@ export const quizThemes = {
       default: 60,
       options: [30, 50, 60]
     },
+    questionTypes: ["MCQ with Code Snippets", "Multiple Select"],
     practice: {
       default: "all" as number | "all",
       options: [30, 50, 60, 100],
@@ -196,6 +200,7 @@ export const quizThemes = {
       default: 40,
       options: [20, 30, 40]
     },
+    questionTypes: ["Code-Based MCQ", "Multiple Select"],
     practice: {
       default: "all" as number | "all",
       options: [20, 40, 60, 100], // Extrapolated from page
@@ -240,6 +245,7 @@ export const quizThemes = {
       default: 50,
       options: [30, 50, 65]
     },
+    questionTypes: ["Java MCQ", "SQL MCQ", "Multiple Select"],
     practice: {
       default: "all" as number | "all",
       options: [30, 50, 65, 100],

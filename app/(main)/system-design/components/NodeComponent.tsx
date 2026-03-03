@@ -1,7 +1,7 @@
 "use client";
 
 import { memo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { Trash2 } from "lucide-react";
 import { Node } from "../types";
 import { NODE_CONFIG, GRID_SIZE } from "../constants";
@@ -28,7 +28,7 @@ export const NodeComponent = memo(({
   const Config = NODE_CONFIG[node.type];
 
   return (
-    <motion.div
+    <m.div
       drag
       dragMomentum={false}
       dragElastic={0}
@@ -71,7 +71,7 @@ export const NodeComponent = memo(({
 
       <AnimatePresence>
         {isSelected && (
-          <motion.div 
+          <m.div 
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
@@ -83,10 +83,10 @@ export const NodeComponent = memo(({
              >
                <Trash2 size={12} />
              </button>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </m.div>
   );
 });
 

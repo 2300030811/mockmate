@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { Sparkles, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
@@ -19,7 +19,7 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: "1s" }}></div>
       </div>
 
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="relative z-10 w-full max-w-md"
@@ -51,7 +51,7 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
         <div className="bg-white/50 dark:bg-gray-900/50 backdrop-blur-xl border border-white/20 dark:border-white/10 p-8 rounded-3xl shadow-2xl">
           {children}
         </div>
-      </motion.div>
+      </m.div>
     </div>
   );
 }

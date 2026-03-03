@@ -13,9 +13,14 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import dynamic from "next/dynamic";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
+
+const SyntaxHighlighter = dynamic(
+  () => import("react-syntax-highlighter/dist/esm/prism").then(mod => mod.default || (mod as any).Prism),
+  { ssr: false }
+);
 import { useState } from "react";
 
 interface SuccessModalProps {
@@ -48,7 +53,7 @@ export function SuccessModal({
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
-          <motion.div
+          <m.div
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -119,7 +124,7 @@ export function SuccessModal({
 
                 <AnimatePresence>
                   {showSolution && (
-                    <motion.div
+                    <m.div
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
@@ -154,7 +159,7 @@ export function SuccessModal({
                           </div>
                         )}
                       </div>
-                    </motion.div>
+                    </m.div>
                   )}
                 </AnimatePresence>
               </div>
@@ -175,7 +180,7 @@ export function SuccessModal({
                 Get AI Code Review
               </button>
             </div>
-          </motion.div>
+          </m.div>
         </div>
       )}
     </AnimatePresence>

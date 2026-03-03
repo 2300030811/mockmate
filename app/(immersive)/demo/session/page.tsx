@@ -5,15 +5,26 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { AnimatePresence } from "framer-motion";
 import { chatWithAI, getSpeechToken } from "@/app/actions/interview";
 import { summarizeInterviewAction } from "@/app/actions/interview-summary";
-import * as SpeechSDK from "microsoft-cognitiveservices-speech-sdk";
-import { Activity, Code2, Video } from "lucide-react";
+import { saveInterviewSession } from "@/app/actions/interview-sessions";
+import type * as SpeechSDKType from "microsoft-cognitiveservices-speech-sdk";
+import { Activity, Code2, Video, Mic, Send, X, CameraOff } from "lucide-react";
+import { useSessionTimer } from "./hooks/useSessionTimer";
+
+// Lazy-load the Azure Speech SDK (~1.5MB) — only needed when Azure token is available
+let SpeechSDK: typeof SpeechSDKType | null = null;
+const loadSpeechSDK = async () => {
+  if (!SpeechSDK) {
+    SpeechSDK = await import("microsoft-cognitiveservices-speech-sdk");
+  }
+  return SpeechSDK;
+};
 
 // Components
 import { SessionHeader } from "./components/SessionHeader";
 import { SessionChat } from "./components/SessionChat";
 import { SessionVisuals } from "./components/SessionVisuals";
 import { SessionEditor } from "./components/SessionEditor";
-import { SessionInsights } from "./components/SessionInsights";
+import { SessionInsights, type InterviewAnalytics } from "./components/SessionInsights";
 import { SessionReport } from "./components/SessionReport";
 
 // --- Types for Web Speech API ---
@@ -22,38 +33,52 @@ interface IWindow extends Window {
   SpeechRecognition: any;
 }
 
-// Icons
-const MicIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-  </svg>
-);
-const SendIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-  </svg>
-);
-const CameraOffIcon = ({ className = "w-12 h-12" }: { className?: string }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3l18 18" />
-  </svg>
-);
-const XMarkIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
-  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-  </svg>
-);
-
 function InterviewSessionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const type = searchParams?.get("type") || "behavioral";
+  const ALLOWED_TYPES = ["behavioral", "technical"] as const;
+  const rawType = searchParams?.get("type") || "behavioral";
+  const type = ALLOWED_TYPES.includes(rawType as any) ? rawType : "behavioral";
+
+  const ALLOWED_DIFFICULTIES = ["junior", "mid", "senior"] as const;
+  const rawDifficulty = searchParams?.get("difficulty") || "mid";
+  const difficulty = ALLOWED_DIFFICULTIES.includes(rawDifficulty as any) ? rawDifficulty : "mid";
+  const topic = (searchParams?.get("topic") || "").slice(0, 100);
 
   // Mobile UI State
   const [mobileTab, setMobileTab] = useState<'chat' | 'code'>('chat');
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [interviewSummary, setInterviewSummary] = useState<string | null>(null);
+
+  // Session Timer with pause/resume and time limit
+  const { elapsedSeconds, isPaused, pause: pauseTimer, resume: resumeTimer, stop: stopTimer } = useSessionTimer({
+    maxSeconds: 45 * 60,
+    warnAtSeconds: 40 * 60,
+    onWarning: () => setDebugStatus("5 minutes remaining!"),
+    onTimeUp: () => handleEndSession(),
+  });
+
+  // Pause/resume handler
+  const [isSessionPaused, setIsSessionPaused] = useState(false);
+  const handlePauseResume = useCallback(() => {
+    if (isSessionPaused) {
+      resumeTimer();
+      setIsSessionPaused(false);
+      setDebugStatus("Resumed");
+      // Auto-listen after unpause
+      setTimeout(() => startListening(), 300);
+    } else {
+      pauseTimer();
+      setIsSessionPaused(true);
+      setDebugStatus("Paused");
+      // Stop all active processes
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+      setIsAISpeaking(false);
+      stopListening();
+    }
+  }, [isSessionPaused, pauseTimer, resumeTimer]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Refs
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -62,7 +87,9 @@ function InterviewSessionContent() {
   const animationFrameRef = useRef<number | null>(null);
   const hasStartedRef = useRef(false);
   const isMountedRef = useRef(true);
-  const messagesRef = useRef<{role: string, content: string}[]>([]); 
+  const messagesRef = useRef<{role: string, content: string}[]>([]);
+  const transcriptRef = useRef("");
+  const finalTranscriptRef = useRef("");
 
   // State
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
@@ -75,7 +102,6 @@ function InterviewSessionContent() {
   const [debugStatus, setDebugStatus] = useState("Initializing...");
   const [cameraActive, setCameraActive] = useState(false);
   const [permissionError, setPermissionError] = useState<string | null>(null);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [azureConfig, setAzureConfig] = useState<{ token: string; region: string } | null>(null);
 
   // Enhanced Features State
@@ -83,24 +109,36 @@ function InterviewSessionContent() {
   const [editorValue, setEditorValue] = useState("");
   const [editorLanguage, setEditorLanguage] = useState<'c' | 'cpp' | 'javascript' | 'typescript' | 'python' | 'css' | 'sql'>('c');
   const [isRunning, setIsRunning] = useState(false);
-  const [sessionStats, setSessionStats] = useState({
+  const [sessionStats, setSessionStats] = useState<InterviewAnalytics>({
     wpm: 0,
     sentiment: "Neutral",
-    keyConcepts: [] as string[],
-    confidenceScore: 0
+    keyConcepts: [],
+    confidenceScore: 0,
+    avgResponseTimeSec: 0,
+    fillerWordCount: 0,
+    fillerWordsPerMinute: 0,
+    answerDepth: "shallow",
+    starMethodCount: 0,
+    questionsCovered: 0,
+    vocabularyRichness: 0,
+    longestAnswerWords: 0,
+    shortestAnswerWords: 0,
+    technicalAccuracy: 0,
   });
 
   // Refs for Azure
-  const azureRecognizerRef = useRef<SpeechSDK.SpeechRecognizer | null>(null);
+  const azureRecognizerRef = useRef<SpeechSDKType.SpeechRecognizer | null>(null);
 
   // Refs for VAD
   const volumeDataRef = useRef<number[]>(new Array(30).fill(0));
   const silenceStartRef = useRef<number | null>(null);
   const isUserActiveRef = useRef(false);
+  const noiseFloorRef = useRef<number>(15); // Adaptive noise floor — starts at 15, calibrates to environment
+  const speechStartTimeRef = useRef<number | null>(null); // Track when user started speaking for dynamic timeout
+  const echoGuardUntilRef = useRef<number>(0); // Suppress mic input while TTS is playing + cooldown
 
   // Refs for proper cleanup of timers
   const pendingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const elapsedTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const ttsKeepAliveRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Stable callback for volume changes — avoids re-creating AudioContext in AudioVisualizer
@@ -113,25 +151,16 @@ function InterviewSessionContent() {
   const handleHomeClick = useCallback(() => router.push("/"), [router]);
 
   // Stable callback for stats updates from SessionInsights
-  const handleStatsUpdate = useCallback((stats: { wpm: number; sentiment: string; keyConcepts: string[]; confidenceScore: number }) => {
+  const handleStatsUpdate = useCallback((stats: InterviewAnalytics) => {
     setSessionStats(stats);
   }, []);
 
-  // Keep ref in sync
-  useEffect(() => {
-    messagesRef.current = messages;
-  }, [messages]);
+  // Keep refs in sync
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
+  useEffect(() => { transcriptRef.current = transcript; }, [transcript]);
+  useEffect(() => { finalTranscriptRef.current = finalTranscript; }, [finalTranscript]);
 
-  // Setup Timer
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setElapsedSeconds((prev) => prev + 1);
-    }, 1000);
-    elapsedTimerRef.current = timer;
-    return () => clearInterval(timer);
-  }, []);
-
-  const handleEndSession = async () => {
+  const handleEndSession = useCallback(async () => {
     // Cancel all speech and audio resources eagerly
     if (typeof window !== "undefined" && window.speechSynthesis) {
        window.speechSynthesis.cancel();
@@ -146,11 +175,8 @@ function InterviewSessionContent() {
        clearInterval(ttsKeepAliveRef.current);
        ttsKeepAliveRef.current = null;
     }
-    // Stop elapsed timer
-    if (elapsedTimerRef.current) {
-       clearInterval(elapsedTimerRef.current);
-       elapsedTimerRef.current = null;
-    }
+    // Stop timer
+    stopTimer();
     // Stop media stream tracks (camera + mic)
     if (streamRef.current) {
        streamRef.current.getTracks().forEach((track) => track.stop());
@@ -181,15 +207,29 @@ function InterviewSessionContent() {
     }
     setIsSummarizing(true);
     try {
-       const result = await summarizeInterviewAction(messages, type || "Technical");
+       const result = await summarizeInterviewAction(messages, type || "Technical", {
+         ...sessionStats,
+         durationSeconds: elapsedSeconds,
+       });
        setInterviewSummary(result.markdown);
+
+       // Save session to database (fire-and-forget)
+       saveInterviewSession({
+         type,
+         difficulty,
+         topic: topic || undefined,
+         messages,
+         aiSummary: result.markdown,
+         stats: sessionStats,
+         durationSeconds: elapsedSeconds,
+       }).catch((err) => console.warn("Failed to save session:", err));
     } catch (err) {
        console.error(err);
        router.push("/demo");
     } finally {
        setIsSummarizing(false);
     }
- };
+  }, [messages, type, sessionStats, elapsedSeconds, stopTimer, router]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Initialize Session, Check Support, Fetch Token
   useEffect(() => {
@@ -207,6 +247,18 @@ function InterviewSessionContent() {
       handleStartSession();
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Warn before accidental navigation / tab close
+  useEffect(() => {
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (messages.length > 1) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [messages.length]);
 
   // Main Cleanup
   useEffect(() => {
@@ -238,10 +290,6 @@ function InterviewSessionContent() {
         clearInterval(ttsKeepAliveRef.current);
         ttsKeepAliveRef.current = null;
       }
-      if (elapsedTimerRef.current) {
-        clearInterval(elapsedTimerRef.current);
-        elapsedTimerRef.current = null;
-      }
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
         animationFrameRef.current = null;
@@ -257,7 +305,13 @@ function InterviewSessionContent() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: true,
-        audio: true, // Needed for visualizer
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          channelCount: 1,
+          sampleRate: { ideal: 48000 },
+        },
       });
 
       streamRef.current = stream;
@@ -271,7 +325,13 @@ function InterviewSessionContent() {
       console.warn("Camera failed, trying audio only:", err);
       try {
         const audioStream = await navigator.mediaDevices.getUserMedia({
-          audio: true,
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+            channelCount: 1,
+            sampleRate: { ideal: 48000 },
+          },
         });
         streamRef.current = audioStream;
         setCameraActive(false);
@@ -289,16 +349,47 @@ function InterviewSessionContent() {
   };
 
   // --- 2. SPEECH RECOGNITION (The Core Logic) ---
-  const startListening = useCallback(() => {
+  const startListening = useCallback(async () => {
     if (isAISpeaking || isProcessing) return;
 
     // A. TRY AZURE SPEECH (Pro Mode)
     if (azureConfig) {
-      const speechConfig = SpeechSDK.SpeechConfig.fromAuthorizationToken(azureConfig.token, azureConfig.region);
+      const sdk = await loadSpeechSDK();
+      const speechConfig = sdk.SpeechConfig.fromAuthorizationToken(azureConfig.token, azureConfig.region);
       speechConfig.speechRecognitionLanguage = "en-US";
+      // Enable detailed output for better interim results
+      speechConfig.outputFormat = sdk.OutputFormat.Detailed;
+      // Enable dictation mode for natural speech with pauses
+      speechConfig.enableDictation();
+      // Increase initial silence timeout — prevents premature "no match" in noisy environments
+      speechConfig.setProperty("SpeechServiceConnection_InitialSilenceTimeoutMs", "10000");
+      // Increase end-of-speech silence timeout for longer thinking pauses
+      speechConfig.setProperty("SpeechServiceConnection_EndSilenceTimeoutMs", "3000");
+      // Enable noise suppression at the SDK level (Baked-in signal processing)
+      speechConfig.setProperty("SpeechContext_EnhancedAudioProcessing", "true");
       
-      const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
-      const recognizer = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
+      const audioConfig = sdk.AudioConfig.fromDefaultMicrophoneInput();
+      const recognizer = new sdk.SpeechRecognizer(speechConfig, audioConfig);
+
+      // Add phrase hints for common interview vocabulary to boost recognition accuracy
+      const phraseList = sdk.PhraseListGrammar.fromRecognizer(recognizer);
+      const interviewPhrases = [
+        // Behavioral
+        "STAR method", "situation", "task", "action", "result",
+        "cross-functional", "stakeholder", "deliverable", "KPI", "OKR",
+        // Technical
+        "API", "REST", "GraphQL", "microservices", "CI/CD", "Docker", "Kubernetes",
+        "React", "Next.js", "TypeScript", "JavaScript", "Node.js", "Python",
+        "SQL", "NoSQL", "MongoDB", "PostgreSQL", "Redis",
+        "AWS", "Azure", "GCP", "Lambda", "S3", "EC2",
+        "Big O", "time complexity", "space complexity", "algorithm", "data structure",
+        "linked list", "binary tree", "hash map", "dynamic programming",
+        "system design", "scalability", "load balancer", "caching", "CDN",
+        "agile", "scrum", "sprint", "retrospective",
+      ];
+      for (const phrase of interviewPhrases) {
+        phraseList.addPhrase(phrase);
+      }
       
       recognizer.recognizing = (s, e) => {
         setTranscript(e.result.text);
@@ -306,9 +397,22 @@ function InterviewSessionContent() {
       };
       
       recognizer.recognized = (s, e) => {
-        if (e.result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
+        if (e.result.reason === sdk.ResultReason.RecognizedSpeech) {
           setFinalTranscript((prev) => prev + " " + e.result.text);
           setTranscript("");
+        }
+      };
+
+      // Handle cancellation / errors (network drops, token expiry, etc.)
+      recognizer.canceled = (s, e) => {
+        if (e.reason === sdk.CancellationReason.Error) {
+          console.warn("Azure Speech canceled:", e.errorDetails);
+          setDebugStatus("Reconnecting...");
+          // Clean up and fall back to Web Speech API
+          try { recognizer.close(); } catch (_) {}
+          azureRecognizerRef.current = null;
+          setAzureConfig(null); // This will cause next startListening to use Web Speech
+          setIsListening(false);
         }
       };
       
@@ -338,6 +442,7 @@ function InterviewSessionContent() {
     recognition.lang = "en-US";
     recognition.continuous = true;
     recognition.interimResults = true;
+    recognition.maxAlternatives = 1; // Use best hypothesis (default, explicit for clarity)
 
     recognition.onstart = () => {
       setIsListening(true);
@@ -350,8 +455,17 @@ function InterviewSessionContent() {
       let interimTranscript = "";
       let finalTranscriptChunk = "";
       for (let i = event.resultIndex; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) finalTranscriptChunk += event.results[i][0].transcript;
-        else interimTranscript += event.results[i][0].transcript;
+        const result = event.results[i];
+        const text = result[0].transcript;
+        const confidence = result[0].confidence;
+
+        if (result.isFinal) {
+          // Skip low-confidence final results (likely noise/echo misinterpretation)
+          if (confidence > 0 && confidence < 0.4) continue;
+          finalTranscriptChunk += text;
+        } else {
+          interimTranscript += text;
+        }
       }
       const currentText = finalTranscriptChunk || interimTranscript;
       if (currentText) {
@@ -363,28 +477,68 @@ function InterviewSessionContent() {
     };
 
     recognition.onerror = (event: any) => {
-      if (event.error !== "no-speech") setDebugStatus("Error: " + event.error);
+      if (event.error === "no-speech") return; // Benign, will auto-restart via onend
+      if (event.error === "aborted") return; // Intentional stop
+      setDebugStatus("Error: " + event.error);
+      // On network error, attempt a restart after a brief delay
+      if (event.error === "network") {
+        pendingTimeoutRef.current = setTimeout(() => {
+          if (isMountedRef.current && recognitionRef.current) {
+            try { recognitionRef.current.start(); } catch (e) {}
+          }
+        }, 1000);
+      }
     };
 
     recognition.onend = () => {
-      if (isMountedRef.current && !isProcessing && !isAISpeaking) setIsListening(false);
+      if (!isMountedRef.current) return;
+      // If we're still supposed to be listening (no intentional stop), auto-restart
+      // Chrome's Web Speech API silently dies after ~60s of silence or network hiccups
+      if (!isProcessing && !isAISpeaking && recognitionRef.current === recognition) {
+        try {
+          recognition.start();
+          return; // Successfully restarted — don't flip isListening off
+        } catch (e) {
+          // start() throws if already started or other issue — fall through
+        }
+      }
+      setIsListening(false);
     };
 
     recognitionRef.current = recognition;
     recognition.start();
   }, [isAISpeaking, isProcessing, azureConfig]);
 
-  // Improved VAD & Turn-Taking Logic
+  // Improved VAD & Turn-Taking Logic with adaptive noise floor + echo guard
   useEffect(() => {
     if (!isListening || isProcessing || isAISpeaking) return;
 
-    const checkSilence = () => {
-      // Check volume-based silence
+    // Calibration: sample ambient noise for the first 500ms to set the noise floor
+    let calibrationSamples: number[] = [];
+    const calibrationEnd = Date.now() + 500;
+
+    const vadIntervalId = setInterval(() => {
       const recentVolume = volumeDataRef.current;
       const avgVolume = recentVolume.reduce((a, b) => a + b, 0) / (recentVolume.length || 1);
-      const isCurrentlySpeaking = avgVolume > 15; // Threshold for active voice
 
-      // Only trigger state update when value actually changes (avoid 60 updates/sec)
+      // Echo guard: ignore volume data while TTS echo is still decaying
+      if (Date.now() < echoGuardUntilRef.current) return;
+
+      // During calibration window, collect ambient noise samples
+      if (Date.now() < calibrationEnd) {
+        calibrationSamples.push(avgVolume);
+        // Set floor to ambient mean + margin (so speech clearly exceeds it)
+        if (calibrationSamples.length >= 3) {
+          const ambientMean = calibrationSamples.reduce((a, b) => a + b, 0) / calibrationSamples.length;
+          // Floor = ambient + 40% headroom, clamped to [8, 40] to stay sane
+          noiseFloorRef.current = Math.max(8, Math.min(40, ambientMean * 1.4 + 5));
+        }
+        return; // Don't do VAD during calibration
+      }
+
+      const isCurrentlySpeaking = avgVolume > noiseFloorRef.current;
+
+      // Only trigger state update when value actually changes
       if (isCurrentlySpeaking !== isUserActiveRef.current) {
         isUserActiveRef.current = isCurrentlySpeaking;
         setIsUserActive(isCurrentlySpeaking);
@@ -392,33 +546,33 @@ function InterviewSessionContent() {
 
       if (isCurrentlySpeaking) {
         silenceStartRef.current = null;
+        // Track when user started speaking (for dynamic silence timeout)
+        if (!speechStartTimeRef.current) speechStartTimeRef.current = Date.now();
       } else {
         if (!silenceStartRef.current) {
           silenceStartRef.current = Date.now();
         } else {
           const silenceDuration = Date.now() - silenceStartRef.current;
-          // Substantial silence after speaking (1.5 seconds)
-          if (silenceDuration > 1500 && (transcript.trim() || finalTranscript.trim())) {
+          // Dynamic silence timeout: longer answers get more grace period
+          // Short answer (<5s speaking): 1.5s silence to submit
+          // Long answer (>15s speaking): 2.5s silence before submitting
+          const speechDuration = speechStartTimeRef.current ? (Date.now() - speechStartTimeRef.current) / 1000 : 0;
+          const silenceThreshold = speechDuration > 15 ? 2500 : speechDuration > 5 ? 2000 : 1500;
+
+          if (silenceDuration > silenceThreshold && (transcriptRef.current.trim() || finalTranscriptRef.current.trim())) {
+            speechStartTimeRef.current = null; // Reset for next turn
             stopListening();
           }
         }
       }
-      
-      if (isListening) {
-        animationFrameRef.current = requestAnimationFrame(checkSilence);
-      }
-    };
+    }, 100);
 
-    animationFrameRef.current = requestAnimationFrame(checkSilence);
     return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
-      }
+      clearInterval(vadIntervalId);
     };
-  }, [isListening, isProcessing, isAISpeaking, transcript, finalTranscript]);
+  }, [isListening, isProcessing, isAISpeaking]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const stopListening = () => {
+  const stopListening = useCallback(() => {
     if (azureRecognizerRef.current) {
         const recognizer = azureRecognizerRef.current;
         azureRecognizerRef.current = null;
@@ -433,7 +587,7 @@ function InterviewSessionContent() {
       recognitionRef.current.stop();
       setIsListening(false);
     }
-  };
+  }, []);
 
   // Watch for listening end to trigger submit
   useEffect(() => {
@@ -462,7 +616,7 @@ function InterviewSessionContent() {
 
     try {
       // Server Action Call
-      const data = await chatWithAI(history, type);
+      const data = await chatWithAI(history, type, difficulty, topic);
       
       if (!isMountedRef.current) return;
 
@@ -491,9 +645,12 @@ function InterviewSessionContent() {
     setDebugStatus("AI Speaking...");
     setIsProcessing(false);
     setIsAISpeaking(true);
+    // Activate echo guard — suppress mic pickup while TTS is active
+    echoGuardUntilRef.current = Infinity;
 
     if (typeof window === "undefined" || !window.speechSynthesis) {
       setIsAISpeaking(false);
+      echoGuardUntilRef.current = 0;
       return;
     }
 
@@ -520,6 +677,8 @@ function InterviewSessionContent() {
         ttsKeepAliveRef.current = null;
       }
       if (!isMountedRef.current) return;
+      // Release echo guard after 600ms cooldown (speaker reverb / room echo decay)
+      echoGuardUntilRef.current = Date.now() + 600;
       setIsAISpeaking(false);
       setIsUserActive(false);
       setDebugStatus("Your Turn");
@@ -536,6 +695,7 @@ function InterviewSessionContent() {
         ttsKeepAliveRef.current = null;
       }
       if (!isMountedRef.current) return;
+      echoGuardUntilRef.current = 0;
       setIsAISpeaking(false);
     };
 
@@ -555,7 +715,7 @@ function InterviewSessionContent() {
     }, 10000);
   };
 
-  const handleSubmit = (textOverride?: string) => {
+  const handleSubmit = useCallback((textOverride?: string) => {
     const text = textOverride || transcript || finalTranscript;
     if (!text || !text.trim()) return;
 
@@ -563,7 +723,7 @@ function InterviewSessionContent() {
     const currentMsgs = messagesRef.current;
     
     // Safety check for duplication (basic)
-    // if (currentMsgs.length > 0 && currentMsgs[currentMsgs.length - 1].content === text) return;
+    if (currentMsgs.length > 0 && currentMsgs[currentMsgs.length - 1].content === text) return;
 
     const newHistory = [...currentMsgs, { role: "user", content: text }];
     
@@ -577,7 +737,7 @@ function InterviewSessionContent() {
 
     // 2. Call AI
     handleAIResponse(newHistory);
-  };
+  }, [transcript, finalTranscript]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="h-screen md:h-screen bg-gray-950 text-white flex flex-col overflow-hidden font-sans selection:bg-blue-500/30">
@@ -593,6 +753,8 @@ function InterviewSessionContent() {
         mobileTab={mobileTab}
         setMobileTab={setMobileTab}
         isSummarizing={isSummarizing}
+        isPaused={isSessionPaused}
+        onPauseResume={handlePauseResume}
         onEndSession={handleEndSession}
         onHomeClick={handleHomeClick}
       />
@@ -600,12 +762,17 @@ function InterviewSessionContent() {
       {/* --- Main Content --- */}
       <main className="flex-1 flex flex-col md:flex-row relative min-h-0">
         
+        {/* Screen reader status announcements */}
+        <div aria-live="polite" aria-atomic="true" className="sr-only">
+          {isAISpeaking ? "AI is speaking" : isProcessing ? "AI is thinking" : isListening ? (isUserActive ? "Detecting your voice" : "Listening for your answer") : "Ready for your input"}
+        </div>
+
         {/* Permission/Browser Error Overlay */}
         {permissionError && (
           <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="bg-gray-900 border border-red-500/30 p-6 rounded-2xl max-w-md w-full shadow-2xl text-center">
               <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CameraOffIcon className="text-red-500" />
+                <CameraOff className="text-red-500" size={32} />
               </div>
               <h3 className="text-xl font-bold text-white mb-2">Notice</h3>
               <p className="text-gray-400 mb-6">{permissionError}</p>
@@ -625,7 +792,8 @@ function InterviewSessionContent() {
             <SessionReport 
               stats={sessionStats}
               transcript={finalTranscript}
-              onClose={() => setInterviewSummary(null)}
+              aiSummary={interviewSummary}
+              durationSeconds={elapsedSeconds}
             />
           )}
         </AnimatePresence>
@@ -703,7 +871,7 @@ function InterviewSessionContent() {
       </main>
 
       {/* --- Floating Bottom Bar --- */}
-      <div className={`absolute bottom-6 left-0 right-0 items-center justify-center px-4 z-30 pointer-events-none ${mobileTab === 'code' ? 'hidden md:flex' : 'flex'}`}>
+      <div className={`absolute bottom-6 left-0 right-0 items-center justify-center px-4 z-30 pointer-events-none flex`}>
         <div className={`
             bg-gray-900/90 backdrop-blur-xl border shadow-2xl rounded-2xl p-2 flex items-center gap-2 pointer-events-auto max-w-3xl w-full transition-all duration-300
             ${isUserActive && !isAISpeaking ? "border-green-500/50 ring-1 ring-green-500/20" : "border-gray-700/50"}
@@ -735,7 +903,7 @@ function InterviewSessionContent() {
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
                 aria-label="Clear input"
               >
-                <XMarkIcon className="w-4 h-4" />
+                <X size={16} />
               </button>
             )}
           </div>
@@ -758,7 +926,7 @@ function InterviewSessionContent() {
             {isListening ? (
               <div className={`w-4 h-4 rounded-sm transition-all ${isUserActive ? "bg-white scale-125 animate-pulse" : "bg-white"}`} />
             ) : (
-              <MicIcon />
+              <Mic size={24} />
             )}
           </button>
 
@@ -776,47 +944,10 @@ function InterviewSessionContent() {
                     }
                 `}
           >
-            <SendIcon />
+            <Send size={20} />
           </button>
         </div>
       </div>
-
-      <style jsx global>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(255, 255, 255, 0.2);
-        }
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-fadeIn {
-          animation: fadeIn 0.3s ease-out forwards;
-        }
-        @keyframes mic-pulse {
-          0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
-          70% { box-shadow: 0 0 0 15px rgba(34, 197, 94, 0); }
-          100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
-        }
-        .mic-active-pulse {
-          animation: mic-pulse 1.5s infinite;
-        }
-      `}</style>
     </div>
   );
 }

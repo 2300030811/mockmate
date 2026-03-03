@@ -8,7 +8,7 @@ import { getSessionId } from "@/utils/session";
 import { useAuth } from "./providers/auth-provider";
 import { toast } from "sonner";
 import { MessageSquare, Bug, Lightbulb, HelpCircle, Loader2 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 
 interface FeedbackModalProps {
   isOpen: boolean;
@@ -64,7 +64,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
       <form onSubmit={handleSubmit} className="space-y-5">
         <AnimatePresence mode="wait">
           {isSuccess ? (
-            <motion.div
+            <m.div
               key="success-state"
               initial={{ opacity: 0, scale: 0.9, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -72,14 +72,14 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
               className="flex flex-col items-center justify-center py-12 space-y-5"
             >
               <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center">
-                <motion.svg
+                <m.svg
                   className="w-10 h-10 text-emerald-400"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
                   strokeWidth={3}
                 >
-                  <motion.path
+                  <m.path
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     d="M5 13l4 4L19 7"
@@ -87,15 +87,15 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                     animate={{ pathLength: 1 }}
                     transition={{ duration: 0.5, ease: "easeOut", delay: 0.2 }}
                   />
-                </motion.svg>
+                </m.svg>
               </div>
               <div className="text-center space-y-2">
                 <h3 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-cyan-400">Feedback Received!</h3>
                 <p className="text-sm font-medium text-gray-500 dark:text-white/60">Thank you for helping us improve MockMate.</p>
               </div>
-            </motion.div>
+            </m.div>
           ) : (
-            <motion.div
+            <m.div
               key="form-state"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -123,7 +123,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                         }`}
                     >
                       {type === item.id && (
-                        <motion.div
+                        <m.div
                           layoutId="activeType"
                           className={`absolute inset-0 ${item.bg} opacity-20`}
                         />
@@ -204,7 +204,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                   )}
                 </Button>
               </div>
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
       </form>

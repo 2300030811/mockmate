@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { useChat } from "ai/react";
 import type { QuizQuestion } from "@/types";
 
@@ -127,7 +127,7 @@ Code (if any): ${question.code}
       <AnimatePresence>
         {isOpen && (
           <>
-            <motion.div
+            <m.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -135,7 +135,7 @@ Code (if any): ${question.code}
               className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm md:bg-transparent md:backdrop-blur-none md:pointer-events-none"
             />
 
-            <motion.div
+            <m.div
               drag={!isMobile}
               dragMomentum={false}
               dragConstraints={{ left: 0, right: 0, top: -100, bottom: 0 }}
@@ -174,7 +174,7 @@ Code (if any): ${question.code}
                 onInputChange={handleInputChange}
                 onSubmit={handleSubmit}
               />
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>

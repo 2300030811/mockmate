@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
@@ -45,7 +45,7 @@ export const Modal: React.FC<ModalProps> = ({
           <FocusTrap focusTrapOptions={{ initialFocus: false, fallbackFocus: '.modal-content-area' }}>
             <div className="fixed inset-0 z-[9999] flex items-start justify-center p-4 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby="modal-description">
               <div className="min-h-screen py-24 flex items-start justify-center w-full">
-                <motion.div
+                <m.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
@@ -53,7 +53,7 @@ export const Modal: React.FC<ModalProps> = ({
                   onClick={onClose}
                   aria-hidden="true"
                 />
-                <motion.div
+                <m.div
                   initial={{ opacity: 0, scale: 0.95, y: 30 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: 30 }}
@@ -104,7 +104,7 @@ export const Modal: React.FC<ModalProps> = ({
                       {footer}
                     </div>
                   )}
-                </motion.div>
+                </m.div>
               </div>
             </div>
           </FocusTrap>

@@ -1,6 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
+import { useEffect } from "react";
 import { QuizTheme } from "@/lib/quiz-themes";
 
 interface ExamModalProps {
@@ -29,13 +30,32 @@ const CloseIcon = () => (
 );
 
 export function ExamModal({ config, examCount, setExamCount, onClose, onStart }: ExamModalProps) {
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [onClose]);
+
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
+    <m.div 
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+      onClick={onClose}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+    >
+      <m.div
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 10 }}
         transition={{ duration: 0.2 }}
         className="rounded-2xl shadow-2xl max-w-lg w-full p-6 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold">
@@ -79,7 +99,7 @@ export function ExamModal({ config, examCount, setExamCount, onClose, onStart }:
                 onClick={() => setExamCount(count)}
                 className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
                   examCount === count
-                    ? "bg-blue-600 text-white shadow-lg shadow-blue-500/30"
+                    ? config.practice.activeClass
                     : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-100 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500 dark:border-transparent"
                 }`}
               >
@@ -124,12 +144,12 @@ export function ExamModal({ config, examCount, setExamCount, onClose, onStart }:
           </button>
           <button
             onClick={onStart}
-            className="flex-[2] py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 font-bold transition shadow-lg shadow-blue-500/30"
+            className={`flex-[2] py-3 rounded-lg font-bold transition ${config.practice.activeClass}`}
           >
             Agree & Start Exam
           </button>
         </div>
-      </motion.div>
-    </div>
+      </m.div>
+    </m.div>
   );
 }

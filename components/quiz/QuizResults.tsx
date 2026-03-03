@@ -1,6 +1,6 @@
 
 import React from "react";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { CheckCircle, XCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
@@ -41,7 +41,7 @@ export const QuizResults: React.FC<QuizResultsProps> = ({
   }, [stats.passed]);
 
   const StatCard = ({ label, value, colorClass, delay }: { label: string; value: string | number; colorClass?: string; delay: number }) => (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay, type: "spring", stiffness: 200, damping: 20 }}
@@ -49,17 +49,17 @@ export const QuizResults: React.FC<QuizResultsProps> = ({
     >
       <p className="text-sm opacity-60 mb-1">{label}</p>
       <p className={`text-3xl font-bold ${colorClass || ""}`}>{value}</p>
-    </motion.div>
+    </m.div>
   );
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-950">
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="max-w-3xl w-full border rounded-3xl p-8 md:p-12 text-center shadow-2xl bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800"
       >
-        <motion.div
+        <m.div
           initial={{ scale: 0.5, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: "spring", stiffness: 300, damping: 20 }}
@@ -67,7 +67,7 @@ export const QuizResults: React.FC<QuizResultsProps> = ({
         >
           {stats.passed && <div className="absolute inset-0 rounded-full animate-ping bg-green-500/30"></div>}
           {stats.passed ? <CheckCircle className="w-12 h-12 relative z-10" /> : <XCircle className="w-12 h-12 relative z-10" />}
-        </motion.div>
+        </m.div>
         <h2 className="text-4xl md:text-5xl font-extrabold mb-3">{stats.passed ? "Congratulations!" : "Keep Practicing!"}</h2>
         <p className="text-xl opacity-60 mb-10">You&apos;ve completed the {category.toUpperCase()} {mode} session.</p>
 
@@ -84,12 +84,17 @@ export const QuizResults: React.FC<QuizResultsProps> = ({
           </div>
         )}
 
-        <div className="flex flex-wrap gap-4 justify-center">
-          <Button onClick={() => router.push(`/${category}-quiz/mode`)} variant="secondary">Back to Menu</Button>
-          <Button onClick={onReview} variant="primary">Review Answers</Button>
-          <Button onClick={onRetake} variant="outline">Retake Quiz</Button>
+        <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+          <div className="flex gap-3">
+            <Button onClick={onReview} variant="primary">Review Answers</Button>
+            <Button onClick={onRetake} variant="outline">Retake Quiz</Button>
+          </div>
+          <div className="flex gap-3">
+            <Button onClick={() => router.push(`/${category}-quiz/mode`)} variant="secondary">Back to Menu</Button>
+            <Button onClick={() => router.push('/certification')} variant="outline">Switch Cert</Button>
+          </div>
         </div>
-      </motion.div>
+      </m.div>
     </div>
   );
 };

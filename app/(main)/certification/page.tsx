@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { m } from "framer-motion";
 import Link from "next/link";
 import { 
   ArrowRight, 
@@ -12,31 +12,11 @@ import {
 import dynamic from 'next/dynamic';
 import { useTheme } from "@/components/providers/providers";
 import { NavigationPill } from "@/components/ui/NavigationPill";
+import { quizThemes } from "@/lib/quiz-themes";
 
 const BobAssistant = dynamic(() => import("@/components/quiz/BobAssistant").then(mod => mod.BobAssistant), {
   ssr: false,
 });
-
-// --- Icons ---
-const AWSIcon = () => (
-    <svg viewBox="0 0 24 24" fill="currentColor" className="w-12 h-12">
-        <path d="M12 2L2 7l10 5 10-5-10-5zm0 9l2.5-1.25L12 8.5l-2.5 1.25L12 11zm0 2.5l-5-2.5-5 2.5L12 22l10-8.5-5-2.5-5 2.5z" />
-    </svg>
-);
-
-const AzureIcon = () => (
-    <svg viewBox="0 0 24 24" fill="currentColor" className="w-12 h-12">
-        <path d="M4.2 2h15.6C21 2 22 3 22 4.2v15.6c0 1.2-1 2.2-2.2 2.2H4.2C3 22 2 21 2 19.8V4.2C2 3 3 2 4.2 2zm7.1 14.8L15.6 7l-4.3 8.3-2.1-4-2.1 4L11.3 16.8z" />
-    </svg>
-);
-
-const SalesforceIcon = () => (
-    <Zap className="w-12 h-12" />
-);
-
-const OracleIcon = () => (
-    <Terminal className="w-12 h-12" />
-);
 
 export default function CertificationSelect() {
   const { theme } = useTheme();
@@ -69,7 +49,7 @@ export default function CertificationSelect() {
 
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-20">
         {/* Title */}
-        <motion.h1
+        <m.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.1 }}
@@ -80,10 +60,10 @@ export default function CertificationSelect() {
           }`}
         >
           Select Certification
-        </motion.h1>
+        </m.h1>
 
         {/* Subtitle */}
-        <motion.p
+        <m.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
@@ -92,298 +72,184 @@ export default function CertificationSelect() {
           }`}
         >
           Choose a certification path to begin practicing
-        </motion.p>
+        </m.p>
 
         {/* Certification Cards */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.3 }}
+        <div
           className="max-w-7xl w-full grid md:grid-cols-2 lg:grid-cols-3 gap-8 px-4"
         >
-          {/* AWS Card */}
-          <Link
-            href="/aws-quiz/mode"
-            className="group relative"
-            aria-label="Select AWS Certified Cloud Practitioner"
-          >
-            <div
-              className={`relative h-full p-8 rounded-3xl transition-all duration-300 overflow-hidden ${
-                isDark
-                  ? "bg-gray-900/50 hover:bg-gray-900/70 border border-gray-800"
-                  : "bg-white hover:bg-gray-50 border border-gray-200 shadow-lg"
-              } hover:scale-105 hover:shadow-2xl`}
-            >
-              {/* Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-br from-orange-500 to-yellow-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
-
-              <div className="relative z-10 text-left h-full flex flex-col">
-                <div
-                  className={`mb-6 w-20 h-20 flex items-center justify-center rounded-2xl transform group-hover:scale-110 transition-transform duration-300 ${
-                    isDark ? "bg-orange-500/20 text-orange-400" : "bg-orange-100 text-orange-600"
-                  }`}
+          {[
+            {
+              id: "aws",
+              href: "/aws-quiz/mode",
+              title: "AWS Certified Cloud Practitioner",
+              description: "Prepare for the foundational AWS certification with comprehensive practice questions.",
+              icon: "☁️",
+              buttonText: "Start AWS Quiz",
+              accentColor: "orange",
+              gradientOverlay: "from-orange-500 to-yellow-500",
+              iconBg: "bg-orange-100 dark:bg-orange-500/20",
+              iconColor: "text-orange-600 dark:text-orange-400",
+              textColor: "text-orange-500",
+              ariaLabel: "Select AWS Certified Cloud Practitioner",
+            },
+            {
+              id: "azure",
+              href: "/azure-quiz/mode",
+              title: "Azure Fundamentals (AZ-900)",
+              description: "Master Microsoft Azure basics and cloud concepts with practice exams.",
+              icon: "🔷",
+              buttonText: "Start Azure Quiz",
+              accentColor: "cyan",
+              gradientOverlay: "from-cyan-500 to-blue-500",
+              iconBg: "bg-cyan-100 dark:bg-cyan-500/20",
+              iconColor: "text-cyan-600 dark:text-cyan-400",
+              textColor: "text-cyan-500",
+              ariaLabel: "Select Azure Fundamentals AZ-900",
+            },
+            {
+              id: "salesforce",
+              href: "/salesforce-quiz/mode",
+              title: "Salesforce Agentforce Specialist",
+              description: "Master Salesforce AI agents, prompt building, and Copilot actions.",
+              icon: <Zap className="w-12 h-12" />,
+              buttonText: "Start Salesforce Quiz",
+              accentColor: "blue",
+              gradientOverlay: "from-blue-500 to-indigo-500",
+              iconBg: "bg-blue-100 dark:bg-blue-500/20",
+              iconColor: "text-blue-600 dark:text-blue-400",
+              textColor: "text-blue-500",
+              ariaLabel: "Select Salesforce Agentforce Specialist",
+            },
+            {
+              id: "mongodb",
+              href: "/mongodb-quiz/mode",
+              title: "MongoDB Certification",
+              description: "Prepare for MongoDB Associate exams with targeted practice questions.",
+              icon: <Database className="w-12 h-12" />,
+              buttonText: "Start MongoDB Quiz",
+              accentColor: "green",
+              gradientOverlay: "from-green-500 to-teal-500",
+              iconBg: "bg-green-100 dark:bg-green-500/20",
+              iconColor: "text-green-600 dark:text-green-400",
+              textColor: "text-green-500",
+              ariaLabel: "Select MongoDB Certification",
+            },
+            {
+              id: "pcap",
+              href: "/pcap-quiz/mode",
+              title: "PCAP Python Certified Associate",
+              description: "Master Python programming with code-centric questions and real-world scenarios.",
+              icon: <Code className="w-12 h-12" />,
+              buttonText: "Start Python Quiz",
+              accentColor: "blue",
+              gradientOverlay: "from-blue-500 to-yellow-500",
+              iconBg: "bg-blue-100 dark:bg-blue-500/20",
+              iconColor: "text-blue-600 dark:text-blue-400",
+              textColor: "text-blue-500",
+              ariaLabel: "Select PCAP Python Certification",
+            },
+            {
+              id: "oracle",
+              href: "/oracle-quiz/mode",
+              title: "Oracle Certified Associate",
+              description: "Master Java and SQL concepts for Oracle certifications.",
+              icon: <Terminal className="w-12 h-12" />,
+              buttonText: "Start Oracle Quiz",
+              accentColor: "red",
+              gradientOverlay: "from-red-500 to-orange-500",
+              iconBg: "bg-red-100 dark:bg-red-500/20",
+              iconColor: "text-red-600 dark:text-red-400",
+              textColor: "text-red-500",
+              ariaLabel: "Select Oracle Certified Associate",
+            },
+          ].map((cert, idx) => {
+            const themeData = quizThemes[cert.id as keyof typeof quizThemes];
+            return (
+              <m.div
+                key={cert.id}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 + idx * 0.08, ease: "easeOut" }}
+              >
+                <Link
+                  href={cert.href}
+                  className="group relative block h-full"
+                  aria-label={cert.ariaLabel}
                 >
-                  <AWSIcon />
-                </div>
-                <h2
-                  className={`text-2xl font-bold mb-3 ${
-                    isDark ? "text-white" : "text-gray-900"
-                  }`}
-                >
-                  AWS Certified Cloud Practitioner
-                </h2>
-                <p
-                  className={`mb-6 leading-relaxed flex-grow ${
-                    isDark ? "text-gray-400" : "text-gray-600"
-                  }`}
-                >
-                  Prepare for the foundational AWS certification with comprehensive practice questions.
-                </p>
+                  <div
+                    className={`relative h-full p-8 rounded-3xl transition-all duration-300 overflow-hidden ${
+                      isDark
+                        ? "bg-gray-900/50 hover:bg-gray-900/70 border border-gray-800"
+                        : "bg-white hover:bg-gray-50 border border-gray-200 shadow-lg"
+                    } hover:scale-105 hover:shadow-2xl`}
+                  >
+                    {/* Gradient Overlay */}
+                    <div className={`absolute inset-0 bg-gradient-to-br ${cert.gradientOverlay} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}></div>
 
-                <span className="inline-flex items-center gap-2 text-orange-500 font-bold group-hover:gap-4 transition-all mt-auto">
-                  Start AWS Quiz
-                  <ArrowRight className="group-hover:translate-x-1 transition-transform" />
-                </span>
-              </div>
-            </div>
-          </Link>
+                    <div className="relative z-10 text-left h-full flex flex-col">
+                      <div
+                        className={`mb-6 w-20 h-20 flex items-center justify-center rounded-2xl transform group-hover:scale-110 transition-transform duration-300 ${cert.iconBg} ${cert.iconColor}`}
+                      >
+                        {typeof cert.icon === "string" ? (
+                          <span className="text-5xl">{cert.icon}</span>
+                        ) : (
+                          cert.icon
+                        )}
+                      </div>
+                      <h2
+                        className={`text-2xl font-bold mb-3 ${
+                          isDark ? "text-white" : "text-gray-900"
+                        }`}
+                      >
+                        {cert.title}
+                      </h2>
+                      <p
+                        className={`mb-4 leading-relaxed ${
+                          isDark ? "text-gray-400" : "text-gray-600"
+                        }`}
+                      >
+                        {cert.description}
+                      </p>
 
-          {/* Azure Card */}
-          <Link
-            href="/azure-quiz/mode"
-            className="group relative"
-            aria-label="Select Azure Fundamentals AZ-900"
-          >
-            <div
-              className={`relative h-full p-8 rounded-3xl transition-all duration-300 overflow-hidden ${
-                isDark
-                  ? "bg-gray-900/50 hover:bg-gray-900/70 border border-gray-800"
-                  : "bg-white hover:bg-gray-50 border border-gray-200 shadow-lg"
-              } hover:scale-105 hover:shadow-2xl`}
-            >
-              {/* Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-blue-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+                      {/* Exam Info */}
+                      <div className={`flex items-center gap-3 mb-4 text-xs font-medium ${
+                        isDark ? "text-gray-500" : "text-gray-400"
+                      }`}>
+                        <span>{themeData.exam.count} questions</span>
+                        <span>·</span>
+                        <span>{themeData.exam.duration} min</span>
+                        <span>·</span>
+                        <span>{themeData.exam.passingScore} to pass</span>
+                      </div>
 
-              <div className="relative z-10 text-left h-full flex flex-col">
-                <div
-                  className={`mb-6 w-20 h-20 flex items-center justify-center rounded-2xl transform group-hover:scale-110 transition-transform duration-300 ${
-                    isDark ? "bg-cyan-500/20 text-cyan-400" : "bg-cyan-100 text-cyan-600"
-                  }`}
-                >
-                  <AzureIcon />
-                </div>
-                <h2
-                  className={`text-2xl font-bold mb-3 ${
-                    isDark ? "text-white" : "text-gray-900"
-                  }`}
-                >
-                  Azure Fundamentals (AZ-900)
-                </h2>
-                <p
-                  className={`mb-6 leading-relaxed flex-grow ${
-                    isDark ? "text-gray-400" : "text-gray-600"
-                  }`}
-                >
-                  Master Microsoft Azure basics and cloud concepts with practice exams.
-                </p>
+                      {/* Question Type Badges */}
+                      <div className="flex flex-wrap gap-1.5 mb-6">
+                        {themeData.questionTypes?.map((type, i) => (
+                          <span
+                            key={i}
+                            className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
+                              isDark
+                                ? "bg-white/5 border-white/10 text-gray-400"
+                                : "bg-gray-100 border-gray-200 text-gray-500"
+                            }`}
+                          >
+                            {type}
+                          </span>
+                        ))}
+                      </div>
 
-                <span className="inline-flex items-center gap-2 text-cyan-500 font-bold group-hover:gap-4 transition-all mt-auto">
-                  Start Azure Quiz
-                  <ArrowRight className="group-hover:translate-x-1 transition-transform" />
-                </span>
-                </div>
-            </div>
-          </Link>
-
-
-          {/* Salesforce Card */}
-          <Link
-            href="/salesforce-quiz/mode"
-            className="group relative"
-            aria-label="Select Salesforce Agentforce Specialist"
-          >
-            <div
-              className={`relative h-full p-8 rounded-3xl transition-all duration-300 overflow-hidden ${
-                isDark
-                  ? "bg-gray-900/50 hover:bg-gray-900/70 border border-gray-800"
-                  : "bg-white hover:bg-gray-50 border border-gray-200 shadow-lg"
-              } hover:scale-105 hover:shadow-2xl`}
-            >
-              {/* Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
-
-              <div className="relative z-10 text-left h-full flex flex-col">
-                <div
-                  className={`mb-6 w-20 h-20 flex items-center justify-center rounded-2xl transform group-hover:scale-110 transition-transform duration-300 ${
-                    isDark ? "bg-blue-500/20 text-blue-400" : "bg-blue-100 text-blue-600"
-                  }`}
-                >
-                  <SalesforceIcon />
-                </div>
-                <h2
-                  className={`text-2xl font-bold mb-3 ${
-                    isDark ? "text-white" : "text-gray-900"
-                  }`}
-                >
-                  Salesforce Agentforce Specialist
-                </h2>
-                <p
-                  className={`mb-6 leading-relaxed flex-grow ${
-                    isDark ? "text-gray-400" : "text-gray-600"
-                  }`}
-                >
-                  Master Salesforce AI agents, prompt building, and Copilot actions.
-                </p>
-
-                <span className="inline-flex items-center gap-2 text-blue-500 font-bold group-hover:gap-4 transition-all mt-auto">
-                  Start Salesforce Quiz
-                  <ArrowRight className="group-hover:translate-x-1 transition-transform" />
-                </span>
-              </div>
-            </div>
-          </Link>
-
-          {/* MongoDB Card */}
-          <Link
-            href="/mongodb-quiz/mode"
-            className="group relative"
-            aria-label="Select MongoDB Certification"
-          >
-            <div
-              className={`relative h-full p-8 rounded-3xl transition-all duration-300 overflow-hidden ${
-                isDark
-                  ? "bg-gray-900/50 hover:bg-gray-900/70 border border-gray-800"
-                  : "bg-white hover:bg-gray-50 border border-gray-200 shadow-lg"
-              } hover:scale-105 hover:shadow-2xl`}
-            >
-              {/* Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-br from-green-500 to-teal-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
-
-              <div className="relative z-10 text-left h-full flex flex-col">
-                <div
-                  className={`mb-6 w-20 h-20 flex items-center justify-center rounded-2xl transform group-hover:scale-110 transition-transform duration-300 ${
-                    isDark ? "bg-green-500/20 text-green-400" : "bg-green-100 text-green-600"
-                  }`}
-                >
-                  <Database className="w-12 h-12" />
-                </div>
-                <h2
-                  className={`text-2xl font-bold mb-3 ${
-                    isDark ? "text-white" : "text-gray-900"
-                  }`}
-                >
-                  MongoDB Certification
-                </h2>
-                <p
-                  className={`mb-6 leading-relaxed flex-grow ${
-                    isDark ? "text-gray-400" : "text-gray-600"
-                  }`}
-                >
-                  Prepare for MongoDB Associate exams with targeted practice questions.
-                </p>
-
-                <span className="inline-flex items-center gap-2 text-green-500 font-bold group-hover:gap-4 transition-all mt-auto">
-                  Start MongoDB Quiz
-                  <ArrowRight className="group-hover:translate-x-1 transition-transform" />
-                </span>
-              </div>
-            </div>
-          </Link>
-
-          {/* PCAP Card */}
-          <Link
-            href="/pcap-quiz/mode"
-            className="group relative"
-            aria-label="Select PCAP Python Certification"
-          >
-            <div
-              className={`relative h-full p-8 rounded-3xl transition-all duration-300 overflow-hidden ${
-                isDark
-                  ? "bg-gray-900/50 hover:bg-gray-900/70 border border-gray-800"
-                  : "bg-white hover:bg-gray-50 border border-gray-200 shadow-lg"
-              } hover:scale-105 hover:shadow-2xl`}
-            >
-              {/* Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-yellow-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
-
-              <div className="relative z-10 text-left h-full flex flex-col">
-                <div
-                  className={`mb-6 w-20 h-20 flex items-center justify-center rounded-2xl transform group-hover:scale-110 transition-transform duration-300 ${
-                    isDark ? "bg-blue-500/20 text-blue-400" : "bg-blue-100 text-blue-600"
-                  }`}
-                >
-                  <Code className="w-12 h-12" />
-                </div>
-                <h2
-                  className={`text-2xl font-bold mb-3 ${
-                    isDark ? "text-white" : "text-gray-900"
-                  }`}
-                >
-                  PCAP Python Certified Associate
-                </h2>
-                <p
-                  className={`mb-6 leading-relaxed flex-grow ${
-                    isDark ? "text-gray-400" : "text-gray-600"
-                  }`}
-                >
-                  Master Python programming with code-centric questions and real-world scenarios.
-                </p>
-
-                <span className="inline-flex items-center gap-2 text-blue-500 font-bold group-hover:gap-4 transition-all mt-auto">
-                  Start Python Quiz
-                  <ArrowRight className="group-hover:translate-x-1 transition-transform" />
-                </span>
-              </div>
-            </div>
-          </Link>
-
-          {/* Oracle Card */}
-          <Link
-            href="/oracle-quiz/mode"
-            className="group relative"
-            aria-label="Select Oracle Certified Associate"
-          >
-            <div
-              className={`relative h-full p-8 rounded-3xl transition-all duration-300 overflow-hidden ${
-                isDark
-                  ? "bg-gray-900/50 hover:bg-gray-900/70 border border-gray-800"
-                  : "bg-white hover:bg-gray-50 border border-gray-200 shadow-lg"
-              } hover:scale-105 hover:shadow-2xl`}
-            >
-              {/* Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-br from-red-500 to-orange-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
-
-              <div className="relative z-10 text-left h-full flex flex-col">
-                <div
-                  className={`mb-6 w-20 h-20 flex items-center justify-center rounded-2xl transform group-hover:scale-110 transition-transform duration-300 ${
-                    isDark ? "bg-red-500/20 text-red-400" : "bg-red-100 text-red-600"
-                  }`}
-                >
-                  <OracleIcon />
-                </div>
-                <h2
-                  className={`text-2xl font-bold mb-3 ${
-                    isDark ? "text-white" : "text-gray-900"
-                  }`}
-                >
-                  Oracle Certified Associate
-                </h2>
-                <p
-                  className={`mb-6 leading-relaxed flex-grow ${
-                    isDark ? "text-gray-400" : "text-gray-600"
-                  }`}
-                >
-                  Master Java and SQL concepts for Oracle certifications.
-                </p>
-
-                <span className="inline-flex items-center gap-2 text-red-500 font-bold group-hover:gap-4 transition-all mt-auto">
-                  Start Oracle Quiz
-                  <ArrowRight className="group-hover:translate-x-1 transition-transform" />
-                </span>
-              </div>
-            </div>
-          </Link>
-        </motion.div>
+                      <span className={`inline-flex items-center gap-2 ${cert.textColor} font-bold group-hover:gap-4 transition-all mt-auto`}>
+                        {cert.buttonText}
+                        <ArrowRight className="group-hover:translate-x-1 transition-transform" />
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              </m.div>
+            );
+          })}
+        </div>
 
 
 

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuiz } from "@/hooks/useQuiz";
 import { QuizMode } from "@/types";
 import { QuestionRenderer } from "./QuestionRenderer";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Modal } from "@/components/ui/Modal";
@@ -176,7 +176,7 @@ export function UniversalQuizShell({ category, mode, count = null }: UniversalQu
 
               {/* Question Content */}
               <AnimatePresence mode="wait">
-                <motion.div
+                <m.div
                   key={currentQ.id}
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -193,7 +193,7 @@ export function UniversalQuizShell({ category, mode, count = null }: UniversalQu
 
                     mode={mode}
                   />
-                </motion.div>
+                </m.div>
               </AnimatePresence>
             </div>
           </main>

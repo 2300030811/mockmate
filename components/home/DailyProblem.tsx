@@ -1,15 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Code2, ChevronRight, Zap, Target, Flame, CheckCircle2 } from "lucide-react";
+import { m } from "framer-motion";
+import { Code2, ChevronRight, Zap, Target, Flame, CheckCircle2, TrendingUp } from "lucide-react";
 import Link from "next/link";
-import { useDailyStreak } from "@/hooks/useDailyStreak";
+import { useStreak } from "@/hooks/useStreak";
 import { DAILY_PROBLEMS } from "@/utils/daily-problems";
-import { syncDailyChallenge } from "@/app/actions/challenge";
 
 export function DailyProblem() {
-  const { streak, points, solvedToday, isLoaded } = useDailyStreak();
+  const { streak, solvedToday, isLoaded, streakMultiplier } = useStreak();
   const [problem, setProblem] = useState(DAILY_PROBLEMS[0]);
 
   // Mock rotating problem based on day
@@ -18,19 +17,10 @@ export function DailyProblem() {
     setProblem(DAILY_PROBLEMS[day % DAILY_PROBLEMS.length]);
   }, []);
 
-  // Self-healing: If solved locally, ensure server knows about it
-  useEffect(() => {
-    if (isLoaded && solvedToday && problem) {
-        syncDailyChallenge(problem.points).catch(err => 
-            console.error("Background sync failed:", err)
-        );
-    }
-  }, [isLoaded, solvedToday, problem]);
-
   if (!isLoaded || !problem) return null; // Prevent hydration mismatch or flash if data missing
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       className="relative group mt-12 overflow-hidden rounded-[2rem] border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-900/40 backdrop-blur-md p-8 md:p-10 shadow-xl dark:shadow-none"
@@ -54,6 +44,12 @@ export function DailyProblem() {
                     <div className="flex items-center gap-1 text-orange-500 dark:text-orange-400 text-xs font-bold animate-pulse" title="Current Daily Streak">
                     <Flame size={14} className="fill-current" />
                     {streak} Day Streak
+                    </div>
+                )}
+                {streakMultiplier > 1 && (
+                    <div className="flex items-center gap-1 text-emerald-500 dark:text-emerald-400 text-xs font-bold" title="Streak XP Multiplier">
+                    <TrendingUp size={14} />
+                    {streakMultiplier}x XP
                     </div>
                 )}
             </div>
@@ -97,7 +93,7 @@ export function DailyProblem() {
             {solvedToday ? <CheckCircle2 size={20} /> : <ChevronRight className="group-hover/btn:translate-x-1 transition-transform" />}
           </Link>
           <p className="text-center md:text-right mt-3 text-[10px] text-gray-400 dark:text-gray-500 uppercase font-bold tracking-widest">
-            {points > 0 ? `Total Points: ${points}` : "3,421 users solved today"}
+            {solvedToday ? "Keep it up!" : "Challenge yourself with today's problem"}
           </p>
         </div>
       </div>
@@ -106,6 +102,6 @@ export function DailyProblem() {
       <div className="absolute right-10 bottom-10 opacity-5 pointer-events-none group-hover:scale-110 transition-transform duration-700">
         <Code2 size={120} className="text-gray-900 dark:text-white" />
       </div>
-    </motion.div>
+    </m.div>
   );
 }

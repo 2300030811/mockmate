@@ -1,13 +1,17 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { Upload, FileText, CheckCircle2, AlertCircle, Briefcase, ArrowRight, Flame, Sparkles } from "lucide-react";
 
+const MAX_FILE_SIZE_MB = 10;
+
 const JOB_PRESETS = [
-  { label: "Frontend Dev", value: "Senior Frontend Engineer with expertise in React, Next.js, and CSS animations. Focus on UI/UX and performance." },
-  { label: "Backend Dev", value: "Backend Engineer specialized in Node.js, PostgreSQL, and system design. Scale-heavy experience required." },
-  { label: "Product Manager", value: "Product Manager with 5+ years experience in SaaS, user research, and data-driven roadmapping." },
-  { label: "Data Scientist", value: "Data Scientist proficient in Python, PyTorch, and large-scale data modeling. PhD preferred." }
+  { label: "Frontend Dev", value: "Senior Frontend Engineer with expertise in React, Next.js, TypeScript, and CSS animations. Focus on UI/UX, web performance, and responsive design. Experience with testing frameworks like Jest or Playwright." },
+  { label: "Backend Dev", value: "Backend Engineer specialized in Node.js, Python, PostgreSQL, Redis, and system design. Experience with microservices, REST/GraphQL APIs, and cloud infrastructure (AWS/GCP). Scale-heavy experience required." },
+  { label: "Full Stack", value: "Full Stack Developer proficient in React, Node.js, TypeScript, and cloud services. Experience with CI/CD pipelines, Docker, database design, and agile development practices." },
+  { label: "Product Manager", value: "Product Manager with 5+ years experience in SaaS, user research, A/B testing, and data-driven roadmapping. Strong stakeholder communication and technical understanding." },
+  { label: "Data Scientist", value: "Data Scientist proficient in Python, PyTorch, TensorFlow, SQL, and large-scale data modeling. Experience with ML pipelines, statistical analysis, and data visualization. PhD preferred." },
+  { label: "DevOps", value: "DevOps Engineer with expertise in AWS/Azure/GCP, Kubernetes, Docker, Terraform, CI/CD, and monitoring tools. Strong scripting skills in Bash/Python. SRE experience a plus." },
 ];
 
 interface ResumeUploadProps {
@@ -38,7 +42,7 @@ export function ResumeUpload({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       {/* Upload Zone */}
-      <motion.div
+      <m.div
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.1 }}
@@ -56,6 +60,7 @@ export function ResumeUpload({
               type="file"
               accept=".pdf"
               onChange={onFileChange}
+              aria-label="Upload resume PDF file"
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
             />
             <div className="flex flex-col items-center text-center">
@@ -73,7 +78,7 @@ export function ResumeUpload({
                     <FileText className="text-gray-400" size={32} />
                   </div>
                   <p className="font-bold text-lg mb-1">Click or drag PDF</p>
-                  <p className="text-sm text-gray-500 italic">Select your &quot;standard&quot; resume</p>
+                  <p className="text-sm text-gray-500 italic">Select your &quot;standard&quot; resume (PDF, max {MAX_FILE_SIZE_MB}MB)</p>
                 </>
               )}
             </div>
@@ -84,10 +89,10 @@ export function ResumeUpload({
             </div>
           )}
         </div>
-      </motion.div>
+      </m.div>
 
       {/* Job Description */}
-      <motion.div
+      <m.div
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.2 }}
@@ -96,7 +101,8 @@ export function ResumeUpload({
         <div className="bg-gray-900/50 border border-gray-800 rounded-3xl p-8 backdrop-blur-xl h-full flex flex-col group hover:border-blue-500/30 transition-all">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold flex items-center gap-3">
-              <Briefcase className="text-blue-500" /> 2. Target Job (Optional)
+              <Briefcase className="text-blue-500" /> 2. Target Job
+              <span className="text-[9px] font-black uppercase text-yellow-400 bg-yellow-500/10 border border-yellow-500/20 px-2 py-0.5 rounded-md tracking-wider ml-1">Recommended</span>
             </h2>
             <div className="flex flex-wrap gap-2">
               {JOB_PRESETS.map((p) => (
@@ -111,11 +117,16 @@ export function ResumeUpload({
             </div>
           </div>
           <textarea
-            placeholder="Paste the job description here to get a tailored roast..."
+            placeholder="Paste the job description here for accurate ATS keyword matching..."
             value={jobDescription}
             onChange={(e) => setJobDescription(e.target.value)}
-            className="flex-1 w-full min-h-[160px] bg-gray-800/50 border border-gray-700 rounded-2xl p-6 text-gray-200 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none transition-all mb-4 font-mono text-sm leading-relaxed"
+            className="flex-1 w-full min-h-[160px] bg-gray-800/50 border border-gray-700 rounded-2xl p-6 text-gray-200 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none transition-all mb-2 font-mono text-sm leading-relaxed"
           />
+          {!jobDescription && (
+            <p className="text-[10px] text-gray-500 italic mb-2 px-1">
+              Without a job description, ATS analysis is limited to general best practices (max score: 70).
+            </p>
+          )}
           <button 
             onClick={() => setJobDescription("")}
             className="text-[10px] font-black text-gray-600 hover:text-gray-400 self-end uppercase tracking-widest transition-colors"
@@ -123,7 +134,7 @@ export function ResumeUpload({
             Clear Description
           </button>
         </div>
-      </motion.div>
+      </m.div>
 
       {/* Action Button */}
       <div className="lg:col-span-2 space-y-8 pt-8 flex flex-col items-center">
@@ -132,6 +143,7 @@ export function ResumeUpload({
             <button
               key={t}
               onClick={() => setSelectedTone(t)}
+              aria-pressed={selectedTone === t}
               className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${
                 selectedTone === t 
                   ? 'bg-orange-600 text-white shadow-lg' 
@@ -146,6 +158,7 @@ export function ResumeUpload({
         <button
           onClick={onRoast}
           disabled={!file || isRoasting}
+          aria-label={isRoasting ? "Analyzing resume" : "Start resume analysis"}
           className={`
             relative group px-12 py-5 rounded-full font-black text-xl transition-all overflow-hidden
             ${!file ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-gradient-to-r from-orange-600 to-red-600 text-white hover:scale-105 active:scale-95 shadow-2xl shadow-orange-600/20'}
@@ -162,14 +175,14 @@ export function ResumeUpload({
         </button>
         
         {isRoasting && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className="mt-8 w-full max-w-md flex flex-col items-center gap-3"
           >
             <div className="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden relative">
               <div className="absolute inset-0 bg-orange-500/20 blur-sm"></div>
-              <motion.div 
+              <m.div 
                 animate={{ width: ["0%", "95%"] }}
                 transition={{ duration: 15, ease: "easeOut" }}
                 className="h-full bg-gradient-to-r from-orange-500 to-red-500 relative z-10"
@@ -178,7 +191,7 @@ export function ResumeUpload({
             <p className="text-orange-400 font-medium italic h-6 text-sm text-center">
               {loadingMessage}
             </p>
-          </motion.div>
+          </m.div>
         )}
       </div>
     </div>

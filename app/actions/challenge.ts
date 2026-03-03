@@ -9,13 +9,19 @@ import { createAdminClient } from "@/utils/supabase/admin";
 import { DAILY_PROBLEMS } from "@/utils/daily-problems";
 import { calculateStreak } from "@/utils/streak";
 import { rateLimit } from "@/lib/rate-limit";
+import {
+  calculateDailyChallengeXP,
+  calculateLevel,
+  computeNewStreak,
+  getStreakMultiplier,
+} from "@/lib/scoring";
 
 export async function getBobChallengeHint(problemTitle: string, userCode: string, language: string) {
     try {
         // Rate limit hint requests
-        const { success: withinLimit } = await rateLimit("challenge");
+        const { success: withinLimit, message: limitMsg } = await rateLimit("challenge");
         if (!withinLimit) {
-            return { markdown: "Bob needs a breather! You've asked too many questions. Try again in a few minutes." };
+            return { markdown: limitMsg || "Bob needs a breather! You've asked too many questions. Try again in a few minutes." };
         }
 
         const problem = DAILY_PROBLEMS.find(p => p.title === problemTitle);
@@ -62,13 +68,13 @@ export async function getBobChallengeHint(problemTitle: string, userCode: string
 export async function submitChallenge(problemTitle: string, code: string, language: string, output: string) {
     try {
         // Rate limit challenge submissions
-        const { success: withinLimit } = await rateLimit("challenge");
+        const { success: withinLimit, message: limitMsg } = await rateLimit("challenge");
         if (!withinLimit) {
             return {
                 success: false,
                 score: 0,
                 efficiency: "N/A",
-                feedback: "Bob's judging queue is full! Please wait a while before submitting again."
+                feedback: limitMsg || "Bob's judging queue is full! Please wait a while before submitting again."
             };
         }
 
@@ -202,33 +208,49 @@ export async function getServerDailyStats() {
     const adminDb = createAdminClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    if (!user) return { streak: 0, points: 0, solvedToday: false };
+    if (!user) return { streak: 0, points: 0, solvedToday: false, xp: 0, level: 1, elo: 1000, streakMultiplier: 1.0 };
 
-    // Fetch all daily challenge results for this user
-    const { data: results } = await adminDb
+    // Fetch profile stats (materialised) + daily-challenge results for solvedToday check
+    const [profileResult, dailyResult] = await Promise.all([
+      adminDb
+        .from('profiles')
+        .select('xp, level, streak, elo')
+        .eq('id', user.id)
+        .single(),
+      adminDb
         .from('quiz_results')
         .select('completed_at, score')
         .eq('user_id', user.id)
         .eq('category', 'daily-challenge')
-        .order('completed_at', { ascending: false });
+        .order('completed_at', { ascending: false })
+        .limit(1),
+    ]);
 
-    if (!results || results.length === 0) return { streak: 0, points: 0, solvedToday: false };
-
-    const points = results.reduce((acc, curr) => acc + (curr.score || 0), 0);
+    const profile = profileResult.data;
+    const streak = profile?.streak ?? 0;
+    const xp = profile?.xp ?? 0;
+    const level = profile?.level ?? 1;
+    const elo = profile?.elo ?? 1000;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Solved Today?
-    const lastSolved = new Date(results[0].completed_at);
-    lastSolved.setHours(0, 0, 0, 0);
+    let solvedToday = false;
+    if (dailyResult.data && dailyResult.data.length > 0) {
+      const lastSolved = new Date(dailyResult.data[0].completed_at);
+      lastSolved.setHours(0, 0, 0, 0);
+      solvedToday = lastSolved.getTime() === today.getTime();
+    }
 
-    const solvedToday = lastSolved.getTime() === today.getTime();
-
-    // Use shared streak utility
-    const streak = calculateStreak(results.map(r => r.completed_at));
-
-    return { streak, points, solvedToday };
+    return {
+      streak,
+      points: xp, // renamed for clarity — total XP
+      solvedToday,
+      xp,
+      level,
+      elo,
+      streakMultiplier: getStreakMultiplier(streak),
+    };
 }
 
 export async function syncDailyChallenge(points: number) {
@@ -254,27 +276,51 @@ export async function syncDailyChallenge(points: number) {
         // Fetch nickname required by DB constraint
         const { data: profile } = await adminDb
             .from('profiles')
-            .select('nickname')
+            .select('nickname, xp, streak, last_activity_at')
             .eq('id', user.id)
             .single();
 
         const userNickname = profile?.nickname || 'User';
 
         console.log(`[Sync] Restoring missing daily challenge for user ${user.id}`);
+        // Fix: Use score=1, total_questions=1 to avoid inflating avgScore
         const { error } = await adminDb.from('quiz_results').insert({
             user_id: user.id,
             nickname: userNickname,
-            session_id: `user_session_${user.id}`, // Replaced dummy ID with user-bound ID
+            session_id: `user_session_${user.id}`,
             category: 'daily-challenge',
-            score: points,
-            total_questions: points,
+            score: 1,
+            total_questions: 1,
             completed_at: new Date().toISOString()
         });
 
         if (error) {
             console.error("[Sync] Failed to restore challenge:", error);
-            // Return stringified error for visibility in client console
             return { success: false, errorMessage: error.message || JSON.stringify(error) };
+        }
+
+        // Sync XP and streak on profiles
+        try {
+            const currentXP = profile?.xp ?? 0;
+            const currentStreak = profile?.streak ?? 0;
+            const lastActivity = profile?.last_activity_at ?? null;
+
+            const newStreak = computeNewStreak(currentStreak, lastActivity);
+            const xpEarned = calculateDailyChallengeXP(points, newStreak);
+            const newXP = currentXP + xpEarned;
+
+            await adminDb
+                .from('profiles')
+                .update({
+                    xp: newXP,
+                    level: calculateLevel(newXP),
+                    streak: newStreak,
+                    last_activity_at: new Date().toISOString(),
+                    streak_updated_at: new Date().toISOString(),
+                })
+                .eq('id', user.id);
+        } catch (syncErr) {
+            console.error("\u26A0\uFE0F Failed to sync daily challenge stats (sync):", syncErr);
         }
 
         revalidatePath('/dashboard');

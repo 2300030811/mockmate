@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { Minimize2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
@@ -13,7 +13,7 @@ export const ReviewModal = memo(({ reviewResult, onClose, theme }: ReviewModalPr
   return (
     <AnimatePresence>
       {reviewResult && (
-         <motion.aside initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} className={`fixed right-0 top-0 h-full w-full md:w-[600px] border-l z-50 pt-14 md:pt-0 overflow-hidden flex flex-col shadow-[0_0_100px_rgba(0,0,0,0.5)] transition-colors duration-500 ${theme === "light" ? "bg-white border-gray-200" : "bg-[#0A0A0A] border-white/10"}`}>
+         <m.aside initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} className={`fixed right-0 top-0 h-full w-full md:w-[600px] border-l z-50 pt-14 md:pt-0 overflow-hidden flex flex-col shadow-[0_0_100px_rgba(0,0,0,0.5)] transition-colors duration-500 ${theme === "light" ? "bg-white border-gray-200" : "bg-[#0A0A0A] border-white/10"}`}>
              <div className={`h-16 px-8 border-b flex items-center justify-between shrink-0 backdrop-blur-md ${theme === "light" ? "bg-gray-50/80 border-gray-200" : "bg-gray-950/80 border-white/10"}`}>
                 <div className="flex items-center gap-3">
                    <div className="w-2.5 h-2.5 bg-indigo-500 rounded-full animate-pulse shadow-[0_0_15px_#6366f1]" />
@@ -33,7 +33,7 @@ export const ReviewModal = memo(({ reviewResult, onClose, theme }: ReviewModalPr
                 </div>
                 <button onClick={onClose} className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-black uppercase tracking-widest rounded-2xl shadow-xl transition-all">Dismiss Analysis</button>
              </div>
-         </motion.aside>
+         </m.aside>
       )}
     </AnimatePresence>
   );

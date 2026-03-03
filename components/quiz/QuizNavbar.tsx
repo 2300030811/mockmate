@@ -42,7 +42,7 @@ export const QuizNavbar = memo(({
   setSidebarOpen,
 }: QuizNavbarProps) => {
   const router = useRouter();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const isDark = theme === "dark";
 
   const categoryName = category.toUpperCase();
@@ -77,7 +77,7 @@ export const QuizNavbar = memo(({
         </div>
 
         <Button
-          onClick={toggleTheme}
+          onClick={() => setTheme(isDark ? "light" : "dark")}
           variant="ghost"
           size="icon"
           className={isDark ? "text-yellow-400" : "text-gray-600"}

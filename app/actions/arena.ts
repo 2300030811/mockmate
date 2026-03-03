@@ -71,9 +71,8 @@ export async function getArenaStats() {
     
     if (!data) return null;
 
-    // Calculate a mock Elo based on XP for now, or just use XP
-    // Elo starts at 1000 + (totalXP / 10)
-    const elo = 1000 + Math.floor(data.stats.xp / 10);
+    // Elo is now materialised on the profiles table
+    const elo = data.stats.elo ?? 1000;
     
     // Recent arena activity
     const arenaResults = data.recentActivity

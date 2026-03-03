@@ -2,7 +2,7 @@
 "use client";
 
 import { DragDropQuestion } from '@/types';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Move, X, GripVertical } from 'lucide-react';
 import { useState, useCallback } from 'react';
 import { useTheme } from '@/components/providers/providers';
@@ -80,7 +80,7 @@ export function DragDropBoard({
                                     const isSelected = selectedItem === opt;
 
                                     return (
-                                        <motion.button
+                                        <m.button
                                             key={opt}
                                             layoutId={`option-${opt}`}
                                             onClick={() => handleSelect(opt)}
@@ -107,7 +107,7 @@ export function DragDropBoard({
                                             {isSelected && (
                                                 <div className="absolute inset-0 border-2 border-blue-500 rounded-xl pointer-events-none animate-pulse" />
                                             )}
-                                        </motion.button>
+                                        </m.button>
                                     );
                                 })}
                             </div>
@@ -132,7 +132,7 @@ export function DragDropBoard({
                                                 <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${isDark ? 'bg-white/10' : 'bg-gray-200'}`}>{idx + 1}</span>
                                                 {zone}
                                             </div>
-                                            <motion.div
+                                            <m.div
                                                 role="button"
                                                 tabIndex={canInteract ? 0 : -1}
                                                 onClick={() => handleZoneClick(zone)}
@@ -151,7 +151,7 @@ export function DragDropBoard({
                                             >
                                                 <AnimatePresence mode="popLayout">
                                                     {filledItem ? (
-                                                        <motion.div
+                                                        <m.div
                                                             layoutId={`placed-${filledItem}`}
                                                             initial={{ opacity: 0, scale: 0.8 }}
                                                             animate={{ opacity: 1, scale: 1 }}
@@ -166,14 +166,14 @@ export function DragDropBoard({
                                                                     <X className="w-4 h-4" />
                                                                 </span>
                                                             )}
-                                                        </motion.div>
+                                                        </m.div>
                                                     ) : (
                                                         <div className="w-full flex items-center justify-center text-sm opacity-30 italic">
                                                             {selectedItem ? "Press Enter to place here" : "Empty"}
                                                         </div>
                                                     )}
                                                 </AnimatePresence>
-                                            </motion.div>
+                                            </m.div>
 
                                             {isReviewMode && !isCorrect && (
                                                 <div className="mt-2 text-sm text-green-500 flex items-center gap-2">
@@ -188,7 +188,7 @@ export function DragDropBoard({
                     </div>
 
                     {isReviewMode && question.explanation && (
-                        <motion.div
+                        <m.div
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             className={`mt-10 p-6 rounded-3xl border-2 ${isDark ? 'bg-blue-500/10 border-blue-500/20' : 'bg-blue-50 border-blue-100'}`}
@@ -200,7 +200,7 @@ export function DragDropBoard({
                                 <h4 className="text-blue-500 font-bold text-lg">Detailed Explanation</h4>
                             </div>
                             <p className={`text-base leading-relaxed ${isDark ? 'text-white/80' : 'text-gray-700'}`}>{question.explanation}</p>
-                        </motion.div>
+                        </m.div>
                     )}
                 </div>
             </div>
@@ -237,7 +237,7 @@ export function DragDropBoard({
                             {question.options.map((opt) => {
                                 const isSelected = currentSelection.includes(opt);
                                 return (
-                                    <motion.button
+                                    <m.button
                                         key={opt}
                                         onClick={() => toggleSelection(opt)}
                                         onKeyDown={(e) => handleKeyDown(e, () => toggleSelection(opt))}
@@ -254,7 +254,7 @@ export function DragDropBoard({
                                         aria-selected={isSelected}
                                     >
                                         {opt}
-                                    </motion.button>
+                                    </m.button>
                                 );
                             })}
                         </div>
@@ -278,7 +278,7 @@ export function DragDropBoard({
                             )}
                             <AnimatePresence>
                                 {currentSelection.map((item) => (
-                                    <motion.button
+                                    <m.button
                                         key={item}
                                         layoutId={`bucket-item-${item}`}
                                         onClick={() => toggleSelection(item)}
@@ -294,13 +294,13 @@ export function DragDropBoard({
                                     >
                                         {item}
                                         {!isReviewMode && <X className="w-4 h-4 opacity-50 ml-2" />}
-                                    </motion.button>
+                                    </m.button>
                                 ))}
                             </AnimatePresence>
                         </div>
 
                         {isReviewMode && (
-                            <motion.div
+                            <m.div
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 className="space-y-4 pt-6"
@@ -314,7 +314,7 @@ export function DragDropBoard({
                                         {question.explanation}
                                     </p>
                                 )}
-                            </motion.div>
+                            </m.div>
                         )}
                     </div>
                 </div>

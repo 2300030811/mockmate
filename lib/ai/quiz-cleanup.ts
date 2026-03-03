@@ -9,6 +9,15 @@ function normalize(str: string): string {
 }
 
 /**
+ * Creates a lightweight fingerprint for a question to detect near-duplicates.
+ * Strips punctuation, whitespace, and lowercases — so "What is X?" and "what is x"
+ * and "What is  X ?" all collapse to the same fingerprint.
+ */
+function questionFingerprint(q: string): string {
+  return q.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+/**
  * Robustly matches an answer to one of the options.
  * Handles:
  * - Exact match
@@ -63,28 +72,34 @@ export function findBestMatch(options: string[], answer: string): string | null 
 
 /**
  * Calculates Levenshtein distance between two strings.
+ * Uses two-row optimisation (O(min(n,m)) memory instead of O(n*m)).
  */
 function levenshtein(a: string, b: string): number {
-  const matrix = [];
-  for (let i = 0; i <= b.length; i++) matrix[i] = [i];
-  for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+  // Ensure `a` is the shorter string to minimise memory
+  if (a.length > b.length) [a, b] = [b, a];
 
-  for (let i = 1; i <= b.length; i++) {
-    for (let j = 1; j <= a.length; j++) {
-      if (b.charAt(i - 1) === a.charAt(j - 1)) {
-        matrix[i][j] = matrix[i - 1][j - 1];
+  const aLen = a.length;
+  const bLen = b.length;
+
+  // Typed arrays are ~2-3x faster than generic arrays for numeric work
+  let prev = new Uint16Array(aLen + 1);
+  let curr = new Uint16Array(aLen + 1);
+
+  for (let j = 0; j <= aLen; j++) prev[j] = j;
+
+  for (let i = 1; i <= bLen; i++) {
+    curr[0] = i;
+    for (let j = 1; j <= aLen; j++) {
+      if (b.charCodeAt(i - 1) === a.charCodeAt(j - 1)) {
+        curr[j] = prev[j - 1];
       } else {
-        matrix[i][j] = Math.min(
-          matrix[i - 1][j - 1] + 1, // substitution
-          Math.min(
-            matrix[i][j - 1] + 1, // insertion
-            matrix[i - 1][j] + 1 // deletion
-          )
-        );
+        curr[j] = 1 + Math.min(prev[j - 1], prev[j], curr[j - 1]);
       }
     }
+    [prev, curr] = [curr, prev];
   }
-  return matrix[b.length][a.length];
+
+  return prev[aLen];
 }
 
 /**
@@ -106,7 +121,9 @@ function rescueFromExplanation(options: string[], explanation: string): string |
 export function sanitizeQuizQuestions(questions: unknown[]): GeneratedQuizQuestion[] {
   if (!Array.isArray(questions)) return [];
 
-  return questions.map((_q) => {
+  const result: GeneratedQuizQuestion[] = [];
+
+  for (const _q of questions) {
     const q = _q as Record<string, unknown>;
     // Ensure basic structure
     const sanitizedQuestion: GeneratedQuizQuestion = {
@@ -114,6 +131,7 @@ export function sanitizeQuizQuestions(questions: unknown[]): GeneratedQuizQuesti
       options: Array.isArray(q.options) ? q.options.map(String) : [],
       answer: String(q.answer || ""),
       explanation: String(q.explanation || ""),
+      type: String(q.type || "mcq"),
     };
     
     // Trim everything
@@ -121,6 +139,12 @@ export function sanitizeQuizQuestions(questions: unknown[]): GeneratedQuizQuesti
     sanitizedQuestion.options = sanitizedQuestion.options.map((o: string) => o.trim());
     sanitizedQuestion.answer = sanitizedQuestion.answer.trim();
     sanitizedQuestion.explanation = sanitizedQuestion.explanation.trim();
+
+    // Skip questions with empty text or no options
+    if (!sanitizedQuestion.question || sanitizedQuestion.options.length === 0) {
+      console.warn(`🗑️ [QuizCleanup] Dropped question with empty text or no options`);
+      continue;
+    }
 
     // Fix Answer
     const bestMatch = findBestMatch(sanitizedQuestion.options, sanitizedQuestion.answer);
@@ -136,10 +160,26 @@ export function sanitizeQuizQuestions(questions: unknown[]): GeneratedQuizQuesti
             console.log(`🚑 [QuizCleanup] RESCUED answer via Explanation: "${sanitizedQuestion.answer}" -> "${rescued}"`);
             sanitizedQuestion.answer = rescued;
         } else {
-            console.warn(`⚠️ [QuizCleanup] No match found for answer: "${sanitizedQuestion.answer}" in options: ${JSON.stringify(sanitizedQuestion.options)}`);
+            // Drop the question — it's unanswerable
+            console.warn(`🗑️ [QuizCleanup] DROPPED unanswerable question: "${sanitizedQuestion.question}" — answer "${sanitizedQuestion.answer}" not in options: ${JSON.stringify(sanitizedQuestion.options)}`);
+            continue;
         }
     }
 
-    return sanitizedQuestion;
+    result.push(sanitizedQuestion);
+  }
+
+  // Deduplicate near-identical questions (same text after normalisation)
+  const seen = new Set<string>();
+  const deduped = result.filter((q) => {
+    const fp = questionFingerprint(q.question);
+    if (seen.has(fp)) {
+      console.warn(`🗑️ [QuizCleanup] Dropped duplicate question: "${q.question}"`);
+      return false;
+    }
+    seen.add(fp);
+    return true;
   });
+
+  return deduped;
 }

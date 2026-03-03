@@ -1,6 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
+import React from "react";
+import { m } from "framer-motion";
 import { ChevronRight, History, Swords, Globe, Database, Cloud, Terminal, Shield } from "lucide-react";
 import { StatItem, RecentMatch } from "../types";
 import { getAvatarIcon } from "@/lib/icons";
@@ -12,6 +13,8 @@ interface ArenaLobbyProps {
   onCategoryChange: (cat: string) => void;
   onStart: () => void;
   userAvatar?: string;
+  statsLoading?: boolean;
+  statsError?: string | null;
 }
 
 const CATEGORIES = [
@@ -24,17 +27,19 @@ const CATEGORIES = [
   { id: "oracle", name: "Oracle", icon: Database },
 ];
 
-export function ArenaLobby({ 
+export const ArenaLobby = React.memo(function ArenaLobby({ 
   stats, 
   recentMatches, 
   selectedCategory, 
   onCategoryChange, 
   onStart,
-  userAvatar
+  userAvatar,
+  statsLoading = false,
+  statsError = null
 }: ArenaLobbyProps) {
   const UserIcon = getAvatarIcon(userAvatar);
   return (
-    <motion.div 
+    <m.div 
       key="lobby"
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
@@ -52,22 +57,24 @@ export function ArenaLobby({
       <h1 className="text-5xl md:text-7xl font-black mb-4 tracking-tighter italic text-center">
          THE <span className="bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">ARENA</span>
       </h1>
-      <p className="text-gray-500 mb-8 md:mb-12 text-center max-w-sm font-bold uppercase tracking-widest text-[8px] md:text-[10px] px-4">
+      <p className="text-gray-400 mb-8 md:mb-12 text-center max-w-sm font-bold uppercase tracking-widest text-xs md:text-sm px-4">
          Technical Combat • Ranked Battles • Global Leaderboard
       </p>
       
       {/* Category Selection */}
-      <div className="flex flex-wrap justify-center gap-2 md:gap-3 mb-10 max-w-2xl px-4">
+      <div className="flex flex-wrap justify-center gap-2 md:gap-3 mb-10 max-w-2xl px-4" role="group" aria-label="Quiz categories">
          {CATEGORIES.map((cat) => (
            <button
              key={cat.id}
              onClick={() => onCategoryChange(cat.id)}
+             aria-pressed={selectedCategory === cat.id}
+             aria-label={`Select ${cat.name} category`}
              className={`flex items-center gap-2 px-4 py-2 md:px-5 md:py-2.5 rounded-full text-[10px] md:text-xs font-black uppercase tracking-wider transition-all border
                ${selectedCategory === cat.id 
                  ? 'bg-red-600 border-red-600 text-white shadow-[0_0_15px_rgba(220,38,38,0.4)]' 
                  : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:border-white/20'}`}
            >
-             <cat.icon size={14} />
+             <cat.icon size={14} aria-hidden="true" />
              {cat.name}
            </button>
          ))}
@@ -75,42 +82,49 @@ export function ArenaLobby({
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6 w-full max-w-4xl mb-10 md:mb-16 px-4">
          {stats.map((stat, i) => (
-           <div key={i} className={`bg-gray-900/40 border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-6 text-center hover:border-white/20 transition-all hover:-translate-y-1 ${stat.hideOnMobile ? 'hidden md:block' : ''}`}>
+           <div key={i} className={`bg-gray-900/40 border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-6 text-center hover:border-white/20 transition-all hover:-translate-y-1 ${stat.hideOnMobile ? 'hidden md:block' : ''}`} aria-label={`${stat.label}: ${stat.val}`}>
               <div className={`w-10 h-10 md:w-12 md:h-12 ${stat.bg} rounded-xl md:rounded-2xl flex items-center justify-center mx-auto mb-3 md:mb-4`}>
-                 <stat.icon className={stat.color} size={20} />
+                 <stat.icon className={stat.color} size={20} aria-hidden="true" />
               </div>
-              <h3 className="text-[8px] md:text-[10px] font-black uppercase text-gray-500 mb-1 tracking-widest">{stat.label}</h3>
+              <h3 className="text-xs md:text-sm font-black uppercase text-gray-400 mb-1 tracking-widest">{stat.label}</h3>
               <p className="text-xl md:text-2xl font-black text-white">{stat.val}</p>
            </div>
          ))}
       </div>
 
+      {statsError && (
+        <div className="w-full max-w-4xl px-4 mb-6 p-3 bg-yellow-900/20 border border-yellow-500/30 rounded-lg">
+          <p className="text-xs md:text-sm text-yellow-400 font-semibold">{statsError}</p>
+        </div>
+      )}
+
       <button 
          onClick={onStart}
+         aria-label={`Enter combat with ${selectedCategory} category`}
          className="group relative px-10 py-5 md:px-16 md:py-6 bg-white text-black rounded-[2rem] md:rounded-[2.5rem] font-black text-lg md:text-2xl hover:scale-105 active:scale-95 transition-all shadow-xl flex items-center gap-4 overflow-hidden mb-12 sm:mb-16 shrink-0"
       >
          <span className="relative z-10 flex items-center gap-3">
-           <Swords size={28} className="hidden md:block" />
+           <Swords size={28} className="hidden md:block" aria-hidden="true" />
            ENTER COMBAT
          </span>
-         <ChevronRight size={24} className="relative z-10 group-hover:translate-x-2 transition-transform" />
+         <ChevronRight size={24} className="relative z-10 group-hover:translate-x-2 transition-transform" aria-hidden="true" />
       </button>
 
       {/* Recent Battles */}
       {recentMatches?.length > 0 && (
         <div className="w-full max-w-2xl px-4 animate-in fade-in slide-in-from-bottom-5 duration-700">
            <div className="flex items-center gap-2 mb-4 px-2">
-              <History size={14} className="text-gray-500" />
-              <h4 className="text-[10px] font-black uppercase text-gray-500 tracking-[0.2em]">Recent Engagements</h4>
+              <History size={14} className="text-gray-400" aria-hidden="true" />
+              <h4 className="text-sm font-black uppercase text-gray-400 tracking-[0.2em]">Recent Engagements</h4>
            </div>
-           <div className="space-y-2">
+           <div className="space-y-2" role="list">
               {recentMatches.map((match, i) => {
                 const category = match.category.replace('arena_', '').toUpperCase();
                 const isWin = match.score >= match.total_questions / 2;
                 return (
-                  <div key={i} className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 flex items-center justify-between group hover:bg-white/[0.04] transition-colors">
+                  <div key={i} className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 flex items-center justify-between group hover:bg-white/[0.04] transition-colors" role="listitem" aria-label={`${isWin ? 'Victory' : 'Defeat'} in ${category} with ${match.score}/${match.total_questions} correct`}>
                      <div className="flex items-center gap-4">
-                        <div className={`w-2 h-2 rounded-full ${isWin ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]'}`} />
+                        <div className={`w-2 h-2 rounded-full ${isWin ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]'}`} aria-hidden="true" />
                         <div>
                            <div className="text-[10px] font-black text-white italic">{category} SECTOR</div>
                            <div className="text-[8px] font-bold text-gray-500 uppercase tracking-tighter">
@@ -130,6 +144,6 @@ export function ArenaLobby({
            </div>
         </div>
       )}
-    </motion.div>
+    </m.div>
   );
-}
+});

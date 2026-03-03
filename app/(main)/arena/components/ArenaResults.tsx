@@ -1,11 +1,12 @@
 "use client";
 
-import { motion } from "framer-motion";
+import React from "react";
+import { m } from "framer-motion";
 import { Zap, Target, TrendingUp, Award } from "lucide-react";
 import { BattleResult } from "../types";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import { saveQuizResult } from "@/app/actions/results";
-import { v4 as uuidv4 } from "uuid";
+import { calculateArenaXP, calculateEloChange } from "@/lib/scoring";
 
 interface ArenaResultsProps {
   userScore: number;
@@ -16,7 +17,7 @@ interface ArenaResultsProps {
   onRematch: () => void;
 }
 
-export function ArenaResults({
+export const ArenaResults = React.memo(function ArenaResults({
   userScore,
   opponentScore,
   battleResults,
@@ -33,7 +34,7 @@ export function ArenaResults({
       if (hasSaved.current) return;
       hasSaved.current = true;
 
-      const sessionId = uuidv4();
+      const sessionId = crypto.randomUUID();
       const userAnswers: Record<string, any> = {};
       
       // Arena results don't have IDs in the same way, but let's mock the structure saveQuizResult expects
@@ -56,55 +57,27 @@ export function ArenaResults({
     persistResults();
   }, [battleResults, category, userScore, opponentScore]);
 
-  const calculateRewards = () => {
+  const { totalXp, totalCredits, eloChange, actualAccuracy } = useMemo(() => {
     const isWin = userScore > opponentScore;
     const isDraw = userScore === opponentScore;
-    
-    // Count actual correct answers for accuracy and base bonuses
+    const winStatus: "win" | "loss" | "tie" = isWin ? "win" : isDraw ? "tie" : "loss";
+
     const correctCount = battleResults.filter(r => r.correct).length;
     const accuracy = correctCount / (battleResults.length || 1);
-    
-    // XP Calculation
-    let xp = 50; // Participation Base
-    if (isWin) xp += 150;
-    if (isDraw) xp += 50;
-    xp += correctCount * 25; // 25 XP per correct answer
-    xp += Math.round(accuracy * 100 * 2); // Accuracy bonus (up to 200 XP)
 
-    // Credits Calculation
-    let credits = 5; // Base
+    const xp = calculateArenaXP(correctCount, accuracy, winStatus);
+    const elo = calculateEloChange(userScore, opponentScore, winStatus);
+
+    let credits = 5;
     if (isWin) credits += 25;
     if (isDraw) credits += 10;
-    credits += correctCount * 10; // 10 credits per correct answer
-
-    // Elo Calculation (Simulated)
-    let elo = 0;
-    const scoreDiff = userScore - opponentScore; // Using points for elo dominance
-    
-    if (isWin) {
-        // Points diff usually between 0 - 1000. 
-        // Normalize it so a big win gives +10 bonus elo
-        const dominanceBonus = Math.min(10, Math.floor(scoreDiff / 100));
-        elo = 25 + dominanceBonus; 
-    } else if (isDraw) {
-        elo = 5;
-    } else {
-        // Loss
-        // Lose less if you had more points
-        const mitigation = Math.min(15, Math.floor(userScore / 100));
-        elo = -25 + mitigation;
-        if (elo > -5) elo = -5; // Minimum penalty cap
-    }
+    credits += correctCount * 10;
 
     return { totalXp: xp, totalCredits: credits, eloChange: elo, actualAccuracy: accuracy };
-  };
-
-  const { totalXp, totalCredits, eloChange, actualAccuracy } = calculateRewards();
-
-  // ... useEffect for saveQuizResult (using these new values if we wanted to save them, but sticking to existing pattern for now)
+  }, [userScore, opponentScore, battleResults]);
 
   return (
-    <motion.div 
+    <m.div 
       key="results"
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
@@ -114,19 +87,21 @@ export function ArenaResults({
           {userScore >= opponentScore ? "🏆" : "💀"}
        </div>
 
-        <h2 className="text-5xl md:text-7xl font-black mb-2 italic tracking-tighter">
-          {userScore > opponentScore ? "VICTORY" : userScore === opponentScore ? "DRAW" : "DEFEAT"}
-        </h2>
+        <div aria-live="assertive" aria-atomic="true" className="text-center">
+          <h2 className="text-5xl md:text-7xl font-black mb-2 italic tracking-tighter">
+            {userScore > opponentScore ? "VICTORY" : userScore === opponentScore ? "DRAW" : "DEFEAT"}
+          </h2>
+        </div>
         
         {actualAccuracy === 1 && (
-           <motion.div 
+           <m.div 
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.5, type: 'spring' }}
               className="mt-2 text-white bg-gradient-to-r from-yellow-500 to-orange-500 px-4 py-1 rounded-full font-black text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(234,179,8,0.5)] border border-yellow-300/50"
            >
               Perfect Combat ✨
-           </motion.div>
+           </m.div>
         )}
         
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 w-full max-w-5xl my-12">
@@ -136,18 +111,18 @@ export function ArenaResults({
              { label: "Rank Change", val: eloChange > 0 ? `+${eloChange}` : `${eloChange}`, color: eloChange >= 0 ? "text-indigo-400" : "text-red-400", icon: TrendingUp },
              { label: "Credits", val: `+${totalCredits}`, color: "text-amber-400", icon: Award }
            ].map((s, i) => (
-             <div key={i} className="bg-gray-900/60 border border-white/5 p-4 md:p-6 rounded-2xl md:rounded-[2rem] text-center group hover:border-white/20 transition-all">
+             <div key={i} className="bg-gray-900/60 border border-white/5 p-4 md:p-6 rounded-2xl md:rounded-[2rem] text-center group hover:border-white/20 transition-all" aria-label={`${s.label}: ${s.val}`}>
                 <div className={`w-10 h-10 md:w-12 md:h-12 bg-white/5 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform`}>
-                   <s.icon className={s.color} size={20} />
+                   <s.icon className={s.color} size={20} aria-hidden="true" />
                 </div>
-                <div className="text-[9px] text-gray-500 font-bold uppercase mb-1 tracking-widest">{s.label}</div>
+                <div className="text-xs text-gray-400 font-bold uppercase mb-1 tracking-widest">{s.label}</div>
                 <div className={`text-xl md:text-3xl font-black ${s.color}`}>{s.val}</div>
              </div>
            ))}
         </div>
  
         <div className="w-full max-w-4xl bg-white/5 border border-white/10 rounded-[2.5rem] p-6 md:p-8 mb-16">
-           <h3 className="text-sm font-black uppercase tracking-widest text-indigo-400 mb-8">Performance Review</h3>
+           <h3 className="text-sm font-black uppercase tracking-widest text-indigo-400 mb-8">Battle Report</h3>
            <div className="space-y-4">
              {battleResults.map((r, i) => (
                <div key={i} className="space-y-3 p-5 rounded-2xl bg-black/40 border border-white/5">
@@ -160,6 +135,11 @@ export function ArenaResults({
                       <p className="text-xs text-gray-400 mt-1">
                         Your answer: <span className={r.correct ? "text-emerald-400" : "text-red-400"}>{r.userAns}</span>
                       </p>
+                      {!r.correct && r.correctAns && (
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          Correct answer: <span className="text-emerald-400">{r.correctAns}</span>
+                        </p>
+                      )}
                     </div>
                  </div>
                  {r.tip && (
@@ -177,17 +157,19 @@ export function ArenaResults({
        <div className="flex flex-col md:flex-row gap-4 w-full max-w-md pb-20">
           <button 
             onClick={onLobby}
-            className="flex-1 py-4 bg-gray-900 text-white rounded-2xl font-black text-xs uppercase"
+            className="flex-1 py-4 bg-gray-900 text-white rounded-2xl font-black text-xs uppercase hover:bg-gray-800 transition-colors active:scale-95"
+            aria-label="Return to lobby"
           >
              Lobby
           </button>
           <button 
             onClick={onRematch}
-            className="flex-1 py-4 bg-red-600 text-white rounded-2xl font-black text-xs uppercase"
+            className="flex-1 py-4 bg-red-600 text-white rounded-2xl font-black text-xs uppercase hover:bg-red-700 transition-colors active:scale-95"
+            aria-label="Play another match"
           >
              Rematch
           </button>
        </div>
-    </motion.div>
+    </m.div>
   );
-}
+});

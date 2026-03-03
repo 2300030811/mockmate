@@ -4,9 +4,11 @@ import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { validateNickname } from "@/utils/moderation";
+import { NICKNAME_REGEX, NICKNAME_REGEX_MESSAGE } from "@/lib/constants";
+import { rateLimit } from "@/lib/rate-limit";
 
 const profileSchema = z.object({
-  nickname: z.string().min(2, "Nickname must be at least 2 characters").max(20, "Nickname must be at most 20 characters").regex(/^[a-zA-Z0-9_ ]+$/, "Nickname can only contain letters, numbers, spaces, and underscores"),
+  nickname: z.string().min(2, "Nickname must be at least 2 characters").max(20, "Nickname must be at most 20 characters").regex(NICKNAME_REGEX, NICKNAME_REGEX_MESSAGE),
   avatar_icon: z.string().min(1, "Icon is required").default("User"),
 });
 
@@ -35,7 +37,13 @@ export async function updateProfile(prevState: ProfileState, formData: FormData)
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    return { error: "Not user found" };
+    return { error: "No user found" };
+  }
+
+  // Rate limit: profile updates (default tier)
+  const rl = await rateLimit("default", user.id);
+  if (!rl.success) {
+    return { error: "Too many update attempts. Please wait a moment." };
   }
 
   const { error } = await supabase
@@ -55,4 +63,49 @@ export async function updateProfile(prevState: ProfileState, formData: FormData)
   revalidatePath("/settings");
   
   return { success: true, message: "Profile updated successfully" };
+}
+
+/**
+ * Export all user data as a JSON object (GDPR compliance).
+ */
+export async function exportUserData() {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Not authenticated." };
+  }
+
+  const [profileResult, quizResultsResult, careerPathsResult] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .single(),
+    supabase
+      .from("quiz_results")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("completed_at", { ascending: false }),
+    supabase
+      .from("career_paths")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false }),
+  ]);
+
+  return {
+    success: true,
+    data: {
+      exportedAt: new Date().toISOString(),
+      user: {
+        id: user.id,
+        email: user.email,
+        created_at: user.created_at,
+      },
+      profile: profileResult.data,
+      quizResults: quizResultsResult.data || [],
+      careerPaths: careerPathsResult.data || [],
+    },
+  };
 }

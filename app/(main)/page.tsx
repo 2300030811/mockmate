@@ -4,14 +4,27 @@ import { FeatureCards } from "@/components/home/FeatureCards";
 import { HeroHeader } from "@/components/home/HeroHeader";
 import { HomeBackground } from "@/components/home/HomeBackground";
 import { HomeCTA } from "@/components/home/HomeCTA";
-import { StatsRow } from "@/components/home/StatsRow";
-import { DailyProblem } from "@/components/home/DailyProblem";
-import { PersonalizedStats } from "@/components/home/PersonalizedStats";
+
 const BobAssistant = dynamic(() => import("@/components/quiz/BobAssistant").then(mod => mod.BobAssistant), {
   ssr: false,
 });
 
-// Lazy load heavy dashboard components
+// Lazy load below-fold and heavy dashboard components
+const DailyProblem = dynamic(() => import("@/components/home/DailyProblem").then(mod => mod.DailyProblem), {
+  ssr: false,
+  loading: () => <div className="h-48 animate-pulse bg-gray-100 dark:bg-gray-800 rounded-3xl mt-12" />
+});
+
+const PersonalizedStats = dynamic(() => import("@/components/home/PersonalizedStats").then(mod => mod.PersonalizedStats), {
+  ssr: false,
+  loading: () => <div className="h-32 animate-pulse bg-gray-100 dark:bg-gray-800 rounded-3xl mt-12" />
+});
+
+const StatsRow = dynamic(() => import("@/components/home/StatsRow").then(mod => mod.StatsRow), {
+  ssr: false,
+  loading: () => <div className="h-12 animate-pulse bg-gray-100 dark:bg-gray-800 rounded-xl mt-16" />
+});
+
 const ResultsHistory = dynamic(() => import("@/components/home/ResultsHistory").then(mod => mod.ResultsHistory), {
   ssr: false,
   loading: () => <div className="h-40 animate-pulse bg-gray-100 dark:bg-gray-800 rounded-xl mt-20" />

@@ -1,3 +1,4 @@
+import { NICKNAME_REGEX } from "@/lib/constants";
 import { BASE_BLOCKLIST, CUSTOM_BLOCKLIST } from "./blocklist";
 
 // Pre-compile blocklist patterns once at module load (not on every call)
@@ -75,10 +76,8 @@ export function validateNickname(nickname: string): { success: boolean; error?: 
     return { success: false, error: "Nickname is too long (max 20 chars)." };
   }
 
-  // Check for allowed characters (alphanumeric, spaces, underscores, hyphens)
-  // This is the first line of defense against Unicode manipulation
-  const allowedCharsRegex = /^[a-zA-Z0-9\s_\-]+$/;
-  if (!allowedCharsRegex.test(trimmed)) {
+  // Check for allowed characters using unified regex from constants
+  if (!NICKNAME_REGEX.test(trimmed)) {
     return { success: false, error: "Nickname contains invalid characters." };
   }
   

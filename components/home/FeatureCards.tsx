@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { InteractiveCard } from "@/components/ui/Card";
 import { BrainCircuit, Mic, Trophy, Rocket, Flame, Layers, Swords, Code2 } from "lucide-react";
 
@@ -82,14 +82,14 @@ const features = [
 
 export function FeatureCards() {
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, delay: 0.3 }}
       className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12 text-left px-4"
     >
       {features.map((feature, index) => (
-        <motion.div
+        <m.div
           key={index}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -121,8 +121,8 @@ export function FeatureCards() {
               </div>
             </InteractiveCard>
           </Link>
-        </motion.div>
+        </m.div>
       ))}
-    </motion.div>
+    </m.div>
   );
 }

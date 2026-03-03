@@ -1,8 +1,8 @@
 "use client";
 
-// @ts-ignore - Types for these hooks are missing in current @types/react-dom version
+// @ts-expect-error -- @types/react-dom 18.2.x lacks useFormState/useFormStatus typings
 import { useFormState, useFormStatus } from "react-dom";
-import { useEffect, useState, useRef, useMemo, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, KeyboardEvent } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/components/providers/auth-provider";
@@ -13,12 +13,15 @@ import {
   Save, 
   LayoutDashboard,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Shield
 } from "lucide-react";
 import { useTheme } from "@/components/providers/ThemeProvider";
-import { motion, AnimatePresence } from "framer-motion";
+import { useRouter, useSearchParams } from "next/navigation";
+import { m, AnimatePresence } from "framer-motion";
 import { GeneralTab } from "./GeneralTab";
 import { AppearanceTab } from "./AppearanceTab";
+import { SecurityTab } from "./SecurityTab";
 import { DangerTab } from "./DangerTab";
 
 const initialState: ProfileState = {
@@ -26,6 +29,15 @@ const initialState: ProfileState = {
   error: undefined,
   success: false,
 };
+
+const TABS = [
+  { id: "general", label: "General", icon: User },
+  { id: "appearance", label: "Appearance", icon: LayoutDashboard },
+  { id: "security", label: "Security", icon: Shield },
+  { id: "danger", label: "Danger Zone", icon: Trash2 },
+] as const;
+
+type TabId = (typeof TABS)[number]["id"];
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -52,17 +64,57 @@ function SubmitButton() {
   );
 }
 
-export function SettingsForm() {
+interface SettingsFormProps {
+  initialTab?: string;
+}
+
+export function SettingsForm({ initialTab = "general" }: SettingsFormProps) {
   const { user, profile, refresh } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   
-  // Custom hook usage with proper types if possible, or keeping it as is but cleaner
-  // @ts-ignore
   const [state, formAction] = useFormState(updateProfile, initialState);
   
-  const [activeTab, setActiveTab] = useState("general");
+  const validTab = TABS.find(t => t.id === initialTab)?.id ?? "general";
+  const [activeTab, setActiveTab] = useState<TabId>(validTab);
   const [selectedIcon, setSelectedIcon] = useState("User");
   const lastProcessedMessage = useRef<string | undefined>(undefined);
+  const tabPanelRef = useRef<HTMLDivElement>(null);
+
+  // Sync tab state with URL
+  const switchTab = useCallback((tab: TabId) => {
+    setActiveTab(tab);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", tab);
+    router.replace(`/settings?${params.toString()}`, { scroll: false });
+    // Move focus to tab panel for accessibility
+    setTimeout(() => tabPanelRef.current?.focus(), 100);
+  }, [router, searchParams]);
+
+  // Keyboard navigation for tabs (arrow keys)
+  const handleTabKeyDown = useCallback((e: KeyboardEvent<HTMLButtonElement>, currentIdx: number) => {
+    let nextIdx = currentIdx;
+    if (e.key === "ArrowDown" || e.key === "ArrowRight") {
+      e.preventDefault();
+      nextIdx = (currentIdx + 1) % TABS.length;
+    } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+      e.preventDefault();
+      nextIdx = (currentIdx - 1 + TABS.length) % TABS.length;
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      nextIdx = 0;
+    } else if (e.key === "End") {
+      e.preventDefault();
+      nextIdx = TABS.length - 1;
+    } else {
+      return;
+    }
+    switchTab(TABS[nextIdx].id);
+    // Focus the new tab button
+    const tabButtons = document.querySelectorAll<HTMLButtonElement>('[role="tab"]');
+    tabButtons[nextIdx]?.focus();
+  }, [switchTab]);
 
   // Set initial icon when profile is available
   useEffect(() => {
@@ -96,15 +148,6 @@ export function SettingsForm() {
     }
   }, [state, refresh]);
 
-  const getInitials = useCallback((name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  }, []);
-
   if (!user) return null;
 
   const renderContent = () => {
@@ -122,7 +165,9 @@ export function SettingsForm() {
           </form>
         );
       case "appearance":
-        return <AppearanceTab theme={theme} toggleTheme={toggleTheme} />;
+        return <AppearanceTab theme={theme} setTheme={setTheme} />;
+      case "security":
+        return <SecurityTab user={user} />;
       case "danger":
         return <DangerTab />;
       default:
@@ -130,49 +175,50 @@ export function SettingsForm() {
     }
   };
 
+  const getTabStyle = (tab: TabId) => {
+    if (tab === "danger") {
+      return activeTab === "danger"
+        ? "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 shadow-sm ring-1 ring-red-200 dark:ring-red-900"
+        : "text-gray-600 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/10 hover:text-red-600 dark:hover:text-red-400";
+    }
+    return activeTab === tab
+      ? "bg-white dark:bg-gray-800 shadow-md text-blue-600 dark:text-blue-400"
+      : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/50";
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-      {/* Sidebar Navigation */}
-      <div className="lg:col-span-1 space-y-2">
-        <button
-          onClick={() => setActiveTab("general")}
-          className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all ${
-            activeTab === "general"
-              ? "bg-white dark:bg-gray-800 shadow-md text-blue-600 dark:text-blue-400"
-              : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/50"
-          }`}
-        >
-          <User className="w-4 h-4" />
-          General
-        </button>
-        <button
-          onClick={() => setActiveTab("appearance")}
-          className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all ${
-            activeTab === "appearance"
-              ? "bg-white dark:bg-gray-800 shadow-md text-blue-600 dark:text-blue-400"
-              : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/50"
-          }`}
-        >
-          <LayoutDashboard className="w-4 h-4" />
-          Appearance
-        </button>
-        <button
-          onClick={() => setActiveTab("danger")}
-          className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all ${
-            activeTab === "danger"
-              ? "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 shadow-sm ring-1 ring-red-200 dark:ring-red-900"
-              : "text-gray-600 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/10 hover:text-red-600 dark:hover:text-red-400"
-          }`}
-        >
-          <Trash2 className="w-4 h-4" />
-          Danger Zone
-        </button>
+      {/* Sidebar Tab Navigation */}
+      <div className="lg:col-span-1 space-y-2" role="tablist" aria-label="Settings sections" aria-orientation="vertical">
+        {TABS.map((tab, idx) => (
+          <button
+            key={tab.id}
+            role="tab"
+            aria-selected={activeTab === tab.id}
+            aria-controls={`tabpanel-${tab.id}`}
+            id={`tab-${tab.id}`}
+            tabIndex={activeTab === tab.id ? 0 : -1}
+            onClick={() => switchTab(tab.id)}
+            onKeyDown={(e) => handleTabKeyDown(e, idx)}
+            className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all ${getTabStyle(tab.id)}`}
+          >
+            <tab.icon className="w-4 h-4" />
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {/* Main Content Area */}
-      <div className="lg:col-span-3">
+      <div
+        className="lg:col-span-3"
+        role="tabpanel"
+        id={`tabpanel-${activeTab}`}
+        aria-labelledby={`tab-${activeTab}`}
+        ref={tabPanelRef}
+        tabIndex={-1}
+      >
         <AnimatePresence mode="wait">
-          <motion.div
+          <m.div
             key={activeTab}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -180,7 +226,7 @@ export function SettingsForm() {
             transition={{ duration: 0.2 }}
           >
             {renderContent()}
-          </motion.div>
+          </m.div>
         </AnimatePresence>
       </div>
     </div>

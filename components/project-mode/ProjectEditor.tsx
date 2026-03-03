@@ -5,9 +5,12 @@ import { SandpackProvider, useSandpack } from "@codesandbox/sandpack-react";
 import { ProjectChallenge } from "@/lib/projects/data";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { toast } from "sonner";
+import { saveProjectProgress } from "@/app/actions/project-progress";
 
 import { ProjectHeader } from "./ProjectHeader";
 import { ProjectInstructions } from "./ProjectInstructions";
+import { MobileInstructionsDrawer } from "./MobileInstructionsDrawer";
+import { useProjectKeyboardShortcuts } from "@/hooks/useProjectKeyboardShortcuts";
 import dynamic from "next/dynamic";
 const ProjectWorkspace = dynamic(
   () => import("./ProjectWorkspace").then((mod) => mod.ProjectWorkspace),
@@ -29,7 +32,7 @@ const normalizeCode = (code: string) => {
 };
 
 export function ProjectEditor({ project }: ProjectEditorProps) {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const isDark = theme === "dark";
 
@@ -86,7 +89,7 @@ export function ProjectEditor({ project }: ProjectEditorProps) {
     >
       <ProjectEditorContent
         project={project}
-        toggleTheme={toggleTheme}
+        setTheme={setTheme}
         isDark={isDark}
       />
     </SandpackProvider>
@@ -95,11 +98,11 @@ export function ProjectEditor({ project }: ProjectEditorProps) {
 
 function ProjectEditorContent({
   project,
-  toggleTheme,
+  setTheme,
   isDark,
 }: {
   project: ProjectChallenge;
-  toggleTheme: () => void;
+  setTheme: (theme: string) => void;
   isDark: boolean;
 }) {
   const [activeTab, setActiveTab] = useState<"code" | "preview">("code");
@@ -111,32 +114,36 @@ function ProjectEditorContent({
     "preview" | "console" | "insights"
   >("preview");
   const [autoTriggerAnalysis, setAutoTriggerAnalysis] = useState(false);
+  const [showMobileInstructions, setShowMobileInstructions] = useState(false);
+  const [isPageVisible, setIsPageVisible] = useState(true);
+  const [lastSavedState, setLastSavedState] = useState<Record<string, string> | null>(null);
 
   // Session Stats
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [isSolved, setIsSolved] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
 
-  // Timer Effect
-  useEffect(() => {
-    if (isSolved || isInitializing) return;
+  // Define callbacks first (before any hooks that use them)
+  const captureCodeSnapshot = useCallback(() => {
+    // Capture current code state for undo
+    const snapshot: Record<string, string> = {};
+    Object.entries(sandpack.files).forEach(([name, file]) => {
+      snapshot[name] = file.code;
+    });
+    setLastSavedState(snapshot);
+  }, [sandpack.files]);
 
-    const interval = setInterval(() => {
-      setTimeElapsed((prev) => prev + 1);
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [isSolved, isInitializing]);
-
-  // Monitor Sandpack status - unblock UI as soon as it's ready
-  useEffect(() => {
-    if (sandpack.status === "running" || sandpack.status === "idle") {
-      setIsInitializing(false);
+  const restoreCodeSnapshot = useCallback(() => {
+    if (lastSavedState) {
+      Object.entries(lastSavedState).forEach(([name, code]) => {
+        sandpack.updateFile(name, code);
+      });
+      toast.success("Code restored");
     }
-  }, [sandpack.status]);
+  }, [lastSavedState, sandpack]);
 
   const handleVerify = useCallback(() => {
-    if (!project.validationRegex) {
+    if (!project.validationRegex && !project.validationTests) {
       toast.info(
         "No automated validation for this challenge. If it looks right, you passed!",
       );
@@ -146,26 +153,50 @@ function ProjectEditorContent({
     setIsValidating(true);
 
     // Artificial delay for "premium" feel
-    setTimeout(() => {
+    setTimeout(async () => {
       let passed = true;
 
-      Object.entries(project.validationRegex!).forEach(([file, regexStr]) => {
-        const content = sandpack.files[file]?.code || "";
-        const regex = new RegExp(regexStr);
-        if (!regex.test(content)) {
-          const normalizedContent = normalizeCode(content);
-          if (!regex.test(normalizedContent)) {
+      // Step 1: Check regex validation (fast path)
+      if (project.validationRegex) {
+        Object.entries(project.validationRegex).forEach(([file, regexStr]) => {
+          const content = sandpack.files[file]?.code || "";
+          const regex = new RegExp(regexStr);
+          if (!regex.test(content)) {
+            const normalizedContent = normalizeCode(content);
+            if (!regex.test(normalizedContent)) {
+              passed = false;
+            }
+          }
+        });
+      }
+
+      // Step 2: Run programmatic tests (secondary layer)
+      if (passed && project.validationTests && project.validationTests.length > 0) {
+        for (const test of project.validationTests) {
+          try {
+            // Create a function that tests the code
+            // The test function receives the files object
+            const testFn = new Function('files', test.test);
+            const result = testFn(sandpack.files);
+            if (!result) {
+              passed = false;
+              break;
+            }
+          } catch (e) {
+            console.error(`Validation test "${test.description}" failed:`, e);
+            // If test throws, consider it failed
             passed = false;
+            break;
           }
         }
-      });
+      }
 
       setIsValidating(false);
 
       if (passed) {
         setIsSolved(true);
 
-        // Save progress
+        // Save progress to localStorage (for all users)
         try {
           const completed = JSON.parse(
             localStorage.getItem("completedProjects") || "[]",
@@ -177,7 +208,19 @@ function ProjectEditorContent({
             );
           }
         } catch (e) {
-          console.error("Failed to save progress", e);
+          console.error("Failed to save progress to localStorage", e);
+        }
+
+        // Save progress to database (for logged-in users only)
+        try {
+          await saveProjectProgress({
+            projectId: project.id,
+            timeTaken: timeElapsed,
+            hintsUsed: hintIndex + 1,
+          });
+        } catch (e) {
+          // Silently fail — project completion should not be blocked by DB errors
+          console.error("Failed to save progress to database", e);
         }
 
         setShowSuccessModal(true);
@@ -185,7 +228,7 @@ function ProjectEditorContent({
         toast.error("Code verification failed. Keep debugging!");
       }
     }, 1500);
-  }, [project, sandpack.files]);
+  }, [project, sandpack.files, timeElapsed, hintIndex]);
 
   const handleReviewSolution = useCallback(() => {
     setShowSuccessModal(false);
@@ -205,16 +248,60 @@ function ProjectEditorContent({
 
   const closeSuccessModal = useCallback(() => setShowSuccessModal(false), []);
 
+  // Keyboard shortcuts
+  useProjectKeyboardShortcuts({
+    onVerify: handleVerify,
+    onReset: () => {
+      // This will be triggered by keyboard shortcut - ideally show confirmation
+      // For now, just reset directly (users can use button for confirmation UI)
+      captureCodeSnapshot();
+      sandpack.resetAllFiles();
+    },
+    onRevealHint: revealHint,
+    enabled: !isSolved && !isValidating, // Disable shortcuts when already solved or validating
+  });
+
+  // Timer Effect
+  useEffect(() => {
+    if (isSolved || isInitializing || showSuccessModal || !isPageVisible) return;
+
+    const interval = setInterval(() => {
+      setTimeElapsed((prev) => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isSolved, isInitializing, showSuccessModal, isPageVisible]);
+
+  // Monitor Sandpack status - unblock UI as soon as it's ready
+  useEffect(() => {
+    if (sandpack.status === "running" || sandpack.status === "idle") {
+      setIsInitializing(false);
+    }
+  }, [sandpack.status]);
+
+  // Listen to page visibility changes (pause timer when user tabs away)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsPageVisible(!document.hidden);
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, []);
+
   return (
     <div className="h-screen w-full flex flex-col bg-white dark:bg-gray-950">
       <ProjectHeader
         project={project}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        toggleTheme={toggleTheme}
+        setTheme={setTheme}
         isDark={isDark}
         timeElapsed={timeElapsed}
+        onShowMobileInstructions={() => setShowMobileInstructions(true)}
         onVerify={handleVerify}
+        onResetRequested={captureCodeSnapshot}
+        onUndoReset={restoreCodeSnapshot}
       />
 
       <div className="flex-1 flex overflow-hidden">
@@ -230,6 +317,7 @@ function ProjectEditorContent({
           isInitializing={isInitializing}
           isValidating={isValidating}
           projectDescription={project.description}
+          projectId={project.id}
           rightPanelTab={rightPanelTab}
           setRightPanelTab={setRightPanelTab}
           autoTriggerAnalysis={autoTriggerAnalysis}
@@ -253,6 +341,15 @@ function ProjectEditorContent({
           timeTaken: timeElapsed,
           hintsUsed: hintIndex + 1,
         }}
+      />
+
+      <MobileInstructionsDrawer
+        isOpen={showMobileInstructions}
+        onClose={() => setShowMobileInstructions(false)}
+        project={project}
+        hintIndex={hintIndex}
+        onRevealHint={revealHint}
+        sandpackStatus={sandpack.status}
       />
     </div>
   );

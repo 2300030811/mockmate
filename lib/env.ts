@@ -27,6 +27,7 @@ const envSchema = z.object({
   GROQ_API_KEY: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
   FEEDBACK_EMAIL: z.string().email().optional(),
+  JUDGE0_API_KEY: z.string().optional(),
 
   // Quiz Data Sources
   AWS_QUESTIONS_URL: z.string().url().optional(),

@@ -53,5 +53,70 @@ describe('Quiz Cleanup Logic', () => {
             const result = sanitizeQuizQuestions(raw);
             expect(result[0].answer).toBe('Correct');
         });
+
+        it('should drop questions where answer cannot be matched to any option', () => {
+            const raw = [
+                {
+                    question: 'Good Question',
+                    options: ['A', 'B'],
+                    answer: 'A',
+                    explanation: 'exp'
+                },
+                {
+                    question: 'Bad Question',
+                    options: ['X', 'Y'],
+                    answer: 'Zebra',
+                    explanation: 'no mention of any option'
+                },
+            ];
+            const result = sanitizeQuizQuestions(raw);
+            expect(result).toHaveLength(1);
+            expect(result[0].question).toBe('Good Question');
+        });
+
+        it('should drop questions with empty question text', () => {
+            const raw = [{
+                question: '',
+                options: ['A', 'B'],
+                answer: 'A',
+                explanation: 'exp'
+            }];
+            const result = sanitizeQuizQuestions(raw);
+            expect(result).toHaveLength(0);
+        });
+
+        it('should drop questions with no options', () => {
+            const raw = [{
+                question: 'Q',
+                options: [],
+                answer: 'A',
+                explanation: 'exp'
+            }];
+            const result = sanitizeQuizQuestions(raw);
+            expect(result).toHaveLength(0);
+        });
+
+        it('should keep all questions when all answers are valid', () => {
+            const raw = [
+                { question: 'Q1', options: ['A', 'B'], answer: 'A', explanation: 'e1' },
+                { question: 'Q2', options: ['C', 'D'], answer: 'D', explanation: 'e2' },
+                { question: 'Q3', options: ['E', 'F'], answer: 'E', explanation: 'e3' },
+            ];
+            const result = sanitizeQuizQuestions(raw);
+            expect(result).toHaveLength(3);
+        });
+
+        it('should deduplicate near-identical questions', () => {
+            const raw = [
+                { question: 'What is photosynthesis?', options: ['A', 'B'], answer: 'A', explanation: 'e1' },
+                { question: 'What is  photosynthesis ?', options: ['A', 'B'], answer: 'A', explanation: 'e2' },
+                { question: 'What is Photosynthesis?', options: ['C', 'D'], answer: 'C', explanation: 'e3' },
+                { question: 'How does respiration work?', options: ['X', 'Y'], answer: 'X', explanation: 'e4' },
+            ];
+            const result = sanitizeQuizQuestions(raw);
+            expect(result).toHaveLength(2);
+            expect(result[0].question).toBe('What is photosynthesis?');
+            expect(result[1].question).toBe('How does respiration work?');
+        });
     });
 });

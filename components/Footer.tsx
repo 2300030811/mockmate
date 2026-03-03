@@ -83,32 +83,46 @@ export function Footer() {
               Connect
             </h4>
             <div className="flex gap-4">
-              <button
-                onClick={() => {
-                  window.open("https://github.com/2300030811", "_blank");
-                  window.open("https://github.com/ktejaswanth", "_blank");
-                }}
+              <a
+                href="https://github.com/2300030811"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-blue-600 hover:text-white transition-all"
-                aria-label="GitHub"
+                aria-label="GitHub - Bhima"
+                title="GitHub - Bhima"
               >
                 <Github className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => {
-                  window.open(
-                    "https://www.linkedin.com/in/mahesh-sai-bhima-038243286",
-                    "_blank",
-                  );
-                  window.open(
-                    "https://www.linkedin.com/in/ktejaswanth/",
-                    "_blank",
-                  );
-                }}
+              </a>
+              <a
+                href="https://github.com/ktejaswanth"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-blue-600 hover:text-white transition-all"
+                aria-label="GitHub - Tejaswanth"
+                title="GitHub - Tejaswanth"
+              >
+                <Github className="w-5 h-5" />
+              </a>
+              <a
+                href="https://www.linkedin.com/in/mahesh-sai-bhima-038243286"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-blue-700 hover:text-white transition-all"
-                aria-label="LinkedIn"
+                aria-label="LinkedIn - Bhima"
+                title="LinkedIn - Bhima"
               >
                 <Linkedin className="w-5 h-5" />
-              </button>
+              </a>
+              <a
+                href="https://www.linkedin.com/in/ktejaswanth/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-blue-700 hover:text-white transition-all"
+                aria-label="LinkedIn - Tejaswanth"
+                title="LinkedIn - Tejaswanth"
+              >
+                <Linkedin className="w-5 h-5" />
+              </a>
             </div>
           </div>
         </div>

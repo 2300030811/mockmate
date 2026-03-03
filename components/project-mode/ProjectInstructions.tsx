@@ -3,7 +3,7 @@
 import { ProjectChallenge } from "@/lib/projects/data";
 import { RefreshCw, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import React from "react";
 
 interface ProjectInstructionsProps {
@@ -77,14 +77,14 @@ export const ProjectInstructions = React.memo(function ProjectInstructions({
 
             <AnimatePresence mode="popLayout">
               {project.hints && project.hints.length > 0 && hintIndex >= 0 && project.hints.slice(0, hintIndex + 1).map((hint, i) => (
-                <motion.div
+                <m.div
                   key={i}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="mb-3 p-3 bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-100 dark:border-yellow-500/20 rounded-lg text-xs text-yellow-800 dark:text-yellow-200"
                 >
                   <span className="font-bold mr-1">Hint {i + 1}:</span> {hint}
-                </motion.div>
+                </m.div>
               ))}
             </AnimatePresence>
 

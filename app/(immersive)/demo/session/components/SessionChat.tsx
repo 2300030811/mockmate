@@ -1,5 +1,28 @@
 import { useRef, useEffect, memo } from "react";
-import ReactMarkdown from "react-markdown";
+import dynamic from "next/dynamic";
+
+const ReactMarkdown = dynamic(() => import("react-markdown"), { ssr: false });
+
+// Memoized individual message — prevents re-parsing Markdown for unchanged messages
+const ChatMessage = memo(function ChatMessage({ role, content }: { role: string; content: string }) {
+    return (
+        <div className={`flex w-full ${role === "assistant" ? "justify-start" : "justify-end"}`}>
+            <div
+                className={`
+                    max-w-[85%] md:max-w-[75%] p-5 rounded-2xl shadow-xl backdrop-blur-sm
+                    ${role === "assistant"
+                        ? "bg-gray-800/80 text-gray-100 rounded-tl-sm border border-gray-700/50"
+                        : "bg-gradient-to-br from-blue-600 to-indigo-600 text-white rounded-tr-sm"}
+                    animate-fadeIn
+                `}
+            >
+                <div className={`prose prose-sm max-w-none ${role === "assistant" ? "prose-invert" : "text-white prose-p:text-white"}`}>
+                    <ReactMarkdown>{content}</ReactMarkdown>
+                </div>
+            </div>
+        </div>
+    );
+});
 
 interface SessionChatProps {
     messages: { role: string; content: string }[];
@@ -30,26 +53,7 @@ export const SessionChat = memo(function SessionChat({ messages, isProcessing, m
             )}
 
             {messages.map((msg, i) => (
-              <div
-                key={i}
-                className={`flex w-full ${msg.role === "assistant" ? "justify-start" : "justify-end"}`}
-              >
-                <div
-                  className={`
-                            max-w-[85%] md:max-w-[75%] p-5 rounded-2xl shadow-xl backdrop-blur-sm
-                            ${
-                              msg.role === "assistant"
-                                ? "bg-gray-800/80 text-gray-100 rounded-tl-sm border border-gray-700/50"
-                                : "bg-gradient-to-br from-blue-600 to-indigo-600 text-white rounded-tr-sm"
-                            }
-                            animate-fadeIn
-                        `}
-                >
-                  <div className={`prose prose-sm max-w-none ${msg.role === "assistant" ? "prose-invert" : "text-white prose-p:text-white"}`}>
-                    <ReactMarkdown>{msg.content}</ReactMarkdown>
-                  </div>
-                </div>
-              </div>
+              <ChatMessage key={i} role={msg.role} content={msg.content} />
             ))}
 
             {isProcessing && (

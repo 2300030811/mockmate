@@ -15,7 +15,7 @@ import { FlashcardGame } from "./components/FlashcardGame";
 
 export default function UploadPage() {
   const router = useRouter();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const isDark = theme === "dark";
 
   // State
@@ -26,7 +26,7 @@ export default function UploadPage() {
   const [current, setCurrent] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [showResults, setShowResults] = useState(false);
-  
+
   // Settings
   const [customApiKey, setCustomApiKey] = useState("");
   const [provider, setProvider] = useState<"gemini" | "openai" | "groq" | "auto">("auto");
@@ -65,17 +65,21 @@ export default function UploadPage() {
         formData.append("file", file!);
 
         const convertData = await convertFileAction(formData);
-        
-        if (convertData.isScanned) {
-           setVisionData({ text: "", base64: convertData.base64 || "" });
-           setIsUploading(false);
-           return;
+
+        if (convertData && 'error' in convertData) {
+          throw new Error(convertData.error as string);
         }
-        textContent = convertData.text;
+
+        if (convertData.isScanned) {
+          setVisionData({ text: "", base64: convertData.base64 || "" });
+          setIsUploading(false);
+          return;
+        }
+        textContent = convertData.text || "";
       }
 
       setLoadingStep(mode === "flashcard" ? "Extracting key concepts..." : "Crafting high-quality quiz questions...");
-      
+
       const questions = await generateQuizAction(
         textContent,
         provider,
@@ -86,7 +90,11 @@ export default function UploadPage() {
         mode
       );
 
-      if (!questions || questions.length === 0) {
+      if (questions && 'error' in questions) {
+        throw new Error(questions.error as string);
+      }
+
+      if (!questions || !Array.isArray(questions) || questions.length === 0) {
         throw new Error("AI could not generate valid content. Try a different file.");
       }
 
@@ -103,16 +111,16 @@ export default function UploadPage() {
 
   // 1. Flashcard View
   if (quiz && quiz.length > 0 && mode === "flashcard") {
-      return (
-          <FlashcardGame 
-              cards={quiz} 
-              isDark={isDark} 
-              onExit={() => {
-                  setQuiz(null);
-                  setMode("quiz");
-              }} 
-          />
-      );
+    return (
+      <FlashcardGame
+        cards={quiz}
+        isDark={isDark}
+        onExit={() => {
+          setQuiz(null);
+          setMode("quiz");
+        }}
+      />
+    );
   }
 
   // 2. Results View (Quiz Only)
@@ -123,15 +131,15 @@ export default function UploadPage() {
   // 3. Quiz View
   if (quiz && quiz.length > 0) {
     return (
-      <QuizGame 
-        quiz={quiz} 
-        current={current} 
+      <QuizGame
+        quiz={quiz}
+        current={current}
         setCurrent={setCurrent}
         answers={answers}
         setAnswers={setAnswers}
         setShowResults={setShowResults}
         isDark={isDark}
-        toggleTheme={toggleTheme}
+        setTheme={setTheme}
       />
     );
   }
@@ -139,15 +147,15 @@ export default function UploadPage() {
   // 4. Upload View (Default)
   return (
     <div className={isDark ? "bg-gray-950 text-white" : "bg-white text-gray-900"}>
-       {/* Navigation Pill */}
-       <div className="absolute top-6 left-6 z-50">
+      {/* Navigation Pill */}
+      <div className="absolute top-6 left-6 z-50">
         <Link href="/" className="flex items-center gap-2 px-4 py-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-full shadow-lg border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-all hover:scale-105 active:scale-95 group">
           <Home className="w-4 h-4 group-hover:text-blue-500 transition-colors" />
           <span>Home</span>
         </Link>
       </div>
 
-      <QuizUpload 
+      <QuizUpload
         isDark={isDark}
         file={file}
         onFileChange={handleFileChange}

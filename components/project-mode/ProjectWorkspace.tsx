@@ -19,8 +19,8 @@ import {
   Sparkles,
   Loader2 as SpinnerIcon
 } from "lucide-react";
-import { motion } from "framer-motion";
-import React, { useState } from "react";
+import { m } from "framer-motion";
+import React, { useState, useCallback } from "react";
 import { ProjectInsights } from "./ProjectInsights";
 
 interface ProjectWorkspaceProps {
@@ -28,6 +28,7 @@ interface ProjectWorkspaceProps {
   isInitializing: boolean;
   isValidating: boolean;
   projectDescription: string;
+  projectId?: string; // For localStorage persistence
   rightPanelTab: "preview" | "console" | "insights";
   setRightPanelTab: (tab: "preview" | "console" | "insights") => void;
   challengeContext?: {
@@ -46,6 +47,7 @@ export const ProjectWorkspace = React.memo(function ProjectWorkspace({
   isInitializing,
   isValidating,
   projectDescription,
+  projectId,
   rightPanelTab,
   setRightPanelTab,
   challengeContext,
@@ -55,6 +57,7 @@ export const ProjectWorkspace = React.memo(function ProjectWorkspace({
   const { sandpack } = useSandpack();
   const [showExplorer, setShowExplorer] = useState(true);
   const [hasBooted, setHasBooted] = useState(false);
+  const [showFilePicker, setShowFilePicker] = useState(false);
 
   // Once the sandbox has run at least once, mark it as booted
   // so the idle overlay never blocks the preview again
@@ -204,7 +207,7 @@ export const ProjectWorkspace = React.memo(function ProjectWorkspace({
 
               {/* Validation Overlay */}
               {isValidating && (
-                <motion.div
+                <m.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   className="absolute inset-0 z-30 bg-blue-600/90 backdrop-blur-md flex flex-col items-center justify-center text-white"
@@ -215,7 +218,7 @@ export const ProjectWorkspace = React.memo(function ProjectWorkspace({
                   </div>
                   <h3 className="text-2xl font-black mb-2">Analyzing Solution</h3>
                   <p className="text-blue-100 text-sm font-medium animate-pulse">Running engineering heuristics...</p>
-                </motion.div>
+                </m.div>
               )}
             </div>
 
@@ -237,6 +240,7 @@ export const ProjectWorkspace = React.memo(function ProjectWorkspace({
               <ProjectInsights
                 files={sandpack.files}
                 description={projectDescription}
+                projectId={projectId}
                 challengeContext={challengeContext}
                 autoTrigger={autoTriggerAnalysis}
                 onTriggered={onAnalysisTriggered}
@@ -245,6 +249,67 @@ export const ProjectWorkspace = React.memo(function ProjectWorkspace({
           </div>
         </div>
       </SandpackLayout>
+
+      {/* Mobile Bottom Toolbar (only visible on mobile) */}
+      <div className="md:hidden h-12 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 flex items-center justify-between px-3 gap-2 overflow-x-auto">
+        {/* File Picker Dropdown - click-based for touch devices */}
+        <div className="relative">
+          <button
+            onClick={() => setShowFilePicker((prev) => !prev)}
+            className="h-8 px-3 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md text-xs font-medium flex items-center gap-1.5 transition-all whitespace-nowrap"
+            aria-expanded={showFilePicker}
+            aria-haspopup="listbox"
+            aria-label="Open file picker"
+          >
+            📁 Files
+          </button>
+          {showFilePicker && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowFilePicker(false)} />
+              <div
+                className="absolute bottom-full left-0 mb-2 flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-800 z-50 max-h-48 overflow-y-auto min-w-[180px]"
+                role="listbox"
+              >
+                {Object.keys(sandpack.files).map((fileName) => (
+                  <button
+                    key={fileName}
+                    role="option"
+                    aria-selected={sandpack.activeFile === fileName}
+                    className={`px-3 py-2 text-xs text-left hover:bg-blue-50 dark:hover:bg-blue-500/10 text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-800 last:border-0 whitespace-nowrap ${sandpack.activeFile === fileName ? 'bg-blue-50 dark:bg-blue-500/10 font-semibold' : ''}`}
+                    onClick={() => { sandpack.openFile(fileName); setShowFilePicker(false); }}
+                    title={fileName}
+                  >
+                    {fileName}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
+        <div className="flex-1" />
+
+        {/* Mobile Quick Actions */}
+        <div className="flex items-center gap-2">
+          {sandpack.status === "idle" || sandpack.status === "timeout" ? (
+            <button
+              onClick={() => sandpack.runSandpack()}
+              className="h-8 px-2 bg-green-600 hover:bg-green-700 text-white rounded-md text-xs font-bold flex items-center gap-1 transition-all"
+              aria-label="Run code"
+            >
+              <Play size={12} fill="currentColor" /> Run
+            </button>
+          ) : (
+            <button
+              onClick={() => Object.values(sandpack.clients).forEach((client: any) => client.dispatch({ type: 'refresh' }))}
+              className="h-8 px-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md text-xs font-bold flex items-center gap-1 transition-all"
+              aria-label="Reload preview"
+            >
+              ⟳ Reload
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 });

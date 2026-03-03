@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { UserAuthSection } from "@/components/UserAuthSection";
 import dynamic from 'next/dynamic';
 import { useState, useEffect, useCallback, useMemo } from "react";
@@ -23,7 +23,7 @@ interface QuizGameProps {
   setAnswers: (a: Record<number, string>) => void;
   setShowResults: (s: boolean) => void;
   isDark: boolean;
-  toggleTheme: () => void;
+  setTheme: (theme: string) => void;
 }
 
 export function QuizGame({
@@ -34,7 +34,7 @@ export function QuizGame({
   setAnswers,
   setShowResults,
   isDark,
-  toggleTheme,
+  setTheme,
 }: QuizGameProps) {
   const [isBobOpen, setIsBobOpen] = useState(false);
   const [streak, setStreak] = useState(0);
@@ -119,7 +119,7 @@ export function QuizGame({
             Finish Now
           </button>
           <button 
-            onClick={toggleTheme} 
+            onClick={() => setTheme(isDark ? 'light' : 'dark')} 
             className={`p-2 rounded-lg transition ${
               isDark ? 'hover:bg-gray-800' : 'hover:bg-gray-100'
             }`}
@@ -144,7 +144,7 @@ export function QuizGame({
             <div className={`h-2.5 w-full rounded-full ${
               isDark ? 'bg-gray-800' : 'bg-gray-200'
             }`}>
-              <motion.div 
+              <m.div 
                 initial={{ width: 0 }}
                 animate={{ width: `${progress}%` }}
                 className="bg-gradient-to-r from-blue-600 to-purple-600 h-2.5 rounded-full transition-all duration-300"
@@ -153,7 +153,7 @@ export function QuizGame({
           </div>
 
           <AnimatePresence mode="wait">
-            <motion.div
+            <m.div
               key={current}
               initial={{ x: 50, opacity: 0, scale: 0.95 }}
               animate={{ x: 0, opacity: 1, scale: 1 }}
@@ -186,7 +186,7 @@ export function QuizGame({
                 {/* Streak Counter */}
                 <div className="flex items-center gap-4">
                      {streak > 1 && (
-                        <motion.div 
+                        <m.div 
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
                             key={streak}
@@ -194,7 +194,7 @@ export function QuizGame({
                         >
                             <span className="text-lg">🔥</span> 
                             <span>{streak} Streak!</span>
-                        </motion.div>
+                        </m.div>
                      )}
                 </div>
               </div>
@@ -240,7 +240,7 @@ export function QuizGame({
                   }
 
                   return (
-                    <motion.button
+                    <m.button
                       key={i}
                       disabled={showFeedback}
                       whileHover={!showFeedback ? { scale: 1.02, x: 4 } : {}}
@@ -254,7 +254,7 @@ export function QuizGame({
                       <div className="flex items-center justify-between relative z-10">
                         <span className="flex-1 pr-4">{opt}</span>
                         {showFeedback && isCorrect && (
-                          <motion.div
+                          <m.div
                              initial={{ scale: 0, rotate: -45 }}
                              animate={{ scale: 1, rotate: 0 }}
                              className="bg-green-500 rounded-full p-1"
@@ -262,10 +262,10 @@ export function QuizGame({
                              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                              </svg>
-                          </motion.div>
+                          </m.div>
                         )}
                          {showFeedback && isWrong && (
-                             <motion.div
+                             <m.div
                              initial={{ scale: 0 }}
                              animate={{ scale: 1 }}
                              className="text-red-500"
@@ -273,10 +273,10 @@ export function QuizGame({
                              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                              </svg>
-                          </motion.div>
+                          </m.div>
                          )}
                       </div>
-                    </motion.button>
+                    </m.button>
                   );
                 })}
               </div>
@@ -284,7 +284,7 @@ export function QuizGame({
               {/* Explanation Box */}
               <AnimatePresence>
                 {answers[q.id] && (
-                    <motion.div 
+                    <m.div 
                     initial={{ opacity: 0, height: 0, marginTop: 0 }}
                     animate={{ opacity: 1, height: "auto", marginTop: 24 }}
                     exit={{ opacity: 0, height: 0, marginTop: 0 }}
@@ -303,10 +303,10 @@ export function QuizGame({
                                 <p className="leading-relaxed opacity-90">{q.explanation}</p>
                             </div>
                         </div>
-                    </motion.div>
+                    </m.div>
                 )}
               </AnimatePresence>
-            </motion.div>
+            </m.div>
           </AnimatePresence>
 
           {/* Navigation Buttons */}

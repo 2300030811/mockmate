@@ -5,15 +5,24 @@ const nextConfig = {
     unoptimized: true,
   },
   reactStrictMode: true,
+  poweredByHeader: false,
 
-  // Packages that should only run in Node.js (not bundled for Edge)
   experimental: {
+    // Packages that should only run in Node.js (not bundled for Edge)
     serverComponentsExternalPackages: ['pdf-parse', '@azure/storage-blob', '@azure/ai-form-recognizer', 'groq-sdk'],
+
     serverActions: {
       // Extra allowed origins for reverse-proxy / preview deployments
       allowedOrigins: process.env.NEXT_PUBLIC_APP_URL
         ? [new URL(process.env.NEXT_PUBLIC_APP_URL).host]
         : [],
+    },
+  },
+
+  // Tree-shake lucide-react icons for smaller bundles
+  modularizeImports: {
+    "lucide-react": {
+      transform: "lucide-react/dist/esm/icons/{{kebabCase member}}",
     },
   },
 

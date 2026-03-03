@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/Button";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 
 export function HomeCTA() {
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, delay: 0.7, ease: "easeOut" }}
@@ -32,6 +32,6 @@ export function HomeCTA() {
       >
         Generate Quiz
       </Link>
-    </motion.div>
+    </m.div>
   );
 }

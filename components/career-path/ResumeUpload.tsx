@@ -4,7 +4,7 @@ import React, { useState, useRef } from 'react';
 import { Upload, FileText, X, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 
 interface ResumeUploadProps {
   onUpload: (file: File) => void;
@@ -63,7 +63,7 @@ export const ResumeUpload: React.FC<ResumeUploadProps> = ({ onUpload }) => {
     <div className="w-full max-w-2xl mx-auto">
       <AnimatePresence mode="wait">
           {!file ? (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -104,9 +104,9 @@ export const ResumeUpload: React.FC<ResumeUploadProps> = ({ onUpload }) => {
                 </Button>
               </div>
             </Card>
-          </motion.div>
+          </m.div>
         ) : (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
           >
@@ -136,7 +136,7 @@ export const ResumeUpload: React.FC<ResumeUploadProps> = ({ onUpload }) => {
                 </div>
               </div>
             </Card>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </div>

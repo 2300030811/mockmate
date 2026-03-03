@@ -1,7 +1,7 @@
-import { CameraOffIcon, HeartPulse } from "lucide-react";
+import { CameraOff } from "lucide-react";
 import { AudioVisualizer } from "./AudioVisualizer";
 import { useEffect, useRef, memo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 
 interface SessionVisualsProps {
     isAISpeaking: boolean;
@@ -40,7 +40,7 @@ export const SessionVisuals = memo(function SessionVisuals({
                 {/* Background Glow */}
                 <AnimatePresence>
                     {isAISpeaking && (
-                        <motion.div 
+                        <m.div 
                             initial={{ opacity: 0, scale: 0.8 }}
                             animate={{ opacity: 1, scale: 1.2 }}
                             exit={{ opacity: 0, scale: 0.8 }}
@@ -50,7 +50,7 @@ export const SessionVisuals = memo(function SessionVisuals({
                 </AnimatePresence>
                 
                 <div className="relative z-10">
-                    <motion.div
+                    <m.div
                         animate={isAISpeaking ? {
                             scale: [1, 1.15, 1],
                             rotate: [0, 5, -5, 0],
@@ -72,25 +72,25 @@ export const SessionVisuals = memo(function SessionVisuals({
                             ${isAISpeaking ? "ring-purple-400/50 shadow-purple-500/40" : "ring-gray-700 shadow-black"}
                         `}
                     >
-                        <motion.span
+                        <m.span
                             animate={isAISpeaking ? { y: [-5, 5, -5] } : {}}
                             transition={{ duration: 0.5, repeat: Infinity }}
                         >
                             🤖
-                        </motion.span>
+                        </m.span>
 
                         {/* Speech Orbs */}
                         <AnimatePresence>
                             {isAISpeaking && (
                                 <>
-                                    <motion.div 
+                                    <m.div 
                                         initial={{ scale: 0, opacity: 0 }}
                                         animate={{ scale: 1.5, opacity: 0 }}
                                         exit={{ scale: 2, opacity: 0 }}
                                         transition={{ duration: 1, repeat: Infinity }}
                                         className="absolute inset-0 rounded-full border-2 border-purple-400"
                                     />
-                                    <motion.div 
+                                    <m.div 
                                         initial={{ scale: 0, opacity: 0 }}
                                         animate={{ scale: 1.8, opacity: 0 }}
                                         exit={{ scale: 2.5, opacity: 0 }}
@@ -100,11 +100,11 @@ export const SessionVisuals = memo(function SessionVisuals({
                                 </>
                             )}
                         </AnimatePresence>
-                    </motion.div>
+                    </m.div>
                 </div>
 
                 <div className="absolute bottom-6 left-0 right-0 text-center flex flex-col items-center gap-2">
-                    <motion.div 
+                    <m.div 
                         layout
                         className="bg-gray-900/80 backdrop-blur-md border border-gray-800 px-4 py-1.5 rounded-full shadow-2xl flex items-center gap-2"
                     >
@@ -112,16 +112,16 @@ export const SessionVisuals = memo(function SessionVisuals({
                         <h3 className="font-bold text-gray-200 uppercase tracking-widest text-[10px]">
                             {isAISpeaking ? 'Bob is Speaking' : isProcessing ? 'Bob is Thinking' : 'Bob is Listening'}
                         </h3>
-                    </motion.div>
+                    </m.div>
                     
-                    <motion.p 
+                    <m.p 
                         key={isAISpeaking ? 'speak' : isProcessing ? 'think' : 'wait'}
                         initial={{ opacity: 0, y: 5 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="text-[10px] text-gray-500 font-medium tracking-tight h-4"
                     >
                         {isAISpeaking ? "Evaluating your logic match..." : isProcessing ? "Connecting key technical concepts..." : "I'm ready when you are."}
-                    </motion.p>
+                    </m.p>
                 </div>
             </div>
 
@@ -137,7 +137,7 @@ export const SessionVisuals = memo(function SessionVisuals({
                 />
                 ) : (
                 <div className="flex flex-col items-center justify-center text-gray-600">
-                    <CameraOffIcon className="mb-2 opacity-50" />
+                    <CameraOff className="mb-2 opacity-50" />
                     <span className="text-xs uppercase tracking-widest opacity-50">
                     Camera Off
                     </span>

@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import Editor, { type OnMount } from "@monaco-editor/react";
+import { m, AnimatePresence } from "framer-motion";
+import dynamic from "next/dynamic";
+import type { OnMount } from "@monaco-editor/react";
+const Editor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 import {
    Terminal,
    Zap,
@@ -26,7 +28,6 @@ import { useRouter } from "next/navigation";
 import { NavigationPill } from "@/components/ui/NavigationPill";
 import { useTheme } from "@/components/providers/providers";
 import { Sun, Moon } from "lucide-react";
-import { useDailyStreak } from "@/hooks/useDailyStreak";
 
 // Language config with correct version labels
 const LANGUAGE_CONFIG: Record<string, { label: string; monacoId: string }> = {
@@ -39,9 +40,8 @@ const LANGUAGE_CONFIG: Record<string, { label: string; monacoId: string }> = {
 
 export default function DailyChallengePage() {
    const router = useRouter();
-   const { theme, toggleTheme } = useTheme();
+    const { theme, setTheme } = useTheme();
    const isDark = theme === "dark";
-   const { completeChallenge } = useDailyStreak();
 
    const editorRef = useRef<any>(null);
    const [problem, setProblem] = useState(DAILY_PROBLEMS[0]);
@@ -162,7 +162,7 @@ export default function DailyChallengePage() {
 
          if (evalResult.success) {
             setIsSolved(true);
-            completeChallenge(problem.points);
+            // XP/streak sync is handled server-side by submitChallenge()
          }
       } catch (err) {
          console.error(err);
@@ -218,16 +218,16 @@ export default function DailyChallengePage() {
 
             <div className="flex items-center gap-2">
                {/* Theme Toggle */}
-               <button onClick={toggleTheme} className="flex items-center justify-center w-8 h-8 text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">
+               <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="flex items-center justify-center w-8 h-8 text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">
                   <AnimatePresence mode="wait">
                      {isDark ? (
-                        <motion.div key="sun" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.2 }}>
+                        <m.div key="sun" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.2 }}>
                            <Sun size={16} className="text-yellow-400" />
-                        </motion.div>
+                        </m.div>
                      ) : (
-                        <motion.div key="moon" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.2 }}>
+                        <m.div key="moon" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.2 }}>
                            <Moon size={16} />
-                        </motion.div>
+                        </m.div>
                      )}
                   </AnimatePresence>
                </button>
@@ -401,13 +401,13 @@ export default function DailyChallengePage() {
 
                   <AnimatePresence>
                      {showConsole && (
-                        <motion.div
+                        <m.div
                            initial={{ opacity: 0 }}
                            animate={{ opacity: 1 }}
                            className="flex-1 p-3 overflow-y-auto font-mono text-xs text-emerald-500/90 leading-relaxed custom-scrollbar whitespace-pre-wrap"
                         >
                            {output || "Run your code to see the output..."}
-                        </motion.div>
+                        </m.div>
                      )}
                   </AnimatePresence>
                </div>
@@ -417,13 +417,13 @@ export default function DailyChallengePage() {
          {/* Submission Overlay */}
          <AnimatePresence>
             {evaluation && (
-               <motion.div
+               <m.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl flex items-center justify-center p-6"
                >
-                  <motion.div
+                  <m.div
                      initial={{ scale: 0.9, y: 20 }}
                      animate={{ scale: 1, y: 0 }}
                      className="bg-gray-900 border border-white/10 rounded-[2.5rem] max-w-2xl w-full overflow-hidden shadow-2xl"
@@ -469,8 +469,8 @@ export default function DailyChallengePage() {
                            </button>
                         </div>
                      </div>
-                  </motion.div>
-               </motion.div>
+                  </m.div>
+               </m.div>
             )}
          </AnimatePresence>
 

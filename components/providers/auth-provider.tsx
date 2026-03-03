@@ -79,39 +79,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const pollTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-
-  const pollAndSetProfile = async (userId: string) => {
-    let attempts = 0;
-    const maxAttempts = 10;
-
-    // Clear any existing poll loop
-    if (pollTimeoutRef.current) {
-      clearTimeout(pollTimeoutRef.current);
-      pollTimeoutRef.current = null;
-    }
-
-    const executePoll = async () => {
-      try {
-        const profileData = await fetchProfile(userId);
-        if (profileData) {
-          setProfile(profileData);
-          return true;
-        }
-      } catch (err) {
-        console.error("Polling profile error:", err);
-      }
-
-      if (attempts < maxAttempts) {
-        attempts++;
-        const delay = attempts < 3 ? 200 : 800;
-        pollTimeoutRef.current = setTimeout(executePoll, delay);
-      }
-    };
-
-    executePoll();
-  };
-
   const refresh = async () => {
     try {
       // Instead of relying on client-side Supabase network calls which fail in India,

@@ -4,7 +4,7 @@
 import { useState, memo, useEffect, useCallback } from 'react';
 import { MCQQuestion, QuizMode } from '@/types';
 import dynamic from 'next/dynamic';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { CheckCircle, XCircle, HelpCircle, Info } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { getCorrectAnswers, getLanguageForCategory } from '@/utils/quiz-helpers';
@@ -152,7 +152,7 @@ export const MultipleChoiceCard = memo(({
                             }
 
                             return (
-                                <motion.button
+                                <m.button
                                     key={index}
                                     layout
                                     initial={{ opacity: 0, y: 10 }}
@@ -205,7 +205,7 @@ export const MultipleChoiceCard = memo(({
                                             <XCircle className="w-4 h-4 text-white" />
                                         </div>
                                     )}
-                                </motion.button>
+                                </m.button>
                             );
                         })}
                     </AnimatePresence>
@@ -229,7 +229,7 @@ export const MultipleChoiceCard = memo(({
 
                         <AnimatePresence>
                             {showExplanation && (
-                                <motion.div
+                                <m.div
                                     initial={{ opacity: 0, height: 0 }}
                                     animate={{ opacity: 1, height: "auto" }}
                                     exit={{ opacity: 0, height: 0 }}
@@ -246,7 +246,7 @@ export const MultipleChoiceCard = memo(({
                                         </div>
                                         <p className="text-base md:text-lg leading-relaxed text-gray-700 dark:text-white/80">{question.explanation}</p>
                                     </div>
-                                </motion.div>
+                                </m.div>
                             )}
                         </AnimatePresence>
                     </div>

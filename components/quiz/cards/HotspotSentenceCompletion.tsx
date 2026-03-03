@@ -2,7 +2,7 @@
 "use client";
 
 import { HotspotSentenceQuestion } from "@/types";
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Check, X } from 'lucide-react';
 import { useTheme } from '@/components/providers/providers';
 
@@ -37,7 +37,7 @@ export function HotspotSentenceCompletion({
           {hasBlank ? (
             <div className="flex flex-wrap items-center gap-3 leading-loose">
               <span>{parts[0]}</span>
-              <motion.div
+              <m.div
                 layout
                 className={`inline-flex items-center min-w-[200px] px-4 py-2 rounded-lg border-2 border-dashed transition-all
                 ${userAnswer
@@ -56,7 +56,7 @@ export function HotspotSentenceCompletion({
                     Select option below
                   </span>
                 )}
-              </motion.div>
+              </m.div>
               {parts[1] && <span>{parts[1]}</span>}
             </div>
           ) : (
@@ -95,7 +95,7 @@ export function HotspotSentenceCompletion({
               }
 
               return (
-                <motion.button
+                <m.button
                   key={index}
                   layout
                   whileHover={!isReviewMode ? { scale: 1.02, x: 5 } : {}}
@@ -116,7 +116,7 @@ export function HotspotSentenceCompletion({
                       Incorrect <X className="w-5 h-5" />
                     </div>
                   )}
-                </motion.button>
+                </m.button>
               );
             })}
           </div>
@@ -124,7 +124,7 @@ export function HotspotSentenceCompletion({
 
         {/* Explanation */}
         {isReviewMode && question.explanation && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className={`mt-8 p-6 border rounded-3xl ${isDark ? 'bg-blue-500/10 border-blue-500/20' : 'bg-blue-50 border-blue-100'}`}
@@ -134,7 +134,7 @@ export function HotspotSentenceCompletion({
               Explanation
             </div>
             <p className={`text-base md:text-lg ${isDark ? 'text-white/80' : 'text-gray-700'}`}>{question.explanation}</p>
-          </motion.div>
+          </m.div>
         )}
       </div>
     </div>

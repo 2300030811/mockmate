@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { InteractiveCard } from "@/components/ui/Card";
 
 interface ModeCardProps {

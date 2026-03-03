@@ -17,6 +17,13 @@ CREATE TABLE IF NOT EXISTS profiles (
   email TEXT,
   avatar_url TEXT,
   role TEXT DEFAULT 'user', -- 'user' or 'admin'
+  -- Materialised scoring stats (updated incrementally by server actions)
+  xp INTEGER DEFAULT 0,
+  level INTEGER DEFAULT 1,
+  streak INTEGER DEFAULT 0,
+  elo INTEGER DEFAULT 1000,
+  last_activity_at TIMESTAMP WITH TIME ZONE,
+  streak_updated_at TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );

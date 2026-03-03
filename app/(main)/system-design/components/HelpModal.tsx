@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { Info, X, Sparkles } from "lucide-react";
 
 interface HelpModalProps {
@@ -13,8 +13,8 @@ export const HelpModal = memo(({ isOpen, onClose, onOpenTutorial }: HelpModalPro
 
   return (
     <AnimatePresence>
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6" onClick={onClose}>
-         <motion.div initial={{ scale: 0.9, y: 30 }} animate={{ scale: 1, y: 0 }} className="bg-gray-950 border border-white/10 rounded-[2rem] p-10 max-w-2xl w-full shadow-2xl relative overflow-hidden" onClick={e => e.stopPropagation()}>
+      <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6" onClick={onClose}>
+         <m.div initial={{ scale: 0.9, y: 30 }} animate={{ scale: 1, y: 0 }} className="bg-gray-950 border border-white/10 rounded-[2rem] p-10 max-w-2xl w-full shadow-2xl relative overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-5 mb-10">
                <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg"><Info size={32} /></div>
                <div><h2 className="text-3xl font-black text-white">System Guide</h2><p className="text-gray-400">Master the architecture modeling workspace.</p></div>
@@ -44,8 +44,8 @@ export const HelpModal = memo(({ isOpen, onClose, onOpenTutorial }: HelpModalPro
                    <Sparkles size={16} /> Tutorial
                 </button>
             </div>
-         </motion.div>
-      </motion.div>
+         </m.div>
+      </m.div>
     </AnimatePresence>
   );
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { Shield, Lock, Eye, FileText } from "lucide-react";
 import { useTheme } from "@/components/providers/providers";
 
@@ -13,7 +13,7 @@ export default function PrivacyPolicy() {
       isDark ? "bg-gray-950 text-gray-300" : "bg-gray-50 text-gray-700"
     }`}>
       <div className="max-w-4xl mx-auto">
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-16"
@@ -30,7 +30,7 @@ export default function PrivacyPolicy() {
           <p className="text-xl opacity-70">
             Last updated: February 13, 2026
           </p>
-        </motion.div>
+        </m.div>
 
         <div className={`prose prose-lg max-w-none ${isDark ? "prose-invert" : ""}`}>
           <section className="mb-12">

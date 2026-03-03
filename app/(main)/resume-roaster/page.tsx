@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect } from "react";
+import { m } from "framer-motion";
 import { roastResumeAction } from "@/app/actions/resume";
 import { NavigationPill } from "@/components/ui/NavigationPill";
 import { Flame } from "lucide-react";
@@ -22,8 +22,12 @@ const LOADING_MESSAGES = [
   "Finding out why your GPA is hidden behind that tiny font...",
   "Scanning for signs of actual competence...",
   "Analyzing your 'hobbies' section for personality red flags...",
-  "Wondering why you used Comic Sans in 2026..."
+  "Wondering why you used Comic Sans in 2026...",
+  "Cross-referencing your skills with actual job requirements...",
+  "Checking if your resume passes the 6-second recruiter test...",
 ];
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export default function ResumeRoasterPage() {
   const [file, setFile] = useState<File | null>(null);
@@ -40,18 +44,32 @@ export default function ResumeRoasterPage() {
   const { isSpeaking, speak, stop } = useSpeech();
   const { playBeforeUpload, playWhileLoading, playAfterLoading, stopAudio } = useMemeAudio();
 
-  // Load from localStorage on mount
+  // Load from localStorage on mount (validate shape to handle schema changes)
   useEffect(() => {
     const saved = localStorage.getItem("last-resume-roast");
     if (saved) {
       try {
-        setRoastData(JSON.parse(saved));
-      } catch (e) {
+        const parsed = JSON.parse(saved);
+        if (
+          parsed &&
+          typeof parsed === "object" &&
+          typeof parsed.professionalScore === "number" &&
+          parsed.atsAnalysis &&
+          typeof parsed.atsAnalysis.atsScore === "number"
+        ) {
+          setRoastData(parsed as RoastData);
+        } else {
+          localStorage.removeItem("last-resume-roast");
+        }
+      } catch {
         localStorage.removeItem("last-resume-roast");
       }
     }
-    return () => stopAudio(); // Cleanup on unmount
-  }, [stopAudio]);
+    return () => {
+      stopAudio();
+      stop();
+    };
+  }, [stopAudio, stop]);
 
   // Save to localStorage when roastData changes
   useEffect(() => {
@@ -62,13 +80,15 @@ export default function ResumeRoasterPage() {
 
   // Cycle loading messages
   useEffect(() => {
-    let interval: any;
+    let interval: ReturnType<typeof setInterval> | undefined;
     if (isRoasting) {
       interval = setInterval(() => {
         setLoadingMessageIndex((prev: number) => (prev + 1) % LOADING_MESSAGES.length);
       }, 3000);
     }
-    return () => clearInterval(interval);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [isRoasting]);
 
   const clearHistory = () => {
@@ -76,6 +96,7 @@ export default function ResumeRoasterPage() {
     setRoastData(null);
     setFile(null);
     setJobDescription("");
+    stop();
   };
 
   const toggleSuggestion = (idx: number) => {
@@ -89,6 +110,10 @@ export default function ResumeRoasterPage() {
       const selectedFile = e.target.files[0];
       if (selectedFile.type !== "application/pdf") {
         setError("Please upload a PDF file.");
+        return;
+      }
+      if (selectedFile.size > MAX_FILE_SIZE) {
+        setError("File too large. Maximum size is 10MB.");
         return;
       }
       setFile(selectedFile);
@@ -105,6 +130,7 @@ export default function ResumeRoasterPage() {
     setRoastData(null);
     setLoadingMessageIndex(0);
     setCompletedSuggestions([]);
+    stop(); // Cancel any ongoing speech
     playWhileLoading();
 
     const formData = new FormData();
@@ -112,6 +138,11 @@ export default function ResumeRoasterPage() {
 
     try {
       const result = await roastResumeAction(formData, jobDescription, selectedTone);
+
+      if (result.error || !result.data) {
+        throw new Error(result.error || "Failed to parse roast. Please try again.");
+      }
+
       setRoastData(result.data);
       playAfterLoading(result.data.professionalScore);
     } catch (err: unknown) {
@@ -129,6 +160,7 @@ export default function ResumeRoasterPage() {
 "${roastData.brutalRoast}"
 
 Score: ${roastData.professionalScore}/100
+ATS Score: ${roastData.atsAnalysis?.atsScore ?? "N/A"}/100 (${roastData.atsAnalysis?.matchRating ?? "N/A"})
 
 Skill Breakdown:
 - Clarity: ${roastData.skillBreakdown?.clarity || 0}%
@@ -139,9 +171,12 @@ Skill Breakdown:
 Critical Flaws:
 ${roastData.criticalFlaws.map((f, i) => `${i + 1}. ${f}`).join("\n")}
 
+ATS Tips:
+${roastData.atsAnalysis?.atsTips?.map((t) => `\u2022 ${t}`).join("\n") ?? "N/A"}
+
 Roadmap to Redemption:
-${roastData.suggestions.map((s) => `• ${s}`).join("\n")}
-    `;
+${roastData.suggestions.map((s) => `\u2022 ${s}`).join("\n")}
+    `.trim();
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -153,6 +188,7 @@ ${roastData.suggestions.map((s) => `• ${s}`).join("\n")}
     setError(null);
     setJobDescription("");
     setCompletedSuggestions([]);
+    stop();
   };
 
   return (
@@ -167,7 +203,7 @@ ${roastData.suggestions.map((s) => `• ${s}`).join("\n")}
 
       <div className="relative z-10 max-w-6xl mx-auto px-4 py-20">
         {/* Header */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-16"
@@ -182,7 +218,7 @@ ${roastData.suggestions.map((s) => `• ${s}`).join("\n")}
           <p className="text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
             Upload your resume and get roasted by our AI. We&apos;ll tell you exactly why you aren&apos;t getting those interviews.
           </p>
-        </motion.div>
+        </m.div>
 
         {!roastData ? (
           <ResumeUpload
@@ -202,7 +238,7 @@ ${roastData.suggestions.map((s) => `• ${s}`).join("\n")}
             roastData={roastData}
             selectedTone={selectedTone}
             isSpeaking={isSpeaking}
-            onSpeak={() => speak(roastData.brutalRoast)}
+            onSpeak={() => isSpeaking ? stop() : speak(roastData.brutalRoast)}
             completedSuggestions={completedSuggestions}
             onToggleSuggestion={toggleSuggestion}
             onCopy={copyToClipboard}

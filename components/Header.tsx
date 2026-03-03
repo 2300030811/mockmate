@@ -9,27 +9,31 @@ import { Home, Sun, Moon } from "lucide-react";
 import { UserAuthSection } from "./UserAuthSection";
 import { m, AnimatePresence } from "framer-motion";
 
+// Routes where the global header should be hidden (immersive/full-screen experiences)
+const HIDDEN_ROUTE_PATTERNS = [
+  "/session",
+  "-quiz",
+  "/interview",
+  "/demo",
+  "/arena",
+  "/daily-challenge",
+  "/system-design",
+  "/career-path",
+  "/resume-roaster",
+  "/certification",
+  "/project-mode",
+];
+
 export function Header() {
   const pathname = usePathname();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const isDark = theme === "dark";
   const [scrolled, setScrolled] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  // Routes where the global header should be hidden (immersive/full-screen experiences)
-  const HIDDEN_ROUTE_PATTERNS = [
-    "/session",
-    "-quiz",
-    "/interview",
-    "/demo",
-    "/arena",
-    "/daily-challenge",
-    "/system-design",
-    "/career-path",
-    "/resume-roaster",
-    "/certification",
-    "/project-mode",
-  ];
+  const toggleTheme = () => {
+    setTheme(isDark ? "light" : "dark");
+  };
 
   const isHiddenRoute = HIDDEN_ROUTE_PATTERNS.some(
     (pattern) => pathname?.includes(pattern)

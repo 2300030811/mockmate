@@ -6,8 +6,9 @@ export interface ProjectChallenge {
   tags: string[];
   files: Record<string, string>;
   activeFile: string;
-  solution?: Record<string, string>; // For validation later
+  solution?: Record<string, string>; // For validation and future features
   validationRegex?: Record<string, string>; // Filename -> Regex pattern to match for success
+  validationTests?: Array<{ description: string; test: string }>; // Optional programmatic tests
   hints?: string[];
   estimatedTime?: string; // e.g. "5 mins"
   completionRate?: number; // e.g. 85 for 85%
@@ -640,4 +641,266 @@ export function useDebounce(value, delay) {
 }`,
     },
   },
+  {
+    id: "vanilla-dom-bug",
+    title: "Fix the DOM Manipulation Bug",
+    description:
+      "You need to build a simple vanilla JavaScript todo app that adds items to a list dynamically. The HTML is provided, but the JavaScript is broken. Fix it to add items to the DOM when the button is clicked.",
+    difficulty: "Easy",
+    tags: ["Vanilla JS", "DOM API", "Event Handling"],
+    template: "vanilla",
+    estimatedTime: "8 mins",
+    completionRate: 78,
+    activeFile: "/script.js",
+    readOnlyFiles: ["/index.html"],
+    validationRegex: {
+      "/script.js": "addEventListener|addEventListener.*click|appendChild|insertAdjacentHTML",
+    },
+    hints: [
+      "You need to get a reference to the HTML elements using `document.querySelector()` or `getElementById()`.",
+      "Add an event listener to the button that triggers when it's clicked.",
+      "When the button is clicked, create a new list item and append it to the list using `appendChild()` or `innerHTML`.",
+    ],
+    expertSolution: `const input = document.querySelector('#todo-input');
+const addBtn = document.querySelector('#add-btn');
+const list = document.querySelector('#todo-list');
+
+addBtn.addEventListener('click', () => {
+  const text = input.value.trim();
+  if (!text) return;
+
+  const li = document.createElement('li');
+  li.textContent = text;
+  list.appendChild(li);
+  
+  input.value = '';
+  input.focus();
+});`,
+    expertExplanation:
+      "The key is using the DOM API correctly: `querySelector()` to find elements, `addEventListener()` to respond to events, and `appendChild()` or `createElement()` to modify the DOM. Always validate user input before using it.",
+    files: {
+      "/index.html": `<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    #todo-input { padding: 8px; width: 200px; }
+    #add-btn { padding: 8px 16px; cursor: pointer; background: #000; color: #fff; border: none; }
+    #todo-list { margin-top: 20px; list-style: none; padding: 0; }
+    #todo-list li { padding: 12px; border-bottom: 1px solid #eee; }
+  </style>
+</head>
+<body>
+  <h2>My Todos</h2>
+  <input id="todo-input" placeholder="Enter a todo...">
+  <button id="add-btn">Add</button>
+  <ul id="todo-list"></ul>
+  <script src="script.js"></script>
+</body>
+</html>`,
+      "/script.js": `// TASK: Make the "Add" button work!
+// When clicked, it should take the input value and add it to the list.
+
+const input = document.querySelector('#todo-input');
+const addBtn = document.querySelector('#add-btn');
+const list = document.querySelector('#todo-list');
+
+// TODO: Add an event listener to addBtn that:
+// 1. Gets the input value
+// 2. Creates a new <li> element
+// 3. Sets the li's text to the input value
+// 4. Appends it to the list`,
+    },
+  },
+  {
+    id: "flexbox-layout",
+    title: "Build a Responsive Flexbox Layout",
+    description:
+      "Create a responsive header layout using CSS Flexbox. The HTML structure is provided. You only need to add the CSS to make the header flex, center items vertically, and respond to mobile screens.",
+    difficulty: "Easy",
+    tags: ["CSS", "Flexbox", "Responsive Design"],
+    template: "vanilla",
+    estimatedTime: "7 mins",
+    completionRate: 82,
+    activeFile: "/style.css",
+    readOnlyFiles: ["/index.html"],
+    validationRegex: {
+      "/style.css": "display:\\s*flex|flex-direction|justify-content|align-items",
+    },
+    hints: [
+      "Use `display: flex` on the container to enable flexbox.",
+      "Use `justify-content` to align items horizontally (e.g., `space-between`).",
+      "Use `align-items: center` to center items vertically.",
+      "Use `@media` queries or `flex-wrap` for mobile responsiveness.",
+    ],
+    expertSolution: `header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background: #f5f5f5;
+  gap: 20px;
+}
+
+@media (max-width: 768px) {
+  header {
+    flex-direction: column;
+    text-align: center;
+  }
+}`,
+    expertExplanation:
+      "Flexbox is the modern way to layout elements. `display: flex` activates it, `justify-content` controls horizontal alignment, and `align-items` controls vertical alignment. Media queries let you adjust for mobile.",
+    files: {
+      "/index.html": `<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="logo">MyApp</div>
+    <nav>
+      <a href="#">Home</a>
+      <a href="#">About</a>
+      <a href="#">Contact</a>
+    </nav>
+    <button>Sign In</button>
+  </header>
+  
+  <main>
+    <h1>Welcome</h1>
+    <p>The header above should use Flexbox to align elements horizontally on desktop, and stack vertically on mobile.</p>
+  </main>
+</body>
+</html>`,
+      "/style.css": `* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+}
+
+header {
+  /* FIX ME: Make this a flexbox container that:
+     1. Displays items in a row (desktop)
+     2. Distributes them evenly with space-between
+     3. Centers items vertically
+     4. On mobile (max-width: 768px), stacks vertically
+  */
+  background: #f5f5f5;
+  padding: 20px;
+}
+
+nav {
+  /* Also make nav a flex container to align links horizontally */
+  display: flex;
+  gap: 20px;
+}
+
+nav a {
+  text-decoration: none;
+  color: #333;
+}
+
+button {
+  padding: 8px 16px;
+  background: #000;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+main {
+  padding: 40px;
+  max-width: 800px;
+  margin: 0 auto;
+}`,
+    },
+  },
+  {
+    id: "tsreact-generic-types",
+    title: "Build a Generic Type-Safe List Component",
+    description:
+      "Build a reusable React component in TypeScript that accepts a generic array and renders it. The component should be type-safe and only accept valid props.",
+    difficulty: "Medium",
+    tags: ["TypeScript", "React", "Generics"],
+    template: "react-ts",
+    estimatedTime: "12 mins",
+    completionRate: 52,
+    activeFile: "/App.tsx",
+    readOnlyFiles: [],
+    validationRegex: {
+      "/App.tsx": "<T extends|generic|interface Props|Record<string",
+    },
+    hints: [
+      "Define a generic component that accepts a type parameter T for the array items.",
+      "Use an interface or type to define the props, making it reusable.",
+      "Map over the array to render each item.",
+    ],
+    expertSolution: `interface ListProps<T> {
+  items: T[];
+  renderItem: (item: T, index: number) => React.ReactNode;
+  keyExtractor: (item: T, index: number) => string | number;
+}
+
+function List<T>({ items, renderItem, keyExtractor }: ListProps<T>) {
+  return (
+    <ul>
+      {items.map((item, index) => (
+        <li key={keyExtractor(item, index)}>
+          {renderItem(item, index)}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export default function App() {
+  const users = [
+    { id: 1, name: 'Alice' },
+    { id: 2, name: 'Bob' },
+  ];
+
+  return (
+    <List
+      items={users}
+      renderItem={(user) => user.name}
+      keyExtractor={(user) => user.id}
+    />
+  );
+}`,
+    expertExplanation:
+      "Generic components let you create reusable UI that works with any data type while maintaining type safety. This pattern is used in libraries like TanStack Query and React Table.",
+    files: {
+      "/App.tsx": `import React from 'react';
+
+// TODO: Create a generic List component that accepts:
+// - items: an array of any type T
+// - renderItem: a function to render each item
+// - keyExtractor: a function to extract unique keys
+
+// Then use it in the App component below to render a list of users
+// (Make sure it's fully type-safe!)
+
+const users = [
+  { id: 1, name: 'Alice' },
+  { id: 2, name: 'Bob' },
+  { id: 3, name: 'Carol' },
 ];
+
+export default function App() {
+  return (
+    <div style={{ padding: 40 }}>
+      <h1>User List (Type-Safe with Generics)</h1>
+      {/* TODO: Render the list here */}
+    </div>
+  );
+}`,
+    },
+  },
+];
+

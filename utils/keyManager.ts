@@ -2,11 +2,13 @@
  * KeyManager — singleton-cached key provider for AI API keys.
  * 
  * Supports comma-separated keys in env vars for rotation.
+ * Uses round-robin selection for even distribution across keys.
  * Instances are cached per env var name so we don't re-parse 
  * process.env on every call (was creating a new instance each time).
  */
 export class KeyManager {
   private keys: string[];
+  private index: number = 0;
 
   constructor(envVarName: string) {
     const envValue = process.env[envVarName] || "";
@@ -18,9 +20,10 @@ export class KeyManager {
 
   public getKey(): string {
     if (this.keys.length === 0) return "";
-    // Random selection — avoids hot spots in serverless where 
-    // multiple instances would all start at index 0
-    return this.keys[Math.floor(Math.random() * this.keys.length)];
+    // Round-robin selection — evenly distributes load across keys
+    const key = this.keys[this.index % this.keys.length];
+    this.index++;
+    return key;
   }
 
   public hasKeys(): boolean {

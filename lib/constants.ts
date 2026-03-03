@@ -1,3 +1,11 @@
+/**
+ * Unified nickname validation regex.
+ * Allows letters, numbers, underscores, hyphens, and spaces.
+ * Used across signup, profile update, and moderation.
+ */
+export const NICKNAME_REGEX = /^[a-zA-Z0-9_\s\-]+$/;
+export const NICKNAME_REGEX_MESSAGE = "Nickname can only contain letters, numbers, spaces, underscores, and hyphens";
+
 export const BOB_SYSTEM_PROMPT = `You are Bob, an expert AI tutor for certification exams (AWS, Azure, Salesforce, etc.).
 Your goal is to ensure the user truly understands the concepts, not just the answers.
 

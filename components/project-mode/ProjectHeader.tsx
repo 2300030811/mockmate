@@ -1,9 +1,9 @@
 "use client";
 
 import { ProjectChallenge } from "@/lib/projects/data";
-import { CheckCircle, Sun, Moon, RotateCcw, Home, Timer } from "lucide-react";
+import { CheckCircle, Sun, Moon, RotateCcw, Home, Timer, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useSandpack } from "@codesandbox/sandpack-react";
 import React, { useState, useCallback } from "react";
@@ -13,10 +13,13 @@ interface ProjectHeaderProps {
   project: ProjectChallenge;
   activeTab: "code" | "preview";
   setActiveTab: (tab: "code" | "preview") => void;
-  toggleTheme: () => void;
+  setTheme: (theme: string) => void;
   isDark: boolean;
   timeElapsed: number;
   onVerify: () => void;
+  onShowMobileInstructions?: () => void;
+  onResetRequested?: () => void; // Called before reset to capture state
+  onUndoReset?: () => void; // Called when user clicks undo
 }
 
 const formatTime = (seconds: number) => {
@@ -29,10 +32,13 @@ export const ProjectHeader = React.memo(function ProjectHeader({
   project,
   activeTab,
   setActiveTab,
-  toggleTheme,
+  setTheme,
   isDark,
   timeElapsed,
   onVerify,
+  onShowMobileInstructions,
+  onResetRequested,
+  onUndoReset,
 }: ProjectHeaderProps) {
   const { sandpack } = useSandpack();
   const [isResetting, setIsResetting] = useState(false);
@@ -41,10 +47,16 @@ export const ProjectHeader = React.memo(function ProjectHeader({
   const handleReset = useCallback(() => {
     setShowResetConfirm(false);
     setIsResetting(true);
+    onResetRequested?.(); // Capture current state before resetting
     sandpack.resetAllFiles();
     setTimeout(() => setIsResetting(false), 1000);
-    toast.info("Project reset to initial state");
-  }, [sandpack]);
+    toast.info("Project reset to initial state", {
+      action: onUndoReset ? {
+        label: "Undo",
+        onClick: onUndoReset,
+      } : undefined,
+    });
+  }, [sandpack, onResetRequested, onUndoReset]);
 
   return (
     <div className="h-16 lg:h-20 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-4 lg:px-8 shrink-0 z-20 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md sticky top-0">
@@ -111,7 +123,7 @@ export const ProjectHeader = React.memo(function ProjectHeader({
         </button>
 
         <Button
-          onClick={toggleTheme}
+          onClick={() => setTheme(isDark ? "light" : "dark")}
           variant="glass"
           size="icon"
           className="rounded-xl border-0 shadow-none bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 w-10 h-10 transition-transform active:scale-95"
@@ -120,7 +132,7 @@ export const ProjectHeader = React.memo(function ProjectHeader({
           <div className="w-5 h-5 relative flex items-center justify-center overflow-hidden">
             <AnimatePresence mode="wait">
               {isDark ? (
-                <motion.div
+                <m.div
                   key="sun"
                   initial={{ y: 20, opacity: 0, scale: 0.5 }}
                   animate={{ y: 0, opacity: 1, scale: 1 }}
@@ -128,9 +140,9 @@ export const ProjectHeader = React.memo(function ProjectHeader({
                   transition={{ duration: 0.3, ease: "backOut" }}
                 >
                   <Sun className="w-5 h-5 text-amber-500 fill-amber-500/20" />
-                </motion.div>
+                </m.div>
               ) : (
-                <motion.div
+                <m.div
                   key="moon"
                   initial={{ y: 20, opacity: 0, scale: 0.5 }}
                   animate={{ y: 0, opacity: 1, scale: 1 }}
@@ -138,13 +150,24 @@ export const ProjectHeader = React.memo(function ProjectHeader({
                   transition={{ duration: 0.3, ease: "backOut" }}
                 >
                   <Moon className="w-5 h-5 text-gray-700 fill-gray-900/10" />
-                </motion.div>
+                </m.div>
               )}
             </AnimatePresence>
           </div>
         </Button>
 
         <div className="h-8 w-px bg-gray-200 dark:bg-gray-800 mx-1 hidden sm:block"></div>
+
+        {/* Mobile Instructions Button (only visible on mobile) */}
+        <Button
+          onClick={onShowMobileInstructions}
+          variant="glass"
+          size="icon"
+          className="md:hidden rounded-xl border-0 shadow-none bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 w-10 h-10 transition-transform active:scale-95"
+          title="View Challenge Instructions"
+        >
+          <HelpCircle size={18} className="text-gray-600 dark:text-gray-400" />
+        </Button>
 
         <Button
           onClick={onVerify}
@@ -160,14 +183,21 @@ export const ProjectHeader = React.memo(function ProjectHeader({
       {/* Custom Reset Confirmation Modal */}
       <AnimatePresence>
         {showResetConfirm && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <motion.div
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="reset-dialog-title"
+            onClick={(e) => { if (e.target === e.currentTarget) setShowResetConfirm(false); }}
+            onKeyDown={(e) => { if (e.key === 'Escape') setShowResetConfirm(false); }}
+          >
+            <m.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               className="bg-white dark:bg-gray-900 rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-gray-100 dark:border-gray-800"
             >
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+              <h3 id="reset-dialog-title" className="text-lg font-bold text-gray-900 dark:text-white mb-2">
                 Reset Project?
               </h3>
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
@@ -188,7 +218,7 @@ export const ProjectHeader = React.memo(function ProjectHeader({
                   Yes, Reset
                 </Button>
               </div>
-            </motion.div>
+            </m.div>
           </div>
         )}
       </AnimatePresence>

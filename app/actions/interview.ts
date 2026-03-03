@@ -9,8 +9,8 @@ import { rateLimit } from "@/lib/rate-limit";
 
 // Input validation schema
 const ChatMessageSchema = z.object({
-  role: z.enum(["user", "assistant", "system"]),
-  content: z.string().min(1).max(10000),
+    role: z.enum(["user", "assistant", "system"]),
+    content: z.string().min(1).max(10000),
 });
 const ChatInputSchema = z.array(ChatMessageSchema).max(50);
 
@@ -21,24 +21,42 @@ const getGroqClient = () => {
     return new Groq({ apiKey });
 };
 
-export async function chatWithAI(messages: { role: string; content: string }[], type: string): Promise<{ response: string, error?: string }> {
+const ALLOWED_INTERVIEW_TYPES = ["behavioral", "technical"];
+const ALLOWED_DIFFICULTIES = ["junior", "mid", "senior"];
+
+export async function chatWithAI(
+  messages: { role: string; content: string }[],
+  type: string,
+  difficulty: string = "mid",
+  topic: string = ""
+): Promise<{ response: string, error?: string }> {
+    // Validate interview type & difficulty
+    const safeType = ALLOWED_INTERVIEW_TYPES.includes(type) ? type : "behavioral";
+    const safeDifficulty = ALLOWED_DIFFICULTIES.includes(difficulty) ? difficulty : "mid";
+    const safeTopic = topic ? sanitizePromptInput(topic, 100) : "";
+
     // Validate input
     const parsed = ChatInputSchema.safeParse(messages);
     if (!parsed.success) {
-      return { response: "", error: "Invalid message format" };
+        return { response: "", error: "Invalid message format" };
     }
     const validMessages = parsed.data;
 
+    // Limit message history to last 30 messages to prevent token overflow
+    const trimmedMessages = validMessages.length > 30 ? validMessages.slice(-30) : validMessages;
+
     try {
-        // Rate limit: 60 chat messages per 10 minutes
-        const { success: withinLimit } = await rateLimit("chat");
+        // Rate limit: 60 chat messages per 10 minutes for users, 10/day for guests
+        const { success: withinLimit, message: limitMsg } = await rateLimit("chat");
         if (!withinLimit) {
-          return { response: "", error: "Too many requests. Please slow down." };
+            return { response: "", error: limitMsg || "Too many requests. Please slow down." };
         }
 
-        const systemPrompt = `You are a professional technical interviewer conducting a ${type} interview. 
+        const systemPrompt = `You are a professional technical interviewer conducting a ${safeType} interview.
+    - Difficulty: ${safeDifficulty}-level (adjust question complexity accordingly).
+    ${safeTopic ? `- Focus area: ${safeTopic}. Prioritize questions related to this topic.` : ''}
     - Your goal is to assess the candidate's skills with insightful questions.
-    ${type === 'technical' ? '- IMPORTANT: When you ask a coding question or ask the candidate to implement something, EXPLICITLY tell them to "type your solution in the Editor tab on the right".' : ''}
+    ${safeType === 'technical' ? '- IMPORTANT: When you ask a coding question or ask the candidate to implement something, EXPLICITLY tell them to "type your solution in the Editor tab on the right".' : ''}
     - Keep your responses concise (1-2 sentences max) so the conversation feels like a real dialogue.
     - Ask one clear question at a time.
     - Acknowledge their answer briefly with "I see", "Great", or "Interesting point" before moving on.
@@ -56,9 +74,9 @@ export async function chatWithAI(messages: { role: string; content: string }[], 
             const completion = await groq.chat.completions.create({
                 messages: [
                     { role: "system" as const, content: systemPrompt },
-                    ...validMessages.map(m => ({
-                      role: m.role as "user" | "assistant" | "system",
-                      content: m.role === "user" ? sanitizePromptInput(m.content) : m.content,
+                    ...trimmedMessages.map(m => ({
+                        role: m.role as "user" | "assistant" | "system",
+                        content: m.role === "user" ? sanitizePromptInput(m.content) : m.content,
                     }))
                 ],
                 model: "llama-3.1-8b-instant",
@@ -78,9 +96,9 @@ export async function chatWithAI(messages: { role: string; content: string }[], 
 
                 const genAI = new GoogleGenerativeAI(googleKey);
                 const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-                
+
                 // Gemini expects 'user' | 'model' roles
-                const history = validMessages.slice(0, -1).map((m) => ({
+                const history = trimmedMessages.slice(0, -1).map((m) => ({
                     role: m.role === 'assistant' ? 'model' : 'user',
                     parts: [{ text: m.role === 'user' ? sanitizePromptInput(m.content) : m.content }]
                 }));
@@ -90,12 +108,12 @@ export async function chatWithAI(messages: { role: string; content: string }[], 
                     systemInstruction: systemPrompt,
                 });
 
-                const lastMsg = validMessages[validMessages.length - 1];
+                const lastMsg = trimmedMessages[trimmedMessages.length - 1];
                 // Handle empty history case for initial greeting
-                const contentToSend = lastMsg 
-                    ? (lastMsg.role === 'user' ? sanitizePromptInput(lastMsg.content) : lastMsg.content) 
+                const contentToSend = lastMsg
+                    ? (lastMsg.role === 'user' ? sanitizePromptInput(lastMsg.content) : lastMsg.content)
                     : "Hello, I am ready.";
-                
+
                 const result = await chatObj.sendMessage(contentToSend);
                 responseText = result.response.text();
 

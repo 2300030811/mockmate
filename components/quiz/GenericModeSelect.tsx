@@ -2,10 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useCallback } from "react";
-import { motion } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { ModeCard } from "@/components/quiz/ModeCard";
-import { ArrowLeft, Home } from "lucide-react";
-import Link from "next/link";
+import { NavigationPill } from "@/components/ui/NavigationPill";
 import { QuizTheme } from "@/lib/quiz-themes";
 import { PracticeModal } from "./modals/PracticeModal";
 import { ExamModal } from "./modals/ExamModal";
@@ -15,22 +14,6 @@ interface GenericModeSelectProps {
 }
 
 const TimerIcon = () => <span className="text-5xl">⏳</span>;
-
-const NavigationPill = ({ onBack }: { onBack: () => void }) => (
-  <div className="absolute top-6 left-6 z-50">
-    <div className="flex items-center gap-2 px-4 py-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-full shadow-lg border border-gray-200 dark:border-gray-700">
-      <button onClick={onBack} className="flex items-center gap-1 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
-        <ArrowLeft className="w-4 h-4" />
-        <span>Back</span>
-      </button>
-      <div className="w-px h-4 bg-gray-300 dark:bg-gray-600"></div>
-      <Link href="/" className="flex items-center gap-1 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
-        <Home className="w-4 h-4" />
-        <span>Home</span>
-      </Link>
-    </div>
-  </div>
-);
 
 export function GenericModeSelect({ config }: GenericModeSelectProps) {
   const router = useRouter();
@@ -49,7 +32,7 @@ export function GenericModeSelect({ config }: GenericModeSelectProps) {
 
   return (
     <div className={`min-h-screen transition-colors duration-500 pt-20 ${config.bgGradient}`}>
-      <NavigationPill onBack={() => router.push('/certification')} />
+      <NavigationPill showBack={true} backHref="/certification" />
       
       {/* Animated Background Orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -58,7 +41,7 @@ export function GenericModeSelect({ config }: GenericModeSelectProps) {
       </div>
 
       <div className="relative z-10 flex flex-col items-center justify-center min-h-[calc(100vh-80px)] px-4 pb-20">
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
@@ -68,27 +51,41 @@ export function GenericModeSelect({ config }: GenericModeSelectProps) {
             <span className="text-2xl">{config.badge.icon}</span>
             <span className="text-sm font-bold tracking-wider">{config.badge.text}</span>
           </div>
-        </motion.div>
+        </m.div>
 
-        <motion.h1
+        <m.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.1 }}
           className={`text-5xl md:text-7xl font-extrabold mb-6 pb-4 text-center bg-clip-text text-transparent ${config.titleGradient}`}
         >
           {config.title}
-        </motion.h1>
+        </m.h1>
 
-        <motion.p
+        <m.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
           className="text-xl md:text-2xl mb-12 max-w-3xl mx-auto text-center text-gray-600 dark:text-gray-400"
         >
           {config.subtitle}
-        </motion.p>
+        </m.p>
 
-        <motion.div
+        {/* Question Types Pills */}
+        <m.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.25 }}
+          className="mb-12 flex flex-wrap gap-2 justify-center"
+        >
+          {config.questionTypes?.map((type, idx) => (
+            <span key={idx} className={`px-3 py-1 rounded-full text-sm font-semibold border ${config.badge.className}`}>
+              {type}
+            </span>
+          ))}
+        </m.div>
+
+        <m.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
@@ -115,7 +112,7 @@ export function GenericModeSelect({ config }: GenericModeSelectProps) {
             title="Exam Simulation"
             description={`Simulate the real exam with ${config.exam.count} questions in ${config.exam.duration} minutes.`}
             icon={<TimerIcon />}
-            features={[`${config.exam.duration}-minute timer`, `${config.exam.count} questions`, "70% passing score"]}
+            features={[`${config.exam.duration}-minute timer`, `${config.exam.count} questions`, `${config.exam.passingScore} passing score`]}
             buttonText="Start Exam"
             gradient={config.cards.exam.gradient}
             iconBgLight={config.cards.exam.iconBgLight}
@@ -125,28 +122,30 @@ export function GenericModeSelect({ config }: GenericModeSelectProps) {
             onClick={() => setModal("exam")}
             onHover={() => router.prefetch(`/${config.id}-quiz?mode=exam&count=${config.exam.default}`)}
           />
-        </motion.div>
+        </m.div>
       </div>
 
-      {modal === "practice" && (
-        <PracticeModal 
-          config={config} 
-          practiceCount={practiceCount} 
-          setPracticeCount={setPracticeCount} 
-          onClose={() => setModal("none")} 
-          onStart={startPractice} 
-        />
-      )}
+      <AnimatePresence>
+        {modal === "practice" && (
+          <PracticeModal 
+            config={config} 
+            practiceCount={practiceCount} 
+            setPracticeCount={setPracticeCount} 
+            onClose={() => setModal("none")} 
+            onStart={startPractice} 
+          />
+        )}
 
-      {modal === "exam" && (
-        <ExamModal 
-          config={config} 
-          examCount={examCount} 
-          setExamCount={setExamCount} 
-          onClose={() => setModal("none")} 
-          onStart={startExam} 
-        />
-      )}
+        {modal === "exam" && (
+          <ExamModal 
+            config={config} 
+            examCount={examCount} 
+            setExamCount={setExamCount} 
+            onClose={() => setModal("none")} 
+            onStart={startExam} 
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

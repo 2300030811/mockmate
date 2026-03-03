@@ -7,6 +7,12 @@ export interface DashboardStats {
   avgScore: number;
   streak: number;
   bestCategory: string;
+  /** Persisted Elo rating (arena). Defaults to 1000. */
+  elo: number;
+  /** Current level derived from XP */
+  level: number;
+  /** Active streak multiplier (1.0 = no bonus) */
+  streakMultiplier: number;
 }
 
 export interface ActivityItem {

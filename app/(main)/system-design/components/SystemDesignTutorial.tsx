@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { 
   X, 
   ChevronRight, 
@@ -157,7 +157,7 @@ export function SystemDesignTutorial({ isOpen, onClose }: SystemDesignTutorialPr
     <AnimatePresence>
       {/* Layer 1: Backdrop (Below Highlight) */}
       <div className="fixed inset-0 z-[1000] pointer-events-none">
-        <motion.div 
+        <m.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -170,7 +170,7 @@ export function SystemDesignTutorial({ isOpen, onClose }: SystemDesignTutorialPr
       <div className="fixed inset-0 z-[1200] flex items-center justify-center p-6 pointer-events-none">
         
         {/* Dynamic Visual Beam / Pulse */}
-        <motion.div
+        <m.div
            animate={{ 
              top: pointerPos.top, 
              left: pointerPos.left, 
@@ -185,7 +185,7 @@ export function SystemDesignTutorial({ isOpen, onClose }: SystemDesignTutorialPr
               <div className="absolute inset-1.5 bg-indigo-400 rounded-full shadow-[0_0_20px_#6366f1,0_0_40px_#6366f1]" />
               
               {/* Directional Beams */}
-              <motion.div 
+              <m.div 
                  animate={{ opacity: [0.2, 0.5, 0.2] }}
                  transition={{ repeat: Infinity, duration: 1.5 }}
                  className={`absolute bg-gradient-to-t from-indigo-500/0 to-indigo-500/50 blur-sm
@@ -196,10 +196,10 @@ export function SystemDesignTutorial({ isOpen, onClose }: SystemDesignTutorialPr
                  `}
               />
            </div>
-        </motion.div>
+        </m.div>
 
         {/* Tutorial Card */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0, scale: 0.9, y: 30 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 30 }}
@@ -217,14 +217,14 @@ export function SystemDesignTutorial({ isOpen, onClose }: SystemDesignTutorialPr
 
           <div className="p-8 pt-10">
             <div className="flex justify-between items-start mb-6">
-              <motion.div 
+              <m.div 
                 key={currentStep}
                 initial={{ rotate: -20, scale: 0.5, opacity: 0 }}
                 animate={{ rotate: 0, scale: 1, opacity: 1 }}
                 className="p-3.5 bg-gradient-to-br from-indigo-500/30 to-purple-500/30 rounded-2xl border border-indigo-400/30 shadow-inner"
               >
                 <Icon className="w-8 h-8 text-indigo-300" />
-              </motion.div>
+              </m.div>
               <button 
                 onClick={finish}
                 className="group flex items-center gap-2 px-3 py-1.5 hover:bg-white/5 rounded-full text-xs font-bold text-gray-500 hover:text-white transition-all border border-transparent hover:border-white/5"
@@ -236,7 +236,7 @@ export function SystemDesignTutorial({ isOpen, onClose }: SystemDesignTutorialPr
 
             <div className="space-y-4 mb-10">
               <AnimatePresence mode="wait">
-                <motion.div
+                <m.div
                   key={currentStep}
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -256,7 +256,7 @@ export function SystemDesignTutorial({ isOpen, onClose }: SystemDesignTutorialPr
                   <p className="text-gray-400 text-lg leading-relaxed font-medium">
                     {step.description}
                   </p>
-                </motion.div>
+                </m.div>
               </AnimatePresence>
             </div>
 
@@ -285,7 +285,7 @@ export function SystemDesignTutorial({ isOpen, onClose }: SystemDesignTutorialPr
                 Quick Nav: Use <kbd className="bg-white/10 px-1.5 py-0.5 rounded text-gray-300 mx-1 border border-white/5 shadow-sm">←</kbd> and <kbd className="bg-white/10 px-1.5 py-0.5 rounded text-gray-300 mx-1 border border-white/5 shadow-sm">→</kbd> to cycle
              </p>
           </div>
-        </motion.div>
+        </m.div>
       </div>
 
       {/* Global CSS for high-fidelity interactive feedback */}

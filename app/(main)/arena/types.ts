@@ -24,6 +24,7 @@ export interface ArenaQuestion {
 export interface BattleResult {
   q: string;
   userAns: string;
+  correctAns: string;
   correct: boolean;
   tip?: string;
 }

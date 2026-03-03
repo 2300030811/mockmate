@@ -37,16 +37,17 @@ export function LoginForm() {
             );
         } else {
             await refresh();
-            router.push("/");
+            const redirectTo = searchParams.get("redirect") || "/";
+            router.push(redirectTo);
             router.refresh();
         }
         setLoading(false);
     }, [refresh, router]);
 
     const forgotLink = (
-        <button type="button" className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline">
+        <Link href="/forgot-password" className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline">
             Forgot?
-        </button>
+        </Link>
     );
 
     return (

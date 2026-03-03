@@ -12,30 +12,23 @@ import { ArenaLobby } from "./components/ArenaLobby";
 import { ArenaMatchmaking } from "./components/ArenaMatchmaking";
 import { ArenaBattle } from "./components/ArenaBattle";
 import { ArenaResults } from "./components/ArenaResults";
-import { StatItem, Opponent } from "./types";
+import { StatItem, RecentMatch } from "./types";
 import { getArenaStats } from "@/app/actions/arena";
 import { useArenaGameLoop } from "./hooks/useArenaGameLoop";
 
-// --- Data ---
-const OPPONENTS: Opponent[] = [
-  { name: "CodeWizard_99", level: 42, avatar: "🧙‍♂️", winRate: "68%", region: "US-East", badge: "Legend" },
-  { name: "FrontendNinja", level: 38, avatar: "🥷", winRate: "72%", region: "EU-West", badge: "Elite" },
-  { name: "DevOpsKing", level: 51, avatar: "👑", winRate: "59%", region: "AS-South", badge: "Master" },
-  { name: "BugHunter_X", level: 31, avatar: "🕵️", winRate: "61%", region: "US-West", badge: "Gold" },
-  { name: "CloudMaster", level: 45, avatar: "☁️", winRate: "65%", region: "SA-East", badge: "Diamond" }
-];
-
-const LOBBY_STATS: StatItem[] = [
+const DEFAULT_LOBBY_STATS: StatItem[] = [
   { icon: Flame, label: "Win Streak", val: "2", color: "text-orange-500", bg: "bg-orange-500/10" },
   { icon: Trophy, label: "Elo Rating", val: "1,245", color: "text-blue-500", bg: "bg-blue-500/10" },
   { icon: Activity, label: "Global Rank", val: "#382", color: "text-emerald-500", bg: "bg-emerald-500/10", hideOnMobile: true }
 ];
 
 export default function ArenaPage() {
-  const [lobbyStats, setLobbyStats] = useState<StatItem[]>(LOBBY_STATS);
+  const [lobbyStats, setLobbyStats] = useState<StatItem[]>(DEFAULT_LOBBY_STATS);
   const [selectedCategory, setSelectedCategory] = useState<string>("random");
-  const [recentMatches, setRecentMatches] = useState<any[]>([]);
+  const [recentMatches, setRecentMatches] = useState<RecentMatch[]>([]);
   const [avatarIcon, setAvatarIcon] = useState<string>("User");
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState<string | null>(null);
 
   const {
     gameState,
@@ -53,25 +46,52 @@ export default function ArenaPage() {
     battleResults,
     combo,
     startMatchmaking,
+    cancelMatchmaking,
+    forfeitBattle,
     handleAnswer
   } = useArenaGameLoop(selectedCategory, lobbyStats);
 
   // Fetch real stats on mount
   useEffect(() => {
     const fetchStats = async () => {
-      const stats = await getArenaStats();
-      if (stats) {
-        setLobbyStats([
-          { icon: Trophy, label: "Elo Rating", val: stats.elo.toLocaleString(), color: "text-blue-500", bg: "bg-blue-500/10" },
-          { icon: Flame, label: "Arena Win Streak", val: stats.winStreak.toString(), color: "text-orange-500", bg: "bg-orange-500/10" },
-          { icon: Activity, label: "Global Rank", val: stats.rank, color: "text-emerald-500", bg: "bg-emerald-500/10", hideOnMobile: true }
-        ]);
-        setRecentMatches(stats.recentArenaMatches || []);
-        if (stats.avatarIcon) setAvatarIcon(stats.avatarIcon);
+      try {
+        setStatsLoading(true);
+        setStatsError(null);
+        const stats = await getArenaStats();
+        if (stats) {
+          setLobbyStats([
+            { icon: Trophy, label: "Elo Rating", val: stats.elo.toLocaleString(), color: "text-blue-500", bg: "bg-blue-500/10" },
+            { icon: Flame, label: "Arena Win Streak", val: stats.winStreak.toString(), color: "text-orange-500", bg: "bg-orange-500/10" },
+            { icon: Activity, label: "Global Rank", val: stats.rank, color: "text-emerald-500", bg: "bg-emerald-500/10", hideOnMobile: true }
+          ]);
+          setRecentMatches(stats.recentArenaMatches || []);
+          if (stats.avatarIcon) setAvatarIcon(stats.avatarIcon);
+        } else {
+          setStatsError("Unable to load your arena stats. Using default values.");
+        }
+      } catch (err) {
+        console.error("Failed to fetch arena stats:", err);
+        setStatsError("Connection error. Using default values.");
+      } finally {
+        setStatsLoading(false);
       }
     };
     fetchStats();
   }, []);
+
+  // Warn before leaving during battle
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (gameState === 'battle') {
+        e.preventDefault();
+        e.returnValue = "You're in the middle of a battle. Leaving will forfeit the match.";
+        return "You're in the middle of a battle. Leaving will forfeit the match.";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [gameState]);
 
 
   return (
@@ -95,11 +115,13 @@ export default function ArenaPage() {
             onCategoryChange={setSelectedCategory}
             onStart={startMatchmaking}
             userAvatar={avatarIcon}
+            statsLoading={statsLoading}
+            statsError={statsError}
           />
         )}
 
         {gameState === 'searching' && (
-          <ArenaMatchmaking matchLog={matchLog} />
+          <ArenaMatchmaking matchLog={matchLog} onCancel={cancelMatchmaking} />
         )}
 
         {gameState === 'battle' && (
@@ -116,6 +138,7 @@ export default function ArenaPage() {
             category={category}
             combo={combo}
             userAvatar={avatarIcon}
+            onForfeit={forfeitBattle}
           />
         )}
 
@@ -130,13 +153,6 @@ export default function ArenaPage() {
           />
         )}
       </AnimatePresence>
-
-      <style jsx global>{`
-        @keyframes scan { from { transform: translateY(-100%); } to { transform: translateY(100vh); } }
-        @keyframes wiggle { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-5deg); } 75% { transform: rotate(5deg); } }
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
-      `}</style>
     </div>
   );
 }

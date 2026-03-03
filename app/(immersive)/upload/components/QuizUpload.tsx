@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { CloudIcon, CheckIcon } from "./icons";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -72,7 +72,7 @@ export function QuizUpload({
 
       <div className="relative z-10 w-full max-w-4xl">
         {/* Logo Badge */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
@@ -88,10 +88,10 @@ export function QuizUpload({
                AI {mode === "flashcard" ? "Flashcard" : "Quiz"} Generator
             </span>
           </div>
-        </motion.div>
+        </m.div>
 
         {/* Title */}
-        <motion.h1
+        <m.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.1 }}
@@ -104,10 +104,10 @@ export function QuizUpload({
           Transform PDFs into
           <br />
           Interactive {mode === "flashcard" ? "Flashcards" : "Quizzes"}
-        </motion.h1>
+        </m.h1>
 
         {/* Subtitle */}
-        <motion.p
+        <m.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
@@ -116,10 +116,10 @@ export function QuizUpload({
           }`}
         >
           Upload your study materials and let AI generate smart {mode === "flashcard" ? "flashcards" : "quizzes"} instantly
-        </motion.p>
+        </m.p>
         
         {/* Upload Card */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
@@ -180,7 +180,7 @@ export function QuizUpload({
           </p>
 
           {error && (
-            <motion.div 
+            <m.div 
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               className={`mt-4 p-4 rounded-xl text-sm font-medium ${
@@ -192,7 +192,7 @@ export function QuizUpload({
               <div className="flex items-center gap-2">
                 <span>⚠️</span> {error}
               </div>
-            </motion.div>
+            </m.div>
           )}
 
             {/* Settings Section */}
@@ -283,7 +283,7 @@ export function QuizUpload({
           {/* Vision Mode Offer */}
           <AnimatePresence>
             {visionData && !isUploading && (
-              <motion.div
+              <m.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
@@ -321,7 +321,7 @@ export function QuizUpload({
                     </button>
                   </div>
                 </div>
-              </motion.div>
+              </m.div>
             )}
           </AnimatePresence>
 
@@ -402,13 +402,13 @@ export function QuizUpload({
                   {provider === "auto" ? "Attempts Gemini first, then falls back to Groq if quota exceeded." :
                    provider === "groq" ? "Uses Llama-3-70b on Groq Hardware (Fastest)." :
                    provider === "openai" ? "Requires a paid OpenAI account." :
-                   "Uses Google's Gemini-1.5-Flash model."}
+                   "Uses Google's Gemini-2.0-Flash-Lite model."}
                 </p>
               </div>
             </details>
           </div>
 
-          <motion.div
+          <m.div
             layout
             className="mt-8 w-full"
           >
@@ -439,7 +439,7 @@ export function QuizUpload({
 
                   {/* Progress Bar */}
                   <div className="w-full h-1.5 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden mt-2">
-                      <motion.div 
+                      <m.div 
                           className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"
                           initial={{ x: "-100%" }}
                           animate={{ x: "100%" }}
@@ -478,11 +478,11 @@ export function QuizUpload({
                     <div className="absolute inset-0 -translate-x-full group-hover:animate-shimmer bg-gradient-to-r from-transparent via-white/20 to-transparent z-0"></div>
                 </button>
             )}
-          </motion.div>
-        </motion.div>
+          </m.div>
+        </m.div>
 
         {/* Features */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.5 }}
@@ -508,7 +508,7 @@ export function QuizUpload({
             </svg>
             <span>Smart Explanations</span>
           </div>
-        </motion.div>
+        </m.div>
       </div>
       <BobAssistant 
         isOpen={isBobOpen} 

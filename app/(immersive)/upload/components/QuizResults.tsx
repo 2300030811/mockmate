@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { saveQuizResult } from "@/app/actions/results";
@@ -58,7 +58,7 @@ export function QuizResults({ quiz, answers, isDark, fileName }: QuizResultsProp
       </div>
 
       <div className="relative z-10 max-w-5xl mx-auto">
-        <motion.div
+        <m.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6, type: "spring" }}
@@ -69,7 +69,7 @@ export function QuizResults({ quiz, answers, isDark, fileName }: QuizResultsProp
         >
           {/* Result Badge */}
           <div className="text-center mb-8">
-            <motion.div
+            <m.div
               initial={{ y: -20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.2 }}
@@ -85,7 +85,7 @@ export function QuizResults({ quiz, answers, isDark, fileName }: QuizResultsProp
               <span className="text-sm font-black tracking-widest uppercase">
                 {passed ? 'Outstanding Performance' : 'Knowledge Check Complete'}
               </span>
-            </motion.div>
+            </m.div>
           </div>
 
           <h2 className={`text-4xl md:text-5xl font-black mb-6 text-center ${isDark
@@ -101,23 +101,23 @@ export function QuizResults({ quiz, answers, isDark, fileName }: QuizResultsProp
           </p>
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-6 text-center mb-12">
-            <motion.div
+            <m.div
               whileHover={{ scale: 1.05 }}
               className={`p-6 rounded-3xl border ${isDark ? 'bg-gray-800/40 border-gray-700' : 'bg-gray-50 border-gray-100'
                 }`}>
               <p className={`text-xs font-bold uppercase tracking-wider mb-2 opacity-60 ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>Total Questions</p>
               <p className={`text-4xl font-black ${isDark ? 'text-white' : 'text-gray-900'}`}>{quiz.length}</p>
-            </motion.div>
+            </m.div>
 
-            <motion.div
+            <m.div
               whileHover={{ scale: 1.05 }}
               className={`p-6 rounded-3xl border ${isDark ? 'bg-gray-800/40 border-gray-700' : 'bg-gray-50 border-gray-100'
                 }`}>
               <p className={`text-xs font-bold uppercase tracking-wider mb-2 opacity-60 ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>Correct</p>
               <p className="text-4xl font-black text-green-500">{score}</p>
-            </motion.div>
+            </m.div>
 
-            <motion.div
+            <m.div
               whileHover={{ scale: 1.05 }}
               className={`p-6 rounded-3xl border col-span-2 md:col-span-1 flex flex-col justify-center relative overflow-hidden ${isDark ? 'bg-gray-800/40 border-gray-700' : 'bg-gray-50 border-gray-100'
                 }`}>
@@ -127,7 +127,7 @@ export function QuizResults({ quiz, answers, isDark, fileName }: QuizResultsProp
                   {scorePercentage}%
                 </p>
               </div>
-            </motion.div>
+            </m.div>
           </div>
 
           <div className="flex flex-wrap justify-center gap-4 mb-12">
@@ -199,7 +199,7 @@ export function QuizResults({ quiz, answers, isDark, fileName }: QuizResultsProp
               );
             })}
           </div>
-        </motion.div>
+        </m.div>
       </div>
     </div>
   );

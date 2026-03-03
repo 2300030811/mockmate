@@ -2,53 +2,60 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { useTheme } from "@/components/providers/providers";
 import { Button } from "@/components/ui/Button";
-import { ArrowRight, Users, Code2, ArrowLeft, Home } from "lucide-react";
+import { ArrowRight, Users, Code2, Home, History } from "lucide-react";
 import Link from "next/link";
+
+const INTERVIEW_TYPES = [
+  {
+    id: "behavioral",
+    Icon: Users,
+    title: "Behavioral",
+    description: "Leadership, teamwork, and conflict resolution scenarios",
+    gradient: "from-blue-500 to-cyan-500",
+    hoverGradient: "from-blue-600 to-cyan-600",
+    features: ["STAR Method", "Soft Skills", "Past Experience"]
+  },
+  {
+    id: "technical",
+    Icon: Code2,
+    title: "Technical",
+    description: "System design, algorithms, and architecture discussions",
+    gradient: "from-purple-500 to-pink-500",
+    hoverGradient: "from-purple-600 to-pink-600",
+    features: ["Coding", "System Design", "Problem Solving"]
+  }
+] as const;
 
 export default function DemoSelection() {
   const router = useRouter();
   const [selectedType, setSelectedType] = useState<"behavioral" | "technical" | null>(null);
+  const [difficulty, setDifficulty] = useState<"junior" | "mid" | "senior">("mid");
+  const [topic, setTopic] = useState("");
   const { theme } = useTheme();
-  const isDark = theme === "dark";
 
   const handleStart = () => {
     if (selectedType) {
-      router.push(`/demo/session?type=${selectedType}`);
+      const params = new URLSearchParams({ type: selectedType, difficulty });
+      if (topic.trim()) params.set("topic", topic.trim());
+      router.push(`/demo/session?${params.toString()}`);
     }
   };
-
-  const interviewTypes = [
-    {
-      id: "behavioral",
-      Icon: Users,
-      title: "Behavioral",
-      description: "Leadership, teamwork, and conflict resolution scenarios",
-      gradient: "from-blue-500 to-cyan-500",
-      hoverGradient: "from-blue-600 to-cyan-600",
-      features: ["STAR Method", "Soft Skills", "Past Experience"]
-    },
-    {
-      id: "technical",
-      Icon: Code2,
-      title: "Technical",
-      description: "System design, algorithms, and architecture discussions",
-      gradient: "from-purple-500 to-pink-500",
-      hoverGradient: "from-purple-600 to-pink-600",
-      features: ["Coding", "System Design", "Problem Solving"]
-    }
-  ];
 
   return (
     <div className="min-h-screen transition-colors duration-500 bg-gradient-to-br from-gray-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950 flex flex-col items-center justify-center p-4 pt-24 relative overflow-hidden">
       
       {/* Navigation Pill */}
-      <div className="absolute top-6 left-6 z-50">
+      <div className="absolute top-6 left-6 z-50 flex items-center gap-3">
         <Link href="/" className="flex items-center gap-2 px-4 py-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-full shadow-lg border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-all hover:scale-105 active:scale-95 group">
           <Home className="w-4 h-4 group-hover:text-blue-500 transition-colors" />
           <span>Home</span>
+        </Link>
+        <Link href="/demo/history" className="flex items-center gap-2 px-4 py-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-full shadow-lg border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-all hover:scale-105 active:scale-95 group">
+          <History className="w-4 h-4 group-hover:text-purple-500 transition-colors" />
+          <span>History</span>
         </Link>
       </div>
       
@@ -61,7 +68,7 @@ export default function DemoSelection() {
       <div className="max-w-6xl w-full text-center relative z-10">
         
         {/* Header */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
@@ -79,12 +86,12 @@ export default function DemoSelection() {
           <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
             Practice with our advanced AI interviewer. Get real-time feedback and improve your skills.
           </p>
-        </motion.div>
+        </m.div>
 
         {/* Interview Type Cards */}
         <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-12">
-          {interviewTypes.map((type, index) => (
-            <motion.button
+          {INTERVIEW_TYPES.map((type, index) => (
+            <m.button
               key={type.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -135,7 +142,7 @@ export default function DemoSelection() {
                 
                 {/* Check Icon */}
                 {selectedType === type.id && (
-                  <motion.div
+                  <m.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     className="absolute top-6 right-6 w-8 h-8 bg-blue-600 dark:bg-white rounded-full flex items-center justify-center shadow-lg"
@@ -143,15 +150,63 @@ export default function DemoSelection() {
                     <svg className="w-5 h-5 text-white dark:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                     </svg>
-                  </motion.div>
+                  </m.div>
                 )}
               </div>
-            </motion.button>
+            </m.button>
           ))}
         </div>
 
+        {/* Customization Options */}
+        {selectedType && (
+          <m.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            className="max-w-4xl mx-auto mb-12 overflow-hidden"
+          >
+            <div className="bg-white dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-2xl p-6 md:p-8 space-y-6">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Customize Your Interview</h3>
+              
+              {/* Difficulty Level */}
+              <div>
+                <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-3">Experience Level</label>
+                <div className="flex gap-3">
+                  {(["junior", "mid", "senior"] as const).map((level) => (
+                    <button
+                      key={level}
+                      onClick={() => setDifficulty(level)}
+                      className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-medium capitalize transition-all border ${
+                        difficulty === level
+                          ? "bg-blue-500/10 border-blue-500/50 text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/20"
+                          : "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600"
+                      }`}
+                    >
+                      {level === "mid" ? "Mid-Level" : level}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Topic Focus */}
+              <div>
+                <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-3">
+                  Topic Focus <span className="text-gray-400 dark:text-gray-500 font-normal">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={topic}
+                  onChange={(e) => setTopic(e.target.value)}
+                  placeholder={selectedType === "technical" ? "e.g., React, System Design, AWS, Algorithms..." : "e.g., Leadership, Conflict Resolution, Teamwork..."}
+                  maxLength={100}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all"
+                />
+              </div>
+            </div>
+          </m.div>
+        )}
+
         {/* Start Button */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
@@ -174,10 +229,10 @@ export default function DemoSelection() {
               Please select an interview type to continue
             </p>
           )}
-        </motion.div>
+        </m.div>
 
         {/* Info Footer */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.5 }}
@@ -201,15 +256,8 @@ export default function DemoSelection() {
             </svg>
             <span>Voice Enabled</span>
           </div>
-        </motion.div>
+        </m.div>
       </div>
-
-      <style jsx global>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-20px); }
-        }
-      `}</style>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { motion, Reorder } from "framer-motion";
+import { m, Reorder } from "framer-motion";
 
 type DragDropItem = {
   id: string;
@@ -85,7 +85,7 @@ export default function DragDropInteraction({
           
           <div className="space-y-2 min-h-[200px]">
             {sourceList.map((item) => (
-              <motion.button
+              <m.button
                 layoutId={item.id}
                 key={item.id}
                 onClick={() => moveToAnswer(item)}
@@ -103,7 +103,7 @@ export default function DragDropInteraction({
                 <span className="opacity-0 group-hover:opacity-100 transition-opacity text-cyan-500">
                   →
                 </span>
-              </motion.button>
+              </m.button>
             ))}
             {sourceList.length === 0 && (
                 <p className="text-center italic opacity-50 py-10">All items placed</p>

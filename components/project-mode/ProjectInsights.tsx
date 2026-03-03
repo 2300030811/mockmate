@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
   analyzeProjectCode,
   AnalysisResult,
@@ -26,11 +26,12 @@ import {
   Minus,
 } from "lucide-react";
 import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 
 interface ProjectInsightsProps {
   files: Record<string, any>;
   description: string;
+  projectId?: string; // For localStorage persistence
   challengeContext?: {
     difficulty?: "Easy" | "Medium" | "Hard";
     hints?: string[];
@@ -91,6 +92,7 @@ function AnimatedNumber({ value }: { value: number }) {
 export function ProjectInsights({
   files,
   description,
+  projectId,
   challengeContext,
   autoTrigger,
   onTriggered
@@ -102,14 +104,30 @@ export function ProjectInsights({
   const [loadingStep, setLoadingStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
-  const loadingMessages = [
+  // Load analysis history from localStorage on mount
+  useEffect(() => {
+    if (!projectId) return;
+    
+    try {
+      const key = `project-analysis-${projectId}`;
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setResult(parsed);
+      }
+    } catch (e) {
+      console.error("Failed to load analysis history from localStorage", e);
+    }
+  }, [projectId]);
+
+  const loadingMessages = useMemo(() => [
     "Initializing Staff Engineer...",
     "Scanning code structure...",
     "Comparing against solution patterns...",
     "Evaluating correctness & edge cases...",
     "Assessing code quality & best practices...",
     "Computing multi-dimensional score...",
-  ];
+  ], []);
 
   const handleAnalysis = useCallback(async () => {
     setIsAnalyzing(true);
@@ -138,6 +156,16 @@ export function ProjectInsights({
       } else {
         setResult(data);
         setHistory(prev => [data, ...prev.slice(0, 4)]); // Keep last 5
+
+        // Persist to localStorage
+        if (projectId) {
+          try {
+            const key = `project-analysis-${projectId}`;
+            localStorage.setItem(key, JSON.stringify(data));
+          } catch (e) {
+            console.error("Failed to save analysis to localStorage", e);
+          }
+        }
       }
     } catch (err) {
       console.error(err);
@@ -146,7 +174,7 @@ export function ProjectInsights({
       clearInterval(interval);
       setIsAnalyzing(false);
     }
-  }, [files, description, challengeContext]);
+  }, [files, description, challengeContext, projectId, loadingMessages]);
 
   // Handle auto-trigger
   useEffect(() => {
@@ -329,12 +357,12 @@ export function ProjectInsights({
               </div>
             </div>
             <div className="w-full bg-gray-200 dark:bg-gray-700 h-1.5 rounded-full mt-4 overflow-hidden">
-              <motion.div
+              <m.div
                 initial={{ width: 0 }}
                 animate={{ width: `${result.score}%` }}
                 transition={{ duration: 1, ease: [0.34, 1.56, 0.64, 1] }}
                 className={`h-full rounded-full ${getScoreBarColor(result.score)}`}
-              ></motion.div>
+              ></m.div>
             </div>
           </div>
 
@@ -361,12 +389,12 @@ export function ProjectInsights({
                           </span>
                         </div>
                         <div className="w-full bg-gray-100 dark:bg-gray-700 h-1.5 rounded-full overflow-hidden">
-                          <motion.div
+                          <m.div
                             initial={{ width: 0 }}
                             animate={{ width: `${val}%` }}
                             transition={{ duration: 1, delay: 0.1 * (index + 1), ease: "easeOut" }}
                             className={`h-full rounded-full ${colors.fill}`}
-                          ></motion.div>
+                          ></m.div>
                         </div>
                       </div>
                     </div>

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { getRecentResults } from "@/app/actions/results";
 import { getRecentCareerPaths } from "@/app/actions/career-save";
 import { getSessionId } from "@/utils/session";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { Trophy, Clock, ChevronRight, BarChart3, RotateCcw, Briefcase, Map } from "lucide-react";
 import Link from "next/link";
 
@@ -48,7 +48,7 @@ export function ResultsHistory() {
   if (!hasData) return null;
 
   return (
-    <motion.section 
+    <m.section 
       id="history"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -75,7 +75,7 @@ export function ResultsHistory() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <AnimatePresence mode="popLayout">
                 {results.map((result, idx) => (
-                  <motion.div
+                  <m.div
                     key={result.id}
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -146,7 +146,7 @@ export function ResultsHistory() {
                     })()}
 
                     <div className="mt-4 h-1.5 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                      <motion.div 
+                      <m.div 
                         initial={{ width: 0 }}
                         animate={{ width: `${(result.score / result.total_questions) * 100}%` }}
                         transition={{ duration: 1, delay: 0.5 }}
@@ -157,7 +157,7 @@ export function ResultsHistory() {
                         }`}
                       />
                     </div>
-                  </motion.div>
+                  </m.div>
                 ))}
               </AnimatePresence>
             </div>
@@ -173,7 +173,7 @@ export function ResultsHistory() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <AnimatePresence mode="popLayout">
                 {careerPaths.map((path, idx) => (
-                  <motion.div
+                  <m.div
                     key={path.id}
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -214,21 +214,21 @@ export function ResultsHistory() {
                     </div>
 
                     <div className="mt-4 h-1.5 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                      <motion.div 
+                      <m.div 
                         initial={{ width: 0 }}
                         animate={{ width: `${path.match_score}%` }}
                         transition={{ duration: 1, delay: 0.5 }}
                         className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
                       />
                     </div>
-                  </motion.div>
+                  </m.div>
                 ))}
               </AnimatePresence>
             </div>
           </div>
         )}
       </div>
-    </motion.section>
+    </m.section>
   );
 }
 

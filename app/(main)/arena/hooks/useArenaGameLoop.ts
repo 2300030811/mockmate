@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { GameState, Opponent, ArenaQuestion, BattleResult, StatItem } from "../types";
 import { startArenaMatch } from "@/app/actions/arena";
 
+// ── Constants ──────────────────────────────────────────────────────────
 export const OPPONENTS: Opponent[] = [
   { name: "CodeWizard_99", level: 42, avatar: "🧙‍♂️", winRate: "68%", region: "US-East", badge: "Legend" },
   { name: "FrontendNinja", level: 38, avatar: "🥷", winRate: "72%", region: "EU-West", badge: "Elite" },
@@ -9,6 +10,18 @@ export const OPPONENTS: Opponent[] = [
   { name: "BugHunter_X", level: 31, avatar: "🕵️", winRate: "61%", region: "US-West", badge: "Gold" },
   { name: "CloudMaster", level: 45, avatar: "☁️", winRate: "65%", region: "SA-East", badge: "Diamond" }
 ];
+
+const BATTLE_DURATION = 30;
+const BASE_POINTS = 100;
+const COMBO_MULTIPLIER = 10;
+const ANSWER_DELAY_MS = 800;
+const MATCHMAKING_DELAY_MS = 3000;
+const MATCHMAKING_TRANSITION_MS = 1000;
+const OPPONENT_MIN_POINTS = 100;
+const OPPONENT_POINT_RANGE = 30;
+const TICK_INTERVAL_MS = 1000;
+
+const getTimestamp = () => new Date().toLocaleTimeString([], { hour12: false });
 
 export function useArenaGameLoop(selectedCategory: string, lobbyStats: StatItem[]) {
   const [gameState, setGameState] = useState<GameState>('lobby');
@@ -20,27 +33,75 @@ export function useArenaGameLoop(selectedCategory: string, lobbyStats: StatItem[
   const [opponentScore, setOpponentScore] = useState(0);
   const [opponentQuestionsAnswered, setOpponentQuestionsAnswered] = useState(0);
   const [opponentProgress, setOpponentProgress] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(30);
+  const [timeLeft, setTimeLeft] = useState(BATTLE_DURATION);
   const [userSelected, setUserSelected] = useState<string | null>(null);
   const [matchLog, setMatchLog] = useState<string[]>([]);
   const [battleResults, setBattleResults] = useState<BattleResult[]>([]);
   const [combo, setCombo] = useState(0);
 
+  // ── Refs for stable callbacks (avoid stale closures & interval churn) ──
+  const battleEndedRef = useRef(false);
+  const timeLeftRef = useRef(timeLeft);
+  const comboRef = useRef(combo);
+  const currentQuestionRef = useRef(currentQuestion);
+  const questionsRef = useRef(questions);
+  const userSelectedRef = useRef(userSelected);
+  const opponentProgressRef = useRef(opponentProgress);
+  const opponentQARef = useRef(opponentQuestionsAnswered);
+
+  // Keep refs in sync with state
+  timeLeftRef.current = timeLeft;
+  comboRef.current = combo;
+  currentQuestionRef.current = currentQuestion;
+  questionsRef.current = questions;
+  userSelectedRef.current = userSelected;
+  opponentProgressRef.current = opponentProgress;
+  opponentQARef.current = opponentQuestionsAnswered;
+
+  // ── Matchmaking abort controller ──
+  const matchmakingAbortRef = useRef<AbortController | null>(null);
+
+  const cancelMatchmaking = useCallback(() => {
+    matchmakingAbortRef.current?.abort();
+    matchmakingAbortRef.current = null;
+    setGameState('lobby');
+    setMatchLog([]);
+  }, []);
+
   const startMatchmaking = useCallback(async () => {
+    // Abort any previous matchmaking
+    matchmakingAbortRef.current?.abort();
+    const abortController = new AbortController();
+    matchmakingAbortRef.current = abortController;
+
     setGameState('searching');
     setCombo(0);
-    setMatchLog(["Connecting to Global Server...", "Searching for available players...", "Filtering by Elo rating (1200)..."]);
+    battleEndedRef.current = false;
+    setMatchLog([
+      `[${getTimestamp()}] Connecting to Global Server...`,
+      `[${getTimestamp()}] Searching for available players...`,
+      `[${getTimestamp()}] Filtering by Elo rating (1200)...`
+    ]);
 
     try {
-      // Start fetching questions in background
       const matchDataPromise = startArenaMatch(selectedCategory);
 
       setTimeout(async () => {
-        setMatchLog(prev => [...prev, "Peer found!", "Synchronizing clocks...", "Ready!"]);
+        if (abortController.signal.aborted) return;
+
+        setMatchLog(prev => [
+          ...prev,
+          `[${getTimestamp()}] Peer found!`,
+          `[${getTimestamp()}] Synchronizing clocks...`,
+          `[${getTimestamp()}] Ready!`
+        ]);
 
         const matchData = await matchDataPromise;
+        if (abortController.signal.aborted) return;
 
         setTimeout(() => {
+          if (abortController.signal.aborted) return;
+
           if (matchData && matchData.success && matchData.questions) {
             setQuestions(matchData.questions);
             setCategory(matchData.category || "");
@@ -52,32 +113,37 @@ export function useArenaGameLoop(selectedCategory: string, lobbyStats: StatItem[
             setOpponentScore(0);
             setOpponentQuestionsAnswered(0);
             setOpponentProgress(0);
-            setTimeLeft(30);
+            setTimeLeft(BATTLE_DURATION);
             setBattleResults([]);
           } else {
             const errorMsg = matchData?.error || "Failed to load match data.";
-            setMatchLog(prev => [...prev, `❌ ${errorMsg}`, "Returning to lobby..."]);
-            setTimeout(() => setGameState('lobby'), 3000);
+            setMatchLog(prev => [...prev, `[${getTimestamp()}] ❌ ${errorMsg}`, `[${getTimestamp()}] Returning to lobby...`]);
+            setTimeout(() => {
+              if (!abortController.signal.aborted) setGameState('lobby');
+            }, 3000);
           }
-        }, 1000);
-      }, 3000);
+        }, MATCHMAKING_TRANSITION_MS);
+      }, MATCHMAKING_DELAY_MS);
     } catch (err) {
-      // Error is communicated via matchLog UI
-      setMatchLog(prev => [...prev, "❌ Critical connection error.", "Returning to lobby..."]);
-      setTimeout(() => setGameState('lobby'), 3000);
+      if (abortController.signal.aborted) return;
+      setMatchLog(prev => [...prev, `[${getTimestamp()}] ❌ Critical connection error.`, `[${getTimestamp()}] Returning to lobby...`]);
+      setTimeout(() => {
+        if (!abortController.signal.aborted) setGameState('lobby');
+      }, 3000);
     }
   }, [selectedCategory]);
 
+  // Stable handleAnswer — reads volatile values from refs so the callback identity stays fixed
   const handleAnswer = useCallback((option: string) => {
-    if (userSelected || !questions[currentQuestion]) return;
+    if (userSelectedRef.current || !questionsRef.current[currentQuestionRef.current]) return;
     setUserSelected(option);
 
-    const isCorrect = option === questions[currentQuestion].a;
+    const q = questionsRef.current[currentQuestionRef.current];
+    const isCorrect = option === q.a;
     if (isCorrect) {
-      // Points = Base (100) + Speed Bonus (up to 50) + Combo Bonus (10 * combo)
-      const speedBonus = Math.floor(timeLeft / 2); // Max 15 if 30s left
-      const comboBonus = combo * 10;
-      const points = 100 + speedBonus + comboBonus;
+      const speedBonus = Math.floor(timeLeftRef.current / 2);
+      const comboBonus = comboRef.current * COMBO_MULTIPLIER;
+      const points = BASE_POINTS + speedBonus + comboBonus;
 
       setUserScore(s => s + points);
       setCombo(c => c + 1);
@@ -86,81 +152,97 @@ export function useArenaGameLoop(selectedCategory: string, lobbyStats: StatItem[
     }
 
     setBattleResults(prev => [...prev, {
-      q: questions[currentQuestion].q,
+      q: q.q,
       userAns: option,
+      correctAns: q.a,
       correct: isCorrect,
-      tip: questions[currentQuestion].tip
+      tip: q.tip
     }]);
 
     setTimeout(() => {
-      if (currentQuestion < questions.length - 1) {
+      if (currentQuestionRef.current < questionsRef.current.length - 1) {
         setCurrentQuestion(c => c + 1);
         setUserSelected(null);
       } else {
         setGameState('results');
       }
-    }, 800);
-  }, [currentQuestion, questions, userSelected]);
+    }, ANSWER_DELAY_MS);
+  }, []); // Stable — no deps needed thanks to refs
 
-  // Battle Logic Effect
+  // ── Battle tick (single stable interval, no deps on volatile state) ──
   useEffect(() => {
-    if (gameState === 'battle') {
-      const eloStat = lobbyStats.find(s => s.label === "Elo Rating")?.val || "1000";
-      const eloValue = parseInt(eloStat.replace(/,/g, '') || "1000");
-      const difficultyMult = Math.max(0.7, Math.min(1.6, eloValue / 1200));
+    if (gameState !== 'battle') return;
 
-      const timer = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
+    const eloStat = lobbyStats.find(s => s.label === "Elo Rating")?.val || "1000";
+    const eloValue = parseInt(eloStat.replace(/,/g, '') || "1000");
+    const difficultyMult = Math.max(0.7, Math.min(1.6, eloValue / 1200));
+    const totalQ = questionsRef.current.length;
+
+    const timer = setInterval(() => {
+      // Timer countdown
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          if (!battleEndedRef.current) {
+            battleEndedRef.current = true;
             setGameState('results');
-            return 0;
           }
-          return prev - 1;
-        });
-
-        // Opponent progress logic
-        setOpponentProgress((prev) => {
-          // Simulating thinking speed based on elo
-          // Increased pause probability for more variety
-          const pauseProb = 0.25 / difficultyMult;
-          if (Math.random() < pauseProb) return prev;
-
-          // Slight "hesitation" logic if they just scored or at certain milestones
-          const isHesitating = (Math.floor(prev) % 25 === 0 && Math.random() > 0.5);
-          if (isHesitating) return prev + 0.5;
-
-          const baseIncrement = Math.random() * 4 + 1.5; // 1.5-5.5% per tick
-          const speedBoost = Math.random() > 0.85 ? 1.8 : 1.0; // Rare speed bursts
-          const increment = baseIncrement * difficultyMult * speedBoost;
-
-          const next = prev + increment;
-          return next >= 100 ? 100 : next;
-        });
-
-        // Opponent scoring logic
-        const scoreProb = 0.85 + (difficultyMult * 0.05);
-        if (Math.random() > scoreProb && opponentQuestionsAnswered < questions.length) {
-          // Only score if they have progress "banked"
-          const maxScoreForProgress = Math.floor(opponentProgress / (100 / questions.length)) + 1;
-          if (opponentQuestionsAnswered < maxScoreForProgress) {
-            // Opponent scoring should also look realistic (around 100-130 pts)
-            const opponentPoints = Math.floor(100 + (Math.random() * 30));
-            setOpponentScore(s => s + opponentPoints);
-            setOpponentQuestionsAnswered(q => q + 1);
-          }
+          return 0;
         }
-      }, 1000);
+        return prev - 1;
+      });
 
-      return () => clearInterval(timer);
-    }
-  }, [gameState, opponentQuestionsAnswered, questions.length, lobbyStats, opponentProgress]);
+      // Opponent progress — reads/writes via setter to avoid stale closure
+      setOpponentProgress((prev) => {
+        const pauseProb = 0.25 / difficultyMult;
+        if (Math.random() < pauseProb) return prev;
 
+        const isHesitating = (Math.floor(prev) % 25 === 0 && Math.random() > 0.5);
+        if (isHesitating) return prev + 0.5;
+
+        const baseIncrement = Math.random() * 4 + 1.5;
+        const speedBoost = Math.random() > 0.85 ? 1.8 : 1.0;
+        const increment = baseIncrement * difficultyMult * speedBoost;
+
+        const next = prev + increment;
+        return next >= 100 ? 100 : next;
+      });
+
+      // Opponent scoring — use refs for cross-state reads
+      const scoreProb = 0.85 + (difficultyMult * 0.05);
+      if (Math.random() > scoreProb && opponentQARef.current < totalQ) {
+        const maxScoreForProgress = Math.floor(opponentProgressRef.current / (100 / totalQ)) + 1;
+        if (opponentQARef.current < maxScoreForProgress) {
+          const opponentPoints = Math.floor(OPPONENT_MIN_POINTS + (Math.random() * OPPONENT_POINT_RANGE));
+          setOpponentScore(s => s + opponentPoints);
+          setOpponentQuestionsAnswered(q => q + 1);
+        }
+      }
+    }, TICK_INTERVAL_MS);
+
+    return () => clearInterval(timer);
+  }, [gameState, lobbyStats]); // Only re-creates when game starts or lobby stats change
+
+  // Detect opponent completion
   useEffect(() => {
-    if (opponentProgress >= 100 && gameState === 'battle') {
+    if (opponentProgress >= 100 && gameState === 'battle' && !battleEndedRef.current) {
+      battleEndedRef.current = true;
       const finishDelay = Math.random() * 1000 + 500;
       setTimeout(() => setGameState('results'), finishDelay);
     }
   }, [opponentProgress, gameState]);
+
+  // Forfeit: zero user score so opponent is guaranteed winner
+  const forfeitBattle = useCallback(() => {
+    if (gameState !== 'battle') return;
+    battleEndedRef.current = true;
+    setUserScore(0);
+    setGameState('results');
+  }, [gameState]);
+
+  // Cleanup matchmaking on unmount
+  useEffect(() => {
+    return () => { matchmakingAbortRef.current?.abort(); };
+  }, []);
 
   return {
     gameState,
@@ -178,6 +260,8 @@ export function useArenaGameLoop(selectedCategory: string, lobbyStats: StatItem[
     battleResults,
     combo,
     startMatchmaking,
+    cancelMatchmaking,
+    forfeitBattle,
     handleAnswer
   };
 }

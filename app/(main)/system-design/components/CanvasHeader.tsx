@@ -1,7 +1,7 @@
 "use client";
 
 import { memo } from "react";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { 
   Undo2, 
   Redo2, 
@@ -89,7 +89,7 @@ export const CanvasHeader = memo(({
         <button onClick={() => setShowGrid(!showGrid)} className={`p-2 rounded-lg transition-all ${showGrid ? 'text-indigo-400 bg-indigo-400/10' : 'text-gray-500 hover:bg-white/5'}`}><GridIcon size={16} /></button>
         
         <div className="flex items-center bg-gray-950/50 border border-white/5 rounded-xl p-1 ml-1 relative group shadow-inner">
-          <motion.div 
+          <m.div 
             layout
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
             className="absolute inset-y-1 bg-white/10 rounded-lg shadow-sm"

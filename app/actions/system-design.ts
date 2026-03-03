@@ -5,11 +5,17 @@ import { getNextKey } from "@/utils/keyManager";
 import { Node, Connection } from "../(main)/system-design/types";
 import { sanitizePromptInput } from "@/utils/sanitize";
 import { logger } from "@/lib/logger";
+import { rateLimit } from "@/lib/rate-limit";
 
-export async function reviewSystemDesignAction(components: Node[], connections: Connection[]) {
+export async function reviewSystemDesignAction(components: Node[], connections: Connection[]): Promise<{ markdown: string; error?: string }> {
   try {
+    const { success: withinLimit, message: limitMsg } = await rateLimit("default");
+    if (!withinLimit) {
+      return { markdown: "", error: limitMsg || "Rate limit exceeded. Please wait." };
+    }
+
     const apiKey = getNextKey("GROQ_API_KEY") || process.env.GROQ_API_KEY;
-    if (!apiKey) throw new Error("Groq API Service configuration missing.");
+    if (!apiKey) return { markdown: "", error: "Groq API Service configuration missing." };
 
     const groq = new Groq({ apiKey });
 
@@ -45,6 +51,6 @@ export async function reviewSystemDesignAction(components: Node[], connections: 
   } catch (error: unknown) {
     logger.error("System Design Review Error (Groq):", error);
     const msg = error instanceof Error ? error.message : "Failed to review system design.";
-    throw new Error(msg);
+    return { markdown: "", error: msg };
   }
 }

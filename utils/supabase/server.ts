@@ -24,6 +24,14 @@ export function createClient() {
           }
         },
       },
+      global: {
+        fetch: (url, options = {}) => {
+          return fetch(url, {
+            ...options,
+            signal: options?.signal ?? AbortSignal.timeout(15_000), // 15s timeout (default 10s too short for India)
+          });
+        },
+      },
     }
   )
 }

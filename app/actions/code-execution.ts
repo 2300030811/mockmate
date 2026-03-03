@@ -1,5 +1,7 @@
 "use server";
 
+import { rateLimit } from "@/lib/rate-limit";
+
 const LANGUAGE_MAP: Record<string, number> = {
   python: 100,   // Python (3.12.5)
   python3: 100,  // Python (3.12.5)
@@ -33,6 +35,16 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 1
 }
 
 export async function executeCode(language: string, code: string): Promise<ExecutionResult> {
+  // 0. Server-side rate limit: prevent abuse bypassing client cooldown
+  try {
+    const { success, message } = await rateLimit("default");
+    if (!success) {
+      return { output: "", error: message || "Too many execution requests. Please wait." };
+    }
+  } catch {
+    // If rate-limiter is unavailable, allow the request through
+  }
+
   // 1. Validation
   if (!code || !code.trim()) {
     return { output: "", error: "Code is empty" };
@@ -57,7 +69,11 @@ export async function executeCode(language: string, code: string): Promise<Execu
     cpu_time_limit: 5,
     memory_limit: 128000,
   });
-  const headers = { "Content-Type": "application/json" };
+  const judge0Key = process.env.JUDGE0_API_KEY;
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (judge0Key) {
+    headers["X-Auth-Token"] = judge0Key;
+  }
 
   let lastError = "";
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -104,7 +120,7 @@ export async function executeCode(language: string, code: string): Promise<Execu
       return { output: out, error: result.stderr || result.compile_output || undefined };
 
     } catch (err: unknown) {
-      if (err instanceof DOMException && err.name === "AbortError") {
+      if (err instanceof Error && err.name === "AbortError") {
         lastError = "Execution timed out (20s). Try simpler code.";
       } else {
         lastError = "Network Error: Failed to reach execution engine.";

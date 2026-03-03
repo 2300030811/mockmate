@@ -1,6 +1,6 @@
 
 import React from "react";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 interface ProgressBarProps {
@@ -22,7 +22,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
 
   return (
     <div className={cn("w-full bg-gray-100 dark:bg-white/10 overflow-hidden rounded-full", heightClass, className)}>
-      <motion.div
+      <m.div
         initial={{ width: 0 }}
         animate={{ width: `${percentage}%` }}
         transition={{ type: "spring", stiffness: 50, damping: 15 }}

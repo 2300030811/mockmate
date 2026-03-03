@@ -52,12 +52,69 @@ export function AudioVisualizer({
     let audioCtx: AudioContext;
     try {
       audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const analyser = audioCtx.createAnalyser();
+      // Chrome's autoplay policy can leave AudioContext suspended — resume it
+      if (audioCtx.state === "suspended") {
+        audioCtx.resume().catch(() => {});
+      }
       const source = audioCtx.createMediaStreamSource(stream);
-      source.connect(analyser);
-      analyser.fftSize = 256;
+
+      // --- Audio processing pipeline for cleaner signal ---
+
+      // 1. High-pass filter: removes low-frequency rumble (AC hum, desk vibrations, etc.)
+      const highPass = audioCtx.createBiquadFilter();
+      highPass.type = "highpass";
+      highPass.frequency.value = 85; // Cut below 85 Hz — speech fundamentals start ~85 Hz
+
+      // 2. Notch filter: removes electrical mains hum (50Hz regions + 60Hz regions)
+      const notch = audioCtx.createBiquadFilter();
+      notch.type = "notch";
+      notch.frequency.value = 55; // Center between 50Hz/60Hz to catch both standards
+      notch.Q.value = 2;          // Narrow enough to not harm speech bass
+
+      // 3. Low-pass filter: removes high-frequency hiss/noise above speech range
+      const lowPass = audioCtx.createBiquadFilter();
+      lowPass.type = "lowpass";
+      lowPass.frequency.value = 8000; // Speech intelligibility lives below 8 kHz
+
+      // 4. Presence boost: lift the 1-4kHz band where speech consonants live
+      const presence = audioCtx.createBiquadFilter();
+      presence.type = "peaking";
+      presence.frequency.value = 2500; // Center of speech clarity range
+      presence.Q.value = 1;            // Broad Q for natural boost
+      presence.gain.value = 3;         // +3dB lift for clearer consonants
+
+      // 5. Compressor: normalizes loud/quiet speech for consistent levels
+      const compressor = audioCtx.createDynamicsCompressor();
+      compressor.threshold.value = -30; // Start compressing at -30 dB
+      compressor.knee.value = 12;       // Soft knee for natural sound
+      compressor.ratio.value = 4;       // 4:1 compression ratio
+      compressor.attack.value = 0.003;  // Fast attack for sharp consonants
+      compressor.release.value = 0.15;  // Quick release to preserve speech dynamics
+
+      // 6. Gain: slight boost to compensate for compression loss
+      const gain = audioCtx.createGain();
+      gain.gain.value = 1.4;
+
+      // Chain: source → highPass → notch → lowPass → presence → compressor → gain → analyser
+      const analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 512;  // Higher resolution for better speech-weighted volume
+      analyser.smoothingTimeConstant = 0.75; // Smoother frequency data for stable volume readings
+
+      source.connect(highPass);
+      highPass.connect(notch);
+      notch.connect(lowPass);
+      lowPass.connect(presence);
+      presence.connect(compressor);
+      compressor.connect(gain);
+      gain.connect(analyser);
+
       audioContextRef.current = audioCtx;
       analyserRef.current = analyser;
+
+      // Auto-resume if browser suspends the AudioContext (e.g., tab switch on mobile)
+      audioCtx.onstatechange = () => {
+        if (audioCtx.state === "suspended") audioCtx.resume().catch(() => {});
+      };
     } catch (e) {
       console.error("Failed to setup visualizer:", e);
       return;
@@ -67,6 +124,11 @@ export function AudioVisualizer({
     const dataArray = new Uint8Array(bufferLength);
 
     const draw = () => {
+      // Skip drawing when tab is hidden to save CPU/GPU
+      if (document.hidden) {
+        animationFrameRef.current = requestAnimationFrame(draw);
+        return;
+      }
       if (!analyserRef.current || !canvasRef.current) return;
 
       const canvas = canvasRef.current;
@@ -75,12 +137,22 @@ export function AudioVisualizer({
 
       analyserRef.current.getByteFrequencyData(dataArray);
 
-      // Volume calculation for VAD
-      let sum = 0;
+      // Speech-weighted volume calculation for VAD
+      // Weight the 300Hz-3kHz range (speech formants) more heavily than bass/treble
+      const sampleRate = audioContextRef.current?.sampleRate || 48000;
+      const binHz = sampleRate / (analyserRef.current!.fftSize || 512);
+      let weightedSum = 0;
+      let weightTotal = 0;
       for (let i = 0; i < dataArray.length; i++) {
-        sum += dataArray[i];
+        const freq = i * binHz;
+        // Triangular weight: 0 at 0Hz, peak at 1.5kHz, 0 at 8kHz
+        let weight = 0.2; // base weight for all bins
+        if (freq >= 300 && freq <= 4000) weight = 1.0; // Full weight for speech band
+        else if (freq > 100 && freq < 300) weight = 0.5; // Partial for low fundamentals
+        weightedSum += dataArray[i] * weight;
+        weightTotal += weight;
       }
-      const currentVol = sum / (dataArray.length || 1);
+      const currentVol = weightedSum / (weightTotal || 1);
       if (onVolumeChangeRef.current) {
         onVolumeChangeRef.current(currentVol);
       }

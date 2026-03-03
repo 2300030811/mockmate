@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { Trophy, Send, CheckCircle2, Loader2, RefreshCw } from "lucide-react";
 import { saveQuizResult } from "@/app/actions/results";
 import { getSessionId, getStoredNickname, setStoredNickname } from "@/utils/session";
@@ -62,7 +62,7 @@ export function NicknamePrompt({ userAnswers, totalQuestions, category }: Nickna
       <div className="p-6">
         <AnimatePresence mode="wait">
           {!submitted ? (
-            <motion.div
+            <m.div
               key="prompt"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -114,9 +114,9 @@ export function NicknamePrompt({ userAnswers, totalQuestions, category }: Nickna
                   {syncing && <p className="absolute -bottom-5 left-0 text-[10px] text-blue-500 font-bold animate-pulse px-1">Syncing profile...</p>}
                   {error && <p className="absolute -bottom-5 left-0 text-[10px] text-red-500 font-bold px-1">{error}</p>}
                 </div>
-            </motion.div>
+            </m.div>
           ) : (
-            <motion.div
+            <m.div
               key="success"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -124,7 +124,7 @@ export function NicknamePrompt({ userAnswers, totalQuestions, category }: Nickna
             >
               <CheckCircle2 className="w-6 h-6" />
               <span className="font-bold">You&apos;re on the board, {nickname}!</span>
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
       </div>

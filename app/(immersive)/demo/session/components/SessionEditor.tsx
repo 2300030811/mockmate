@@ -1,8 +1,19 @@
 
-import { useRef, useState, useEffect, useCallback, useMemo } from "react";
-import Editor, { type OnMount } from "@monaco-editor/react";
+import { useRef, useState, useEffect, useCallback, useMemo, memo } from "react";
+import dynamic from "next/dynamic";
+import type { OnMount } from "@monaco-editor/react";
 import { Terminal, Zap, Copy, ChevronRight, Check, RotateCcw } from "lucide-react";
 import { executeCode } from "@/app/actions/code-execution";
+
+// Lazy-load Monaco Editor (~2MB) — only loaded when code tab is opened
+const Editor = dynamic(() => import("@monaco-editor/react"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex-1 flex items-center justify-center bg-[#1e1e2e] text-gray-500 text-sm">
+      Loading Editor...
+    </div>
+  ),
+});
 
 interface SessionEditorProps {
    editorLanguage: 'c' | 'cpp' | 'javascript' | 'typescript' | 'python' | 'css' | 'sql';
@@ -278,7 +289,7 @@ const LANGUAGE_LABELS: Record<string, string> = {
    css: "CSS"
 };
 
-export function SessionEditor({
+export const SessionEditor = memo(function SessionEditor({
    editorLanguage,
    setEditorLanguage,
    editorValue,
@@ -551,4 +562,4 @@ export function SessionEditor({
          )}
       </div>
    );
-}
+});

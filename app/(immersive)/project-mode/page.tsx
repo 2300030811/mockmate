@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { projects, ProjectChallenge } from "@/lib/projects/data";
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
@@ -11,6 +11,7 @@ import { useEffect, useState, useMemo } from "react";
 import { NavigationPill } from "@/components/ui/NavigationPill";
 import React from "react";
 import { logger } from "@/lib/logger";
+import { getCompletedProjects } from "@/app/actions/project-progress";
 
 // Sort projects by difficulty: Easy (1) -> Medium (2) -> Hard (3)
 const DIFFICULTY_WEIGHT: Record<string, number> = { "Easy": 1, "Medium": 2, "Hard": 3 };
@@ -21,14 +22,29 @@ export default function ProjectModeList() {
     const [activeDifficulty, setActiveDifficulty] = useState<"All" | "Easy" | "Medium" | "Hard">("All");
 
     useEffect(() => {
+        // Fetch from localStorage (all users)
         const saved = localStorage.getItem('completedProjects');
+        let localCompleted: string[] = [];
         if (saved) {
             try {
-                setCompletedProjects(JSON.parse(saved));
+                localCompleted = JSON.parse(saved);
             } catch (e) {
                 logger.error("Failed to parse completed projects", e);
             }
         }
+
+        // Fetch from server (logged-in users only) and merge
+        (async () => {
+            try {
+                const serverCompleted = await getCompletedProjects();
+                const merged = Array.from(new Set([...localCompleted, ...serverCompleted]));
+                setCompletedProjects(merged);
+            } catch (e) {
+                // If server fetch fails, just use localStorage
+                logger.error("Failed to fetch server-side completions", e);
+                setCompletedProjects(localCompleted);
+            }
+        })();
     }, []);
 
     const filteredProjects = useMemo(() => {
@@ -48,29 +64,29 @@ export default function ProjectModeList() {
 
             <div className="max-w-6xl mx-auto">
                 <header className="text-center mb-12">
-                    <motion.div
+                    <m.div
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
                         className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-bold uppercase tracking-widest mb-6"
                     >
                         <Code2 size={14} />
                         Live Engineering Challenges
-                    </motion.div>
-                    <motion.h1
+                    </m.div>
+                    <m.h1
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="text-4xl md:text-6xl font-black bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 mb-6"
                     >
                         Project Mode
-                    </motion.h1>
-                    <motion.p
+                    </m.h1>
+                    <m.p
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
                         className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto"
                     >
                         Solve real-world engineering bugs and build features in a live, multi-file environment.
-                    </motion.p>
+                    </m.p>
                 </header>
 
                 {/* Filters and Search */}
@@ -135,7 +151,7 @@ interface ProjectCardProps {
 
 const ProjectCard = React.memo(({ project, index, isCompleted }: ProjectCardProps) => {
     return (
-        <motion.div
+        <m.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: index * 0.05 }}
@@ -210,14 +226,14 @@ const ProjectCard = React.memo(({ project, index, isCompleted }: ProjectCardProp
                     </div>
                 </Card>
             </Link>
-        </motion.div>
+        </m.div>
     );
 });
 ProjectCard.displayName = "ProjectCard";
 
 function EmptyState({ onClear }: { onClear: () => void }) {
     return (
-        <motion.div
+        <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="text-center py-20 bg-gray-50 dark:bg-white/5 rounded-3xl border border-dashed border-gray-200 dark:border-gray-800"
@@ -233,6 +249,6 @@ function EmptyState({ onClear }: { onClear: () => void }) {
             >
                 Clear all filters
             </button>
-        </motion.div>
+        </m.div>
     );
 }

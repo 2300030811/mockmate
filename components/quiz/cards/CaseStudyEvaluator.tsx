@@ -2,7 +2,7 @@
 "use client";
 
 import { CaseStudyQuestion } from '@/types';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Check, ClipboardList } from 'lucide-react';
 import { useTheme } from '@/components/providers/providers';
 
@@ -33,7 +33,7 @@ export function CaseStudyEvaluator({
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6">
       {/* Scenario Panel */}
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         className={`border rounded-3xl p-8 transition-colors duration-300
@@ -46,7 +46,7 @@ export function CaseStudyEvaluator({
         <p className={`leading-relaxed text-lg md:text-xl font-medium ${isDark ? 'text-white/90' : 'text-gray-800'}`}>
           {question.scenario}
         </p>
-      </motion.div>
+      </m.div>
 
       <div className={`backdrop-blur-xl border rounded-3xl p-6 md:p-10 transition-colors duration-300
         ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-gray-200 shadow-sm'}
@@ -72,7 +72,7 @@ export function CaseStudyEvaluator({
             const isCorrect = currentVal === correctVal;
 
             return (
-              <motion.div
+              <m.div
                 key={idx}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -118,13 +118,13 @@ export function CaseStudyEvaluator({
                     No
                   </button>
                 </div>
-              </motion.div>
+              </m.div>
             );
           })}
         </div>
 
         {isReviewMode && question.explanation && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className={`mt-8 p-6 border rounded-3xl ${isDark ? 'bg-blue-500/10 border-blue-500/20' : 'bg-blue-50 border-blue-100'}`}
@@ -134,7 +134,7 @@ export function CaseStudyEvaluator({
               Explanation
             </div>
             <p className={`text-base md:text-lg ${isDark ? 'text-white/80' : 'text-gray-700'}`}>{question.explanation}</p>
-          </motion.div>
+          </m.div>
         )}
       </div>
     </div>

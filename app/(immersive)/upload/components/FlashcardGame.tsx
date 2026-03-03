@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ArrowRight, RotateCcw, Check, X, Shuffle, Download } from "lucide-react";
 import { GeneratedQuizQuestion } from "@/lib/ai/models";
 
@@ -151,7 +151,7 @@ export function FlashcardGame({ cards: initialCards, isDark, onExit }: Flashcard
         style={{ perspective: "1000px" }}
       >
         <AnimatePresence mode="wait" custom={direction}>
-          <motion.div
+          <m.div
             key={currentIndex}
             custom={direction}
             initial={{ opacity: 0, x: direction * 50, rotateY: 0 }}
@@ -212,7 +212,7 @@ export function FlashcardGame({ cards: initialCards, isDark, onExit }: Flashcard
                 )}
               </div>
             </div>
-          </motion.div>
+          </m.div>
         </AnimatePresence>
       </div>
 

@@ -5,8 +5,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { validateNickname } from "@/utils/moderation";
 import { logger } from "@/lib/logger";
+import { withRetry } from "@/lib/retry";
 
 import { z } from "zod";
+import { NICKNAME_REGEX, NICKNAME_REGEX_MESSAGE } from "@/lib/constants";
 
 const getURL = () => {
   let url =
@@ -27,7 +29,7 @@ const signupSchema = z.object({
     .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
     .regex(/[a-z]/, "Password must contain at least one lowercase letter")
     .regex(/[0-9]/, "Password must contain at least one number"),
-  nickname: z.string().min(2, "Nickname must be at least 2 characters").max(20, "Nickname must be at most 20 characters").regex(/^[a-zA-Z0-9_]+$/, "Nickname can only contain letters, numbers, and underscores"),
+  nickname: z.string().min(2, "Nickname must be at least 2 characters").max(20, "Nickname must be at most 20 characters").regex(NICKNAME_REGEX, NICKNAME_REGEX_MESSAGE),
 });
 
 export async function signup(formData: { email: string; password: string; nickname: string }) {
@@ -82,14 +84,20 @@ export async function login(formData: { email: string; password: string }) {
   const { email, password } = result.data;
   const supabase = createClient();
 
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+  try {
+    const { error } = await withRetry(
+      () => supabase.auth.signInWithPassword({ email, password }),
+      { retries: 2, baseDelay: 1500, label: "Login" }
+    );
 
-  if (error) {
-    logger.warn("Supabase login error", error.message);
-    return { error: error.message };
+    if (error) {
+      logger.warn("Supabase login error", error.message);
+      return { error: error.message };
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Unknown error";
+    logger.warn("Login failed after retries", msg);
+    return { error: "Connection timed out. Please check your internet and try again." };
   }
 
   revalidatePath("/", "layout");
@@ -142,4 +150,80 @@ export async function getCurrentUser() {
     role: profile?.role || 'user',
     avatar_icon: profile?.avatar_icon,
   };
+}
+
+/**
+ * Change the user's password. Only works for email/password users.
+ */
+export async function changePassword({ newPassword }: { newPassword: string }) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Not authenticated." };
+  }
+
+  if (newPassword.length < 8) {
+    return { error: "Password must be at least 8 characters." };
+  }
+
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+
+  if (error) {
+    logger.error("Password change error", error.message);
+    return { error: error.message };
+  }
+
+  return { success: true };
+}
+
+/**
+ * Sends a password reset email to the given address.
+ */
+export async function resetPassword(email: string) {
+  if (!email) {
+    return { error: "Email is required." };
+  }
+
+  const supabase = createClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${getURL()}auth/callback?next=/settings?tab=security`,
+  });
+
+  if (error) {
+    logger.error("Password reset error", error.message);
+    return { error: error.message };
+  }
+
+  return { success: true };
+}
+
+/**
+ * Soft-delete the user's account. Marks the profile as deleted (7-day grace period)
+ * and signs the user out.
+ */
+export async function deleteAccount() {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Not authenticated." };
+  }
+
+  // Soft-delete: mark profile with deleted_at timestamp
+  const { error } = await supabase
+    .from("profiles")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", user.id);
+
+  if (error) {
+    logger.error("Account deletion error", error.message);
+    return { error: "Failed to delete account. Please try again." };
+  }
+
+  // Sign the user out
+  await supabase.auth.signOut();
+  revalidatePath("/", "layout");
+
+  return { success: true };
 }

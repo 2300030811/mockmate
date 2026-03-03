@@ -7,13 +7,47 @@ import { env } from '@/lib/env';
 import { z } from 'zod';
 import { sanitizePromptInput } from '@/utils/sanitize';
 import { getNextKey } from '@/utils/keyManager';
+import { fetchSalaryEstimate, EnrichedSalaryData } from '@/lib/services/salary-service';
+
+// Simple heuristic to estimate years of experience from resume text
+function estimateExperienceYears(resumeText: string): number | undefined {
+  // Pattern: "X years of experience" or "X+ years" or "X yrs"
+  const patterns = [
+    /\b(\d{1,2})\+?\s*(?:years?|yrs?)\s*(?:of)?\s*(?:experience|exp)/i,
+    /\b(?:experience|exp)\s*(?:of)?\s*(?:over|about|approximately)?\s*(\d{1,2})\+?\s*(?:years?|yrs?)/i,
+    /\b(\d{4})\s*(?:-|–|to)\s*(?:present|current|now|\d{4})/gi,
+  ];
+
+  // Try direct patterns first
+  for (const pattern of patterns.slice(0, 2)) {
+    const match = resumeText.match(pattern);
+    if (match?.[1]) {
+      const years = parseInt(match[1], 10);
+      if (years >= 0 && years <= 50) return years;
+    }
+  }
+
+  // Try date range extraction (count spans)
+  const dateRanges = [...resumeText.matchAll(/(\d{4})\s*(?:-|–|to)\s*(?:present|current|now|(\d{4}))/gi)];
+  if (dateRanges.length > 0) {
+    const currentYear = new Date().getFullYear();
+    let earliest = currentYear;
+    for (const m of dateRanges) {
+      const start = parseInt(m[1], 10);
+      if (start >= 1980 && start < currentYear && start < earliest) earliest = start;
+    }
+    if (earliest < currentYear) return currentYear - earliest;
+  }
+
+  return undefined;
+}
 
 // Zod schemas for AI response validation
 const AnalysisSchema = z.object({
   matchScore: z.number().min(0).max(100).default(0),
   extractedSkills: z.array(z.object({
     name: z.string(),
-    category: z.enum(["technical", "soft", "domain"]).catch("technical") // robust fallback
+    category: z.enum(["technical", "soft", "domain"]).catch("technical")
   })).default([]),
   missingSkills: z.array(z.object({
     skill: z.string(),
@@ -21,32 +55,51 @@ const AnalysisSchema = z.object({
     importance: z.enum(["high", "medium", "low"]).catch("medium"),
     recommendedQuiz: z.enum(["aws", "azure", "mongodb", "salesforce", "pcap", "java"]).nullable().optional()
   })).default([]),
+  strengths: z.array(z.object({
+    skill: z.string(),
+    evidence: z.string(),
+    level: z.enum(["expert", "proficient", "intermediate"]).catch("proficient")
+  })).default([]),
+  competitiveEdge: z.string().optional(),
   roadmap: z.array(z.object({
     title: z.string(),
     description: z.string(),
     duration: z.string(),
+    milestone: z.string().catch('Complete phase objectives'),
+    priority: z.enum(['critical', 'important', 'nice-to-have']).catch('important'),
+    estimatedHours: z.number().min(1).max(200).catch(30),
     resources: z.array(z.object({
       name: z.string(),
       url: z.string(),
-      type: z.enum(["course", "article", "project"]).catch("article")
+      type: z.enum(["course", "article", "project", "video", "documentation"]).catch("article")
     })).default([])
   })).default([]),
   marketInsights: z.object({
     demand: z.enum(["high", "medium", "low"]).catch("medium"),
     salaryRange: z.string(),
-    outlook: z.string()
+    outlook: z.string(),
+    confidence: z.enum(["high", "medium", "low"]).catch("medium")
   }).optional(),
   interviewPrep: z.object({
     topQuestions: z.array(z.object({
       question: z.string(),
-      reason: z.string()
+      reason: z.string(),
+      difficulty: z.enum(["easy", "medium", "hard"]).optional(),
+      category: z.enum(["technical", "behavioral", "system-design"]).optional()
     }))
   }).optional(),
   resumeSuggestions: z.array(z.object({
     category: z.enum(["keyword", "experience", "structure"]).catch("keyword"),
     suggestion: z.string(),
     impact: z.enum(["high", "medium", "low"]).catch("medium")
-  })).optional()
+  })).optional(),
+  suggestedRoles: z.array(z.object({
+    role: z.string(),
+    matchPercentage: z.number().min(0).max(100).catch(0),
+    keyMatchingSkills: z.array(z.string()).default([]),
+    missingSkills: z.array(z.string()).default([]),
+    reasoning: z.string().catch('')
+  })).default([])
 });
 
 import { CAREER_ANALYSIS_SYSTEM_PROMPT } from '@/lib/prompts';
@@ -61,16 +114,24 @@ export async function analyzeCareerPath(formData: FormData, jobRole: string, com
       throw new Error('No valid file uploaded');
     }
 
-
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     
     const data = await pdf(buffer);
     const resumeText = data.text;
 
-    const truncatedResume = resumeText.slice(0, 15000); 
+    const truncatedResume = resumeText.slice(0, 15000);
 
-    const systemPrompt = CAREER_ANALYSIS_SYSTEM_PROMPT(jobRole, company);
+    // Extract experience years from resume for salary scaling
+    const experienceYears = estimateExperienceYears(resumeText);
+
+    // Fetch salary data from local DB (instant)
+    const salaryData = fetchSalaryEstimate(jobRole, 'India', experienceYears);
+    const salaryDataStr = salaryData 
+      ? `REAL SALARY DATA (${salaryData.source}, confidence: ${(salaryData as EnrichedSalaryData).confidence || 'medium'}): Min: ${salaryData.currency} ${salaryData.min}, Median: ${salaryData.currency} ${salaryData.median}, Max: ${salaryData.currency} ${salaryData.max}. ${experienceYears !== undefined ? `Candidate has ~${experienceYears} years experience.` : ''}`
+      : '';
+
+    const systemPrompt = CAREER_ANALYSIS_SYSTEM_PROMPT(jobRole, company, salaryDataStr);
 
     let content: string | null = null;
     let providerUsed = "";
@@ -90,7 +151,7 @@ export async function analyzeCareerPath(formData: FormData, jobRole: string, com
                 { role: "user", content: `Here is the candidate's resume text:\n\n${sanitizePromptInput(truncatedResume, 15000)}` }
             ],
             response_format: { type: "json_object" },
-            temperature: 0.7,
+            temperature: 0.4,
         });
         content = completion.choices[0]?.message?.content;
         providerUsed = "Groq";
@@ -122,7 +183,7 @@ export async function analyzeCareerPath(formData: FormData, jobRole: string, com
         interface RawSkill { name?: string; category?: string }
         interface RawGap { skill?: string; category?: string; importance?: string; recommendedQuiz?: string | null }
         interface RawResource { name?: string; url?: string; type?: string }
-        interface RawStep { title?: string; description?: string; duration?: string; resources?: RawResource[] }
+        interface RawStep { title?: string; description?: string; duration?: string; milestone?: string; priority?: string; estimatedHours?: number; resources?: RawResource[] }
 
         const fallback: CareerAnalysisResult = {
             jobRole,
@@ -142,15 +203,30 @@ export async function analyzeCareerPath(formData: FormData, jobRole: string, com
                 title: String(r?.title || ''),
                 description: String(r?.description || ''),
                 duration: String(r?.duration || ''),
+                milestone: String(r?.milestone || 'Complete phase objectives'),
+                priority: (['critical', 'important', 'nice-to-have'].includes(r?.priority ?? '') ? r!.priority : 'important') as LearningStep['priority'],
+                estimatedHours: typeof r?.estimatedHours === 'number' ? r.estimatedHours : 30,
                 resources: Array.isArray(r?.resources) ? r.resources.map((res: RawResource) => ({
                     name: String(res?.name || 'Unknown Resource'),
                     url: String(res?.url || '#'),
-                    type: (['course', 'article', 'project'].includes(res?.type ?? '') ? res!.type : 'article') as LearningStep['resources'][number]['type']
+                    type: (['course', 'article', 'project', 'video', 'documentation'].includes(res?.type ?? '') ? res!.type : 'article') as LearningStep['resources'][number]['type']
                 })) : []
             })) : [],
-            marketInsights: rawResult.marketInsights,
+            marketInsights: rawResult.marketInsights ? {
+                ...rawResult.marketInsights,
+                confidence: (salaryData as EnrichedSalaryData)?.confidence || rawResult.marketInsights?.confidence || 'medium',
+            } : undefined,
             interviewPrep: rawResult.interviewPrep,
-            resumeSuggestions: rawResult.resumeSuggestions
+            resumeSuggestions: rawResult.resumeSuggestions,
+            strengths: Array.isArray(rawResult.strengths) ? rawResult.strengths : [],
+            competitiveEdge: typeof rawResult.competitiveEdge === 'string' ? rawResult.competitiveEdge : undefined,
+            suggestedRoles: Array.isArray(rawResult.suggestedRoles) ? rawResult.suggestedRoles.map((r: { role?: string; matchPercentage?: number; keyMatchingSkills?: string[]; missingSkills?: string[]; reasoning?: string }) => ({
+                role: String(r?.role || ''),
+                matchPercentage: typeof r?.matchPercentage === 'number' ? r.matchPercentage : 0,
+                keyMatchingSkills: Array.isArray(r?.keyMatchingSkills) ? r.keyMatchingSkills.map(String) : [],
+                missingSkills: Array.isArray(r?.missingSkills) ? r.missingSkills.map(String) : [],
+                reasoning: String(r?.reasoning || '')
+            })) : [],
         };
 
         return fallback;
@@ -174,15 +250,24 @@ export async function analyzeCareerPath(formData: FormData, jobRole: string, com
         title: r.title,
         description: r.description,
         duration: r.duration,
+        milestone: r.milestone,
+        priority: r.priority,
+        estimatedHours: r.estimatedHours,
         resources: r.resources.map(res => ({
           name: res.name || 'Unknown Resource',
           url: res.url || '#',
           type: res.type
         }))
       })),
-      marketInsights: result.marketInsights,
+      marketInsights: result.marketInsights ? {
+        ...result.marketInsights,
+        confidence: (salaryData as EnrichedSalaryData)?.confidence || result.marketInsights.confidence || 'medium',
+      } : undefined,
       interviewPrep: result.interviewPrep,
-      resumeSuggestions: result.resumeSuggestions
+      resumeSuggestions: result.resumeSuggestions,
+      strengths: result.strengths,
+      competitiveEdge: result.competitiveEdge,
+      suggestedRoles: result.suggestedRoles,
     };
 
     return finalResponse;

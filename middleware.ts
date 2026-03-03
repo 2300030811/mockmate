@@ -57,6 +57,7 @@ export const config = {
     "/salesforce-quiz/:path*",
     "/pcap-quiz/:path*",
     "/oracle-quiz/:path*",
-    "/career-path/:path*"
+    "/career-path/:path*",
+    "/demo/session"
   ],
 };

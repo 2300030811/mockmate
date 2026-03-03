@@ -7,7 +7,7 @@ import { CareerDashboard } from '@/components/career-path/CareerDashboard';
 import { HomeBackground } from "@/components/home/HomeBackground";
 import { analyzeCareerPath } from '@/app/actions/career-analysis';
 import { CareerAnalysisResult } from '@/types/career';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { saveCareerPath } from '@/app/actions/career-save';
 import { getSessionId } from '@/utils/session';
 import { useRouter } from "next/navigation";
@@ -89,7 +89,7 @@ export default function CareerPathPage() {
 
         <AnimatePresence mode="wait">
           {step === 'upload' && (
-            <motion.div
+            <m.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
@@ -104,11 +104,11 @@ export default function CareerPathPage() {
                   hasFile={!!file}
                 />
               )}
-            </motion.div>
+            </m.div>
           )}
 
           {step === 'analysis' && (
-            <motion.div
+            <m.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -116,17 +116,17 @@ export default function CareerPathPage() {
             >
               <div className="relative w-32 h-32 mb-10">
                 {/* Neural Pulse Circles */}
-                <motion.div
+                <m.div
                   animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0.1, 0.3] }}
                   transition={{ duration: 2, repeat: Infinity }}
                   className="absolute inset-0 bg-purple-500/20 rounded-full blur-2xl"
                 />
-                <motion.div
+                <m.div
                   animate={{ rotate: 360 }}
                   transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
                   className="absolute inset-0 border-2 border-dashed border-purple-500/30 rounded-full"
                 />
-                <motion.div
+                <m.div
                   animate={{ rotate: -360 }}
                   transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
                   className="absolute inset-4 border border-blue-500/20 rounded-full border-t-blue-500"
@@ -141,16 +141,16 @@ export default function CareerPathPage() {
                   Neural Career Mapping
                 </h3>
                 <div className="flex flex-col items-center gap-2">
-                  <motion.p
+                  <m.p
                     key={messageIndex}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="text-purple-600 dark:text-purple-400 font-bold uppercase tracking-[0.2em] text-[10px]"
                   >
                     {['Deconstructing Resume...', 'Mapping Market Trends...', 'Simulating Growth Paths...', 'Finalizing Roadmap...'][messageIndex]}
-                  </motion.p>
+                  </m.p>
                   <div className="w-48 h-1 bg-gray-200 dark:bg-white/5 rounded-full overflow-hidden">
-                    <motion.div
+                    <m.div
                       initial={{ x: '-100%' }}
                       animate={{ x: '100%' }}
                       transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
@@ -159,11 +159,11 @@ export default function CareerPathPage() {
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           )}
 
           {step === 'results' && result && (
-            <motion.div
+            <m.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
@@ -175,7 +175,7 @@ export default function CareerPathPage() {
                 Analyze another role
               </button>
               <CareerDashboard data={result} />
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
       </div>

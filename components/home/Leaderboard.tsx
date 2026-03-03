@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { Trophy, Medal, Crown, Loader2, Sparkles, ChevronRight, Clock, Flame, Shield, Zap } from "lucide-react";
 import { getLeaderboard, deleteQuizResult } from "@/app/actions/results";
 import { Card } from "@/components/ui/Card";
 import { useAuth } from "@/components/providers/auth-provider";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import Link from "next/link";
+import { LeaderboardItem } from "@/types/dashboard";
 
 const categories = [
   { id: "aws", name: "AWS", icon: "☁️" },
@@ -23,7 +25,7 @@ type Timeframe = 'weekly' | 'all-time';
 export function Leaderboard() {
   const [activeCategory, setActiveCategory] = useState("aws");
   const [timeframe, setTimeframe] = useState<Timeframe>('weekly');
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<LeaderboardItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState("");
   const { profile } = useAuth();
@@ -131,11 +133,14 @@ export function Leaderboard() {
                 {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
             </select>
 
-            <div className="hidden md:flex flex-wrap justify-center gap-1">
+            <div className="hidden md:flex flex-wrap justify-center gap-1" role="tablist">
             {categories.map((cat) => (
                 <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
+                role="tab"
+                aria-selected={activeCategory === cat.id}
+                aria-controls="leaderboard-panel"
                 className={`
                     px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-300 flex items-center gap-1.5
                     ${activeCategory === cat.id 
@@ -164,11 +169,11 @@ export function Leaderboard() {
         )}
 
         {/* Content Area */}
-        <Card className="overflow-hidden border-orange-500/20 shadow-2xl shadow-orange-500/5 bg-white/50 dark:bg-gray-900/50 backdrop-blur-xl">
+        <Card className="overflow-hidden border-orange-500/20 shadow-2xl shadow-orange-500/5 bg-white/50 dark:bg-gray-900/50 backdrop-blur-xl" id="leaderboard-panel" role="tabpanel">
           <div className="p-2 md:p-6">
             <AnimatePresence mode="wait">
               {loading ? (
-                <motion.div 
+                <m.div 
                   key="loading"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -177,20 +182,20 @@ export function Leaderboard() {
                 >
                   <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
                   <p className="text-sm text-gray-500 font-medium">Fetching the best...</p>
-                </motion.div>
+                </m.div>
               ) : data.length > 0 ? (
-                <motion.div 
+                <m.ol 
                   key="list"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="space-y-3"
+                  className="space-y-3 list-none"
                 >
                   {data.map((entry, index) => {
                     const percentage = Math.round((entry.score / entry.total_questions) * 100);
                     const tier = getRankTier(index, percentage);
                     const TierIcon = tier.icon;
                     return (
-                        <motion.div
+                        <m.li
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.05 }}
@@ -250,12 +255,12 @@ export function Leaderboard() {
                             </button>
                             )}
                         </div>
-                        </motion.div>
+                        </m.li>
                     );
                   })}
-                </motion.div>
+                </m.ol>
               ) : (
-                <motion.div 
+                <m.div 
                   key="empty"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -268,15 +273,15 @@ export function Leaderboard() {
                   <p className="text-sm text-gray-500 mt-1 max-w-xs mx-auto">
                     Be the first to finish an exam in this category and claim your place!
                   </p>
-                </motion.div>
+                </m.div>
               )}
             </AnimatePresence>
           </div>
           
           <div className="bg-gray-50/50 dark:bg-white/5 p-4 border-t border-gray-100 dark:border-white/10 flex justify-center">
-            <button className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
+            <Link href="/dashboard" className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
               View All Rankings <ChevronRight className="w-3 h-3" />
-            </button>
+            </Link>
           </div>
         </Card>
       </div>

@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Minimize2, 
+import { m, AnimatePresence } from "framer-motion";
+import {
+  Minimize2,
   Sparkles,
   HelpCircle,
   Info,
@@ -47,10 +47,10 @@ export default function SystemDesignCanvas() {
   const [nodes, setNodes] = useState<Node[]>([]);
   const [connections, setConnections] = useState<Connection[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
-  const { 
-    history, historyIndex, historyLength, 
-    setInitialHistory, addToHistory, 
-    undo: undoHistory, redo: redoHistory 
+  const {
+    history, historyIndex, historyLength,
+    setInitialHistory, addToHistory,
+    undo: undoHistory, redo: redoHistory
   } = useSystemDesignHistory({ nodes: [], connections: [], groups: [] });
 
   const {
@@ -67,7 +67,7 @@ export default function SystemDesignCanvas() {
   const [activeTool, setActiveTool] = useState<"Select" | "Connect" | "Pan" | "Group">("Select");
   const [connectStart, setConnectStart] = useState<string | null>(null);
   const [showGrid, setShowGrid] = useState(true);
-  
+
   // --- UI States ---
   const [showReview, setShowReview] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
@@ -101,15 +101,15 @@ export default function SystemDesignCanvas() {
         }
       }
     } else {
-        setInitialHistory({ nodes: [], connections: [], groups: [] });
+      setInitialHistory({ nodes: [], connections: [], groups: [] });
     }
     setHasLoaded(true);
     setWindowSize({ width: window.innerWidth, height: window.innerHeight });
-    
+
     // Auto-trigger tutorial if not onboarded
     const onboarded = localStorage.getItem('mockmate-sd-onboarded');
     if (!onboarded) {
-        setTimeout(() => setShowTutorial(true), 1500);
+      setTimeout(() => setShowTutorial(true), 1500);
     }
 
     const handleResize = () => setWindowSize({ width: window.innerWidth, height: window.innerHeight });
@@ -149,11 +149,11 @@ export default function SystemDesignCanvas() {
 
   const updateNodePos = useCallback((id: string, x: number, y: number) => {
     setNodes(prev => {
-       const old = prev.find(n => n.id === id);
-       if (old && old.x === x && old.y === y) return prev;
-       const next = prev.map(n => n.id === id ? { ...n, x, y } : n);
-       recordHistory(next, connections, groups);
-       return next;
+      const old = prev.find(n => n.id === id);
+      if (old && old.x === x && old.y === y) return prev;
+      const next = prev.map(n => n.id === id ? { ...n, x, y } : n);
+      recordHistory(next, connections, groups);
+      return next;
     });
   }, [connections, groups, recordHistory]);
 
@@ -195,13 +195,13 @@ export default function SystemDesignCanvas() {
 
   const addGroup = useCallback(() => {
     const newGroup: Group = {
-       id: `g-${Date.now()}`,
-       name: "Container",
-       x: Math.round((-pan.x + (typeof window !== 'undefined' ? window.innerWidth : 1200) / 4) / scale / GRID_SIZE) * GRID_SIZE,
-       y: Math.round((-pan.y + (typeof window !== 'undefined' ? window.innerHeight : 800) / 4) / scale / GRID_SIZE) * GRID_SIZE,
-       w: 400,
-       h: 300,
-       color: "rgba(99, 102, 241, 0.1)"
+      id: `g-${Date.now()}`,
+      name: "Container",
+      x: Math.round((-pan.x + (typeof window !== 'undefined' ? window.innerWidth : 1200) / 4) / scale / GRID_SIZE) * GRID_SIZE,
+      y: Math.round((-pan.y + (typeof window !== 'undefined' ? window.innerHeight : 800) / 4) / scale / GRID_SIZE) * GRID_SIZE,
+      w: 400,
+      h: 300,
+      color: "rgba(99, 102, 241, 0.1)"
     };
     const next = [...groups, newGroup];
     setGroups(next);
@@ -212,18 +212,18 @@ export default function SystemDesignCanvas() {
   const deleteSelected = useCallback(() => {
     if (!selectedId) return;
     if (selectedType === "node") {
-       const nextN = nodes.filter(n => n.id !== selectedId);
-       const nextC = connections.filter(c => c.from !== selectedId && c.to !== selectedId);
-       setNodes(nextN); setConnections(nextC);
-       recordHistory(nextN, nextC, groups);
+      const nextN = nodes.filter(n => n.id !== selectedId);
+      const nextC = connections.filter(c => c.from !== selectedId && c.to !== selectedId);
+      setNodes(nextN); setConnections(nextC);
+      recordHistory(nextN, nextC, groups);
     } else if (selectedType === "connection") {
-       const nextC = connections.filter(c => c.id !== selectedId);
-       setConnections(nextC);
-       recordHistory(nodes, nextC, groups);
+      const nextC = connections.filter(c => c.id !== selectedId);
+      setConnections(nextC);
+      recordHistory(nodes, nextC, groups);
     } else if (selectedType === "group") {
-       const nextG = groups.filter(g => g.id !== selectedId);
-       setGroups(nextG);
-       recordHistory(nodes, connections, nextG);
+      const nextG = groups.filter(g => g.id !== selectedId);
+      setGroups(nextG);
+      recordHistory(nodes, connections, nextG);
     }
     clearSelection();
   }, [selectedId, selectedType, nodes, connections, groups, recordHistory, clearSelection]);
@@ -256,29 +256,29 @@ export default function SystemDesignCanvas() {
     let newConns: Connection[] = [];
 
     if (stack === "Serverless") {
-       newNodes = [
-          { id: `${base}-1`, type: "Client", x: center.x, y: center.y, name: "End User" },
-          { id: `${base}-2`, type: "Load Balancer", x: center.x + 150, y: center.y, name: "API Gate" },
-          { id: `${base}-3`, type: "Microservice", x: center.x + 300, y: center.y, name: "Lambda" },
-          { id: `${base}-4`, type: "Database", x: center.x + 450, y: center.y, name: "Dynamo" },
-       ];
-       newConns = [
-          { id: `${base}-c1`, from: `${base}-1`, to: `${base}-2`, label: "JSON" },
-          { id: `${base}-c2`, from: `${base}-2`, to: `${base}-3`, label: "Trigger" },
-          { id: `${base}-c3`, from: `${base}-3`, to: `${base}-4`, label: "Query" },
-       ];
+      newNodes = [
+        { id: `${base}-1`, type: "Client", x: center.x, y: center.y, name: "End User" },
+        { id: `${base}-2`, type: "Load Balancer", x: center.x + 150, y: center.y, name: "API Gate" },
+        { id: `${base}-3`, type: "Microservice", x: center.x + 300, y: center.y, name: "Lambda" },
+        { id: `${base}-4`, type: "Database", x: center.x + 450, y: center.y, name: "Dynamo" },
+      ];
+      newConns = [
+        { id: `${base}-c1`, from: `${base}-1`, to: `${base}-2`, label: "JSON" },
+        { id: `${base}-c2`, from: `${base}-2`, to: `${base}-3`, label: "Trigger" },
+        { id: `${base}-c3`, from: `${base}-3`, to: `${base}-4`, label: "Query" },
+      ];
     } else if (stack === "Web") {
-       newNodes = [
-          { id: `${base}-w1`, type: "CDN", x: center.x, y: center.y, name: "CloudFront" },
-          { id: `${base}-w2`, type: "Load Balancer", x: center.x + 150, y: center.y, name: "ALB" },
-          { id: `${base}-w3`, type: "Web Server", x: center.x + 300, y: center.y, name: "ASG" },
-          { id: `${base}-w4`, type: "Database", x: center.x + 450, y: center.y, name: "RDS" },
-       ];
-       newConns = [
-          { id: `${base}-wc1`, from: `${base}-w1`, to: `${base}-w2`, label: "Edge" },
-          { id: `${base}-wc2`, from: `${base}-w2`, to: `${base}-w3`, label: "Forward" },
-          { id: `${base}-wc3`, from: `${base}-w3`, to: `${base}-w4`, label: "SQL" },
-       ];
+      newNodes = [
+        { id: `${base}-w1`, type: "CDN", x: center.x, y: center.y, name: "CloudFront" },
+        { id: `${base}-w2`, type: "Load Balancer", x: center.x + 150, y: center.y, name: "ALB" },
+        { id: `${base}-w3`, type: "Web Server", x: center.x + 300, y: center.y, name: "ASG" },
+        { id: `${base}-w4`, type: "Database", x: center.x + 450, y: center.y, name: "RDS" },
+      ];
+      newConns = [
+        { id: `${base}-wc1`, from: `${base}-w1`, to: `${base}-w2`, label: "Edge" },
+        { id: `${base}-wc2`, from: `${base}-w2`, to: `${base}-w3`, label: "Forward" },
+        { id: `${base}-wc3`, from: `${base}-w3`, to: `${base}-w4`, label: "SQL" },
+      ];
     }
     const nextN = [...nodes, ...newNodes];
     const nextC = [...connections, ...newConns];
@@ -291,6 +291,10 @@ export default function SystemDesignCanvas() {
     setIsReviewing(true);
     try {
       const result = await reviewSystemDesignAction(nodes, connections);
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
       setReviewResult(result.markdown);
       toast.success("Audit Complete");
     } catch (err) {
@@ -321,20 +325,19 @@ export default function SystemDesignCanvas() {
       if (e.key === "Delete" || e.key === "Backspace") deleteSelected();
       if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); }
       if ((e.ctrlKey || e.metaKey) && e.key === 'p') { e.preventDefault(); setShowTutorial(true); }
-      if (e.key === " ") { e.preventDefault(); setActiveTool("Pan"); if(canvasRef.current) canvasRef.current.style.cursor = 'grab'; }
+      if (e.key === " ") { e.preventDefault(); setActiveTool("Pan"); if (canvasRef.current) canvasRef.current.style.cursor = 'grab'; }
     };
-    const up = (e: KeyboardEvent) => { if (e.key === " ") { setActiveTool("Select"); if(canvasRef.current) canvasRef.current.style.cursor = 'crosshair'; } };
+    const up = (e: KeyboardEvent) => { if (e.key === " ") { setActiveTool("Select"); if (canvasRef.current) canvasRef.current.style.cursor = 'crosshair'; } };
     window.addEventListener("keydown", down); window.addEventListener("keyup", up);
     return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); };
   }, [deleteSelected, redo, undo]);
 
   return (
-    <div className={`h-screen flex flex-col overflow-hidden selection:bg-indigo-500/30 font-sans antialiased transition-colors duration-500 ${
-      theme === "light" ? "bg-gray-50 text-gray-900" : 
-      theme === "neo" ? "bg-[#0a0a12] text-white" : "bg-[#050505] text-white"
-    }`}>
-      
-      <CanvasHeader 
+    <div className={`h-screen flex flex-col overflow-hidden selection:bg-indigo-500/30 font-sans antialiased transition-colors duration-500 ${theme === "light" ? "bg-gray-50 text-gray-900" :
+        theme === "neo" ? "bg-[#0a0a12] text-white" : "bg-[#050505] text-white"
+      }`}>
+
+      <CanvasHeader
         undo={undo} redo={redo} historyIndex={historyIndex} historyLength={historyLength}
         setPan={setPan} setScale={setScale} scale={scale}
         showGrid={showGrid} setShowGrid={setShowGrid}
@@ -346,154 +349,152 @@ export default function SystemDesignCanvas() {
       />
 
       <div className="flex-1 flex overflow-hidden">
-        <Toolbar 
-          activeTool={activeTool} setActiveTool={setActiveTool} 
-          addGroup={addGroup} addNode={addNode} 
-          insertTemplate={insertTemplate} 
+        <Toolbar
+          activeTool={activeTool} setActiveTool={setActiveTool}
+          addGroup={addGroup} addNode={addNode}
+          insertTemplate={insertTemplate}
           theme={theme}
         />
 
-        <main 
-           id="sd-canvas"
-           ref={canvasRef}
-           onMouseDown={(e) => handleMouseDown(e, activeTool, canvasRef)} 
-           onMouseMove={handleMouseMove} 
-           onMouseUp={() => handleMouseUp(activeTool, canvasRef)} 
-           onWheel={handleWheel}
-           className={`flex-1 relative overflow-hidden select-none outline-none transition-colors duration-500 ${
-             theme === "light" ? "bg-white" : 
-             theme === "neo" ? "bg-[#050508]" : "bg-[#030303]"
-           }`}
-           style={{ cursor: activeTool === "Pan" ? 'grab' : 'crosshair' }}
+        <main
+          id="sd-canvas"
+          ref={canvasRef}
+          onMouseDown={(e) => handleMouseDown(e, activeTool, canvasRef)}
+          onMouseMove={handleMouseMove}
+          onMouseUp={() => handleMouseUp(activeTool, canvasRef)}
+          onWheel={handleWheel}
+          className={`flex-1 relative overflow-hidden select-none outline-none transition-colors duration-500 ${theme === "light" ? "bg-white" :
+              theme === "neo" ? "bg-[#050508]" : "bg-[#030303]"
+            }`}
+          style={{ cursor: activeTool === "Pan" ? 'grab' : 'crosshair' }}
         >
-           {/* AI Scanning Overlay */}
-           <AnimatePresence>
-              {isReviewing && (
-                 <motion.div 
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="absolute inset-0 z-50 bg-indigo-600/10 backdrop-blur-[2px] pointer-events-none flex flex-col items-center justify-center"
-                 >
-                    <div className="relative">
-                       <motion.div 
-                          animate={{ rotate: 360 }} transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                          className="w-32 h-32 border-2 border-dashed border-indigo-500/30 rounded-full"
-                       />
-                       <motion.div 
-                          animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 2, repeat: Infinity }}
-                          className="absolute inset-0 flex items-center justify-center"
-                       >
-                          <Sparkles size={32} className="text-indigo-500" />
-                       </motion.div>
-                       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-indigo-500 to-transparent animate-scan" />
-                    </div>
-                    <p className="mt-6 text-xs font-black uppercase tracking-[0.3em] text-indigo-400 animate-pulse">Deep Scanning Architecture...</p>
-                 </motion.div>
-              )}
-           </AnimatePresence>
-           {/* Visual Guides - Advanced Dot Grid */}
-           {showGrid && (
-             <div className={`absolute inset-0 pointer-events-none transition-all duration-700 ${
-               theme === "light" ? "opacity-[0.2]" : "opacity-[0.15] mix-blend-screen"
-             }`}
-               style={{ 
-                  backgroundImage: theme === "light" 
-                    ? `radial-gradient(circle, #000 1px, transparent 1px)`
-                    : `radial-gradient(circle, #444 1px, transparent 1px)`,
-                  backgroundSize: `${GRID_SIZE * scale}px ${GRID_SIZE * scale}px`,
-                  backgroundPosition: `${pan.x}px ${pan.y}px`
-               }}
-             />
-           )}
+          {/* AI Scanning Overlay */}
+          <AnimatePresence>
+            {isReviewing && (
+              <m.div
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="absolute inset-0 z-50 bg-indigo-600/10 backdrop-blur-[2px] pointer-events-none flex flex-col items-center justify-center"
+              >
+                <div className="relative">
+                  <m.div
+                    animate={{ rotate: 360 }} transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                    className="w-32 h-32 border-2 border-dashed border-indigo-500/30 rounded-full"
+                  />
+                  <m.div
+                    animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 2, repeat: Infinity }}
+                    className="absolute inset-0 flex items-center justify-center"
+                  >
+                    <Sparkles size={32} className="text-indigo-500" />
+                  </m.div>
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-indigo-500 to-transparent animate-scan" />
+                </div>
+                <p className="mt-6 text-xs font-black uppercase tracking-[0.3em] text-indigo-400 animate-pulse">Deep Scanning Architecture...</p>
+              </m.div>
+            )}
+          </AnimatePresence>
+          {/* Visual Guides - Advanced Dot Grid */}
+          {showGrid && (
+            <div className={`absolute inset-0 pointer-events-none transition-all duration-700 ${theme === "light" ? "opacity-[0.2]" : "opacity-[0.15] mix-blend-screen"
+              }`}
+              style={{
+                backgroundImage: theme === "light"
+                  ? `radial-gradient(circle, #000 1px, transparent 1px)`
+                  : `radial-gradient(circle, #444 1px, transparent 1px)`,
+                backgroundSize: `${GRID_SIZE * scale}px ${GRID_SIZE * scale}px`,
+                backgroundPosition: `${pan.x}px ${pan.y}px`
+              }}
+            />
+          )}
 
-           <motion.div 
-              className="w-full h-full relative origin-top-left"
-              style={{ x: pan.x, y: pan.y, scale }}
-           >
-              {/* Groups Layer */}
-              {groups.map(g => (
-                 <GroupComponent
-                    key={g.id}
-                    group={g}
-                    isSelected={selectedId === g.id}
-                    onSelect={handleGroupSelect}
-                 />
+          <m.div
+            className="w-full h-full relative origin-top-left"
+            style={{ x: pan.x, y: pan.y, scale }}
+          >
+            {/* Groups Layer */}
+            {groups.map(g => (
+              <GroupComponent
+                key={g.id}
+                group={g}
+                isSelected={selectedId === g.id}
+                onSelect={handleGroupSelect}
+              />
+            ))}
+
+            {/* Connections Layer (Memoized inside) */}
+            <svg ref={svgRef} className="absolute inset-0 w-full h-full pointer-events-none overflow-visible z-10">
+              <defs>
+                <filter id="glow">
+                  <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+                  <feMerge><feMergeNode in="coloredBlur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                </filter>
+                <marker id="arrow" markerWidth="10" markerHeight="7" refX="28" refY="3.5" orient="auto">
+                  <polygon points="0 0, 10 3.5, 0 7" fill="#6366f1" />
+                </marker>
+              </defs>
+              {connections.map(c => (
+                <ConnectionLine
+                  key={c.id} connection={c}
+                  fromNode={nodes.find(n => n.id === c.from)}
+                  toNode={nodes.find(n => n.id === c.to)}
+                  isSelected={selectedId === c.id}
+                  onClick={handleConnectionClick}
+                />
               ))}
+            </svg>
 
-              {/* Connections Layer (Memoized inside) */}
-              <svg ref={svgRef} className="absolute inset-0 w-full h-full pointer-events-none overflow-visible z-10">
-                 <defs>
-                   <filter id="glow">
-                     <feGaussianBlur stdDeviation="2" result="coloredBlur" />
-                     <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
-                   </filter>
-                   <marker id="arrow" markerWidth="10" markerHeight="7" refX="28" refY="3.5" orient="auto">
-                      <polygon points="0 0, 10 3.5, 0 7" fill="#6366f1" />
-                   </marker>
-                 </defs>
-                 {connections.map(c => (
-                    <ConnectionLine 
-                       key={c.id} connection={c} 
-                       fromNode={nodes.find(n => n.id === c.from)} 
-                       toNode={nodes.find(n => n.id === c.to)} 
-                       isSelected={selectedId === c.id}
-                       onClick={handleConnectionClick}
-                    />
-                 ))}
-              </svg>
+            {/* Nodes Layer */}
+            <AnimatePresence>
+              {nodes.map(n => (
+                <NodeComponent
+                  key={n.id} node={n} scale={scale}
+                  isSelected={selectedId === n.id}
+                  isConnecting={connectStart === n.id}
+                  onDelete={deleteSelected}
+                  onNodeClick={handleNodeClick}
+                  updatePos={updateNodePos}
+                />
+              ))}
+            </AnimatePresence>
+          </m.div>
 
-              {/* Nodes Layer */}
-              <AnimatePresence>
-                 {nodes.map(n => (
-                    <NodeComponent 
-                       key={n.id} node={n} scale={scale} 
-                       isSelected={selectedId === n.id} 
-                       isConnecting={connectStart === n.id} 
-                       onDelete={deleteSelected} 
-                       onNodeClick={handleNodeClick} 
-                       updatePos={updateNodePos} 
-                    />
-                 ))}
-              </AnimatePresence>
-           </motion.div>
+          {/* --- Overlays & HUD --- */}
 
-           {/* --- Overlays & HUD --- */}
-           
-           <MiniMap 
-             pan={pan} scale={scale} groups={groups} nodes={nodes} windowSize={windowSize} 
-           />
+          <MiniMap
+            pan={pan} scale={scale} groups={groups} nodes={nodes} windowSize={windowSize}
+          />
 
-           <StatsHUD 
-             nodesLength={nodes.length} connectionsLength={connections.length} setShowHelp={setShowHelp} 
-           />
+          <StatsHUD
+            nodesLength={nodes.length} connectionsLength={connections.length} setShowHelp={setShowHelp}
+          />
         </main>
 
-        <PropertyPanel 
-           selectedId={selectedId} selectedType={selectedType}
-           nodes={nodes} connections={connections} groups={groups}
-           setNodes={setNodes} setConnections={setConnections} setGroups={setGroups}
-           setSelectedId={(id: string | null) => selectElement(id, selectedType)} addToHistory={recordHistory}
-           deleteSelected={deleteSelected}
-           theme={theme}
+        <PropertyPanel
+          selectedId={selectedId} selectedType={selectedType}
+          nodes={nodes} connections={connections} groups={groups}
+          setNodes={setNodes} setConnections={setConnections} setGroups={setGroups}
+          setSelectedId={(id: string | null) => selectElement(id, selectedType)} addToHistory={recordHistory}
+          deleteSelected={deleteSelected}
+          theme={theme}
         />
       </div>
 
-       {/* Modals & Overlays */}
-       <ReviewModal 
-          reviewResult={reviewResult} 
-          onClose={useCallback(() => setReviewResult(null), [])} 
-          theme={theme} 
-       />
+      {/* Modals & Overlays */}
+      <ReviewModal
+        reviewResult={reviewResult}
+        onClose={useCallback(() => setReviewResult(null), [])}
+        theme={theme}
+      />
 
-       <HelpModal 
-          isOpen={showHelp} 
-          onClose={useCallback(() => setShowHelp(false), [])} 
-          onOpenTutorial={useCallback(() => setShowTutorial(true), [])} 
-       />
+      <HelpModal
+        isOpen={showHelp}
+        onClose={useCallback(() => setShowHelp(false), [])}
+        onOpenTutorial={useCallback(() => setShowTutorial(true), [])}
+      />
 
-       <SystemDesignTutorial 
-          isOpen={showTutorial} 
-          onClose={useCallback(() => setShowTutorial(false), [])} 
-       />
+      <SystemDesignTutorial
+        isOpen={showTutorial}
+        onClose={useCallback(() => setShowTutorial(false), [])}
+      />
 
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }

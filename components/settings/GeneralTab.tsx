@@ -94,7 +94,8 @@ export function GeneralTab({ profile, user, selectedIcon, setSelectedIcon, submi
           </label>
           <input
             type="email"
-            value={user?.email}
+            id="email"
+            defaultValue={user?.email ?? ""}
             disabled
             className="flex h-11 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-3 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-400 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-70 dark:bg-gray-900/50 dark:border-gray-800 dark:text-gray-400 cursor-not-allowed"
           />

@@ -1,6 +1,12 @@
 
 import { QuizQuestion, QuizAnswer } from "@/types";
 
+/**
+ * @deprecated Use `calculateActivityXP` from `@/lib/scoring` instead.
+ * Kept temporarily for backwards-compatibility — will be removed in next cleanup.
+ */
+export { calculateActivityXP } from "@/lib/scoring";
+
 export const parseExplanationForHotspot = (explanation: string | undefined): Record<string, string> | null => {
   if (!explanation) return null;
 
@@ -115,6 +121,23 @@ export function checkAnswer(q: QuizQuestion, uAns: QuizAnswer): boolean {
            const userRecord = uAns as Record<string, string>;
            return Object.entries(q.answer_mapping).every(([zone, item]) => userRecord[zone] === item);
        }
+    } else if (q.type === 'hotspot_yesno_table') {
+      // Structured hotspot with statements array — each statement has a Yes/No answer
+      if ('statements' in q && Array.isArray(q.statements) && typeof uAns === 'object' && !Array.isArray(uAns)) {
+           const userRecord = uAns as Record<string, string>;
+           return q.statements.every((st, idx) => userRecord[idx.toString()] === st.answer);
+      }
+    } else if (q.type === 'hotspot_sentence') {
+      // Sentence completion — user selects a phrase to fill the blank
+      if ('answer' in q && typeof q.answer === 'string' && typeof uAns === 'string') {
+           return uAns === q.answer;
+      }
+    } else if (q.type === 'hotspot_box_mapping') {
+      // Multiple boxes with dropdowns — each box maps to a selected option
+      if ('boxes' in q && Array.isArray(q.boxes) && typeof uAns === 'object' && !Array.isArray(uAns)) {
+           const userRecord = uAns as Record<string, string>;
+           return q.boxes.every((box) => userRecord[box.label] === box.answer);
+      }
     }
     return false;
 }

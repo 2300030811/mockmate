@@ -1,7 +1,7 @@
 "use client";
 
 import { memo } from "react";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { X, Trash2, Plus, ArrowRight, Settings, Link as LinkIcon, Layout } from "lucide-react";
 import { Node, Connection, Group } from "../types";
 import { NODE_CONFIG } from "../constants";
@@ -38,7 +38,7 @@ export const PropertyPanel = memo(({
   if (!selectedId) return null;
 
   return (
-    <motion.aside 
+    <m.aside 
       initial={{ x: 300, opacity: 0 }} 
       animate={{ x: 0, opacity: 1 }} 
       exit={{ x: 300, opacity: 0 }} 
@@ -233,7 +233,7 @@ export const PropertyPanel = memo(({
           Delete Selection
         </button>
       </div>
-    </motion.aside>
+    </m.aside>
   );
 });
 
