@@ -7,20 +7,14 @@ import { rateLimit } from "@/lib/rate-limit";
 import { getStreakMultiplier, calculateLevel } from "@/lib/scoring";
 
 async function fetchDashboardData(userId: string, userEmail: string | undefined) {
-  const supabase = createClient();
-
-  // adminDb may throw if SUPABASE_SERVICE_ROLE_KEY is missing — fall back to anon client
-  let adminDb;
-  try {
-    adminDb = createAdminClient();
-  } catch (err) {
-    console.warn("[Dashboard] Admin client unavailable, falling back to anon client:", err instanceof Error ? err.message : err);
-    adminDb = supabase;
-  }
+  // Use admin client inside unstable_cache to bypass cookies usage requirement
+  // Next.js unstable_cache throws errors if dynamic functions like cookies() are called inside
+  // Auth has already been verified outside unstable_cache
+  const adminDb = createAdminClient();
 
   // Parallel fetch: Profile (with stats), Quiz Results, Career Paths
   const [profileResult, quizResultsResult, careerPathsResult] = await Promise.all([
-    supabase
+    adminDb
       .from('profiles')
       .select('nickname, avatar_icon, role, created_at, xp, level, streak, elo')
       .eq('id', userId)
@@ -31,7 +25,7 @@ async function fetchDashboardData(userId: string, userEmail: string | undefined)
       .eq('user_id', userId)
       .order('completed_at', { ascending: false })
       .limit(500),
-    supabase
+    adminDb
       .from('career_paths')
       .select('id, job_role, company, match_score, created_at')
       .eq('user_id', userId)
@@ -63,10 +57,10 @@ async function fetchDashboardData(userId: string, userEmail: string | undefined)
 
   let avgScore = 0;
   if (stdTotalQuestions > 0) {
-      avgScore = Math.round((stdCorrectData / stdTotalQuestions) * 100);
+    avgScore = Math.round((stdCorrectData / stdTotalQuestions) * 100);
   } else if (dailyChallenges.length > 0) {
-      const passed = dailyChallenges.filter(d => d.score >= 1).length;
-      avgScore = Math.round((passed / dailyChallenges.length) * 100);
+    const passed = dailyChallenges.filter(d => d.score >= 1).length;
+    avgScore = Math.round((passed / dailyChallenges.length) * 100);
   }
 
   const arenaWins = arenaMatches.filter(r => r.category.includes(':win:') || (r.category.startsWith('arena_') && r.score > r.total_questions / 2)).length;
@@ -78,7 +72,7 @@ async function fetchDashboardData(userId: string, userEmail: string | undefined)
   quizResults?.forEach(r => {
     let cat = r.category;
     if (cat.includes('arena')) {
-       cat = cat.replace(/^arena:[^:]+:/, 'arena_').replace(/^arena_/, 'Arena: ');
+      cat = cat.replace(/^arena:[^:]+:/, 'arena_').replace(/^arena_/, 'Arena: ');
     }
     if (!categoryScores[cat]) categoryScores[cat] = { total: 0, count: 0 };
     categoryScores[cat].total += (r.score / Math.max(1, r.total_questions)) * 100;
@@ -155,7 +149,7 @@ export async function getDashboardData() {
       { revalidate: 60, tags: [`dashboard-${user.id}`] }
     );
 
-    return getCachedDashboard();
+    return await getCachedDashboard();
   } catch (err) {
     console.error("[Dashboard] Unexpected error:", err instanceof Error ? err.message : err);
     return null;
