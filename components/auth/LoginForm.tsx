@@ -42,7 +42,7 @@ export function LoginForm() {
             router.refresh();
         }
         setLoading(false);
-    }, [refresh, router]);
+    }, [refresh, router, searchParams]);
 
     const forgotLink = (
         <Link href="/forgot-password" className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline">

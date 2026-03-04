@@ -101,8 +101,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
         setProfile(null);
       }
-    } catch (error) {
-      console.warn("Auth refresh via Server Action failed or timed out:", error);
+    } catch (error: any) {
+      if (error?.message !== 'Request timed out') {
+        console.warn("Auth refresh via Server Action failed:", error);
+      }
     }
   };
 
@@ -165,8 +167,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(null);
           setProfile(null);
         }
-      } catch (err) {
-        console.warn("Server action auth verification failed", err);
+      } catch (err: any) {
+        if (err?.message !== 'Request timed out') {
+          console.warn("Server action auth verification failed", err);
+        }
       } finally {
         setLoading(false);
       }

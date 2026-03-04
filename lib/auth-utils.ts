@@ -8,10 +8,17 @@ import { logger } from "@/lib/logger";
  * Returns null if not authenticated.
  */
 export async function requireAuth() {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  return user;
+  try {
+    const supabase = createClient();
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) return null;
+    return user;
+  } catch (err: any) {
+    if (err?.message !== 'Request timed out') {
+      logger.warn("requireAuth failed with error:", err.message);
+    }
+    return null;
+  }
 }
 
 /**
@@ -19,17 +26,24 @@ export async function requireAuth() {
  * Returns false if not authenticated or not admin.
  */
 export async function requireAdmin(): Promise<boolean> {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return false;
+  try {
+    const supabase = createClient();
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) return false;
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
 
-  return profile?.role === "admin";
+    return profile?.role === "admin";
+  } catch (err: any) {
+    if (err?.message !== 'Request timed out') {
+      logger.warn("requireAdmin failed with error:", err.message);
+    }
+    return false;
+  }
 }
 
 /**

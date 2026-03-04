@@ -133,23 +133,28 @@ export async function logout() {
 }
 
 export async function getCurrentUser() {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
+  try {
+    const supabase = createClient();
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) return null;
 
-  // Fetch profile to get nickname
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('nickname, role, avatar_icon')
-    .eq('id', user.id)
-    .single();
+    // Fetch profile to get nickname
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('nickname, role, avatar_icon')
+      .eq('id', user.id)
+      .single();
 
-  return {
-    ...user,
-    nickname: profile?.nickname || user.user_metadata?.name || user.user_metadata?.full_name || user.user_metadata?.nickname || user.email?.split('@')[0],
-    role: profile?.role || 'user',
-    avatar_icon: profile?.avatar_icon,
-  };
+    return {
+      ...user,
+      nickname: profile?.nickname || user.user_metadata?.name || user.user_metadata?.full_name || user.user_metadata?.nickname || user.email?.split('@')[0],
+      role: profile?.role || 'user',
+      avatar_icon: profile?.avatar_icon,
+    };
+  } catch (err) {
+    logger.warn("Server Action getCurrentUser network or fetch error", err instanceof Error ? err.message : String(err));
+    return null;
+  }
 }
 
 /**

@@ -679,6 +679,7 @@ addBtn.addEventListener('click', () => {
     expertExplanation:
       "The key is using the DOM API correctly: `querySelector()` to find elements, `addEventListener()` to respond to events, and `appendChild()` or `createElement()` to modify the DOM. Always validate user input before using it.",
     files: {
+      "/index.js": `// Bypass Sandpack's default index.js\nimport "./script.js";`,
       "/index.html": `<!DOCTYPE html>
 <html>
 <head>
@@ -751,6 +752,7 @@ const list = document.querySelector('#todo-list');
     expertExplanation:
       "Flexbox is the modern way to layout elements. `display: flex` activates it, `justify-content` controls horizontal alignment, and `align-items` controls vertical alignment. Media queries let you adjust for mobile.",
     files: {
+      "/index.js": `// Bypass Sandpack's default index.js\n`,
       "/index.html": `<!DOCTYPE html>
 <html>
 <head>

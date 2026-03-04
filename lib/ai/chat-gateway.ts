@@ -1,0 +1,96 @@
+import { Groq } from 'groq-sdk';
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getNextKey } from "@/utils/keyManager";
+
+export interface ChatMessage {
+    role: 'system' | 'user' | 'assistant';
+    content: string;
+}
+
+export class AIGateway {
+    static async streamChat(messages: ChatMessage[], systemPrompt: string): Promise<ReadableStream> {
+        // 1. ATTEMPT GROQ
+        const groqKey = getNextKey("GROQ_API_KEY");
+        if (groqKey) {
+            try {
+                console.log("🦁 Bob is using Groq...");
+                const groq = new Groq({ apiKey: groqKey });
+
+                const completion = await groq.chat.completions.create({
+                    model: 'llama-3.3-70b-versatile',
+                    stream: true,
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        ...messages
+                    ],
+                    temperature: 0.5,
+                    max_tokens: 1000,
+                });
+
+                return new ReadableStream({
+                    async start(controller) {
+                        const encoder = new TextEncoder();
+                        try {
+                            for await (const chunk of completion) {
+                                const text = chunk.choices[0]?.delta?.content || '';
+                                if (text) controller.enqueue(encoder.encode(`0:${JSON.stringify(text)}\n`));
+                            }
+                        } catch (e) {
+                            console.error("Groq stream error:", e);
+                            // Ideally fallback here but stream might have already started
+                        } finally {
+                            controller.close();
+                        }
+                    },
+                });
+            } catch (groqErr: unknown) {
+                const message = groqErr instanceof Error ? groqErr.message : "Unknown error";
+                console.warn("⚠️ Bob Groq failed, falling back to Gemini:", message);
+            }
+        }
+
+        // 2. FALLBACK TO GEMINI
+        const geminiKey = getNextKey("GOOGLE_API_KEY");
+        if (geminiKey) {
+            try {
+                console.log("🦁 Bob is using Gemini...");
+                const genAI = new GoogleGenerativeAI(geminiKey);
+                const model = genAI.getGenerativeModel({
+                    model: "gemini-2.0-flash",
+                    systemInstruction: systemPrompt
+                });
+
+                const result = await model.generateContentStream({
+                    contents: messages
+                        .filter((m, i) => !(i === 0 && m.role === 'assistant'))
+                        .map((m) => ({
+                            role: m.role === 'assistant' ? 'model' : 'user',
+                            parts: [{ text: m.content }]
+                        })),
+                    generationConfig: { temperature: 0.5, maxOutputTokens: 1000 }
+                });
+
+                return new ReadableStream({
+                    async start(controller) {
+                        const encoder = new TextEncoder();
+                        try {
+                            for await (const chunk of result.stream) {
+                                const text = chunk.text();
+                                if (text) controller.enqueue(encoder.encode(`0:${JSON.stringify(text)}\n`));
+                            }
+                        } catch (e) {
+                            console.error("Gemini stream error:", e);
+                        } finally {
+                            controller.close();
+                        }
+                    }
+                });
+            } catch (geminiErr: unknown) {
+                const message = geminiErr instanceof Error ? geminiErr.message : "Unknown error";
+                console.warn("⚠️ Bob Gemini failed:", message);
+            }
+        }
+
+        throw new Error("No AI services available.");
+    }
+}
