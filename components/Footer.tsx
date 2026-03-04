@@ -83,46 +83,28 @@ export function Footer() {
               Connect
             </h4>
             <div className="flex gap-4">
-              <a
-                href="https://github.com/2300030811"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-blue-600 hover:text-white transition-all"
-                aria-label="GitHub - Bhima"
-                title="GitHub - Bhima"
+              <button
+                onClick={() => {
+                  window.open("https://github.com/2300030811", "_blank");
+                  window.open("https://github.com/ktejaswanth", "_blank");
+                }}
+                className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-blue-600 hover:text-white transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
+                aria-label="GitHub Profiles"
+                title="GitHub Profiles"
               >
                 <Github className="w-5 h-5" />
-              </a>
-              <a
-                href="https://github.com/ktejaswanth"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-blue-600 hover:text-white transition-all"
-                aria-label="GitHub - Tejaswanth"
-                title="GitHub - Tejaswanth"
-              >
-                <Github className="w-5 h-5" />
-              </a>
-              <a
-                href="https://www.linkedin.com/in/mahesh-sai-bhima-038243286"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-blue-700 hover:text-white transition-all"
-                aria-label="LinkedIn - Bhima"
-                title="LinkedIn - Bhima"
+              </button>
+              <button
+                onClick={() => {
+                  window.open("https://www.linkedin.com/in/mahesh-sai-bhima-038243286", "_blank");
+                  window.open("https://www.linkedin.com/in/ktejaswanth/", "_blank");
+                }}
+                className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-blue-700 hover:text-white transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
+                aria-label="LinkedIn Profiles"
+                title="LinkedIn Profiles"
               >
                 <Linkedin className="w-5 h-5" />
-              </a>
-              <a
-                href="https://www.linkedin.com/in/ktejaswanth/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-blue-700 hover:text-white transition-all"
-                aria-label="LinkedIn - Tejaswanth"
-                title="LinkedIn - Tejaswanth"
-              >
-                <Linkedin className="w-5 h-5" />
-              </a>
+              </button>
             </div>
           </div>
         </div>
