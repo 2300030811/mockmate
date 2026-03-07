@@ -25,11 +25,12 @@ describe('useSystemDesignCanvas Reducer', () => {
         expect(state.nodes[0].id).toBe('n1');
     });
 
-    it('should update node position', () => {
-        const startState = { ...initialState, nodes: [{ id: 'n1', x: 0, y: 0, name: 'LB' }] } as any;
-        const state = reducer(startState, { type: 'UPDATE_NODE_POS', id: 'n1', x: 50, y: 50 });
+    it('should move a node and update its group assignment', () => {
+        const startState = { ...initialState, nodes: [{ id: 'n1', x: 0, y: 0, name: 'LB', groupId: null }] } as any;
+        const state = reducer(startState, { type: 'MOVE_NODE', id: 'n1', x: 50, y: 50, groupId: 'g1' });
         expect(state.nodes[0].x).toBe(50);
         expect(state.nodes[0].y).toBe(50);
+        expect(state.nodes[0].groupId).toBe('g1');
     });
 
     it('should move nodes with group', () => {
@@ -50,11 +51,7 @@ describe('useSystemDesignCanvas Reducer', () => {
         expect(state.nodes[0].y).toBe(60); // 20 + 40
     });
 
-    it('should assign node to group', () => {
-        const startState = { ...initialState, nodes: [{ id: 'n1', x: 0, y: 0, name: 'LB' }] } as any;
-        const state = reducer(startState, { type: 'ASSIGN_NODE_TO_GROUP', nodeId: 'n1', groupId: 'g1' });
-        expect(state.nodes[0].groupId).toBe('g1');
-    });
+
 
     it('should clear canvas', () => {
         const startState = {

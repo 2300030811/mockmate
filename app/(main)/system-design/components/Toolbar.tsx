@@ -78,6 +78,7 @@ export const Toolbar = memo(({
             <button
               key={t}
               onClick={() => addNode(t)}
+              title={t}
               className={`flex w-full items-center gap-3 p-2 rounded-xl group transition-all duration-300 hover:translate-x-2 hover:shadow-lg ${isLight ? 'hover:bg-gray-100' : isNeo ? 'hover:bg-fuchsia-500/10' : 'hover:bg-white/10'}`}
             >
               <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${NODE_CONFIG[t].bg} ${NODE_CONFIG[t].color} shadow-sm group-hover:shadow-[0_0_20px_rgba(255,255,255,0.2)] transition-all duration-300`}>

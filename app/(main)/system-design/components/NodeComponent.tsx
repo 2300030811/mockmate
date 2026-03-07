@@ -62,7 +62,7 @@ export const NodeComponent = memo(({
         top: 0
       }}
       className={`
-        w-24 h-24 rounded-2xl flex flex-col items-center justify-center gap-2 cursor-grab z-20
+        w-24 h-24 rounded-2xl flex flex-col items-center justify-center gap-2 cursor-grab z-20 group
         backdrop-blur-xl border border-b-4 transition-all duration-300
         ${Config.bg} ${isLight ? Config.border.replace('border-white/5', 'border-gray-200') : isNeo ? Config.border.replace('border-white/5', 'border-fuchsia-500/20') : Config.border} ${isLight ? 'bg-white/80' : isNeo ? 'bg-[#050212]/80' : ''}
         ${isSelected ? `ring-2 scale-105 ${isLight ? 'shadow-[0_0_30px_rgba(0,0,0,0.1)] ring-indigo-400' : isNeo ? 'shadow-[0_0_30px_rgba(217,70,239,0.2)] ring-cyan-400' : 'shadow-[0_0_30px_rgba(255,255,255,0.2)] ring-white/60'}` : `shadow-lg hover:-translate-y-1 ${isLight ? 'hover:shadow-[0_8px_30px_rgba(0,0,0,0.1)]' : isNeo ? 'hover:shadow-[0_8px_30px_rgba(6,182,212,0.1)]' : 'hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)]'}`}
