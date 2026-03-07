@@ -7,7 +7,7 @@ export interface Node {
   y: number;
   name: string;
   metadata?: Record<string, string>;
-  groupId?: string;
+  groupId?: string | null;
 }
 
 export interface Connection {

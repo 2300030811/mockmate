@@ -15,6 +15,33 @@ function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
 }
 
+function renderVisualText(text: string) {
+  if (!text || typeof text !== "string") return text;
+
+  const parts = text.split(/(\[MIRROR\].*?\[\/MIRROR\]|\[WATER\].*?\[\/WATER\])/g);
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (part.startsWith("[MIRROR]") && part.endsWith("[/MIRROR]")) {
+          return (
+            <span key={i} style={{ display: "inline-block", transform: "scaleX(-1)" }}>
+              {part.slice(8, -9)}
+            </span>
+          );
+        }
+        if (part.startsWith("[WATER]") && part.endsWith("[/WATER]")) {
+          return (
+            <span key={i} style={{ display: "inline-block", transform: "scaleY(-1)" }}>
+              {part.slice(7, -8)}
+            </span>
+          );
+        }
+        return <span key={i}>{part}</span>;
+      })}
+    </>
+  );
+}
+
 interface QuizGameProps {
   quiz: any[];
   current: number;
@@ -38,7 +65,7 @@ export function QuizGame({
 }: QuizGameProps) {
   const [isBobOpen, setIsBobOpen] = useState(false);
   const [streak, setStreak] = useState(0);
-  
+
   const q = quiz[current];
   const progress = useMemo(() => ((current + 1) / quiz.length) * 100, [current, quiz.length]);
 
@@ -47,7 +74,7 @@ export function QuizGame({
 
     const normalizeStr = (s: string) => s.replace(/\s+/g, "").toLowerCase();
     const isCorrect = q.answer === option || normalizeStr(q.answer) === normalizeStr(option);
-    
+
     setAnswers({ ...answers, [q.id]: option });
 
     if (isCorrect) {
@@ -60,19 +87,19 @@ export function QuizGame({
   // Keyboard Navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-        if (["1", "2", "3", "4"].includes(e.key)) {
-            const index = parseInt(e.key) - 1;
-            if (q.options[index]) {
-                handleAnswer(q.options[index]);
-            }
+      if (["1", "2", "3", "4"].includes(e.key)) {
+        const index = parseInt(e.key) - 1;
+        if (q.options[index]) {
+          handleAnswer(q.options[index]);
         }
-        if (e.key === "Enter" && answers[q.id]) {
-            if (current < quiz.length - 1) {
-                setCurrent(prev => prev + 1);
-            } else {
-                setShowResults(true);
-            }
+      }
+      if (e.key === "Enter" && answers[q.id]) {
+        if (current < quiz.length - 1) {
+          setCurrent(prev => prev + 1);
+        } else {
+          setShowResults(true);
         }
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
@@ -81,48 +108,43 @@ export function QuizGame({
   if (!q) return <div className="p-10 text-center">Loading question...</div>;
 
   return (
-    <div className={`h-screen overflow-hidden flex flex-col transition-colors duration-500 ${
-      isDark 
-        ? 'bg-gradient-to-br from-gray-950 via-gray-900 to-blue-950' 
+    <div className={`h-screen overflow-hidden flex flex-col transition-colors duration-500 ${isDark
+        ? 'bg-gradient-to-br from-gray-950 via-gray-900 to-blue-950'
         : 'bg-gradient-to-br from-gray-50 via-white to-blue-50'
-    }`}>
-      
-      {/* Navbar */}
-      <nav className={`h-16 flex-none shadow-md z-50 flex items-center justify-between px-4 lg:px-8 ${
-        isDark 
-          ? 'bg-gray-900/80 backdrop-blur-sm border-b border-gray-800' 
-          : 'bg-white/80 backdrop-blur-sm border-b border-gray-200'
       }`}>
+
+      {/* Navbar */}
+      <nav className={`h-16 flex-none shadow-md z-50 flex items-center justify-between px-4 lg:px-8 ${isDark
+          ? 'bg-gray-900/80 backdrop-blur-sm border-b border-gray-800'
+          : 'bg-white/80 backdrop-blur-sm border-b border-gray-200'
+        }`}>
         <div className="flex items-center gap-2">
           <span className="text-2xl">🎯</span>
-          <h1 className={`text-lg font-bold ${
-            isDark ? 'text-white' : 'text-gray-900'
-          }`}>
+          <h1 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'
+            }`}>
             AI Quiz Generator
           </h1>
         </div>
 
         <div className="flex items-center gap-4">
           <div className="hidden md:flex items-center">
-              <UserAuthSection />
-              <div className="w-px h-6 bg-gray-200 dark:bg-white/10 mx-4"></div>
+            <UserAuthSection />
+            <div className="w-px h-6 bg-gray-200 dark:bg-white/10 mx-4"></div>
           </div>
 
-          <button 
+          <button
             onClick={() => setShowResults(true)}
-            className={`text-sm font-bold px-3 py-2 rounded-lg transition ${
-              isDark 
-                ? 'text-red-400 hover:bg-red-900/20' 
+            className={`text-sm font-bold px-3 py-2 rounded-lg transition ${isDark
+                ? 'text-red-400 hover:bg-red-900/20'
                 : 'text-red-500 hover:bg-red-50'
-            }`}
+              }`}
           >
             Finish Now
           </button>
-          <button 
-            onClick={() => setTheme(isDark ? 'light' : 'dark')} 
-            className={`p-2 rounded-lg transition ${
-              isDark ? 'hover:bg-gray-800' : 'hover:bg-gray-100'
-            }`}
+          <button
+            onClick={() => setTheme(isDark ? 'light' : 'dark')}
+            className={`p-2 rounded-lg transition ${isDark ? 'hover:bg-gray-800' : 'hover:bg-gray-100'
+              }`}
           >
             {isDark ? "☀️" : "🌙"}
           </button>
@@ -132,19 +154,17 @@ export function QuizGame({
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto py-10 px-4">
         <div className="max-w-3xl mx-auto">
-          
+
           {/* Progress Bar */}
           <div className="mb-8">
-            <div className={`flex justify-between text-sm font-medium mb-2 ${
-              isDark ? 'text-gray-400' : 'text-gray-600'
-            }`}>
+            <div className={`flex justify-between text-sm font-medium mb-2 ${isDark ? 'text-gray-400' : 'text-gray-600'
+              }`}>
               <span>Question {current + 1} of {quiz.length}</span>
               <span>{Math.round(progress)}%</span>
             </div>
-            <div className={`h-2.5 w-full rounded-full ${
-              isDark ? 'bg-gray-800' : 'bg-gray-200'
-            }`}>
-              <m.div 
+            <div className={`h-2.5 w-full rounded-full ${isDark ? 'bg-gray-800' : 'bg-gray-200'
+              }`}>
+              <m.div
                 initial={{ width: 0 }}
                 animate={{ width: `${progress}%` }}
                 className="bg-gradient-to-r from-blue-600 to-purple-600 h-2.5 rounded-full transition-all duration-300"
@@ -158,51 +178,47 @@ export function QuizGame({
               initial={{ x: 50, opacity: 0, scale: 0.95 }}
               animate={{ x: 0, opacity: 1, scale: 1 }}
               exit={{ x: -50, opacity: 0, scale: 0.95 }}
-              transition={{ 
-                type: "spring", 
-                stiffness: 300, 
-                damping: 30 
+              transition={{
+                type: "spring",
+                stiffness: 300,
+                damping: 30
               }}
-              className={`p-8 rounded-3xl shadow-xl border relative overflow-hidden ${
-                isDark 
-                  ? 'bg-gray-900/60 border-gray-800 backdrop-blur-md' 
+              className={`p-8 rounded-3xl shadow-xl border relative overflow-hidden ${isDark
+                  ? 'bg-gray-900/60 border-gray-800 backdrop-blur-md'
                   : 'bg-white/80 border-gray-200 backdrop-blur-md'
-              }`}
+                }`}
             >
               {/* Background Glow */}
-              <div className={`absolute -top-20 -right-20 w-64 h-64 rounded-full blur-3xl opacity-20 pointer-events-none ${
-                  isDark ? 'bg-blue-500' : 'bg-blue-300'
-              }`}></div>
+              <div className={`absolute -top-20 -right-20 w-64 h-64 rounded-full blur-3xl opacity-20 pointer-events-none ${isDark ? 'bg-blue-500' : 'bg-blue-300'
+                }`}></div>
 
               <div className="flex justify-between items-start mb-6 relative z-10">
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full border ${
-                  isDark 
-                    ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' 
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full border ${isDark
+                    ? 'bg-blue-500/10 border-blue-500/20 text-blue-400'
                     : 'bg-blue-50 border-blue-200 text-blue-700'
-                }`}>
+                  }`}>
                   <span>✨</span> AI Generated
                 </span>
-                
+
                 {/* Streak Counter */}
                 <div className="flex items-center gap-4">
-                     {streak > 1 && (
-                        <m.div 
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            key={streak}
-                            className="flex items-center gap-1 px-3 py-1 rounded-full bg-orange-500/10 text-orange-500 font-bold border border-orange-500/20"
-                        >
-                            <span className="text-lg">🔥</span> 
-                            <span>{streak} Streak!</span>
-                        </m.div>
-                     )}
+                  {streak > 1 && (
+                    <m.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      key={streak}
+                      className="flex items-center gap-1 px-3 py-1 rounded-full bg-orange-500/10 text-orange-500 font-bold border border-orange-500/20"
+                    >
+                      <span className="text-lg">🔥</span>
+                      <span>{streak} Streak!</span>
+                    </m.div>
+                  )}
                 </div>
               </div>
-              
-              <h2 className={`text-2xl md:text-3xl font-bold mb-8 leading-snug relative z-10 ${
-                isDark ? 'text-white' : 'text-gray-900'
-              }`}>
-                {q.question}
+
+              <h2 className={`text-2xl md:text-3xl font-bold mb-8 leading-snug relative z-10 ${isDark ? 'text-white' : 'text-gray-900'
+                }`}>
+                {renderVisualText(q.question)}
               </h2>
 
               <div className="space-y-3 relative z-10">
@@ -214,7 +230,7 @@ export function QuizGame({
                   const showFeedback = !!answers[q.id];
 
                   let buttonStyle = "";
-                  
+
                   if (showFeedback) {
                     if (isCorrect) {
                       buttonStyle = isDark
@@ -252,29 +268,29 @@ export function QuizGame({
                       )}
                     >
                       <div className="flex items-center justify-between relative z-10">
-                        <span className="flex-1 pr-4">{opt}</span>
+                        <span className="flex-1 pr-4">{renderVisualText(opt)}</span>
                         {showFeedback && isCorrect && (
                           <m.div
-                             initial={{ scale: 0, rotate: -45 }}
-                             animate={{ scale: 1, rotate: 0 }}
-                             className="bg-green-500 rounded-full p-1"
+                            initial={{ scale: 0, rotate: -45 }}
+                            animate={{ scale: 1, rotate: 0 }}
+                            className="bg-green-500 rounded-full p-1"
                           >
-                             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                             </svg>
+                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
                           </m.div>
                         )}
-                         {showFeedback && isWrong && (
-                             <m.div
-                             initial={{ scale: 0 }}
-                             animate={{ scale: 1 }}
-                             className="text-red-500"
+                        {showFeedback && isWrong && (
+                          <m.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="text-red-500"
                           >
-                             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                             </svg>
+                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
                           </m.div>
-                         )}
+                        )}
                       </div>
                     </m.button>
                   );
@@ -284,26 +300,25 @@ export function QuizGame({
               {/* Explanation Box */}
               <AnimatePresence>
                 {answers[q.id] && (
-                    <m.div 
+                  <m.div
                     initial={{ opacity: 0, height: 0, marginTop: 0 }}
                     animate={{ opacity: 1, height: "auto", marginTop: 24 }}
                     exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                    className={`rounded-2xl border overflow-hidden ${
-                        isDark 
-                        ? "bg-blue-900/10 border-blue-500/20 text-blue-200" 
+                    className={`rounded-2xl border overflow-hidden ${isDark
+                        ? "bg-blue-900/10 border-blue-500/20 text-blue-200"
                         : "bg-blue-50/50 border-blue-200 text-blue-800"
-                    }`}
-                    >
-                        <div className="p-5 flex items-start gap-4">
-                            <div className="p-2 bg-blue-500/10 rounded-xl">
-                                <span className="text-xl">💡</span>
-                            </div>
-                            <div>
-                                <p className="font-bold text-xs uppercase tracking-wider opacity-60 mb-1">Explanation</p>
-                                <p className="leading-relaxed opacity-90">{q.explanation}</p>
-                            </div>
-                        </div>
-                    </m.div>
+                      }`}
+                  >
+                    <div className="p-5 flex items-start gap-4">
+                      <div className="p-2 bg-blue-500/10 rounded-xl">
+                        <span className="text-xl">💡</span>
+                      </div>
+                      <div>
+                        <p className="font-bold text-xs uppercase tracking-wider opacity-60 mb-1">Explanation</p>
+                        <p className="leading-relaxed opacity-90">{renderVisualText(q.explanation)}</p>
+                      </div>
+                    </div>
+                  </m.div>
                 )}
               </AnimatePresence>
             </m.div>
@@ -314,13 +329,12 @@ export function QuizGame({
             <button
               disabled={current === 0}
               onClick={() => setCurrent(prev => prev - 1)}
-              className={`px-8 py-3 rounded-xl font-semibold transition-all ${
-                current === 0 
-                  ? 'opacity-0 pointer-events-none' 
+              className={`px-8 py-3 rounded-xl font-semibold transition-all ${current === 0
+                  ? 'opacity-0 pointer-events-none'
                   : isDark
                     ? 'bg-gray-800 text-white hover:bg-gray-700'
                     : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-              }`}
+                }`}
             >
               Previous
             </button>
@@ -341,22 +355,22 @@ export function QuizGame({
               </button>
             )}
           </div>
-        
-          <BobAssistant 
-            question={q} 
-            isOpen={isBobOpen} 
-            onClose={() => setIsBobOpen(false)} 
+
+          <BobAssistant
+            question={q}
+            isOpen={isBobOpen}
+            onClose={() => setIsBobOpen(false)}
           />
 
           <button
-              onClick={() => setIsBobOpen(true)}
-              className="fixed bottom-6 right-6 z-40 bg-orange-500 hover:bg-orange-600 text-white p-4 rounded-full shadow-xl transition-transform hover:scale-110 active:scale-95 group"
-              title="Ask Bob"
+            onClick={() => setIsBobOpen(true)}
+            className="fixed bottom-6 right-6 z-40 bg-orange-500 hover:bg-orange-600 text-white p-4 rounded-full shadow-xl transition-transform hover:scale-110 active:scale-95 group"
+            title="Ask Bob"
           >
-              <div className="text-2xl leading-none">🦁</div>
-              <span className="absolute right-full mr-2 top-1/2 -translate-y-1/2 bg-black/75 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                  Ask Bob
-              </span>
+            <div className="text-2xl leading-none">🦁</div>
+            <span className="absolute right-full mr-2 top-1/2 -translate-y-1/2 bg-black/75 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+              Ask Bob
+            </span>
           </button>
         </div>
       </div>

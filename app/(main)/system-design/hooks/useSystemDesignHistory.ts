@@ -8,47 +8,63 @@ export interface HistoryState {
 }
 
 export function useSystemDesignHistory(initialState: HistoryState) {
-  const [history, setHistory] = useState<HistoryState[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
+  const [state, setState] = useState<{
+    history: HistoryState[];
+    index: number;
+  }>({
+    history: [initialState],
+    index: 0
+  });
 
-  const setInitialHistory = useCallback((state: HistoryState) => {
-    setHistory([state]);
-    setHistoryIndex(0);
+  const setInitialHistory = useCallback((hState: HistoryState) => {
+    setState({
+      history: [hState],
+      index: 0
+    });
   }, []);
 
-  const addToHistory = useCallback((state: HistoryState) => {
-    setHistory(prev => {
-      const next = prev.slice(0, historyIndex + 1);
-      return [...next, state].slice(-50);
+  const addToHistory = useCallback((hState: HistoryState) => {
+    setState(prev => {
+      const nextHistory = prev.history.slice(0, prev.index + 1);
+      const updatedHistory = [...nextHistory, hState].slice(-50);
+      return {
+        history: updatedHistory,
+        index: updatedHistory.length - 1
+      };
     });
-    setHistoryIndex(prev => prev + 1);
-  }, [historyIndex]);
+  }, []);
 
   const undo = useCallback((): HistoryState | null => {
-    if (historyIndex > 0) {
-      const state = history[historyIndex - 1];
-      setHistoryIndex(historyIndex - 1);
-      return state;
-    }
-    return null;
-  }, [historyIndex, history]);
+    let targetState: HistoryState | null = null;
+    setState(prev => {
+      if (prev.index > 0) {
+        targetState = prev.history[prev.index - 1];
+        return { ...prev, index: prev.index - 1 };
+      }
+      return prev;
+    });
+    return targetState;
+  }, []);
 
   const redo = useCallback((): HistoryState | null => {
-    if (historyIndex < history.length - 1) {
-      const state = history[historyIndex + 1];
-      setHistoryIndex(historyIndex + 1);
-      return state;
-    }
-    return null;
-  }, [historyIndex, history]);
+    let targetState: HistoryState | null = null;
+    setState(prev => {
+      if (prev.index < prev.history.length - 1) {
+        targetState = prev.history[prev.index + 1];
+        return { ...prev, index: prev.index + 1 };
+      }
+      return prev;
+    });
+    return targetState;
+  }, []);
 
   return {
-    history,
-    historyIndex,
+    history: state.history,
+    historyIndex: state.index,
     setInitialHistory,
     addToHistory,
     undo,
     redo,
-    historyLength: history.length
+    historyLength: state.history.length
   };
 }

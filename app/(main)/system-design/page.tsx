@@ -18,7 +18,10 @@ import { toast } from "sonner";
 
 // --- Extracted Parts ---
 import { Node, Connection, Group } from "./types";
-import { NODE_CONFIG, GRID_SIZE, NodeType } from "./constants";
+import { NODE_CONFIG, GRID_SIZE, NodeType, TEMPLATES } from "./constants";
+import { CHALLENGES } from "./challenges";
+import { saveSystemDesignAction } from "../../actions/system-design";
+import { ChallengePanel } from "./components/ChallengePanel";
 import { NodeComponent } from "./components/NodeComponent";
 import { ConnectionLine } from "./components/ConnectionLine";
 import { Toolbar } from "./components/Toolbar";
@@ -31,22 +34,17 @@ import { MiniMap } from "./components/MiniMap";
 import { StatsHUD } from "./components/StatsHUD";
 import { GroupComponent } from "./components/GroupComponent";
 
-// --- Helper ---
-const isInputActive = () => {
-  if (typeof window === 'undefined') return false;
-  const el = document.activeElement;
-  return el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || (el as HTMLElement).isContentEditable);
-};
-
 // --- Custom Hooks ---
 import { useSystemDesignHistory } from "./hooks/useSystemDesignHistory";
 import { useCanvasControls } from "./hooks/useCanvasControls";
 import { useSelection } from "./hooks/useSelection";
+import { useSystemDesignCanvas } from "./hooks/useSystemDesignCanvas";
+import { isInputActive } from "./utils";
+import { DotGrid } from "./components/DotGrid";
 
 export default function SystemDesignCanvas() {
-  const [nodes, setNodes] = useState<Node[]>([]);
-  const [connections, setConnections] = useState<Connection[]>([]);
-  const [groups, setGroups] = useState<Group[]>([]);
+  const { state, dispatch, nodes, connections, groups } = useSystemDesignCanvas();
+
   const {
     history, historyIndex, historyLength,
     setInitialHistory, addToHistory,
@@ -60,43 +58,39 @@ export default function SystemDesignCanvas() {
 
   const { selectedId, selectedType, selectElement, clearSelection } = useSelection();
 
-  // --- History & Persistence State ---
+  // --- Persistence State ---
   const [hasLoaded, setHasLoaded] = useState(false);
-
-  // --- UI Tools ---
-  const [activeTool, setActiveTool] = useState<"Select" | "Connect" | "Pan" | "Group">("Select");
-  const [connectStart, setConnectStart] = useState<string | null>(null);
-  const [showGrid, setShowGrid] = useState(true);
-
-  // --- UI States ---
-  const [showReview, setShowReview] = useState(false);
-  const [showHelp, setShowHelp] = useState(false);
-  const [showTutorial, setShowTutorial] = useState(false);
-  const [theme, setTheme] = useState<"dark" | "light" | "neo">("dark");
-
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
+  const [isChallengePanelOpen, setIsChallengePanelOpen] = useState(false);
+  const [currentDesignId, setCurrentDesignId] = useState<string | null>(null);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const canvasRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // --- Persistence Logic ---
   useEffect(() => {
     const saved = localStorage.getItem('mockmate-design-pro-v3');
     const savedTheme = localStorage.getItem('mockmate-design-theme') as any;
-    if (savedTheme) setTheme(savedTheme);
+    if (savedTheme) dispatch({ type: "SET_THEME", theme: savedTheme });
 
     if (saved) {
       try {
         const p = JSON.parse(saved);
-        setNodes(p.nodes || []);
-        setConnections(p.connections || []);
-        setGroups(p.groups || []);
+        dispatch({
+          type: "LOAD_STATE", state: {
+            nodes: p.nodes || [],
+            connections: p.connections || [],
+            groups: p.groups || []
+          }
+        });
         setInitialHistory({ nodes: p.nodes || [], connections: p.connections || [], groups: p.groups || [] });
       } catch (e) {
         const old = localStorage.getItem('mockmate-design-pro');
         if (old) {
           const p = JSON.parse(old);
           const initial = { nodes: p.nodes || [], connections: p.connections || [], groups: p.groups || [] };
-          setNodes(initial.nodes); setConnections(initial.connections); setGroups(initial.groups);
+          dispatch({ type: "LOAD_STATE", state: initial });
           setInitialHistory(initial);
         }
       }
@@ -109,20 +103,30 @@ export default function SystemDesignCanvas() {
     // Auto-trigger tutorial if not onboarded
     const onboarded = localStorage.getItem('mockmate-sd-onboarded');
     if (!onboarded) {
-      setTimeout(() => setShowTutorial(true), 1500);
+      setTimeout(() => dispatch({ type: "SET_SHOW_TUTORIAL", show: true }), 1500);
     }
 
     const handleResize = () => setWindowSize({ width: window.innerWidth, height: window.innerHeight });
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [setInitialHistory]);
+  }, [dispatch, setInitialHistory]);
 
+  // Debounced Save
   useEffect(() => {
     if (!hasLoaded) return;
-    const data = { nodes, connections, groups, timestamp: Date.now() };
-    localStorage.setItem('mockmate-design-pro-v3', JSON.stringify(data));
-    localStorage.setItem('mockmate-design-theme', theme);
-  }, [nodes, connections, groups, theme, hasLoaded]);
+
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+
+    saveTimeoutRef.current = setTimeout(() => {
+      const data = { nodes, connections, groups, timestamp: Date.now() };
+      localStorage.setItem('mockmate-design-pro-v3', JSON.stringify(data));
+      localStorage.setItem('mockmate-design-theme', state.theme);
+    }, 300);
+
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    };
+  }, [nodes, connections, groups, state.theme, hasLoaded]);
 
   // --- Wrapper Handlers ---
   const recordHistory = useCallback((n: Node[], c: Connection[], g: Group[]) => {
@@ -131,13 +135,59 @@ export default function SystemDesignCanvas() {
 
   const undo = useCallback(() => {
     const prev = undoHistory();
-    if (prev) { setNodes(prev.nodes); setConnections(prev.connections); setGroups(prev.groups); }
-  }, [undoHistory]);
+    if (prev) {
+      dispatch({
+        type: "LOAD_STATE", state: {
+          nodes: prev.nodes,
+          connections: prev.connections,
+          groups: prev.groups
+        }
+      });
+    }
+  }, [undoHistory, dispatch]);
 
   const redo = useCallback(() => {
     const next = redoHistory();
-    if (next) { setNodes(next.nodes); setConnections(next.connections); setGroups(next.groups); }
-  }, [redoHistory]);
+    if (next) {
+      dispatch({
+        type: "LOAD_STATE", state: {
+          nodes: next.nodes,
+          connections: next.connections,
+          groups: next.groups
+        }
+      });
+    }
+  }, [redoHistory, dispatch]);
+
+  const saveDesign = useCallback(async () => {
+    const payload = {
+      id: currentDesignId || undefined,
+      title: state.activeChallengeId ? CHALLENGES.find(c => c.id === state.activeChallengeId)?.title : "Untitled Design",
+      nodes,
+      connections,
+      groups,
+      ai_score: state.reviewScore,
+      ai_review: state.reviewResult || undefined,
+      challenge_id: state.activeChallengeId || undefined
+    };
+
+    const result = await saveSystemDesignAction(payload);
+    if (result.error) {
+      toast.error(result.error);
+    } else {
+      if (!currentDesignId && result.data?.id) {
+        setCurrentDesignId(result.data.id);
+      }
+      toast.success("Design saved to cloud");
+    }
+  }, [currentDesignId, nodes, connections, groups, state.reviewScore, state.reviewResult, state.activeChallengeId]);
+
+  const onSelectChallenge = useCallback((id: string | null) => {
+    dispatch({ type: "SET_CHALLENGE", id });
+    if (id) {
+      toast.success(`Challenge Active: ${CHALLENGES.find(c => c.id === id)?.title}`);
+    }
+  }, [dispatch]);
 
   const handleConnectionClick = useCallback((id: string) => {
     selectElement(id, "connection");
@@ -148,34 +198,74 @@ export default function SystemDesignCanvas() {
   }, [selectElement]);
 
   const updateNodePos = useCallback((id: string, x: number, y: number) => {
-    setNodes(prev => {
-      const old = prev.find(n => n.id === id);
-      if (old && old.x === x && old.y === y) return prev;
-      const next = prev.map(n => n.id === id ? { ...n, x, y } : n);
-      recordHistory(next, connections, groups);
-      return next;
-    });
-  }, [connections, groups, recordHistory]);
+    // Check for group containment
+    let groupId: string | null = null;
+    for (const g of groups) {
+      if (x >= g.x && x <= g.x + g.w && y >= g.y && y <= g.y + g.h) {
+        groupId = g.id;
+        break;
+      }
+    }
+
+    dispatch({ type: "MOVE_NODE", id, x, y, groupId });
+
+    const nextNodes = nodes.map(n => n.id === id ? { ...n, x, y, groupId } : n);
+    recordHistory(nextNodes, connections, groups);
+  }, [connections, groups, recordHistory, dispatch, nodes]);
+
+  const updateGroupPos = useCallback((id: string, x: number, y: number) => {
+    dispatch({ type: "UPDATE_GROUP_POS", id, x, y });
+    const g = groups.find(x => x.id === id);
+    if (!g) return;
+    const dx = x - g.x;
+    const dy = y - g.y;
+    const nextG = groups.map(group => group.id === id ? { ...group, x, y } : group);
+    const nextN = nodes.map(n => n.groupId === id ? { ...n, x: n.x + dx, y: n.y + dy } : n);
+    recordHistory(nextN, connections, nextG);
+  }, [groups, nodes, connections, recordHistory, dispatch]);
+
+  const updateGroupSize = useCallback((id: string, w: number, h: number) => {
+    dispatch({ type: "UPDATE_GROUP_SIZE", id, w, h });
+    const nextG = groups.map(g => g.id === id ? { ...g, w, h } : g);
+    recordHistory(nodes, connections, nextG);
+  }, [groups, nodes, connections, recordHistory, dispatch]);
 
   const handleNodeClick = useCallback((id: string) => {
-    if (activeTool === "Connect") {
-      if (!connectStart) {
-        setConnectStart(id);
+    if (state.activeTool === "Connect") {
+      if (!state.connectStart) {
+        dispatch({ type: "SET_CONNECT_START", startId: id });
         toast("Select target node...", { icon: <ArrowRight size={14} /> });
-      } else if (connectStart !== id) {
-        const exists = connections.some(c => (c.from === connectStart && c.to === id) || (c.from === id && c.to === connectStart));
+      } else if (state.connectStart !== id) {
+        const exists = connections.some(c => (c.from === state.connectStart && c.to === id) || (c.from === id && c.to === state.connectStart));
         if (!exists) {
-          const nc = { id: `c-${Date.now()}`, from: connectStart, to: id, label: "Interface" };
+          const fromNode = nodes.find(n => n.id === state.connectStart);
+          const toNode = nodes.find(n => n.id === id);
+
+          let defaultLabel = "Interface";
+          if (fromNode && toNode) {
+            if (fromNode.type === "Client" && toNode.type === "Load Balancer") defaultLabel = "HTTPS / TCP";
+            else if (toNode.type === "Database") defaultLabel = "Query / SQL";
+            else if (toNode.type === "Cache") defaultLabel = "Cache Hit/Miss";
+            else if (fromNode.type === "Message Queue") defaultLabel = "Consume / Poll";
+            else if (toNode.type === "Message Queue") defaultLabel = "Publish Event";
+            else if (fromNode.type === "CDN" || toNode.type === "CDN") defaultLabel = "Static Assets";
+            else if (fromNode.type === "Microservice" && toNode.type === "Microservice") defaultLabel = "gRPC / REST";
+            else defaultLabel = "Data Flow";
+          }
+
+          const nc = { id: `c-${Date.now()}`, from: state.connectStart, to: id, label: defaultLabel };
           const nx = [...connections, nc];
-          setConnections(nx); recordHistory(nodes, nx, groups);
+          dispatch({ type: "SET_CONNECTIONS", connections: nx });
+          recordHistory(nodes, nx, groups);
           toast.success("Link established");
         }
-        setConnectStart(null); setActiveTool("Select");
+        dispatch({ type: "SET_CONNECT_START", startId: null });
+        dispatch({ type: "SET_TOOL", tool: "Select" });
       }
     } else {
       selectElement(id, "node");
     }
-  }, [activeTool, connectStart, connections, nodes, groups, recordHistory, selectElement]);
+  }, [state.activeTool, state.connectStart, connections, nodes, groups, recordHistory, selectElement, dispatch]);
 
   const addNode = useCallback((type: NodeType) => {
     const newNode: Node = {
@@ -186,12 +276,12 @@ export default function SystemDesignCanvas() {
       name: type,
       metadata: {}
     };
+    dispatch({ type: "ADD_NODE", node: newNode });
     const next = [...nodes, newNode];
-    setNodes(next);
     recordHistory(next, connections, groups);
     selectElement(newNode.id, "node");
     toast.success(`Added ${type}`);
-  }, [pan, scale, nodes, connections, groups, recordHistory, selectElement]);
+  }, [pan, scale, nodes, connections, groups, recordHistory, selectElement, dispatch]);
 
   const addGroup = useCallback(() => {
     const newGroup: Group = {
@@ -203,30 +293,44 @@ export default function SystemDesignCanvas() {
       h: 300,
       color: "rgba(99, 102, 241, 0.1)"
     };
+    dispatch({ type: "ADD_GROUP", group: newGroup });
     const next = [...groups, newGroup];
-    setGroups(next);
     recordHistory(nodes, connections, next);
     selectElement(newGroup.id, "group");
-  }, [pan, scale, nodes, connections, groups, recordHistory, selectElement]);
+  }, [pan, scale, nodes, connections, groups, recordHistory, selectElement, dispatch]);
 
   const deleteSelected = useCallback(() => {
     if (!selectedId) return;
     if (selectedType === "node") {
       const nextN = nodes.filter(n => n.id !== selectedId);
       const nextC = connections.filter(c => c.from !== selectedId && c.to !== selectedId);
-      setNodes(nextN); setConnections(nextC);
+      dispatch({ type: "SET_NODES", nodes: nextN });
+      dispatch({ type: "SET_CONNECTIONS", connections: nextC });
       recordHistory(nextN, nextC, groups);
     } else if (selectedType === "connection") {
       const nextC = connections.filter(c => c.id !== selectedId);
-      setConnections(nextC);
+      dispatch({ type: "SET_CONNECTIONS", connections: nextC });
       recordHistory(nodes, nextC, groups);
     } else if (selectedType === "group") {
       const nextG = groups.filter(g => g.id !== selectedId);
-      setGroups(nextG);
+      dispatch({ type: "SET_GROUPS", groups: nextG });
       recordHistory(nodes, connections, nextG);
     }
     clearSelection();
-  }, [selectedId, selectedType, nodes, connections, groups, recordHistory, clearSelection]);
+  }, [selectedId, selectedType, nodes, connections, groups, recordHistory, clearSelection, dispatch]);
+
+  const handleMouseMoveWrapper = useCallback((e: React.MouseEvent) => {
+    handleMouseMove(e);
+    if (state.activeTool === "Connect" && state.connectStart) {
+      const rect = canvasRef.current?.getBoundingClientRect();
+      if (rect) {
+        setMousePos({
+          x: (e.clientX - rect.left - pan.x) / scale,
+          y: (e.clientY - rect.top - pan.y) / scale
+        });
+      }
+    }
+  }, [handleMouseMove, state.activeTool, state.connectStart, pan, scale]);
 
   const exportSVG = useCallback(() => {
     if (!svgRef.current) return;
@@ -249,74 +353,72 @@ export default function SystemDesignCanvas() {
     toast.success("JSON Architecture Copied");
   }, [nodes, connections, groups]);
 
-  const insertTemplate = useCallback((stack: "Serverless" | "Web") => {
+  const insertTemplate = useCallback((stack: keyof typeof TEMPLATES) => {
     const base = Date.now();
     const center = { x: -pan.x / scale + 400, y: -pan.y / scale + 300 };
-    let newNodes: Node[] = [];
-    let newConns: Connection[] = [];
+    const template = TEMPLATES[stack];
 
-    if (stack === "Serverless") {
-      newNodes = [
-        { id: `${base}-1`, type: "Client", x: center.x, y: center.y, name: "End User" },
-        { id: `${base}-2`, type: "Load Balancer", x: center.x + 150, y: center.y, name: "API Gate" },
-        { id: `${base}-3`, type: "Microservice", x: center.x + 300, y: center.y, name: "Lambda" },
-        { id: `${base}-4`, type: "Database", x: center.x + 450, y: center.y, name: "Dynamo" },
-      ];
-      newConns = [
-        { id: `${base}-c1`, from: `${base}-1`, to: `${base}-2`, label: "JSON" },
-        { id: `${base}-c2`, from: `${base}-2`, to: `${base}-3`, label: "Trigger" },
-        { id: `${base}-c3`, from: `${base}-3`, to: `${base}-4`, label: "Query" },
-      ];
-    } else if (stack === "Web") {
-      newNodes = [
-        { id: `${base}-w1`, type: "CDN", x: center.x, y: center.y, name: "CloudFront" },
-        { id: `${base}-w2`, type: "Load Balancer", x: center.x + 150, y: center.y, name: "ALB" },
-        { id: `${base}-w3`, type: "Web Server", x: center.x + 300, y: center.y, name: "ASG" },
-        { id: `${base}-w4`, type: "Database", x: center.x + 450, y: center.y, name: "RDS" },
-      ];
-      newConns = [
-        { id: `${base}-wc1`, from: `${base}-w1`, to: `${base}-w2`, label: "Edge" },
-        { id: `${base}-wc2`, from: `${base}-w2`, to: `${base}-w3`, label: "Forward" },
-        { id: `${base}-wc3`, from: `${base}-w3`, to: `${base}-w4`, label: "SQL" },
-      ];
-    }
+    const newNodes: Node[] = template.nodes.map((n: any, i: number) => ({
+      id: `${base}-${i}`,
+      type: n.type,
+      x: center.x + n.dx,
+      y: center.y + n.dy,
+      name: n.name,
+      metadata: {}
+    }));
+
+    const newConns: Connection[] = template.connections.map((c: any, i: number) => ({
+      id: `${base}-c${i}`,
+      from: newNodes[c.fromIdx].id,
+      to: newNodes[c.toIdx].id,
+      label: c.label
+    }));
+
     const nextN = [...nodes, ...newNodes];
     const nextC = [...connections, ...newConns];
-    setNodes(nextN); setConnections(nextC);
+    dispatch({ type: "SET_NODES", nodes: nextN });
+    dispatch({ type: "SET_CONNECTIONS", connections: nextC });
     recordHistory(nextN, nextC, groups);
-  }, [pan, scale, nodes, connections, groups, recordHistory]);
+  }, [pan, scale, nodes, connections, groups, recordHistory, dispatch]);
 
   const handleReview = useCallback(async () => {
     if (nodes.length === 0) return;
-    setIsReviewing(true);
+    dispatch({ type: "SET_REVIEWING", isReviewing: true });
     try {
-      const result = await reviewSystemDesignAction(nodes, connections);
+      const activeChallenge = CHALLENGES.find(c => c.id === state.activeChallengeId);
+      const challengeContext = activeChallenge ? {
+        title: activeChallenge.title,
+        objectives: activeChallenge.objectives,
+        constraints: activeChallenge.constraints
+      } : undefined;
+
+      const result = await reviewSystemDesignAction(nodes, connections, challengeContext);
       if (result.error) {
         toast.error(result.error);
         return;
       }
-      setReviewResult(result.markdown);
+      dispatch({ type: "SET_REVIEW_RESULT", result: result.markdown, score: result.score });
       toast.success("Audit Complete");
     } catch (err) {
       toast.error("Audit Failed");
     } finally {
-      setIsReviewing(false);
+      dispatch({ type: "SET_REVIEWING", isReviewing: false });
     }
-  }, [nodes, connections]);
+  }, [nodes, connections, state.activeChallengeId, dispatch]);
 
   const clearCanvas = useCallback(() => {
     if (nodes.length === 0 && connections.length === 0 && groups.length === 0) return;
     if (window.confirm("Are you sure you want to clear the entire workspace? This cannot be undone.")) {
-      setNodes([]);
-      setConnections([]);
-      setGroups([]);
+      dispatch({ type: "CLEAR_CANVAS" });
       recordHistory([], [], []);
       toast.success("Workspace cleared");
     }
-  }, [nodes.length, connections.length, groups.length, recordHistory]);
+  }, [nodes.length, connections.length, groups.length, recordHistory, dispatch]);
 
-  const [isReviewing, setIsReviewing] = useState(false);
-  const [reviewResult, setReviewResult] = useState<string | null>(null);
+  const onCloseReview = useCallback(() => dispatch({ type: "SET_REVIEW_RESULT", result: null }), [dispatch]);
+  const onCloseHelp = useCallback(() => dispatch({ type: "SET_SHOW_HELP", show: false }), [dispatch]);
+  const onOpenTutorial = useCallback(() => dispatch({ type: "SET_SHOW_TUTORIAL", show: true }), [dispatch]);
+  const onCloseTutorial = useCallback(() => dispatch({ type: "SET_SHOW_TUTORIAL", show: false }), [dispatch]);
 
   // --- Keyboard Shortcuts ---
   useEffect(() => {
@@ -324,53 +426,97 @@ export default function SystemDesignCanvas() {
       if (isInputActive()) return;
       if (e.key === "Delete" || e.key === "Backspace") deleteSelected();
       if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); }
-      if ((e.ctrlKey || e.metaKey) && e.key === 'p') { e.preventDefault(); setShowTutorial(true); }
-      if (e.key === " ") { e.preventDefault(); setActiveTool("Pan"); if (canvasRef.current) canvasRef.current.style.cursor = 'grab'; }
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveDesign(); }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'p') { e.preventDefault(); dispatch({ type: "SET_SHOW_TUTORIAL", show: true }); }
+      if (e.key === " ") {
+        e.preventDefault();
+        dispatch({ type: "SET_TOOL", tool: "Pan" });
+        if (canvasRef.current) canvasRef.current.style.cursor = 'grab';
+      }
     };
-    const up = (e: KeyboardEvent) => { if (e.key === " ") { setActiveTool("Select"); if (canvasRef.current) canvasRef.current.style.cursor = 'crosshair'; } };
+    const up = (e: KeyboardEvent) => {
+      if (e.key === " ") {
+        dispatch({ type: "SET_TOOL", tool: "Select" });
+        if (canvasRef.current) canvasRef.current.style.cursor = 'crosshair';
+      }
+    };
     window.addEventListener("keydown", down); window.addEventListener("keyup", up);
     return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); };
-  }, [deleteSelected, redo, undo]);
+  }, [deleteSelected, redo, undo, dispatch]);
+
+  const ConnectionsLayer = useMemo(() => (
+    <svg ref={svgRef} className="absolute inset-0 w-full h-full pointer-events-none overflow-visible z-10">
+      <defs>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+          <feMerge><feMergeNode in="coloredBlur" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <marker id="arrow" markerWidth="10" markerHeight="7" refX="28" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#6366f1" />
+        </marker>
+      </defs>
+      {connections.map(c => (
+        <ConnectionLine
+          key={c.id} connection={c}
+          fromNode={nodes.find(n => n.id === c.from)}
+          toNode={nodes.find(n => n.id === c.to)}
+          isSelected={selectedId === c.id}
+          onClick={handleConnectionClick}
+          theme={state.theme}
+        />
+      ))}
+    </svg>
+  ), [connections, nodes, selectedId, handleConnectionClick]);
 
   return (
-    <div className={`h-screen flex flex-col overflow-hidden selection:bg-indigo-500/30 font-sans antialiased transition-colors duration-500 ${theme === "light" ? "bg-gray-50 text-gray-900" :
-        theme === "neo" ? "bg-[#0a0a12] text-white" : "bg-[#050505] text-white"
+    <div className={`h-screen flex flex-col overflow-hidden font-sans antialiased transition-colors duration-500 ${state.theme === "light" ? "bg-gray-50 text-gray-900 selection:bg-indigo-500/30" :
+      state.theme === "neo" ? "bg-[#02000a] text-cyan-50 selection:bg-fuchsia-500/30" : "bg-[#050505] text-white selection:bg-indigo-500/30"
       }`}>
 
       <CanvasHeader
         undo={undo} redo={redo} historyIndex={historyIndex} historyLength={historyLength}
         setPan={setPan} setScale={setScale} scale={scale}
-        showGrid={showGrid} setShowGrid={setShowGrid}
+        showGrid={state.showGrid} setShowGrid={() => dispatch({ type: "TOGGLE_GRID" })}
         exportSVG={exportSVG} copyJSON={copyJSON}
-        handleReview={handleReview} isReviewing={isReviewing}
+        handleReview={handleReview} isReviewing={state.isReviewing}
         nodesLength={nodes.length}
-        theme={theme} setTheme={setTheme}
+        theme={state.theme} setTheme={(t) => dispatch({ type: "SET_THEME", theme: t })}
         clearCanvas={clearCanvas}
+        saveDesign={saveDesign}
+        toggleChallengePanel={() => setIsChallengePanelOpen(!isChallengePanelOpen)}
       />
 
       <div className="flex-1 flex overflow-hidden">
+        {isChallengePanelOpen && (
+          <ChallengePanel
+            activeChallengeId={state.activeChallengeId}
+            onSelectChallenge={onSelectChallenge}
+            theme={state.theme}
+          />
+        )}
+
         <Toolbar
-          activeTool={activeTool} setActiveTool={setActiveTool}
+          activeTool={state.activeTool} setActiveTool={(t) => dispatch({ type: "SET_TOOL", tool: t })}
           addGroup={addGroup} addNode={addNode}
           insertTemplate={insertTemplate}
-          theme={theme}
+          theme={state.theme}
         />
 
         <main
           id="sd-canvas"
           ref={canvasRef}
-          onMouseDown={(e) => handleMouseDown(e, activeTool, canvasRef)}
-          onMouseMove={handleMouseMove}
-          onMouseUp={() => handleMouseUp(activeTool, canvasRef)}
+          onMouseDown={(e) => handleMouseDown(e, state.activeTool, canvasRef)}
+          onMouseMove={handleMouseMoveWrapper}
+          onMouseUp={() => handleMouseUp(state.activeTool, canvasRef)}
           onWheel={handleWheel}
-          className={`flex-1 relative overflow-hidden select-none outline-none transition-colors duration-500 ${theme === "light" ? "bg-white" :
-              theme === "neo" ? "bg-[#050508]" : "bg-[#030303]"
+          className={`flex-1 relative overflow-hidden select-none outline-none transition-colors duration-500 ${state.theme === "light" ? "bg-white" :
+            state.theme === "neo" ? "bg-[#050212]" : "bg-[#030303]"
             }`}
-          style={{ cursor: activeTool === "Pan" ? 'grab' : 'crosshair' }}
+          style={{ cursor: state.activeTool === "Pan" ? 'grab' : 'crosshair' }}
         >
           {/* AI Scanning Overlay */}
           <AnimatePresence>
-            {isReviewing && (
+            {state.isReviewing && (
               <m.div
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 className="absolute inset-0 z-50 bg-indigo-600/10 backdrop-blur-[2px] pointer-events-none flex flex-col items-center justify-center"
@@ -393,21 +539,12 @@ export default function SystemDesignCanvas() {
             )}
           </AnimatePresence>
           {/* Visual Guides - Advanced Dot Grid */}
-          {showGrid && (
-            <div className={`absolute inset-0 pointer-events-none transition-all duration-700 ${theme === "light" ? "opacity-[0.2]" : "opacity-[0.15] mix-blend-screen"
-              }`}
-              style={{
-                backgroundImage: theme === "light"
-                  ? `radial-gradient(circle, #000 1px, transparent 1px)`
-                  : `radial-gradient(circle, #444 1px, transparent 1px)`,
-                backgroundSize: `${GRID_SIZE * scale}px ${GRID_SIZE * scale}px`,
-                backgroundPosition: `${pan.x}px ${pan.y}px`
-              }}
-            />
+          {state.showGrid && (
+            <DotGrid theme={state.theme} pan={pan} scale={scale} />
           )}
 
           <m.div
-            className="w-full h-full relative origin-top-left"
+            className="w-full h-full relative origin-top-left will-change-transform"
             style={{ x: pan.x, y: pan.y, scale }}
           >
             {/* Groups Layer */}
@@ -417,83 +554,94 @@ export default function SystemDesignCanvas() {
                 group={g}
                 isSelected={selectedId === g.id}
                 onSelect={handleGroupSelect}
+                updatePos={updateGroupPos}
+                updateSize={updateGroupSize}
+                theme={state.theme}
               />
             ))}
 
             {/* Connections Layer (Memoized inside) */}
-            <svg ref={svgRef} className="absolute inset-0 w-full h-full pointer-events-none overflow-visible z-10">
-              <defs>
-                <filter id="glow">
-                  <feGaussianBlur stdDeviation="2" result="coloredBlur" />
-                  <feMerge><feMergeNode in="coloredBlur" /><feMergeNode in="SourceGraphic" /></feMerge>
-                </filter>
-                <marker id="arrow" markerWidth="10" markerHeight="7" refX="28" refY="3.5" orient="auto">
-                  <polygon points="0 0, 10 3.5, 0 7" fill="#6366f1" />
-                </marker>
-              </defs>
-              {connections.map(c => (
-                <ConnectionLine
-                  key={c.id} connection={c}
-                  fromNode={nodes.find(n => n.id === c.from)}
-                  toNode={nodes.find(n => n.id === c.to)}
-                  isSelected={selectedId === c.id}
-                  onClick={handleConnectionClick}
-                />
-              ))}
-            </svg>
+            {ConnectionsLayer}
 
-            {/* Nodes Layer */}
+            {/* Nodes Layer - Memoized to prevent re-renders on layout updates */}
             <AnimatePresence>
               {nodes.map(n => (
                 <NodeComponent
                   key={n.id} node={n} scale={scale}
                   isSelected={selectedId === n.id}
-                  isConnecting={connectStart === n.id}
+                  isConnecting={state.connectStart === n.id}
                   onDelete={deleteSelected}
                   onNodeClick={handleNodeClick}
                   updatePos={updateNodePos}
+                  theme={state.theme}
                 />
               ))}
             </AnimatePresence>
+
+            {/* Ghost Connection Line */}
+            {state.activeTool === "Connect" && state.connectStart && (() => {
+              const startNode = nodes.find(n => n.id === state.connectStart);
+              if (!startNode) return null;
+              const x1 = startNode.x + 48;
+              const y1 = startNode.y + 48;
+              return (
+                <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible z-[15]">
+                  <line
+                    x1={x1} y1={y1} x2={mousePos.x} y2={mousePos.y}
+                    stroke="#6366f1" strokeWidth="2" strokeDasharray="5,5" opacity="0.5"
+                  />
+                  <circle cx={mousePos.x} cy={mousePos.y} r="4" fill="#6366f1" opacity="0.5" />
+                </svg>
+              );
+            })()}
           </m.div>
 
           {/* --- Overlays & HUD --- */}
 
           <MiniMap
-            pan={pan} scale={scale} groups={groups} nodes={nodes} windowSize={windowSize}
+            pan={pan} scale={scale} groups={groups} nodes={nodes} windowSize={windowSize} theme={state.theme}
           />
 
           <StatsHUD
-            nodesLength={nodes.length} connectionsLength={connections.length} setShowHelp={setShowHelp}
+            nodesLength={nodes.length} connectionsLength={connections.length} setShowHelp={() => dispatch({ type: "SET_SHOW_HELP", show: true })}
           />
         </main>
 
         <PropertyPanel
-          selectedId={selectedId} selectedType={selectedType}
+          selectedItem={useMemo(() => {
+            if (selectedType === "node") return nodes.find(n => n.id === selectedId) || null;
+            if (selectedType === "connection") return connections.find(c => c.id === selectedId) || null;
+            if (selectedType === "group") return groups.find(g => g.id === selectedId) || null;
+            return null;
+          }, [selectedId, selectedType, nodes, connections, groups])}
+          selectedType={selectedType}
           nodes={nodes} connections={connections} groups={groups}
-          setNodes={setNodes} setConnections={setConnections} setGroups={setGroups}
+          onUpdateNodes={(n: Node[]) => dispatch({ type: "SET_NODES", nodes: n })}
+          onUpdateConnections={(c: Connection[]) => dispatch({ type: "SET_CONNECTIONS", connections: c })}
+          onUpdateGroups={(g: Group[]) => dispatch({ type: "SET_GROUPS", groups: g })}
           setSelectedId={(id: string | null) => selectElement(id, selectedType)} addToHistory={recordHistory}
           deleteSelected={deleteSelected}
-          theme={theme}
+          theme={state.theme}
         />
       </div>
 
       {/* Modals & Overlays */}
       <ReviewModal
-        reviewResult={reviewResult}
-        onClose={useCallback(() => setReviewResult(null), [])}
-        theme={theme}
+        reviewResult={state.reviewResult}
+        score={state.reviewScore}
+        onClose={onCloseReview}
+        theme={state.theme}
       />
 
       <HelpModal
-        isOpen={showHelp}
-        onClose={useCallback(() => setShowHelp(false), [])}
-        onOpenTutorial={useCallback(() => setShowTutorial(true), [])}
+        isOpen={state.showHelp}
+        onClose={onCloseHelp}
+        onOpenTutorial={onOpenTutorial}
       />
 
       <SystemDesignTutorial
-        isOpen={showTutorial}
-        onClose={useCallback(() => setShowTutorial(false), [])}
+        isOpen={state.showTutorial}
+        onClose={onCloseTutorial}
       />
 
       <style jsx global>{`
@@ -513,7 +661,6 @@ export default function SystemDesignCanvas() {
           height: 2px;
           background: linear-gradient(90deg, transparent, #6366f1, transparent);
           animation: scan 2s linear infinite;
-        }
       `}</style>
     </div>
   );

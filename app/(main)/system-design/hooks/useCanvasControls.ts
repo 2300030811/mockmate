@@ -32,8 +32,10 @@ export function useCanvasControls(initialPan = { x: 0, y: 0 }, initialScale = 1)
   const handleWheel = useCallback((e: React.WheelEvent) => {
     if (e.ctrlKey) {
       e.preventDefault();
-      const delta = e.deltaY > 0 ? -0.1 : 0.1;
-      setScale(s => Math.min(Math.max(0.2, s + delta), 3));
+      // Smooth exponential zoom
+      const zoomSensitivity = 0.001;
+      const multiplier = Math.exp(-e.deltaY * zoomSensitivity);
+      setScale(s => Math.min(Math.max(0.2, s * multiplier), 3));
     } else {
       setPan(p => ({ x: p.x - e.deltaX, y: p.y - e.deltaY }));
     }

@@ -172,5 +172,5 @@ npx playwright test   # Run E2E Tests
 ---
 
 <div align="center">
-  Built with ❤️ by Bhima & Tejaswanth
+  Built with ❤️ by Mahesh
 </div>

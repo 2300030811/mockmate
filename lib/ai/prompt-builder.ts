@@ -13,7 +13,7 @@ const QUIZ_SYSTEM_PROMPT = "You are a helpful assistant that outputs JSON.";
 // ── User Prompts ────────────────────────────────────────────────────────
 
 function buildFlashcardPrompt(content: string, count: number): string {
-  return `
+   return `
 You are an elite Study Assistant.
 
 TASK:
@@ -40,12 +40,12 @@ ${content}
 }
 
 function buildQuizPrompt(content: string, count: number, difficulty: string): string {
-  const difficultyGuidance =
-    difficulty === "hard"
-      ? "Focus on complex scenarios, edge cases, and multi-step reasoning."
-      : "Focus on conceptual understanding and application.";
+   const difficultyGuidance =
+      difficulty === "hard"
+         ? "Focus on complex scenarios, edge cases, and multi-step reasoning."
+         : "Focus on conceptual understanding and application.";
 
-  return `
+   return `
 You are an elite AI Quiz Architect.
 
 TASK:
@@ -65,6 +65,7 @@ CRITICAL INSTRUCTIONS:
    - Exactly 4 options per question.
    - Distractors must be PLAUSIBLE but clearly INCORRECT.
    - Avoid "All of the above" unless absolutely appropriate.
+   - CONSTRAINTS: For visual puzzles (like "mirror image", "water image"), DO NOT use Cyrillic or Unicode characters. Instead, wrap the ORIGINAL unreflected string in tags: '[MIRROR]...[/MIRROR]' or '[WATER]...[/WATER]' (e.g. '[MIRROR]15bg82XQh[/MIRROR]'). The UI will render the visual reflection via CSS. For completely non-textual spatial puzzles (e.g., "embedded figure", "paper folding"), IGNORE and skip them.
 
 3. EXPLANATIONS:
    - Explain WHY the correct answer is right.
@@ -72,8 +73,8 @@ CRITICAL INSTRUCTIONS:
 
 4. JSON FORMATTING:
    - Return ONLY a raw JSON array.
-   - Structure: [{"question": "...", "options": ["A", "B", "C", "D"], "answer": "A", "explanation": "..."}]
-   - "answer" MUST match one option EXACTLY.
+   - Structure: [{"question": "What is the capital of France?", "options": ["Paris", "London", "Berlin", "Madrid"], "answer": "Paris", "explanation": "Paris is the capital of France."}]
+   - "answer" MUST match the exact text of one option. NEVER output just the option letter (e.g., "A").
 
 TEXT CONTENT:
 ${content}
@@ -83,7 +84,7 @@ ${content}
 // ── Vision Prompts (PDF with images / scanned docs) ─────────────────────
 
 function buildVisionFlashcardPrompt(count: number): string {
-  return `
+   return `
 You are an elite Study Assistant.
 Analyze the provided PDF document.
 
@@ -103,7 +104,7 @@ CRITICAL INSTRUCTIONS:
 }
 
 function buildVisionQuizPrompt(count: number, difficulty: string): string {
-  return `
+   return `
 You are an elite AI Quiz Architect.
 Analyze the provided PDF document (which may contain text, images, handwritten notes, or diagrams).
 
@@ -126,6 +127,7 @@ CRITICAL INSTRUCTIONS:
    - Provide exactly 4 options per question.
    - Distractors (wrong answers) MUST be plausible and related to the content, not obviously silly.
    - Avoid "All of the above" or "None of the above" unless absolutely necessary.
+   - CONSTRAINTS: For visual puzzles (like "mirror image", "water image"), DO NOT use Cyrillic or Unicode characters. Instead, wrap the ORIGINAL unreflected string in tags: '[MIRROR]...[/MIRROR]' or '[WATER]...[/WATER]' (e.g. '[MIRROR]15bg82XQh[/MIRROR]'). The UI will render the visual reflection via CSS. For completely non-textual spatial puzzles (e.g., "embedded figure", "paper folding"), IGNORE and skip them.
 
 3. EXPLANATIONS:
    - Provide a comprehensive explanation for EACH question.
@@ -134,52 +136,52 @@ CRITICAL INSTRUCTIONS:
 4. TECHNICAL SPECIFICATIONS:
    - Return ONLY a raw JSON array.
    - NO markdown formatting (no \`\`\`json blocks).
-   - STRUCTURE: [{"question": "...", "options": ["...", "...", "...", "..."], "answer": "...", "explanation": "..."}]
-   - ACCURACY: The "answer" field MUST be a CHARACTER-FOR-CHARACTER match with one of the strings in the "options" array.
+   - STRUCTURE: [{"question": "What is the capital of France?", "options": ["Paris", "London", "Berlin", "Madrid"], "answer": "Paris", "explanation": "Paris is the capital of France."}]
+   - ACCURACY: The "answer" field MUST be a CHARACTER-FOR-CHARACTER match with one of the strings in the "options" array. NEVER output just the option letter (e.g., "A").
 `.trim();
 }
 
 // ── Public API ──────────────────────────────────────────────────────────
 
 export class PromptBuilder {
-  /** System prompt shared by all providers. */
-  static getSystemPrompt(): string {
-    return QUIZ_SYSTEM_PROMPT;
-  }
+   /** System prompt shared by all providers. */
+   static getSystemPrompt(): string {
+      return QUIZ_SYSTEM_PROMPT;
+   }
 
-  /**
-   * Build the user prompt for text-based quiz / flashcard generation.
-   *
-   * @param content  - Sanitised user content (already trimmed / sampled)
-   * @param count    - Target number of questions / cards
-   * @param difficulty - "easy" | "medium" | "hard"
-   * @param mode     - "quiz" | "flashcard"
-   */
-  static buildUserPrompt(
-    content: string,
-    count: number,
-    difficulty: string,
-    mode: "quiz" | "flashcard"
-  ): string {
-    return mode === "flashcard"
-      ? buildFlashcardPrompt(content, count)
-      : buildQuizPrompt(content, count, difficulty);
-  }
+   /**
+    * Build the user prompt for text-based quiz / flashcard generation.
+    *
+    * @param content  - Sanitised user content (already trimmed / sampled)
+    * @param count    - Target number of questions / cards
+    * @param difficulty - "easy" | "medium" | "hard"
+    * @param mode     - "quiz" | "flashcard"
+    */
+   static buildUserPrompt(
+      content: string,
+      count: number,
+      difficulty: string,
+      mode: "quiz" | "flashcard"
+   ): string {
+      return mode === "flashcard"
+         ? buildFlashcardPrompt(content, count)
+         : buildQuizPrompt(content, count, difficulty);
+   }
 
-  /**
-   * Build the user prompt for vision-based (scanned PDF) generation.
-   *
-   * @param count      - Target number of questions / cards
-   * @param difficulty - "easy" | "medium" | "hard"
-   * @param mode       - "quiz" | "flashcard"
-   */
-  static buildVisionPrompt(
-    count: number,
-    difficulty: string,
-    mode: "quiz" | "flashcard"
-  ): string {
-    return mode === "flashcard"
-      ? buildVisionFlashcardPrompt(count)
-      : buildVisionQuizPrompt(count, difficulty);
-  }
+   /**
+    * Build the user prompt for vision-based (scanned PDF) generation.
+    *
+    * @param count      - Target number of questions / cards
+    * @param difficulty - "easy" | "medium" | "hard"
+    * @param mode       - "quiz" | "flashcard"
+    */
+   static buildVisionPrompt(
+      count: number,
+      difficulty: string,
+      mode: "quiz" | "flashcard"
+   ): string {
+      return mode === "flashcard"
+         ? buildVisionFlashcardPrompt(count)
+         : buildVisionQuizPrompt(count, difficulty);
+   }
 }
