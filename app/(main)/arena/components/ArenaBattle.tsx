@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, memo, lazy, Suspense } from "react";
 import { m, AnimatePresence } from "framer-motion";
 import { Cpu, Zap, X } from "lucide-react";
-import { ArenaQuestion, Opponent } from "../types";
+import { ArenaQuestion, Opponent, BattleResult } from "../types";
 import { getAvatarIcon } from "@/lib/icons";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
@@ -159,6 +159,7 @@ interface ArenaBattleProps {
   handleAnswer: (option: string) => void;
   category: string;
   combo: number;
+  battleResults: BattleResult[];
   userAvatar?: string;
   onForfeit?: () => void;
 }
@@ -349,13 +350,15 @@ const RoundScoreboard = memo(function RoundScoreboard({
   opponentScore, 
   currentQuestion, 
   totalQuestions, 
-  opponentName 
+  opponentName,
+  battleResults
 }: { 
   userScore: number, 
   opponentScore: number, 
   currentQuestion: number, 
   totalQuestions: number, 
-  opponentName: string 
+  opponentName: string,
+  battleResults: BattleResult[]
 }) {
   return (
     <div className="mx-4 mb-4 bg-white/[0.02] border border-white/5 rounded-xl overflow-hidden shrink-0">
@@ -373,10 +376,19 @@ const RoundScoreboard = memo(function RoundScoreboard({
               <div
                 key={qi}
                 className={`flex-1 h-4 md:h-5 rounded text-[8px] md:text-[9px] flex items-center justify-center font-black
-                  ${qi < currentQuestion ? (pi === 0 ? "bg-blue-500/20 text-blue-400" : "bg-red-500/20 text-red-400") : 
-                    qi === currentQuestion ? "bg-white/5 text-gray-600 border border-white/10" : "bg-white/[0.03] text-gray-800"}`}
+                  ${qi < currentQuestion 
+                    ? (pi === 0 
+                      ? (battleResults[qi]?.correct ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400")
+                      : "bg-red-500/20 text-red-400") 
+                    : qi === currentQuestion 
+                      ? "bg-white/5 text-gray-600 border border-white/10" 
+                      : "bg-white/[0.03] text-gray-800"}`}
               >
-                {qi < currentQuestion ? (pi === 0 ? "W" : "L") : qi === currentQuestion ? `${qi + 1}` : "—"}
+                {qi < currentQuestion 
+                  ? (pi === 0 
+                    ? (battleResults[qi]?.correct ? "W" : "L") 
+                    : "L") 
+                  : qi === currentQuestion ? `${qi + 1}` : "—"}
               </div>
             ))}
           </div>
@@ -399,6 +411,7 @@ export function ArenaBattle({
   handleAnswer,
   category,
   combo,
+  battleResults,
   userAvatar,
   onForfeit
 }: ArenaBattleProps) {
@@ -496,36 +509,38 @@ export function ArenaBattle({
 
       <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
         <div className="min-h-full p-4 md:p-12 flex flex-col items-center">
-          {showForfeitConfirm && (
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
-              <m.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                className="bg-gray-900 border border-white/10 rounded-2xl p-6 md:p-8 max-w-sm shadow-2xl"
-              >
-                <h3 className="text-lg md:text-xl font-black text-white mb-2">Forfeit Battle?</h3>
-                <p className="text-sm md:text-base text-gray-400 mb-6">Are you sure you want to forfeit? You will lose this match and receive no points.</p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setShowForfeitConfirm(false)}
-                    className="flex-1 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-black transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowForfeitConfirm(false);
-                      onForfeit?.();
-                    }}
-                    className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-black transition-colors"
-                  >
-                    Forfeit
-                  </button>
-                </div>
-              </m.div>
-            </div>
-          )}
+          <AnimatePresence>
+            {showForfeitConfirm && (
+              <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                <m.div
+                  initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                  className="bg-gray-900 border border-white/10 rounded-2xl p-6 md:p-8 max-w-sm w-full shadow-2xl"
+                >
+                  <h3 className="text-lg md:text-xl font-black text-white mb-2">Forfeit Battle?</h3>
+                  <p className="text-sm md:text-base text-gray-400 mb-6">Are you sure you want to forfeit? You will lose this match and receive no points.</p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setShowForfeitConfirm(false)}
+                      className="flex-1 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-black transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowForfeitConfirm(false);
+                        onForfeit?.();
+                      }}
+                      className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-black transition-colors"
+                    >
+                      Forfeit
+                    </button>
+                  </div>
+                </m.div>
+              </div>
+            )}
+          </AnimatePresence>
           
           <m.div
             key={currentQuestion}
@@ -563,6 +578,7 @@ export function ArenaBattle({
         currentQuestion={currentQuestion} 
         totalQuestions={questions.length} 
         opponentName={opponent?.name || "Opponent"} 
+        battleResults={battleResults}
       />
     </m.div>
   );

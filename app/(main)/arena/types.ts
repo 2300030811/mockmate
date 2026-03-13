@@ -9,6 +9,8 @@ export interface Opponent {
   winRate: string;
   region: string;
   badge: string;
+  speed: number;
+  accuracy: number;
 }
 
 export interface ArenaQuestion {
@@ -44,4 +46,5 @@ export interface RecentMatch {
   score: number;
   total_questions: number;
   completed_at: string;
+  winStatus?: 'win' | 'loss' | 'tie';
 }

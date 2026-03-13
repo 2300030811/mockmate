@@ -41,6 +41,7 @@ import { useSelection } from "./hooks/useSelection";
 import { useSystemDesignCanvas } from "./hooks/useSystemDesignCanvas";
 import { isInputActive } from "./utils";
 import { DotGrid } from "./components/DotGrid";
+import { useSystemDesignPersistence } from "./hooks/useSystemDesignPersistence";
 
 export default function SystemDesignCanvas() {
   const { state, dispatch, nodes, connections, groups } = useSystemDesignCanvas();
@@ -59,74 +60,23 @@ export default function SystemDesignCanvas() {
   const { selectedId, selectedType, selectElement, clearSelection } = useSelection();
 
   // --- Persistence State ---
-  const [hasLoaded, setHasLoaded] = useState(false);
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
   const [isChallengePanelOpen, setIsChallengePanelOpen] = useState(false);
   const [currentDesignId, setCurrentDesignId] = useState<string | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const canvasRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // --- Persistence Logic ---
+  const { hasLoaded } = useSystemDesignPersistence({
+    nodes, connections, groups, theme: state.theme, dispatch, setInitialHistory
+  });
+
   useEffect(() => {
-    const saved = localStorage.getItem('mockmate-design-pro-v3');
-    const savedTheme = localStorage.getItem('mockmate-design-theme') as any;
-    if (savedTheme) dispatch({ type: "SET_THEME", theme: savedTheme });
-
-    if (saved) {
-      try {
-        const p = JSON.parse(saved);
-        dispatch({
-          type: "LOAD_STATE", state: {
-            nodes: p.nodes || [],
-            connections: p.connections || [],
-            groups: p.groups || []
-          }
-        });
-        setInitialHistory({ nodes: p.nodes || [], connections: p.connections || [], groups: p.groups || [] });
-      } catch (e) {
-        const old = localStorage.getItem('mockmate-design-pro');
-        if (old) {
-          const p = JSON.parse(old);
-          const initial = { nodes: p.nodes || [], connections: p.connections || [], groups: p.groups || [] };
-          dispatch({ type: "LOAD_STATE", state: initial });
-          setInitialHistory(initial);
-        }
-      }
-    } else {
-      setInitialHistory({ nodes: [], connections: [], groups: [] });
-    }
-    setHasLoaded(true);
     setWindowSize({ width: window.innerWidth, height: window.innerHeight });
-
-    // Auto-trigger tutorial if not onboarded
-    const onboarded = localStorage.getItem('mockmate-sd-onboarded');
-    if (!onboarded) {
-      setTimeout(() => dispatch({ type: "SET_SHOW_TUTORIAL", show: true }), 1500);
-    }
-
     const handleResize = () => setWindowSize({ width: window.innerWidth, height: window.innerHeight });
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [dispatch, setInitialHistory]);
-
-  // Debounced Save
-  useEffect(() => {
-    if (!hasLoaded) return;
-
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-
-    saveTimeoutRef.current = setTimeout(() => {
-      const data = { nodes, connections, groups, timestamp: Date.now() };
-      localStorage.setItem('mockmate-design-pro-v3', JSON.stringify(data));
-      localStorage.setItem('mockmate-design-theme', state.theme);
-    }, 300);
-
-    return () => {
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-    };
-  }, [nodes, connections, groups, state.theme, hasLoaded]);
+  }, []);
 
   // --- Wrapper Handlers ---
   const recordHistory = useCallback((n: Node[], c: Connection[], g: Group[]) => {
@@ -444,6 +394,13 @@ export default function SystemDesignCanvas() {
     return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); };
   }, [deleteSelected, redo, undo, dispatch]);
 
+  const selectedItem = useMemo(() => {
+    if (selectedType === "node") return nodes.find(n => n.id === selectedId) || null;
+    if (selectedType === "connection") return connections.find(c => c.id === selectedId) || null;
+    if (selectedType === "group") return groups.find(g => g.id === selectedId) || null;
+    return null;
+  }, [selectedId, selectedType, nodes, connections, groups]);
+
   const ConnectionsLayer = useMemo(() => (
     <svg ref={svgRef} className="absolute inset-0 w-full h-full pointer-events-none overflow-visible z-10">
       <defs>
@@ -466,7 +423,7 @@ export default function SystemDesignCanvas() {
         />
       ))}
     </svg>
-  ), [connections, nodes, selectedId, handleConnectionClick]);
+  ), [connections, nodes, selectedId, handleConnectionClick, state.theme]);
 
   return (
     <div className={`h-screen flex flex-col overflow-hidden font-sans antialiased transition-colors duration-500 ${state.theme === "light" ? "bg-gray-50 text-gray-900 selection:bg-indigo-500/30" :
@@ -608,12 +565,7 @@ export default function SystemDesignCanvas() {
         </main>
 
         <PropertyPanel
-          selectedItem={useMemo(() => {
-            if (selectedType === "node") return nodes.find(n => n.id === selectedId) || null;
-            if (selectedType === "connection") return connections.find(c => c.id === selectedId) || null;
-            if (selectedType === "group") return groups.find(g => g.id === selectedId) || null;
-            return null;
-          }, [selectedId, selectedType, nodes, connections, groups])}
+          selectedItem={selectedItem}
           selectedType={selectedType}
           nodes={nodes} connections={connections} groups={groups}
           onUpdateNodes={(n: Node[]) => dispatch({ type: "SET_NODES", nodes: n })}

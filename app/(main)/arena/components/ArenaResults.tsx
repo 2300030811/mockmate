@@ -13,6 +13,7 @@ interface ArenaResultsProps {
   opponentScore: number;
   battleResults: BattleResult[];
   category: string;
+  battleId: string;
   onLobby: () => void;
   onRematch: () => void;
 }
@@ -22,24 +23,21 @@ export const ArenaResults = React.memo(function ArenaResults({
   opponentScore,
   battleResults,
   category,
+  battleId,
   onLobby,
   onRematch
 }: ArenaResultsProps) {
   const displayCategory = category.replace('arena_', '').toUpperCase();
-  const hasSaved = useRef(false);
-  
+  const hasSaved = useRef<string | null>(null);
+
   useEffect(() => {
     // Persist results on mount
     const persistResults = async () => {
-      if (hasSaved.current) return;
-      hasSaved.current = true;
+      if (hasSaved.current === battleId) return;
+      hasSaved.current = battleId;
 
-      const sessionId = crypto.randomUUID();
       const userAnswers: Record<string, any> = {};
       
-      // Arena results don't have IDs in the same way, but let's mock the structure saveQuizResult expects
-      // if possible, or we might need to adjust saveQuizResult to handle arena specifically if it's different.
-      // For now, we'll try to follow the standard format.
       battleResults.forEach((res, idx) => {
         userAnswers[idx] = res.userAns;
       });
@@ -47,15 +45,16 @@ export const ArenaResults = React.memo(function ArenaResults({
       const winStatus = userScore > opponentScore ? 'win' : userScore === opponentScore ? 'tie' : 'loss';
 
       await saveQuizResult({
-        sessionId,
-        category: `arena:${winStatus}:${category}`, // Encode win status in category
+        sessionId: battleId,
+        category: `arena_${category}`, // No longer encoding win status
         userAnswers,
-        totalQuestions: battleResults.length
+        totalQuestions: battleResults.length,
+        arenaStatus: winStatus
       });
     };
 
-    persistResults();
-  }, [battleResults, category, userScore, opponentScore]);
+    if (battleId) persistResults();
+  }, [battleResults, category, userScore, opponentScore, battleId]);
 
   const { totalXp, totalCredits, eloChange, actualAccuracy } = useMemo(() => {
     const isWin = userScore > opponentScore;

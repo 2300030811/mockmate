@@ -1,6 +1,6 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useRef, useCallback } from "react";
 import { m } from "framer-motion";
 import { X, Trash2, Plus, ArrowRight, Settings, Link as LinkIcon, Layout } from "lucide-react";
 import { Node, Connection, Group } from "../types";
@@ -39,6 +39,23 @@ export const PropertyPanel = memo(({
 
   const isLight = theme === 'light';
   const isNeo = theme === 'neo';
+
+  const lastHistoryState = useRef<string>("");
+
+  const handleBlur = useCallback(() => {
+    const currentState = JSON.stringify({ nodes, connections, groups });
+    if (currentState !== lastHistoryState.current) {
+      addToHistory(nodes, connections, groups);
+      lastHistoryState.current = currentState;
+    }
+  }, [nodes, connections, groups, addToHistory]);
+
+  // Handle focus to initialize the state if empty
+  const handleFocus = useCallback(() => {
+    if (!lastHistoryState.current) {
+      lastHistoryState.current = JSON.stringify({ nodes, connections, groups });
+    }
+  }, [nodes, connections, groups]);
 
   return (
     <m.aside
@@ -84,7 +101,8 @@ export const PropertyPanel = memo(({
                     const next = nodes.map(n => n.id === node.id ? { ...n, name: e.target.value } : n);
                     onUpdateNodes(next);
                   }}
-                  onBlur={() => addToHistory(nodes, connections, groups)}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
                 />
               </div>
 
@@ -117,7 +135,8 @@ export const PropertyPanel = memo(({
                           const next = nodes.map(n => n.id === node.id ? { ...n, metadata: mx } : n);
                           onUpdateNodes(next);
                         }}
-                        onBlur={() => addToHistory(nodes, connections, groups)}
+                        onFocus={handleFocus}
+                        onBlur={handleBlur}
                       />
                       <button onClick={() => {
                         const mx = { ...node.metadata }; delete mx[k];
@@ -162,7 +181,8 @@ export const PropertyPanel = memo(({
                       const next = connections.map(c => c.id === conn.id ? { ...c, label: e.target.value } : c);
                       onUpdateConnections(next);
                     }}
-                    onBlur={() => addToHistory(nodes, connections, groups)}
+                    onFocus={handleFocus}
+                  onBlur={handleBlur}
                   />
                 </div>
               </div>
@@ -194,7 +214,8 @@ export const PropertyPanel = memo(({
                     const next = groups.map(x => x.id === g.id ? { ...x, name: e.target.value } : x);
                     onUpdateGroups(next);
                   }}
-                  onBlur={() => addToHistory(nodes, connections, groups)}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -209,7 +230,8 @@ export const PropertyPanel = memo(({
                       const next = groups.map(x => x.id === g.id ? { ...x, w: Number(e.target.value) } : x);
                       onUpdateGroups(next);
                     }}
-                    onBlur={() => addToHistory(nodes, connections, groups)}
+                    onFocus={handleFocus}
+                  onBlur={handleBlur}
                   />
                 </div>
                 <div className="space-y-1">
@@ -223,7 +245,8 @@ export const PropertyPanel = memo(({
                       const next = groups.map(x => x.id === g.id ? { ...x, h: Number(e.target.value) } : x);
                       onUpdateGroups(next);
                     }}
-                    onBlur={() => addToHistory(nodes, connections, groups)}
+                    onFocus={handleFocus}
+                  onBlur={handleBlur}
                   />
                 </div>
               </div>
@@ -239,7 +262,8 @@ export const PropertyPanel = memo(({
                       const next = groups.map(x => x.id === g.id ? { ...x, color: e.target.value } : x);
                       onUpdateGroups(next);
                     }}
-                    onBlur={() => addToHistory(nodes, connections, groups)}
+                    onFocus={handleFocus}
+                    onBlur={handleBlur}
                   />
                   <div className={`flex-1 text-[10px] rounded-lg flex items-center px-4 font-mono ${isLight ? 'bg-gray-100 text-gray-700' : isNeo ? 'bg-fuchsia-500/10 text-cyan-400' : 'bg-white/5 text-gray-500'}`}>
                     {g.color}

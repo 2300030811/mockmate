@@ -46,6 +46,7 @@ export default function ArenaPage() {
     matchLog,
     battleResults,
     combo,
+    battleId,
     startMatchmaking,
     cancelMatchmaking,
     forfeitBattle,
@@ -142,6 +143,7 @@ export default function ArenaPage() {
             handleAnswer={handleAnswer}
             category={category}
             combo={combo}
+            battleResults={battleResults}
             userAvatar={avatarIcon}
             onForfeit={forfeitBattle}
           />
@@ -153,6 +155,7 @@ export default function ArenaPage() {
             opponentScore={opponentScore}
             battleResults={battleResults}
             category={category}
+            battleId={battleId}
             onLobby={() => setGameState('lobby')}
             onRematch={startMatchmaking}
           />

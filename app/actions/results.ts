@@ -34,6 +34,7 @@ export async function saveQuizResult(data: {
     totalQuestions: number; // Claimed total
     nickname?: string;
     generatedQuiz?: QuizQuestion[]; // Optional: For AI generated quizzes where we pass the source of truth
+    arenaStatus?: 'win' | 'loss' | 'tie';
 }) {
     const supabase = createClient();
     const adminDb = createAdminClient(); // Initialize Admin Client
@@ -174,14 +175,14 @@ export async function saveQuizResult(data: {
             const multiplier = getStreakMultiplier(newStreak);
 
             // Determine if this is an arena match
-            const isArena = data.category.includes("arena");
-            const winStatus = data.category.includes(":win:")
+            const isArena = data.category.includes("arena") || !!data.arenaStatus;
+            const winStatus = data.arenaStatus || (data.category.includes(":win:")
               ? ("win" as const)
               : data.category.includes(":loss:")
                 ? ("loss" as const)
                 : data.category.includes(":tie:")
                   ? ("tie" as const)
-                  : null;
+                  : null);
 
             let xpEarned = 0;
             let eloChange = 0;

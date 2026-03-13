@@ -143,11 +143,12 @@ export const ArenaLobby = React.memo(function ArenaLobby({
            <div className="space-y-2" role="list">
               {recentMatches.map((match, i) => {
                 const category = match.category.replace('arena_', '').toUpperCase();
-                const isWin = match.score >= match.total_questions / 2;
+                const isWin = match.winStatus === 'win' || (!match.winStatus && match.score >= match.total_questions / 2);
+                const isTie = match.winStatus === 'tie';
                 return (
-                  <div key={i} className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 flex items-center justify-between group hover:bg-white/[0.04] transition-colors" role="listitem" aria-label={`${isWin ? 'Victory' : 'Defeat'} in ${category} with ${match.score}/${match.total_questions} correct`}>
+                  <div key={i} className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 flex items-center justify-between group hover:bg-white/[0.04] transition-colors" role="listitem" aria-label={`${match.winStatus || (isWin ? 'Victory' : 'Defeat')} in ${category} with ${match.score}/${match.total_questions} correct`}>
                      <div className="flex items-center gap-4">
-                        <div className={`w-2 h-2 rounded-full ${isWin ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]'}`} aria-hidden="true" />
+                        <div className={`w-2 h-2 rounded-full ${isWin ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : isTie ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]'}`} aria-hidden="true" />
                         <div>
                            <div className="text-[10px] font-black text-white italic">{category} SECTOR</div>
                            <div className="text-[8px] font-bold text-gray-500 uppercase tracking-tighter">
@@ -156,7 +157,7 @@ export const ArenaLobby = React.memo(function ArenaLobby({
                         </div>
                      </div>
                      <div className="text-right">
-                        <div className={`text-sm font-black ${isWin ? 'text-emerald-400' : 'text-red-400'}`}>
+                        <div className={`text-sm font-black ${isWin ? 'text-emerald-400' : isTie ? 'text-amber-400' : 'text-red-400'}`}>
                            {match.score}/{match.total_questions}
                         </div>
                         <div className="text-[8px] font-bold text-gray-600 uppercase">Correct</div>

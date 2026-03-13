@@ -18,7 +18,7 @@ export const DotGrid = memo(({ theme, pan, scale }: DotGridProps) => {
 
     return (
         <div
-            className={`absolute inset-0 pointer-events-none transition-all duration-700 ${opacity} mix-blend-screen`}
+            className={`absolute inset-0 pointer-events-none transition-all duration-700 ${opacity} ${isLight ? 'mix-blend-multiply' : 'mix-blend-screen'}`}
             style={{
                 backgroundImage: `radial-gradient(circle, ${gridColor} 1px, transparent 1px)`,
                 backgroundSize: `${GRID_SIZE * scale}px ${GRID_SIZE * scale}px`,

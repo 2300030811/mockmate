@@ -4,11 +4,11 @@ import { startArenaMatch } from "@/app/actions/arena";
 
 // ── Constants ──────────────────────────────────────────────────────────
 export const OPPONENTS: Opponent[] = [
-  { name: "CodeWizard_99", level: 42, avatar: "🧙‍♂️", winRate: "68%", region: "US-East", badge: "Legend" },
-  { name: "FrontendNinja", level: 38, avatar: "🥷", winRate: "72%", region: "EU-West", badge: "Elite" },
-  { name: "DevOpsKing", level: 51, avatar: "👑", winRate: "59%", region: "AS-South", badge: "Master" },
-  { name: "BugHunter_X", level: 31, avatar: "🕵️", winRate: "61%", region: "US-West", badge: "Gold" },
-  { name: "CloudMaster", level: 45, avatar: "☁️", winRate: "65%", region: "SA-East", badge: "Diamond" }
+  { name: "CodeWizard_99", level: 42, avatar: "🧙‍♂️", winRate: "68%", region: "US-East", badge: "Legend", speed: 0.8, accuracy: 0.95 },
+  { name: "FrontendNinja", level: 38, avatar: "🥷", winRate: "72%", region: "EU-West", badge: "Elite", speed: 0.9, accuracy: 0.85 },
+  { name: "DevOpsKing", level: 51, avatar: "👑", winRate: "59%", region: "AS-South", badge: "Master", speed: 0.6, accuracy: 0.8 },
+  { name: "BugHunter_X", level: 31, avatar: "🕵️", winRate: "61%", region: "US-West", badge: "Gold", speed: 0.7, accuracy: 0.9 },
+  { name: "CloudMaster", level: 45, avatar: "☁️", winRate: "65%", region: "SA-East", badge: "Diamond", speed: 0.75, accuracy: 0.88 }
 ];
 
 const BATTLE_DURATION = 30;
@@ -38,6 +38,7 @@ export function useArenaGameLoop(selectedCategory: string, lobbyStats: StatItem[
   const [matchLog, setMatchLog] = useState<string[]>([]);
   const [battleResults, setBattleResults] = useState<BattleResult[]>([]);
   const [combo, setCombo] = useState(0);
+  const [battleId, setBattleId] = useState<string>("");
 
   // ── Refs for stable callbacks (avoid stale closures & interval churn) ──
   const battleEndedRef = useRef(false);
@@ -48,6 +49,7 @@ export function useArenaGameLoop(selectedCategory: string, lobbyStats: StatItem[
   const userSelectedRef = useRef(userSelected);
   const opponentProgressRef = useRef(opponentProgress);
   const opponentQARef = useRef(opponentQuestionsAnswered);
+  const lastOpponentActionRef = useRef(Date.now());
 
   // Keep refs in sync with state
   timeLeftRef.current = timeLeft;
@@ -66,6 +68,9 @@ export function useArenaGameLoop(selectedCategory: string, lobbyStats: StatItem[
     matchmakingAbortRef.current = null;
     setGameState('lobby');
     setMatchLog([]);
+    setCombo(0);
+    setBattleResults([]);
+    setQuestions([]);
   }, []);
 
   // Pre-calculate current question based on state to simplify usage
@@ -119,6 +124,7 @@ export function useArenaGameLoop(selectedCategory: string, lobbyStats: StatItem[
         setOpponentQuestionsAnswered(0);
         setOpponentProgress(0);
         setTimeLeft(BATTLE_DURATION);
+        setBattleId(crypto.randomUUID());
         setBattleResults([]);
       } else {
         const errorMsg = matchData?.error || "Failed to load match data.";
@@ -213,13 +219,31 @@ export function useArenaGameLoop(selectedCategory: string, lobbyStats: StatItem[
         return Math.min(100, prev + inc);
       });
 
-      const scoreProb = 0.85 + (difficultyMult * 0.05);
-      if (Math.random() > scoreProb && opponentQARef.current < totalQ) {
-        const maxQAAllowed = Math.floor(opponentProgressRef.current / (100 / totalQ)) + 1;
+      // Higher speed means lower delay
+      const now = Date.now();
+      const elapsed = now - lastOpponentActionRef.current;
+      const baseDelay = (1 - (opponent?.speed || 0.5)) * 5000 + 1000;
+      const randomJitter = Math.random() * 1000;
+      const nextTickTime = baseDelay + randomJitter;
+
+      if (elapsed > nextTickTime && !battleEndedRef.current) {
+        lastOpponentActionRef.current = now;
+        
+        const maxQAAllowed = questionsRef.current.length;
         if (opponentQARef.current < maxQAAllowed) {
-          const points = Math.floor(OPPONENT_MIN_POINTS + (Math.random() * OPPONENT_POINT_RANGE));
-          setOpponentScore(s => s + points);
-          setOpponentQuestionsAnswered(q => q + 1);
+          // Bot answer logic: roll for accuracy
+          const isCorrectBot = Math.random() < (opponent?.accuracy || 0.85);
+          
+          if (isCorrectBot) {
+            const points = Math.floor(OPPONENT_MIN_POINTS + (Math.random() * OPPONENT_POINT_RANGE));
+            setOpponentScore(s => s + points);
+          }
+          
+          setOpponentQuestionsAnswered(q => {
+            const next = q + 1;
+            opponentQARef.current = next;
+            return next;
+          });
         }
       }
     }, TICK_INTERVAL_MS);
@@ -261,6 +285,7 @@ export function useArenaGameLoop(selectedCategory: string, lobbyStats: StatItem[
     matchLog,
     battleResults,
     combo,
+    battleId,
     startMatchmaking,
     cancelMatchmaking,
     forfeitBattle,
@@ -268,6 +293,6 @@ export function useArenaGameLoop(selectedCategory: string, lobbyStats: StatItem[
   }), [
     gameState, opponent, questions, category, currentQuestion, userScore, 
     opponentScore, opponentProgress, timeLeft, userSelected, matchLog, 
-    battleResults, combo, startMatchmaking, cancelMatchmaking, forfeitBattle, handleAnswer
+    battleResults, combo, battleId, startMatchmaking, cancelMatchmaking, forfeitBattle, handleAnswer
   ]);
 }
