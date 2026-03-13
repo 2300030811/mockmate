@@ -20,6 +20,7 @@ export function useSystemDesignPersistence({
 }: PersistenceProps) {
   const [hasLoaded, setHasLoaded] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const tutorialTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initial Load
   useEffect(() => {
@@ -55,8 +56,12 @@ export function useSystemDesignPersistence({
     // Auto-trigger tutorial if not onboarded
     const onboarded = localStorage.getItem('mockmate-sd-onboarded');
     if (!onboarded) {
-      setTimeout(() => dispatch({ type: "SET_SHOW_TUTORIAL", show: true }), 1500);
+      tutorialTimeoutRef.current = setTimeout(() => dispatch({ type: "SET_SHOW_TUTORIAL", show: true }), 1500);
     }
+
+    return () => {
+      if (tutorialTimeoutRef.current) clearTimeout(tutorialTimeoutRef.current);
+    };
   }, [dispatch, setInitialHistory]);
 
   // Debounced Save

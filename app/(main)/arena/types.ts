@@ -25,6 +25,7 @@ export interface ArenaQuestion {
 }
 
 export interface BattleResult {
+  questionId: string;
   q: string;
   userAns: string;
   correctAns: string;

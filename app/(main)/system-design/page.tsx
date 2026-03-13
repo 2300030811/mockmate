@@ -67,7 +67,7 @@ export default function SystemDesignCanvas() {
   const canvasRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
-  const { hasLoaded } = useSystemDesignPersistence({
+  useSystemDesignPersistence({
     nodes, connections, groups, theme: state.theme, dispatch, setInitialHistory
   });
 

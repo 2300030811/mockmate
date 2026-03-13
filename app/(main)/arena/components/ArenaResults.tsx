@@ -38,18 +38,19 @@ export const ArenaResults = React.memo(function ArenaResults({
 
       const userAnswers: Record<string, any> = {};
       
-      battleResults.forEach((res, idx) => {
-        userAnswers[idx] = res.userAns;
+      battleResults.forEach((res) => {
+        userAnswers[res.questionId] = res.userAns;
       });
 
       const winStatus = userScore > opponentScore ? 'win' : userScore === opponentScore ? 'tie' : 'loss';
 
       await saveQuizResult({
         sessionId: battleId,
-        category: `arena_${category}`, // No longer encoding win status
+        category: `arena_${category}:${winStatus}:`,
         userAnswers,
         totalQuestions: battleResults.length,
-        arenaStatus: winStatus
+        arenaStatus: winStatus,
+        arenaTotalQuestions: battleResults.length
       });
     };
 

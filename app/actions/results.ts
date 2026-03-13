@@ -35,6 +35,7 @@ export async function saveQuizResult(data: {
     nickname?: string;
     generatedQuiz?: QuizQuestion[]; // Optional: For AI generated quizzes where we pass the source of truth
     arenaStatus?: 'win' | 'loss' | 'tie';
+    arenaTotalQuestions?: number;
 }) {
     const supabase = createClient();
     const adminDb = createAdminClient(); // Initialize Admin Client
@@ -77,6 +78,7 @@ export async function saveQuizResult(data: {
             // For static quizzes, fetch from server-side source
             const sourceCategory = data.category
                 .replace(/^arena:[^:]+:/, '') // Matches arena:win:aws -> aws
+                .replace(/^arena_[^:]+:[^:]+:/, '') // Matches arena_aws:win: -> aws
                 .replace(/^arena_/, '');      // Matches arena_aws -> aws
 
             questions = await getRawQuestions(sourceCategory);
@@ -119,6 +121,11 @@ export async function saveQuizResult(data: {
         if (userId) {
             query = query.eq('user_id', userId);
         } else {
+            query = query.eq('session_id', data.sessionId);
+        }
+
+        // For arena matches, include session_id in de-duplication to allow distinct battles
+        if (data.arenaStatus) {
             query = query.eq('session_id', data.sessionId);
         }
 
@@ -188,17 +195,20 @@ export async function saveQuizResult(data: {
             let eloChange = 0;
 
             if (isArena && winStatus) {
+              const totalArenaQuestions = data.arenaTotalQuestions || questions.length;
               const accuracy =
-                questions.length > 0 ? scoreToSave / questions.length : 0;
+                totalArenaQuestions > 0 ? scoreToSave / totalArenaQuestions : 0;
               xpEarned = calculateArenaXP(
                 scoreToSave,
                 accuracy,
                 winStatus,
                 newStreak,
               );
+              // For elo, if arenaTotalQuestions is provided, use it for approximate opponent score
+              const approximateOpponentScore = Math.max(0, totalArenaQuestions - scoreToSave);
               eloChange = calculateEloChange(
                 scoreToSave,
-                questions.length - scoreToSave, // approximate opponent score
+                approximateOpponentScore,
                 winStatus,
               );
             } else if (data.category !== "daily-challenge") {

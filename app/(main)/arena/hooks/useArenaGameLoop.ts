@@ -118,6 +118,9 @@ export function useArenaGameLoop(selectedCategory: string, lobbyStats: StatItem[
         setCategory(matchData.category || "");
         setOpponent(OPPONENTS[Math.floor(Math.random() * OPPONENTS.length)]);
         setGameState('battle');
+        if (lastOpponentActionRef.current) {
+          lastOpponentActionRef.current = Date.now();
+        }
         setCurrentQuestion(0);
         setUserScore(0);
         setOpponentScore(0);
@@ -130,12 +133,18 @@ export function useArenaGameLoop(selectedCategory: string, lobbyStats: StatItem[
         const errorMsg = matchData?.error || "Failed to load match data.";
         setMatchLog(prev => [...prev, `[${getTimestamp()}] ❌ ${errorMsg}`, `[${getTimestamp()}] Returning to lobby...`]);
         await new Promise(resolve => setTimeout(resolve, 3000));
+        if (lastOpponentActionRef.current) {
+          lastOpponentActionRef.current = Date.now();
+        }
         if (!abortController.signal.aborted) setGameState('lobby');
       }
     } catch (err) {
       if (abortController.signal.aborted) return;
       setMatchLog(prev => [...prev, `[${getTimestamp()}] ❌ Critical connection error.`, `[${getTimestamp()}] Returning to lobby...`]);
       await new Promise(resolve => setTimeout(resolve, 3000));
+      if (lastOpponentActionRef.current) {
+        lastOpponentActionRef.current = Date.now();
+      }
       if (!abortController.signal.aborted) setGameState('lobby');
     }
   }, [selectedCategory]);
@@ -169,6 +178,7 @@ export function useArenaGameLoop(selectedCategory: string, lobbyStats: StatItem[
     }
 
     setBattleResults(prev => [...prev, {
+      questionId: String(q.id),
       q: q.q,
       userAns: option,
       correctAns: q.a,
