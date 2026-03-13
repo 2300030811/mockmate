@@ -96,7 +96,7 @@ export const quizThemes = {
     subtitle: "Detailed questions for Salesforce Agentforce Specialist Certification.",
     badge: {
       text: "SALESFORCE AGENTFORCE",
-      icon: "☁️",
+      icon: "💼",
       className: "bg-blue-500/10 border-blue-500/30 text-blue-600 dark:bg-blue-500/10 dark:border-blue-500/20 dark:text-blue-400"
     },
     bgGradient: "bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-950 dark:via-blue-950 dark:to-cyan-950",
@@ -124,7 +124,7 @@ export const quizThemes = {
         iconBgLight: "bg-cyan-100",
         iconBgDark: "bg-cyan-500",
         iconColorClass: "text-cyan-600",
-        icon: "☁️"
+        icon: "💼"
       },
       exam: {
         gradient: "from-blue-600 to-indigo-600",

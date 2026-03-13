@@ -32,11 +32,15 @@ export async function updateSession(request: NextRequest) {
   // issues with users being randomly logged out.
 
   try {
-    await supabase.auth.getUser()
+    const userPromise = supabase.auth.getUser();
+    const timeoutPromise = new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error('Auth timeout')), 5000)
+    );
+    await Promise.race([userPromise, timeoutPromise]);
   } catch (err) {
     // If the network times out or Supabase is down, don't crash the entire site.
     // Let the request proceed as an unauthenticated user.
-    console.warn("Middleware supabase.auth.getUser() failed:", err instanceof Error ? err.message : String(err))
+    console.warn("Middleware auth check timed out or failed:", err instanceof Error ? err.message : String(err))
   }
 
   return supabaseResponse

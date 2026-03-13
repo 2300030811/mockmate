@@ -101,15 +101,50 @@ export function UniversalQuizShell({ category, mode, count = null }: UniversalQu
   }, [handleAnswer, questions, currentQuestionIndex]);
 
   if (loading) {
-    return <LoadingState message={`Loading ${category.toUpperCase()} Quiz...`} />;
+    return <LoadingState message={`Preparing Your ${category.toUpperCase()} Journey...`} />;
   }
 
   if (error) {
-    return <EmptyState title="Error Loading Quiz" message={(error as Error).message || "An unexpected error occurred while fetching questions."} />;
+    return (
+      <div className="h-screen w-full flex flex-col items-center justify-center p-6 text-center bg-gray-50 dark:bg-gray-950">
+        <h2 className="text-xl font-black mb-2 text-red-500">Connection Error</h2>
+        <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-sm">
+          {(error as Error).message || "We encountered a network issue while fetching your questions. Please check your connection."}
+        </p>
+        <Button onClick={() => window.location.reload()} variant="primary">
+          Try Again
+        </Button>
+      </div>
+    );
   }
 
+  // If we have no questions, check if it's because the user isn't logged in
   if (!questions.length) {
-    return <EmptyState title="No Questions Found" message="We couldn't load the questions for this category. Please try again later." />;
+    return (
+      <div className="h-screen w-full flex flex-col items-center justify-center p-6 text-center bg-gray-50 dark:bg-gray-950">
+        <m.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="max-w-md"
+        >
+          <div className="w-20 h-20 bg-blue-100 dark:bg-blue-500/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
+            <Star className="w-10 h-10 text-blue-600 dark:text-blue-400" />
+          </div>
+          <h2 className="text-2xl font-black mb-3">Authentication Required</h2>
+          <p className="text-gray-500 dark:text-gray-400 mb-8 font-medium">
+            You need to be signed in to access the certification quiz engine and save your progress.
+          </p>
+          <div className="flex flex-col gap-3">
+            <Button onClick={() => window.location.href = `/login?next=${window.location.pathname}`} variant="primary" size="lg" className="w-full">
+              Sign In to Start
+            </Button>
+            <Button onClick={() => window.location.href = '/'} variant="ghost" className="w-full">
+              Back to Home
+            </Button>
+          </div>
+        </m.div>
+      </div>
+    );
   }
 
   if (viewingResults) {

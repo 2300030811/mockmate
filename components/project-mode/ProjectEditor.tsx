@@ -14,7 +14,15 @@ import { useProjectKeyboardShortcuts } from "@/hooks/useProjectKeyboardShortcuts
 import dynamic from "next/dynamic";
 const ProjectWorkspace = dynamic(
   () => import("./ProjectWorkspace").then((mod) => mod.ProjectWorkspace),
-  { ssr: false },
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="flex-1 flex flex-col items-center justify-center bg-gray-900 border-l border-gray-800">
+        <div className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mb-4" />
+        <p className="text-sm text-gray-400 font-medium">Mounting Workspace...</p>
+      </div>
+    )
+  },
 );
 import { SuccessModal } from "./SuccessModal";
 

@@ -103,7 +103,7 @@ export default function TermsOfService() {
 
           <section className="border-t border-gray-200 dark:border-gray-800 pt-8 text-center">
             <p className="text-sm opacity-60">
-               मॉकMate is built for growth. Let&apos;s learn together.
+               MockMate is built for growth. Let&apos;s learn together.
             </p>
           </section>
         </div>

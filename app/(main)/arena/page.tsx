@@ -29,6 +29,7 @@ export default function ArenaPage() {
   const [avatarIcon, setAvatarIcon] = useState<string>("User");
   const [statsLoading, setStatsLoading] = useState(true);
   const [statsError, setStatsError] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
 
   const {
     gameState,
@@ -59,6 +60,7 @@ export default function ArenaPage() {
         setStatsError(null);
         const stats = await getArenaStats();
         if (stats) {
+          setIsAuthenticated(true);
           setLobbyStats([
             { icon: Trophy, label: "Elo Rating", val: stats.elo.toLocaleString(), color: "text-blue-500", bg: "bg-blue-500/10" },
             { icon: Flame, label: "Arena Win Streak", val: stats.winStreak.toString(), color: "text-orange-500", bg: "bg-orange-500/10" },
@@ -67,7 +69,9 @@ export default function ArenaPage() {
           setRecentMatches(stats.recentArenaMatches || []);
           if (stats.avatarIcon) setAvatarIcon(stats.avatarIcon);
         } else {
-          setStatsError("Unable to load your arena stats. Using default values.");
+          setIsAuthenticated(false);
+          // For guests, we don't show an error, we just keep default stats
+          setStatsError(null);
         }
       } catch (err) {
         console.error("Failed to fetch arena stats:", err);
@@ -117,6 +121,7 @@ export default function ArenaPage() {
             userAvatar={avatarIcon}
             statsLoading={statsLoading}
             statsError={statsError}
+            isAuthenticated={isAuthenticated}
           />
         )}
 

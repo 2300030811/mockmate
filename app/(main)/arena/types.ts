@@ -19,6 +19,7 @@ export interface ArenaQuestion {
   tip?: string;
   category?: string;
   code?: string;
+  multipleCorrect?: boolean;
 }
 
 export interface BattleResult {

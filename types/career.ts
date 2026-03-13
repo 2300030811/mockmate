@@ -80,5 +80,6 @@ export interface CareerAnalysisResult {
   interviewPrep?: InterviewPrep;
   resumeSuggestions?: ResumeSuggestion[];
   suggestedRoles?: RoleSuggestion[]; // AI-suggested alternative roles with match %
+  wasTruncated?: boolean;
 }
 

@@ -39,6 +39,7 @@ export const JobInput: React.FC<JobInputProps> = ({ onAnalyze, isLoading, hasFil
                 value={jobRole}
                 onChange={(e) => setJobRole(e.target.value)}
                 placeholder="e.g. Full Stack Developer"
+                maxLength={100}
                 className="w-full bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-lg py-3 px-4 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all"
                 required
               />
@@ -56,30 +57,38 @@ export const JobInput: React.FC<JobInputProps> = ({ onAnalyze, isLoading, hasFil
                 value={company}
                 onChange={(e) => setCompany(e.target.value)}
                 placeholder="e.g. Google, Amazon"
+                maxLength={80}
                 className="w-full bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-lg py-3 px-4 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all"
               />
             </div>
           </div>
         </div>
 
-        <Button 
-          type="submit" 
-          variant="primary" 
-          className={`w-full py-4 text-lg font-medium text-white bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 shadow-lg shadow-purple-500/20 ${!hasFile || !jobRole ? 'opacity-50 cursor-not-allowed' : ''}`}
-          disabled={isLoading || !hasFile || !jobRole}
-        >
-          {isLoading ? (
-            <span className="flex items-center gap-2">
-              <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Analyzing your profile...
-            </span>
-          ) : (
-            <span className="flex items-center gap-2">
-              <Search size={20} />
-              Analyze Career Path
-            </span>
+        <div className="relative group">
+          <Button 
+            type="submit" 
+            variant="primary" 
+            className={`w-full py-4 text-lg font-medium text-white bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 shadow-lg shadow-purple-500/20 ${!hasFile || !jobRole.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
+            disabled={isLoading || !hasFile || !jobRole.trim()}
+          >
+            {isLoading ? (
+              <span className="flex items-center gap-2">
+                <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Analyzing your profile...
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                <Search size={20} />
+                Analyze Career Path
+              </span>
+            )}
+          </Button>
+          {(!hasFile || !jobRole.trim()) && !isLoading && (
+            <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+              {!hasFile ? "Upload a resume first" : "Enter a job role to continue"}
+            </div>
           )}
-        </Button>
+        </div>
       </form>
     </Card>
   );

@@ -21,7 +21,10 @@ export class SimpleUrlQuizSource extends BaseQuizSource {
     // DB check is now in BaseQuizSource
     
     try {
-        const res = await fetch(this.url, { next: { revalidate: 3600 } });
+        const res = await fetch(this.url, { 
+            next: { revalidate: 3600 },
+            signal: AbortSignal.timeout(10000) 
+        });
         if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
         const rawData = await res.json();
         return detectAndParse(rawData);

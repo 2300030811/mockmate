@@ -235,7 +235,7 @@ export async function saveQuizResult(data: {
     }
 }
 
-export async function getRecentResults(sessionId: string): Promise<ActivityItem[]> {
+export async function getRecentResults(sessionId?: string): Promise<ActivityItem[]> {
     const supabase = createClient();
     try {
         const { data: { user } } = await supabase.auth.getUser();

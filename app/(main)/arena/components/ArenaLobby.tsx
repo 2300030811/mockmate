@@ -5,6 +5,7 @@ import { m } from "framer-motion";
 import { ChevronRight, History, Swords, Globe, Database, Cloud, Terminal, Shield } from "lucide-react";
 import { StatItem, RecentMatch } from "../types";
 import { getAvatarIcon } from "@/lib/icons";
+import { Button } from "@/components/ui/Button";
 
 interface ArenaLobbyProps {
   stats: StatItem[];
@@ -15,6 +16,7 @@ interface ArenaLobbyProps {
   userAvatar?: string;
   statsLoading?: boolean;
   statsError?: string | null;
+  isAuthenticated?: boolean;
 }
 
 const CATEGORIES = [
@@ -35,7 +37,8 @@ export const ArenaLobby = React.memo(function ArenaLobby({
   onStart,
   userAvatar,
   statsLoading = false,
-  statsError = null
+  statsError = null,
+  isAuthenticated = false,
 }: ArenaLobbyProps) {
   const UserIcon = getAvatarIcon(userAvatar);
   return (
@@ -57,11 +60,10 @@ export const ArenaLobby = React.memo(function ArenaLobby({
       <h1 className="text-5xl md:text-7xl font-black mb-4 tracking-tighter italic text-center">
          THE <span className="bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">ARENA</span>
       </h1>
-      <p className="text-gray-400 mb-8 md:mb-12 text-center max-w-sm font-bold uppercase tracking-widest text-xs md:text-sm px-4">
+      <p className="text-gray-400 mb-6 md:mb-10 text-center max-w-sm font-bold uppercase tracking-widest text-xs md:text-sm px-4">
          Technical Combat • Ranked Battles • Global Leaderboard
       </p>
-      
-      {/* Category Selection */}
+
       <div className="flex flex-wrap justify-center gap-2 md:gap-3 mb-10 max-w-2xl px-4" role="group" aria-label="Quiz categories">
          {CATEGORIES.map((cat) => (
            <button
@@ -92,6 +94,27 @@ export const ArenaLobby = React.memo(function ArenaLobby({
          ))}
       </div>
 
+      {!isAuthenticated && !statsLoading && (
+        <m.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-2xl px-4 mb-10 p-6 bg-blue-600/10 border border-blue-500/20 rounded-3xl text-center backdrop-blur-sm"
+        >
+           <h3 className="text-lg font-black mb-2 flex items-center justify-center gap-2">
+             <Shield className="text-blue-500" size={20} />
+             Ranked Access Restricted
+           </h3>
+           <p className="text-sm text-gray-400 mb-6 font-medium">Sign in to track your Elo rating, climb the leaderboard, and unlock ranked Sector battles.</p>
+           <Button 
+             onClick={() => window.location.href = '/login?next=/arena'} 
+             variant="primary" 
+             className="rounded-full px-8"
+           >
+             Sign In to Compete
+           </Button>
+        </m.div>
+      )}
+
       {statsError && (
         <div className="w-full max-w-4xl px-4 mb-6 p-3 bg-yellow-900/20 border border-yellow-500/30 rounded-lg">
           <p className="text-xs md:text-sm text-yellow-400 font-semibold">{statsError}</p>
@@ -108,9 +131,9 @@ export const ArenaLobby = React.memo(function ArenaLobby({
            ENTER COMBAT
          </span>
          <ChevronRight size={24} className="relative z-10 group-hover:translate-x-2 transition-transform" aria-hidden="true" />
+         <div className="absolute inset-0 bg-gradient-to-r from-red-600/0 via-red-600/10 to-red-600/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
       </button>
 
-      {/* Recent Battles */}
       {recentMatches?.length > 0 && (
         <div className="w-full max-w-2xl px-4 animate-in fade-in slide-in-from-bottom-5 duration-700">
            <div className="flex items-center gap-2 mb-4 px-2">

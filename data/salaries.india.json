@@ -78,5 +78,16 @@
   "tableau developer":         { "min": 500000,  "max": 1600000,  "median": 900000   },
   "business intelligence analyst": { "min": 500000, "max": 1800000, "median": 1000000 },
   "support engineer":          { "min": 300000,  "max": 1000000,  "median": 600000   },
-  "technical support engineer": { "min": 300000, "max": 1200000,  "median": 650000   }
+  "technical support engineer": { "min": 300000, "max": 1200000,  "median": 650000   },
+  "senior software engineer":   { "min": 1200000, "max": 3500000, "median": 2200000 },
+  "junior software engineer":   { "min": 450000,  "max": 900000,  "median": 650000  },
+  "software engineer intern":   { "min": 200000,  "max": 600000,  "median": 400000  },
+  "senior data scientist":      { "min": 1500000, "max": 4000000, "median": 2500000 },
+  "senior devops engineer":     { "min": 1400000, "max": 3500000, "median": 2200000 },
+  "lead engineer":              { "min": 1800000, "max": 4500000, "median": 2800000 },
+  "associate software engineer":{ "min": 350000,  "max": 800000,  "median": 550000  },
+  "infrastructure engineer":    { "min": 700000,  "max": 2500000, "median": 1400000 },
+  "computer vision engineer":   { "min": 1200000, "max": 4000000, "median": 2200000 },
+  "nlp engineer":               { "min": 1200000, "max": 4000000, "median": 2200000 },
+  "deep learning engineer":     { "min": 1200000, "max": 4500000, "median": 2500000 }
 }

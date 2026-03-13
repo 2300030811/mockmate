@@ -13,6 +13,7 @@ interface ResumeUploadProps {
 export const ResumeUpload: React.FC<ResumeUploadProps> = ({ onUpload }) => {
   const [dragActive, setDragActive] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleDrag = (e: React.DragEvent) => {
@@ -43,13 +44,17 @@ export const ResumeUpload: React.FC<ResumeUploadProps> = ({ onUpload }) => {
   };
 
   const validateAndSetFile = (uploadedFile: File) => {
-    const validTypes = ['application/pdf'];
-    if (validTypes.includes(uploadedFile.type)) {
-      setFile(uploadedFile);
-      onUpload(uploadedFile);
-    } else {
-      alert("Please upload a PDF file.");
+    if (uploadedFile.size > 5 * 1024 * 1024) {
+      setFileError("File too large. Maximum size is 5MB.");
+      return;
     }
+    if (!['application/pdf'].includes(uploadedFile.type)) {
+      setFileError("Please upload a PDF file only.");
+      return;
+    }
+    setFileError(null);
+    setFile(uploadedFile);
+    onUpload(uploadedFile);
   };
 
   const removeFile = () => {
@@ -139,6 +144,9 @@ export const ResumeUpload: React.FC<ResumeUploadProps> = ({ onUpload }) => {
           </m.div>
         )}
       </AnimatePresence>
+      {fileError && (
+        <p className="text-red-400 text-sm text-center mt-3 font-medium">{fileError}</p>
+      )}
     </div>
   );
 };

@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { getRecentResults } from "@/app/actions/results";
 import { getRecentCareerPaths } from "@/app/actions/career-save";
-import { getSessionId } from "@/utils/session";
 import { m, AnimatePresence } from "framer-motion";
 import { Trophy, Clock, ChevronRight, BarChart3, RotateCcw, Briefcase, Map } from "lucide-react";
 import Link from "next/link";
@@ -31,10 +30,9 @@ export function ResultsHistory() {
 
   useEffect(() => {
     async function loadHistory() {
-      const sessionId = getSessionId();
       const [quizHistory, careerHistory] = await Promise.all([
-        getRecentResults(sessionId),
-        getRecentCareerPaths(sessionId)
+        getRecentResults(),
+        getRecentCareerPaths()
       ]);
       setResults(quizHistory as QuizResult[]);
       setCareerPaths(careerHistory as CareerPathEntry[]);

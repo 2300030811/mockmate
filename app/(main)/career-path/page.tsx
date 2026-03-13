@@ -9,7 +9,6 @@ import { analyzeCareerPath } from '@/app/actions/career-analysis';
 import { CareerAnalysisResult } from '@/types/career';
 import { m, AnimatePresence } from 'framer-motion';
 import { saveCareerPath } from '@/app/actions/career-save';
-import { getSessionId } from '@/utils/session';
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Sparkles, Home } from 'lucide-react';
 import Link from 'next/link';
@@ -22,6 +21,7 @@ export default function CareerPathPage() {
   const [result, setResult] = useState<CareerAnalysisResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [messageIndex, setMessageIndex] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   React.useEffect(() => {
     if (step === 'analysis') {
@@ -41,6 +41,7 @@ export default function CareerPathPage() {
 
     setIsLoading(true);
     setStep('analysis');
+    setError(null);
 
     try {
       const formData = new FormData();
@@ -50,12 +51,15 @@ export default function CareerPathPage() {
       setResult(data);
       // Auto-save to DB
       if (data) {
-        await saveCareerPath(getSessionId(), data);
+        const saveResult = await saveCareerPath(data);
+        if (!saveResult.success && saveResult.error === "Authentication required to save career paths") {
+          console.info("Guest user — career path not saved");
+        }
       }
       setStep('results');
     } catch (error) {
       console.error(error);
-      alert("Failed to analyze resume. Please try again.");
+      setError("Failed to analyze resume. Please try again.");
       setStep('upload');
     } finally {
       setIsLoading(false);
@@ -95,6 +99,11 @@ export default function CareerPathPage() {
               exit={{ opacity: 0, y: -20 }}
               className="space-y-8"
             >
+              {error && (
+                <div className="max-w-2xl mx-auto mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-medium">
+                  {error}
+                </div>
+              )}
               <ResumeUpload onUpload={handleUpload} />
 
               {file && (

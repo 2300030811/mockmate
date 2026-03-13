@@ -3,8 +3,18 @@ import { Metadata } from "next";
 import { Inter, Outfit } from "next/font/google";
 import { Providers } from "@/components/providers/providers";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
-const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit", display: "swap" });
+const inter = Inter({ 
+  subsets: ["latin"], 
+  variable: "--font-inter", 
+  display: "swap",
+  weight: ["400", "500", "700", "900"] 
+});
+const outfit = Outfit({ 
+  subsets: ["latin"], 
+  variable: "--font-outfit", 
+  display: "swap",
+  weight: ["400", "500", "700", "900"]
+});
 
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL
   || (process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` : null)

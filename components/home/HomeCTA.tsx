@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/Button";
 import { m } from "framer-motion";
+import { useAuth } from "@/components/providers/auth-provider";
 
 export function HomeCTA() {
+  const { user } = useAuth();
   return (
     <m.div
       initial={{ opacity: 0, y: 20 }}
@@ -28,10 +30,19 @@ export function HomeCTA() {
       
       <Link
         href="/upload"
-        className={buttonVariants({ variant: "default", size: "lg", className: "bg-white dark:bg-gray-800 dark:border-gray-700 hover:border-gray-400 shadow-lg hover:shadow-2xl" })}
+        className={buttonVariants({ variant: "default", size: "lg", className: "bg-white dark:bg-gray-800 dark:border-gray-700 hover:border-gray-400 shadow-lg hover:shadow-2xl px-8" })}
       >
         Generate Quiz
       </Link>
+
+      {!user && (
+        <Link
+          href="/login"
+          className={buttonVariants({ variant: "ghost", size: "lg", className: "text-gray-600 dark:text-gray-400 font-bold hover:bg-black/5 dark:hover:bg-white/5" })}
+        >
+          Sign In
+        </Link>
+      )}
     </m.div>
   );
 }

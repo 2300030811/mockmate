@@ -99,7 +99,8 @@ const AnalysisSchema = z.object({
     keyMatchingSkills: z.array(z.string()).default([]),
     missingSkills: z.array(z.string()).default([]),
     reasoning: z.string().catch('')
-  })).default([])
+  })).default([]),
+  wasTruncated: z.boolean().optional()
 });
 
 import { CAREER_ANALYSIS_SYSTEM_PROMPT } from '@/lib/prompts';
@@ -119,14 +120,15 @@ export async function analyzeCareerPath(formData: FormData, jobRole: string, com
     
     const data = await pdf(buffer);
     const resumeText = data.text;
-
-    const truncatedResume = resumeText.slice(0, 15000);
+    const MAX_CHARS = 15000;
+    const wasTruncated = resumeText.length > MAX_CHARS;
+    const truncatedResume = resumeText.slice(0, MAX_CHARS);
 
     // Extract experience years from resume for salary scaling
     const experienceYears = estimateExperienceYears(resumeText);
 
     // Fetch salary data from local DB (instant)
-    const salaryData = fetchSalaryEstimate(jobRole, 'India', experienceYears);
+    const salaryData = fetchSalaryEstimate(jobRole, experienceYears);
     const salaryDataStr = salaryData 
       ? `REAL SALARY DATA (${salaryData.source}, confidence: ${(salaryData as EnrichedSalaryData).confidence || 'medium'}): Min: ${salaryData.currency} ${salaryData.min}, Median: ${salaryData.currency} ${salaryData.median}, Max: ${salaryData.currency} ${salaryData.max}. ${experienceYears !== undefined ? `Candidate has ~${experienceYears} years experience.` : ''}`
       : '';
@@ -227,6 +229,7 @@ export async function analyzeCareerPath(formData: FormData, jobRole: string, com
                 missingSkills: Array.isArray(r?.missingSkills) ? r.missingSkills.map(String) : [],
                 reasoning: String(r?.reasoning || '')
             })) : [],
+            wasTruncated,
         };
 
         return fallback;
@@ -268,6 +271,7 @@ export async function analyzeCareerPath(formData: FormData, jobRole: string, com
       strengths: result.strengths,
       competitiveEdge: result.competitiveEdge,
       suggestedRoles: result.suggestedRoles,
+      wasTruncated: result.wasTruncated ?? wasTruncated,
     };
 
     return finalResponse;
