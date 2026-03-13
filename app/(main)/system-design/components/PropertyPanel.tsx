@@ -35,8 +35,6 @@ export const PropertyPanel = memo(({
   deleteSelected,
   theme
 }: PropertyPanelProps) => {
-  if (!selectedItem) return null;
-
   const isLight = theme === 'light';
   const isNeo = theme === 'neo';
 
@@ -56,6 +54,8 @@ export const PropertyPanel = memo(({
       lastHistoryState.current = JSON.stringify({ nodes, connections, groups });
     }
   }, [nodes, connections, groups]);
+
+  if (!selectedItem) return null;
 
   return (
     <m.aside

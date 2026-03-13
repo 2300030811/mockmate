@@ -249,7 +249,7 @@ export function useArenaGameLoop(selectedCategory: string, lobbyStats: StatItem[
     }, TICK_INTERVAL_MS);
 
     return () => clearInterval(timer);
-  }, [gameState, lobbyStats]);
+  }, [gameState, lobbyStats, opponent]);
 
   // Opponent Auto-Finish
   useEffect(() => {

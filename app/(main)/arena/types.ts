@@ -46,5 +46,5 @@ export interface RecentMatch {
   score: number;
   total_questions: number;
   completed_at: string;
-  winStatus?: 'win' | 'loss' | 'tie';
+  winStatus?: 'win' | 'loss' | 'tie' | null;
 }
