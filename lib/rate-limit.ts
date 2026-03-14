@@ -40,12 +40,13 @@ function inMemoryRateLimit(
 }
 
 // ── Rate Limit Tiers ────────────────────────────────────────────────────
-type RateLimitTier = "generate" | "chat" | "challenge" | "default";
+type RateLimitTier = "generate" | "chat" | "challenge" | "feedback" | "default";
 
 const TIER_CONFIG: Record<RateLimitTier, { maxRequests: number; windowSeconds: number }> = {
   generate: { maxRequests: 100, windowSeconds: 86400 },     // 100 quiz generations per day (authenticated)
   chat: { maxRequests: 200, windowSeconds: 3600 },           // 200 chat messages per hour
   challenge: { maxRequests: 50, windowSeconds: 3600 },       // 50 challenge submissions per hour
+  feedback: { maxRequests: 5, windowSeconds: 3600 },         // 5 feedback submissions per hour
   default: { maxRequests: 120, windowSeconds: 3600 },        // 120 requests per hour
 };
 

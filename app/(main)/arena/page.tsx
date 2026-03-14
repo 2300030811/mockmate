@@ -15,6 +15,7 @@ import { ArenaResults } from "./components/ArenaResults";
 import { StatItem, RecentMatch } from "./types";
 import { getArenaStats } from "@/app/actions/arena";
 import { useArenaGameLoop } from "./hooks/useArenaGameLoop";
+import { useTheme } from "next-themes";
 
 const DEFAULT_LOBBY_STATS: StatItem[] = [
   { icon: Flame, label: "Win Streak", val: "2", color: "text-orange-500", bg: "bg-orange-500/10" },
@@ -23,6 +24,14 @@ const DEFAULT_LOBBY_STATS: StatItem[] = [
 ];
 
 export default function ArenaPage() {
+  const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isDark = resolvedTheme === "dark";
   const [lobbyStats, setLobbyStats] = useState<StatItem[]>(DEFAULT_LOBBY_STATS);
   const [selectedCategory, setSelectedCategory] = useState<string>("random");
   const [recentMatches, setRecentMatches] = useState<RecentMatch[]>([]);
@@ -109,7 +118,7 @@ export default function ArenaPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent h-24 animate-[scan_4s_linear_infinite]" />
       </div>
 
-      <NavigationPill variant="dark" className="absolute top-7 left-6 z-[100] text-white scale-75 sm:scale-90 origin-top-left" />
+      <NavigationPill className="absolute top-7 left-6 z-[100] text-white scale-75 sm:scale-90 origin-top-left" />
 
       <AnimatePresence mode="wait">
         {gameState === 'lobby' && (
