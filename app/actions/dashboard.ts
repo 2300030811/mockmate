@@ -5,6 +5,7 @@ import { createAdminClient } from "@/utils/supabase/admin";
 import { unstable_cache } from "next/cache";
 import { rateLimit } from "@/lib/rate-limit";
 import { getStreakMultiplier, calculateLevel } from "@/lib/scoring";
+import { isArenaCategory, parseArenaStatus, formatArenaCategoryLabel } from "@/lib/arena-category";
 
 async function fetchDashboardData(userId: string, userEmail: string | undefined) {
   // Use admin client inside unstable_cache to bypass cookies usage requirement
@@ -46,8 +47,8 @@ async function fetchDashboardData(userId: string, userEmail: string | undefined)
 
   // Segment results for analytics (avgScore, bestCategory, arena stats)
   const dailyChallenges = quizResults?.filter(r => r.category === 'daily-challenge') || [];
-  const arenaMatches = quizResults?.filter(r => r.category.includes('arena')) || [];
-  const standardQuizzes = quizResults?.filter(r => r.category !== 'daily-challenge' && !r.category.includes('arena')) || [];
+  const arenaMatches = quizResults?.filter(r => isArenaCategory(r.category)) || [];
+  const standardQuizzes = quizResults?.filter(r => r.category !== 'daily-challenge' && !isArenaCategory(r.category)) || [];
 
   const totalTests = quizResults?.length || 0;
 
@@ -71,8 +72,8 @@ async function fetchDashboardData(userId: string, userEmail: string | undefined)
   const categoryScores: Record<string, { total: number, count: number }> = {};
   quizResults?.forEach(r => {
     let cat = r.category;
-    if (cat.includes('arena')) {
-      cat = cat.replace(/^arena:[^:]+:/, 'arena_').replace(/^arena_/, 'Arena: ');
+    if (isArenaCategory(cat)) {
+      cat = formatArenaCategoryLabel(cat);
     }
     if (!categoryScores[cat]) categoryScores[cat] = { total: 0, count: 0 };
     categoryScores[cat].total += (r.score / Math.max(1, r.total_questions)) * 100;
@@ -115,8 +116,8 @@ async function fetchDashboardData(userId: string, userEmail: string | undefined)
     },
     recentActivity: quizResults?.map(r => ({
       ...r,
-      isArena: r.category.includes('arena'),
-      winStatus: r.category.includes(':win:') ? 'win' as const : r.category.includes(':loss:') ? 'loss' as const : r.category.includes(':tie:') ? 'tie' as const : null
+      isArena: isArenaCategory(r.category),
+      winStatus: parseArenaStatus(r.category)
     })).slice(0, 5) || [],
     careerPaths: careerPaths?.slice(0, 3) || []
   };

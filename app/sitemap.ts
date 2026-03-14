@@ -3,14 +3,13 @@ import { env } from "@/lib/env";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = env.NEXT_PUBLIC_APP_URL;
-  const lastModified = new Date("2026-01-01"); // Update this when content changes significantly
+  const lastModified = new Date();
   const pages = [
     { path: "", priority: 1 },
     { path: "/certification", priority: 0.9 },
     { path: "/career-path", priority: 0.9 },
     { path: "/dashboard", priority: 0.9 },
     { path: "/demo", priority: 0.9 },
-    { path: "/upload", priority: 0.8 },
     { path: "/arena", priority: 0.8 },
     { path: "/project-mode", priority: 0.8 },
     { path: "/system-design", priority: 0.8 },

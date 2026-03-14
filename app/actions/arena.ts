@@ -2,6 +2,7 @@
 
 import { getRawQuestions } from "@/app/actions/quiz";
 import { ArenaQuestion } from "../(main)/arena/types";
+import { shuffleArray } from "@/lib/shuffle";
 
 const CATEGORIES = ["aws", "azure", "salesforce", "mongodb", "pcap", "oracle"];
 
@@ -33,9 +34,7 @@ export async function startArenaMatch(category?: string) {
       throw new Error(`No compatible questions found for category: ${actualCategory}`);
     }
 
-    const shuffled = [...filtered]
-      .sort(() => 0.5 - Math.random())
-      .slice(0, 5);
+    const shuffled = shuffleArray(filtered).slice(0, 5);
 
     const formattedQuestions: ArenaQuestion[] = shuffled.map(q => {
       return {

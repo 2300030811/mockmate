@@ -86,7 +86,7 @@ export const env = _env.success
       PCAP_QUESTIONS_URL: process.env.PCAP_QUESTIONS_URL,
       ORACLE_QUESTIONS_URL: process.env.ORACLE_QUESTIONS_URL,
       NEXT_PUBLIC_AZURE_FINAL_JSON_URL: process.env.NEXT_PUBLIC_AZURE_FINAL_JSON_URL,
-    } as any);
+    } satisfies Partial<z.infer<typeof envSchema>> as z.infer<typeof envSchema>);
 
 /**
  * Helper to ensure a server key exists or throw helpful error

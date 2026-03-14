@@ -9,12 +9,8 @@ import { createAdminClient } from "@/utils/supabase/admin";
 import { DAILY_PROBLEMS } from "@/utils/daily-problems";
 import { calculateStreak } from "@/utils/streak";
 import { rateLimit } from "@/lib/rate-limit";
-import {
-  calculateDailyChallengeXP,
-  calculateLevel,
-  computeNewStreak,
-  getStreakMultiplier,
-} from "@/lib/scoring";
+import { getStreakMultiplier } from "@/lib/scoring";
+import { syncProfileStats } from "@/lib/profile-sync";
 
 export async function getBobChallengeHint(problemTitle: string, userCode: string, language: string) {
     try {
@@ -125,6 +121,7 @@ export async function submitChallenge(problemTitle: string, code: string, langua
             model: "llama-3.3-70b-versatile",
             temperature: 0.1,
             max_tokens: 500,
+            response_format: { type: "json_object" },
         });
 
         const text = chatCompletion.choices[0]?.message?.content || "";
@@ -301,24 +298,13 @@ export async function syncDailyChallenge(points: number) {
 
         // Sync XP and streak on profiles
         try {
-            const currentXP = profile?.xp ?? 0;
-            const currentStreak = profile?.streak ?? 0;
-            const lastActivity = profile?.last_activity_at ?? null;
-
-            const newStreak = computeNewStreak(currentStreak, lastActivity);
-            const xpEarned = calculateDailyChallengeXP(points, newStreak);
-            const newXP = currentXP + xpEarned;
-
-            await adminDb
-                .from('profiles')
-                .update({
-                    xp: newXP,
-                    level: calculateLevel(newXP),
-                    streak: newStreak,
-                    last_activity_at: new Date().toISOString(),
-                    streak_updated_at: new Date().toISOString(),
-                })
-                .eq('id', user.id);
+            await syncProfileStats({
+                userId: user.id,
+                type: "daily-challenge",
+                score: 1,
+                totalQuestions: 1,
+                dailyPoints: points,
+            });
         } catch (syncErr) {
             console.error("\u26A0\uFE0F Failed to sync daily challenge stats (sync):", syncErr);
         }

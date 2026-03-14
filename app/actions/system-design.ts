@@ -13,9 +13,10 @@ export async function saveSystemDesignAction(design: Partial<SystemDesign>) {
     const { data, error } = await SystemDesignService.saveDesign(design);
     if (error) throw error;
     return { data: data as SystemDesign };
-  } catch (error: any) {
-    logger.error("Save System Design Error:", error);
-    return { error: error.message || "Failed to save design" };
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : "Failed to save design";
+    logger.error("Save System Design Error:", msg);
+    return { error: msg };
   }
 }
 
@@ -24,9 +25,10 @@ export async function getSystemDesignsAction() {
     const { data, error } = await SystemDesignService.getDesigns();
     if (error) throw error;
     return { data: data as SystemDesign[] };
-  } catch (error: any) {
-    logger.error("Get System Designs Error:", error);
-    return { error: error.message || "Failed to fetch designs" };
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : "Failed to fetch designs";
+    logger.error("Get System Designs Error:", msg);
+    return { error: msg };
   }
 }
 
@@ -35,9 +37,10 @@ export async function deleteSystemDesignAction(id: string) {
     const { error } = await SystemDesignService.deleteDesign(id);
     if (error) throw error;
     return { success: true };
-  } catch (error: any) {
-    logger.error("Delete System Design Error:", error);
-    return { error: error.message || "Failed to delete design" };
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : "Failed to delete design";
+    logger.error("Delete System Design Error:", msg);
+    return { error: msg };
   }
 }
 
