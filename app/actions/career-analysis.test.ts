@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-import { estimateExperienceYears } from './career-analysis';
+import { describe, it, expect } from 'vitest';
+import { estimateExperienceYears } from '@/lib/career-utils';
 
 describe('estimateExperienceYears', () => {
   it('should extract years from "X years of experience" pattern', () => {

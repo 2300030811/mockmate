@@ -8,39 +8,8 @@ import { z } from 'zod';
 import { sanitizePromptInput } from '@/utils/sanitize';
 import { getNextKey } from '@/utils/keyManager';
 import { fetchSalaryEstimate, EnrichedSalaryData } from '@/lib/services/salary-service';
+import { estimateExperienceYears } from '@/lib/career-utils';
 
-// Simple heuristic to estimate years of experience from resume text
-export function estimateExperienceYears(resumeText: string): number | undefined {
-  // Pattern: "X years of experience" or "X+ years" or "X yrs"
-  const patterns = [
-    /\b(\d{1,2})\+?\s*(?:years?|yrs?)\s*(?:of)?\s*(?:experience|exp)/i,
-    /\b(?:experience|exp)\s*(?:of)?\s*(?:over|about|approximately)?\s*(\d{1,2})\+?\s*(?:years?|yrs?)/i,
-    /\b(\d{4})\s*(?:-|–|to)\s*(?:present|current|now|\d{4})/gi,
-  ];
-
-  // Try direct patterns first
-  for (const pattern of patterns.slice(0, 2)) {
-    const match = resumeText.match(pattern);
-    if (match?.[1]) {
-      const years = parseInt(match[1], 10);
-      if (years >= 0 && years <= 50) return years;
-    }
-  }
-
-  // Try date range extraction (count spans)
-  const dateRanges = [...resumeText.matchAll(/(\d{4})\s*(?:-|–|to)\s*(?:present|current|now|(\d{4}))/gi)];
-  if (dateRanges.length > 0) {
-    const currentYear = new Date().getFullYear();
-    let earliest = currentYear;
-    for (const m of dateRanges) {
-      const start = parseInt(m[1], 10);
-      if (start >= 1980 && start < currentYear && start < earliest) earliest = start;
-    }
-    if (earliest < currentYear) return currentYear - earliest;
-  }
-
-  return undefined;
-}
 
 // Zod schemas for AI response validation
 const AnalysisSchema = z.object({
