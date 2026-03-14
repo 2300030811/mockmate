@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { Resend } from "resend";
 import { env } from "@/lib/env";
+import { rateLimit } from "@/lib/rate-limit";
 
 const feedbackSchema = z.object({
   type: z.enum(["bug", "suggestion", "other"]),
@@ -13,6 +14,60 @@ const feedbackSchema = z.object({
   sessionId: z.string().min(1, "Session ID is required"),
   userId: z.string().uuid().optional().nullable(),
 });
+
+function getEmailTemplate(validated: z.infer<typeof feedbackSchema>) {
+  const colors = {
+    bug: { bg: '#fef2f2', text: '#dc2626' },
+    suggestion: { bg: '#f0fdf4', text: '#16a34a' },
+    other: { bg: '#eff6ff', text: '#2563eb' }
+  };
+  
+  const theme = colors[validated.type as keyof typeof colors];
+
+  return `
+    <div style="font-family: 'Inter', system-ui, -apple-system, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #f8fafc;">
+      <div style="background-color: #ffffff; border-radius: 16px; padding: 32px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0;">
+        <div style="display: flex; align-items: center; margin-bottom: 24px;">
+          <div style="background-color: #3b82f6; width: 4px; height: 24px; border-radius: 2px; margin-right: 12px;"></div>
+          <h2 style="margin: 0; font-size: 20px; color: #1e293b; font-weight: 700; letter-spacing: -0.025em;">New Feedback Received</h2>
+        </div>
+        
+        <div style="margin-bottom: 24px;">
+          <span style="display: inline-block; padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; background-color: ${theme.bg}; color: ${theme.text};">
+            ${validated.type}
+          </span>
+        </div>
+
+        <div style="background-color: #f1f5f9; border-radius: 12px; padding: 24px; margin-bottom: 24px; border-left: 4px solid #3b82f6;">
+          <p style="margin: 0; font-size: 16px; line-height: 1.6; color: #334155; font-style: italic;">
+            "${validated.message}"
+          </p>
+        </div>
+
+        <div style="border-top: 1px solid #e2e8f0; padding-top: 24px;">
+          <h3 style="margin: 0 0 16px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; font-weight: 600;">Context Details</h3>
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 8px 0; font-size: 14px; color: #94a3b8; width: 100px;">User ID</td>
+              <td style="padding: 8px 0; font-size: 14px; color: #475569; font-family: monospace;">${validated.userId || "Guest"}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; font-size: 14px; color: #94a3b8;">Session ID</td>
+              <td style="padding: 8px 0; font-size: 14px; color: #475569; font-family: monospace;">${validated.sessionId}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; font-size: 14px; color: #94a3b8;">User Email</td>
+              <td style="padding: 8px 0; font-size: 14px; color: #475569;">${validated.email || "Not provided"}</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+      <p style="text-align: center; margin-top: 24px; font-size: 12px; color: #94a3b8;">
+        Sent via MockMate internal feedback system
+      </p>
+    </div>
+  `;
+}
 
 export async function submitFeedback(formData: {
   type: string;
@@ -23,10 +78,17 @@ export async function submitFeedback(formData: {
 }) {
   try {
     const validated = feedbackSchema.parse(formData);
+    
+    // 1. Rate Limiting (5 per hour)
+    const rl = await rateLimit("feedback", validated.userId);
+    if (!rl.success) {
+      return { success: false, error: rl.message || "Too many feedback submissions. Please try again later." };
+    }
+
     const supabase = createAdminClient();
 
-    // 1. Save to Database
-    const { error: dbError } = await supabase
+    // 2. Define operations
+    const dbOperation = supabase
       .from("feedback")
       .insert({
         type: validated.type,
@@ -36,37 +98,31 @@ export async function submitFeedback(formData: {
         user_id: validated.userId || null,
       });
 
-    if (dbError) throw dbError;
+    const emailOperation = async () => {
+      if (!env.RESEND_API_KEY || !env.FEEDBACK_EMAIL) return null;
+      
+      const resend = new Resend(env.RESEND_API_KEY);
+      return resend.emails.send({
+        from: "MockMate <onboarding@resend.dev>",
+        to: env.FEEDBACK_EMAIL,
+        subject: `[Feedback] ${validated.type.toUpperCase()}`,
+        html: getEmailTemplate(validated),
+      });
+    };
 
-    // 2. Send Email Notification (if API Key exists)
-    if (env.RESEND_API_KEY) {
-      try {
-        const resend = new Resend(env.RESEND_API_KEY);
-        await resend.emails.send({
-          from: "MockMate <onboarding@resend.dev>", // Note: Use verified domain in production
-          to: env.FEEDBACK_EMAIL || "admin@mockmate.app",
-          subject: `New Feedback: ${validated.type.toUpperCase()}`,
-          html: `
-            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; rounded: 10px;">
-              <h2 style="color: #3b82f6; border-bottom: 2px solid #3b82f6; padding-bottom: 10px;">New User Feedback</h2>
-              <p><strong>Type:</strong> <span style="text-transform: capitalize; background: #eff6ff; padding: 2px 8px; border-radius: 4px; color: #1e40af;">${validated.type}</span></p>
-              <p><strong>Message:</strong></p>
-              <div style="background: #f9fafb; padding: 15px; border-radius: 8px; border-left: 4px solid #3b82f6; font-style: italic;">
-                "${validated.message}"
-              </div>
-              <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;" />
-              <p style="font-size: 0.85rem; color: #6b7280;">
-                <strong>User ID:</strong> ${validated.userId || "Guest"}<br />
-                <strong>Session ID:</strong> ${validated.sessionId}<br />
-                <strong>User Email:</strong> ${validated.email || "Not provided"}
-              </p>
-            </div>
-          `,
-        });
-      } catch (emailErr) {
-        console.warn("⚠️ [Feedback] DB Success, but Email failed:", emailErr);
-        // We don't throw here strictly because the feedback IS saved to DB
-      }
+    // 3. Execute in parallel for performance
+    const [dbResult, emailResult] = await Promise.allSettled([
+      dbOperation,
+      emailOperation()
+    ]);
+
+    // Handle DB failure as critical
+    if (dbResult.status === "rejected") throw dbResult.reason;
+    if (dbResult.value.error) throw dbResult.value.error;
+
+    // Log email failure as non-critical
+    if (emailResult.status === "rejected" || (emailResult.status === "fulfilled" && (emailResult.value as any)?.error)) {
+      console.warn("⚠️ [Feedback] DB Success, but Email failed:", emailResult.status === "rejected" ? emailResult.reason : (emailResult.value as any).error);
     }
 
     return { success: true };

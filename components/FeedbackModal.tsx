@@ -1,19 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Modal } from "./ui/Modal";
 import { Button } from "./ui/Button";
 import { submitFeedback } from "@/app/actions/feedback";
 import { getSessionId } from "@/utils/session";
 import { useAuth } from "./providers/auth-provider";
 import { toast } from "sonner";
-import { MessageSquare, Bug, Lightbulb, HelpCircle, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { MessageSquare, Bug, Lightbulb, HelpCircle, Loader2, AlertTriangle } from "lucide-react";
 import { m, AnimatePresence } from "framer-motion";
 
 interface FeedbackModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
+const FEEDBACK_CATEGORIES = [
+  { id: "suggestion", label: "Idea", icon: Lightbulb, color: "text-amber-400", bg: "bg-amber-400/10", border: "border-amber-400/20", focus: "focus:border-amber-400", ring: "focus-visible:ring-amber-500/20" },
+  { id: "bug", label: "Bug", icon: Bug, color: "text-rose-400", bg: "bg-rose-400/10", border: "border-rose-400/20", focus: "focus:border-rose-400", ring: "focus-visible:ring-rose-500/20" },
+  { id: "other", label: "Other", icon: HelpCircle, color: "text-sky-400", bg: "bg-sky-400/10", border: "border-sky-400/20", focus: "focus:border-sky-400", ring: "focus-visible:ring-sky-500/20" },
+] as const;
 
 export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
   const { user } = useAuth();
@@ -22,8 +29,9 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (message.length < 5) {
       toast.error("Please provide a more detailed message (min 5 characters)");
@@ -31,6 +39,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
     }
 
     setIsSubmitting(true);
+    setError(null);
     const result = await submitFeedback({
       type,
       message,
@@ -49,9 +58,12 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
         onClose();
       }, 2000);
     } else {
+      if (result.error?.toLowerCase().includes("limit") || result.error?.toLowerCase().includes("wait")) {
+        setError(result.error);
+      }
       toast.error(result.error || "Failed to submit feedback. Please try again.");
     }
-  };
+  }, [type, message, email, user?.id, onClose]);
 
   return (
     <Modal
@@ -61,7 +73,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
       description="Help us improve MockMate by sharing your thoughts, bug reports, or suggestions."
 
     >
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-5 px-1">
         <AnimatePresence mode="wait">
           {isSuccess ? (
             <m.div
@@ -102,34 +114,56 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
               exit={{ opacity: 0 }}
               className="space-y-5"
             >
+              {/* Rate Limit Warning */}
+              {error && (
+                <m.div 
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 flex gap-3 items-start"
+                >
+                  <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="text-xs font-bold text-amber-500 uppercase tracking-wider">Too Many Submissions</p>
+                    <p className="text-sm text-amber-500/80 leading-relaxed font-medium">
+                      {error}
+                    </p>
+                  </div>
+                </m.div>
+              )}
+
               {/* Type Selection */}
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-white/50">
                   Select Category
                 </label>
                 <div className="grid grid-cols-3 gap-3">
-                  {[
-                    { id: "suggestion", label: "Idea", icon: Lightbulb, color: "text-amber-400", bg: "bg-amber-400/10", border: "border-amber-400/20" },
-                    { id: "bug", label: "Bug", icon: Bug, color: "text-rose-400", bg: "bg-rose-400/10", border: "border-rose-400/20" },
-                    { id: "other", label: "Other", icon: HelpCircle, color: "text-sky-400", bg: "bg-sky-400/10", border: "border-sky-400/20" },
-                  ].map((item) => (
+                  {FEEDBACK_CATEGORIES.map((item) => (
                     <button
                       key={item.id}
                       type="button"
                       onClick={() => setType(item.id as any)}
-                      className={`flex flex-col items-center gap-2 p-3 rounded-2xl border-2 transition-all duration-300 relative overflow-hidden group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 ${type === item.id
-                          ? `${item.bg} shadow-lg border-blue-500 dark:border-${item.color.split('-')[1]}-400/50`
-                          : "bg-gray-50 dark:bg-white/5 border-gray-100 dark:border-white/5 hover:border-gray-200 dark:hover:border-white/10"
-                        }`}
+                      className={cn(
+                        "flex flex-col items-center gap-2 p-3 rounded-2xl border-2 transition-all duration-300 relative overflow-hidden group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-95",
+                        type === item.id
+                          ? `${item.bg} shadow-[0_0_20px_rgba(59,130,246,0.15)] border-blue-500/50 dark:border-${item.color.split('-')[1]}-400/50`
+                          : "bg-gray-50/50 dark:bg-white/5 border-gray-100 dark:border-white/5 hover:border-gray-200 dark:hover:border-white/10"
+                      )}
                     >
                       {type === item.id && (
                         <m.div
                           layoutId="activeType"
-                          className={`absolute inset-0 ${item.bg} opacity-20`}
+                          className={cn("absolute inset-0 opacity-20", item.bg)}
+                          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                         />
                       )}
-                      <item.icon className={`w-5 h-5 transition-transform group-hover:scale-110 ${type === item.id ? item.color : "opacity-40"}`} />
-                      <span className={`text-[10px] font-bold uppercase tracking-wider transition-colors ${type === item.id ? 'text-blue-600 dark:text-white' : 'text-gray-500'}`}>
+                      <item.icon className={cn(
+                        "w-5 h-5 transition-transform duration-300 group-hover:scale-110 group-active:scale-90",
+                        type === item.id ? item.color : "opacity-40"
+                      )} />
+                      <span className={cn(
+                        "text-[10px] font-black uppercase tracking-widest transition-colors",
+                        type === item.id ? 'text-blue-600 dark:text-white' : 'text-gray-500'
+                      )}>
                         {item.label}
                       </span>
                     </button>
@@ -152,7 +186,12 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder="Tell us what's on your mind... (min 5 characters)"
-                    className="w-full h-32 p-4 rounded-2xl border-2 outline-none transition-all resize-none text-sm leading-relaxed focus-visible:ring-4 focus-visible:ring-emerald-500/20 bg-gray-50 dark:bg-black/40 border-gray-100 dark:border-white/5 focus:border-emerald-500 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-white/20"
+                    className={cn(
+                      "w-full h-32 p-4 rounded-2xl border-2 outline-none transition-all resize-none text-sm leading-relaxed bg-gray-50 dark:bg-black/40 border-gray-100 dark:border-white/5 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-white/20 focus-visible:ring-4",
+                      type === 'bug' && "focus:border-rose-400 focus-visible:ring-rose-500/20",
+                      type === 'suggestion' && "focus:border-amber-400 focus-visible:ring-amber-500/20",
+                      type === 'other' && "focus:border-sky-400 focus-visible:ring-sky-500/20"
+                    )}
                   />
                   <div className={`absolute bottom-3 right-3 transition-opacity duration-300 ${message.length >= 5 ? 'opacity-100' : 'opacity-0'}`}>
                     <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center">

@@ -40,8 +40,14 @@ const LANGUAGE_CONFIG: Record<string, { label: string; monacoId: string }> = {
 
 export default function DailyChallengePage() {
    const router = useRouter();
-    const { theme, setTheme } = useTheme();
-   const isDark = theme === "dark";
+   const { resolvedTheme, setTheme } = useTheme();
+   const [mounted, setMounted] = useState(false);
+
+   useEffect(() => {
+      setMounted(true);
+   }, []);
+
+   const isDark = resolvedTheme === "dark";
 
    const editorRef = useRef<any>(null);
    const [problem, setProblem] = useState(DAILY_PROBLEMS[0]);
@@ -196,10 +202,10 @@ export default function DailyChallengePage() {
          <header className="h-14 px-4 md:px-6 border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/50 backdrop-blur-md flex items-center justify-between z-30 shrink-0 transition-colors duration-300">
             <div className="flex items-center gap-3">
                <div className="md:hidden">
-                  <NavigationPill showBack={true} showHome={false} className="relative z-50 scale-75 origin-left" variant="dark" />
+                  <NavigationPill showBack={true} showHome={false} className="relative z-50 scale-75 origin-left" />
                </div>
                <div className="hidden md:block">
-                  <NavigationPill className="relative z-50 scale-90 origin-left" variant="dark" />
+                  <NavigationPill className="relative z-50 scale-90 origin-left" />
                </div>
                <div className="w-px h-5 bg-gray-300 dark:bg-gray-800"></div>
                <div>
@@ -218,7 +224,7 @@ export default function DailyChallengePage() {
 
             <div className="flex items-center gap-2">
                {/* Theme Toggle */}
-               <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="flex items-center justify-center w-8 h-8 text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">
+               <button onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')} className="flex items-center justify-center w-8 h-8 text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">
                   <AnimatePresence mode="wait">
                      {isDark ? (
                         <m.div key="sun" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.2 }}>

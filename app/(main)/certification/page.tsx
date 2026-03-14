@@ -10,7 +10,8 @@ import {
   Code 
 } from "lucide-react";
 import dynamic from 'next/dynamic';
-import { useTheme } from "@/components/providers/providers";
+import { useState, useEffect } from "react";
+import { useTheme } from "next-themes";
 import { NavigationPill } from "@/components/ui/NavigationPill";
 import { quizThemes } from "@/lib/quiz-themes";
 
@@ -19,8 +20,14 @@ const BobAssistant = dynamic(() => import("@/components/quiz/BobAssistant").then
 });
 
 export default function CertificationSelect() {
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isDark = resolvedTheme === "dark";
 
   return (
     <div
@@ -30,7 +37,7 @@ export default function CertificationSelect() {
           : "bg-gradient-to-br from-gray-50 via-white to-blue-50"
       }`}
     >
-      <NavigationPill showBack={false} className="absolute top-4 left-4 sm:top-6 sm:left-6 z-50 scale-75 origin-top-left sm:scale-100" variant="dark" />
+      <NavigationPill showBack={false} className="absolute top-4 left-4 sm:top-6 sm:left-6 z-50 scale-75 origin-top-left sm:scale-100" />
 
       {/* Animated Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">

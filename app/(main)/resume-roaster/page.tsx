@@ -11,6 +11,8 @@ import { RoastResults } from "./components/RoastResults";
 import { RoastData } from "./types";
 import { useSpeech } from "./hooks/useSpeech";
 import { useMemeAudio } from "./hooks/useMemeAudio";
+import { useTheme } from "next-themes";
+import { cn } from "@/lib/utils";
 
 const LOADING_MESSAGES = [
   "Judging your font choice...",
@@ -30,6 +32,8 @@ const LOADING_MESSAGES = [
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export default function ResumeRoasterPage() {
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [jobDescription, setJobDescription] = useState("");
   const [isRoasting, setIsRoasting] = useState(false);
@@ -43,6 +47,11 @@ export default function ResumeRoasterPage() {
 
   const { isSpeaking, speak, stop } = useSpeech();
   const { playBeforeUpload, playWhileLoading, playAfterLoading, stopAudio } = useMemeAudio();
+
+  // Sync mounted state to prevent hydration flicker
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Load from localStorage on mount (validate shape to handle schema changes)
   useEffect(() => {
@@ -191,14 +200,19 @@ ${roastData.suggestions.map((s) => `\u2022 ${s}`).join("\n")}
     stop();
   };
 
+  // Prevent flash during hydration
+  if (!mounted) return <div className="min-h-screen bg-white dark:bg-gray-950" />;
+
+  const isDark = resolvedTheme === "dark";
+
   return (
-    <div className="min-h-screen bg-gray-950 text-white selection:bg-orange-500/30">
-      <NavigationPill className="absolute top-4 left-4 sm:top-6 sm:left-6 z-50 scale-75 origin-top-left sm:scale-100" variant="dark" />
+    <div className={cn("min-h-screen transition-colors duration-500 selection:bg-orange-500/30", isDark ? "bg-gray-950 text-white" : "bg-gray-50 text-gray-900")}>
+      <NavigationPill showHome showBack={false} />
 
       {/* Background Decorations */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-orange-600/10 blur-[120px] rounded-full animate-pulse" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-red-600/10 blur-[120px] rounded-full animate-pulse delay-1000" />
+        <div className={cn("absolute top-[-10%] left-[-10%] w-[40%] h-[40%] blur-[120px] rounded-full animate-pulse", isDark ? "bg-orange-600/10" : "bg-orange-500/5")} />
+        <div className={cn("absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] blur-[120px] rounded-full animate-pulse delay-1000", isDark ? "bg-red-600/10" : "bg-red-500/5")} />
       </div>
 
       <div className="relative z-10 max-w-6xl mx-auto px-4 py-20">
@@ -212,10 +226,10 @@ ${roastData.suggestions.map((s) => `\u2022 ${s}`).join("\n")}
             <Flame size={16} className="animate-bounce" />
             Brutally Honest Analysis
           </div>
-          <h1 className="text-5xl md:text-7xl font-black mb-6 bg-gradient-to-r from-white via-orange-100 to-red-200 bg-clip-text text-transparent">
+          <h1 className={cn("text-5xl md:text-7xl font-black mb-6 bg-clip-text text-transparent bg-gradient-to-r", isDark ? "from-white via-orange-100 to-red-200" : "from-gray-900 via-orange-600 to-red-600")}>
             Resume Roaster
           </h1>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
+          <p className={cn("text-xl max-w-2xl mx-auto leading-relaxed", isDark ? "text-gray-400" : "text-gray-600")}>
             Upload your resume and get roasted by our AI. We&apos;ll tell you exactly why you aren&apos;t getting those interviews.
           </p>
         </m.div>

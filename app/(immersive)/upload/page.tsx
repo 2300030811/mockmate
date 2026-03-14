@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useTheme } from "@/components/providers/providers";
+import { useTheme } from "next-themes";
 import { convertFileAction, generateQuizAction } from "@/app/actions/generator";
-import { ArrowLeft, Home } from "lucide-react";
-import Link from "next/link";
+import { NavigationPill } from "@/components/ui/NavigationPill";
+import { ThemeSwitcher } from "@/components/ui/ThemeSwitcher";
+import { cn } from "@/lib/utils";
 
 // Sub-components
 import { QuizUpload } from "./components/QuizUpload";
@@ -15,8 +16,8 @@ import { FlashcardGame } from "./components/FlashcardGame";
 
 export default function UploadPage() {
   const router = useRouter();
-  const { theme, setTheme } = useTheme();
-  const isDark = theme === "dark";
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
   // State
   const [file, setFile] = useState<File | null>(null);
@@ -35,6 +36,11 @@ export default function UploadPage() {
   const [mode, setMode] = useState<"quiz" | "flashcard">("quiz");
   const [visionData, setVisionData] = useState<{ text: string, base64: string } | null>(null);
   const [loadingStep, setLoadingStep] = useState("");
+
+  // Sync mounted state to prevent hydration flicker
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
@@ -107,6 +113,11 @@ export default function UploadPage() {
     }
   };
 
+  // Prevent flash during hydration
+  if (!mounted) return <div className="min-h-screen bg-white dark:bg-gray-950" />;
+
+  const isDark = resolvedTheme === "dark";
+
   // --- RENDERING LOGIC ---
 
   // 1. Flashcard View
@@ -146,13 +157,13 @@ export default function UploadPage() {
 
   // 4. Upload View (Default)
   return (
-    <div className={isDark ? "bg-gray-950 text-white" : "bg-white text-gray-900"}>
-      {/* Navigation Pill */}
-      <div className="absolute top-6 left-6 z-50">
-        <Link href="/" className="flex items-center gap-2 px-4 py-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-full shadow-lg border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-all hover:scale-105 active:scale-95 group">
-          <Home className="w-4 h-4 group-hover:text-blue-500 transition-colors" />
-          <span>Home</span>
-        </Link>
+    <div className={cn("min-h-screen transition-colors duration-500", isDark ? "bg-gray-950 text-white" : "bg-gray-50 text-gray-900")}>
+      {/* Premium Navigation */}
+      <NavigationPill showHome showBack={false} />
+      
+      {/* Theme Switcher */}
+      <div className="absolute top-6 right-6 z-50">
+        <ThemeSwitcher />
       </div>
 
       <QuizUpload
