@@ -10,7 +10,7 @@ import { getNextKey } from '@/utils/keyManager';
 import { fetchSalaryEstimate, EnrichedSalaryData } from '@/lib/services/salary-service';
 
 // Simple heuristic to estimate years of experience from resume text
-function estimateExperienceYears(resumeText: string): number | undefined {
+export function estimateExperienceYears(resumeText: string): number | undefined {
   // Pattern: "X years of experience" or "X+ years" or "X yrs"
   const patterns = [
     /\b(\d{1,2})\+?\s*(?:years?|yrs?)\s*(?:of)?\s*(?:experience|exp)/i,
