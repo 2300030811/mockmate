@@ -1,4 +1,3 @@
-
 export const quizThemes = {
   aws: {
     id: "aws",
@@ -96,7 +95,7 @@ export const quizThemes = {
     subtitle: "Detailed questions for Salesforce Agentforce Specialist Certification.",
     badge: {
       text: "SALESFORCE AGENTFORCE",
-      icon: "💼",
+      icon: "zap",
       className: "bg-blue-500/10 border-blue-500/30 text-blue-600 dark:bg-blue-500/10 dark:border-blue-500/20 dark:text-blue-400"
     },
     bgGradient: "bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-950 dark:via-blue-950 dark:to-cyan-950",
@@ -124,7 +123,7 @@ export const quizThemes = {
         iconBgLight: "bg-cyan-100",
         iconBgDark: "bg-cyan-500",
         iconColorClass: "text-cyan-600",
-        icon: "💼"
+        icon: "zap"
       },
       exam: {
         gradient: "from-blue-600 to-indigo-600",
@@ -141,7 +140,7 @@ export const quizThemes = {
     subtitle: "Choose how you want to prepare for MongoDB certification.",
     badge: {
       text: "MONGODB CERTIFICATION PREP",
-      icon: "🍃",
+      icon: "database",
       className: "bg-green-500/10 border-green-500/30 text-green-600 dark:bg-green-500/10 dark:border-green-500/20 dark:text-green-400"
     },
     bgGradient: "bg-gradient-to-br from-green-50 via-white to-teal-50 dark:from-gray-950 dark:via-gray-900 dark:to-green-950",
@@ -159,7 +158,7 @@ export const quizThemes = {
     practice: {
       default: "all" as number | "all",
       options: [30, 50, 60, 100],
-      max: 500, // Assuming default max if not strict
+      max: 500,
       activeClass: "bg-green-600 text-white shadow-lg shadow-green-500/30",
       ringClass: "focus:ring-green-500"
     },
@@ -169,7 +168,7 @@ export const quizThemes = {
         iconBgLight: "bg-green-100",
         iconBgDark: "bg-green-500",
         iconColorClass: "text-green-600",
-        icon: "🍃"
+        icon: "database"
       },
       exam: {
         gradient: "from-teal-500 to-emerald-600",
@@ -186,7 +185,7 @@ export const quizThemes = {
     subtitle: "Prepare for the Certified Associate in Python Programming exam with real scenarios and code challenges.",
     badge: {
       text: "PCAP PYTHON CERTIFICATION",
-      icon: "🐍",
+      icon: "code",
       className: "bg-blue-500/10 border-blue-500/30 text-blue-600 dark:bg-blue-500/10 dark:border-blue-500/20 dark:text-blue-400"
     },
     bgGradient: "bg-gradient-to-br from-blue-50 via-white to-yellow-50 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950",
@@ -203,7 +202,7 @@ export const quizThemes = {
     questionTypes: ["Code-Based MCQ", "Multiple Select"],
     practice: {
       default: "all" as number | "all",
-      options: [20, 40, 60, 100], // Extrapolated from page
+      options: [20, 40, 60, 100],
       max: 500,
       activeClass: "bg-blue-600 text-white shadow-lg shadow-blue-500/30",
       ringClass: "focus:ring-blue-500"
@@ -214,7 +213,7 @@ export const quizThemes = {
         iconBgLight: "bg-blue-100",
         iconBgDark: "bg-blue-500",
         iconColorClass: "text-blue-500",
-        icon: "🐍"
+        icon: "code"
       },
       exam: {
         gradient: "from-yellow-400 to-orange-500",
@@ -231,7 +230,7 @@ export const quizThemes = {
     subtitle: "Prepare for the Oracle certification exam with our comprehensive practice suite.",
     badge: {
       text: "ORACLE CERTIFIED ASSOCIATE",
-      icon: "🗄️",
+      icon: "terminal",
       className: "bg-red-500/10 border-red-500/30 text-red-600 dark:bg-red-500/10 dark:border-red-500/20 dark:text-red-400"
     },
     bgGradient: "bg-gradient-to-br from-red-50 via-white to-orange-50 dark:from-gray-950 dark:via-gray-900 dark:to-red-950",
@@ -259,7 +258,7 @@ export const quizThemes = {
         iconBgLight: "bg-red-100",
         iconBgDark: "bg-red-500",
         iconColorClass: "text-red-600",
-        icon: "🗄️"
+        icon: "terminal"
       },
       exam: {
         gradient: "from-orange-500 to-red-600",

@@ -28,13 +28,13 @@ describe("PromptBuilder", () => {
 
     it("returns flashcard-specific prompt when mode is flashcard", () => {
       const prompt = PromptBuilder.buildUserPrompt("content", 10, "medium", "flashcard");
-      expect(prompt).toContain("FLASHCARD");
-      expect(prompt).toContain("Front of Card");
+      expect(prompt).toContain("flashcards");
+      expect(prompt).toContain("Front (question)");
     });
 
     it("returns quiz-specific prompt when mode is quiz", () => {
       const prompt = PromptBuilder.buildUserPrompt("content", 10, "medium", "quiz");
-      expect(prompt).toContain("Quiz Architect");
+      expect(prompt).toContain("multiple-choice questions");
       expect(prompt).toContain("4 options");
     });
 
@@ -53,19 +53,19 @@ describe("PromptBuilder", () => {
     it("returns a quiz vision prompt with difficulty", () => {
       const prompt = PromptBuilder.buildVisionPrompt(20, "hard", "quiz");
       expect(prompt).toContain("HARD");
-      expect(prompt).toContain("PDF document");
+      expect(prompt).toContain("PDF");
     });
 
     it("returns a flashcard vision prompt", () => {
       const prompt = PromptBuilder.buildVisionPrompt(10, "medium", "flashcard");
-      expect(prompt).toContain("FLASHCARD");
-      expect(prompt).toContain("PDF document");
+      expect(prompt).toContain("flashcards");
+      expect(prompt).toContain("PDF");
     });
 
     it("does not include user content (vision prompts rely on inline PDF data)", () => {
       const prompt = PromptBuilder.buildVisionPrompt(10, "medium", "quiz");
       // Vision prompts should NOT have a TEXT CONTENT section
-      expect(prompt).not.toContain("TEXT CONTENT:");
+      expect(prompt).not.toContain("TEXT:");
     });
   });
 });

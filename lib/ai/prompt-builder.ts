@@ -1,161 +1,266 @@
 /**
  * Centralized prompt builder for AI quiz generation.
  *
- * All quiz/flashcard prompts live here so that providers share a single
- * source of truth.  Each provider can still pass its own `contentLimit`
- * when calling `buildUserPrompt`.
+ * Optimised for Groq-hosted open-source models (Llama 3, Mixtral).
+ * Key strategies:
+ *  - Use Groq's `response_format: { type: "json_object" }` at the API call
+ *    level for hard JSON enforcement. json_object mode requires the root to be
+ *    an object, so all output is wrapped as { "concepts": [...], "questions": [...] }.
+ *  - Concept-first prompting: Step 1 extracts concepts INTO the JSON "concepts"
+ *    array, Step 2 generates one question per concept. Embedding Step 1 inside
+ *    the JSON makes it work on all model sizes including llama-3.1-8b-instant —
+ *    the model has a concrete JSON target to hit rather than free-form reasoning.
+ *    Strip "concepts" before sending to the frontend; it only guides generation.
+ *  - Concrete filled example over abstract schema — OSS models follow examples
+ *    far more reliably than placeholder templates.
+ *  - Flat, short instruction lists — deep nesting loses Llama/Mixtral attention.
+ *  - "Generate exactly N" + "Do not stop early" — OSS models treat "at least"
+ *    as a soft suggestion and frequently stop at 8-12.
+ *  - "type" field included in examples so sanitizeQuizQuestions never has to
+ *    fall back to the default — consistent with quiz-cleanup.ts expectations.
+ *  - Fallback { "concepts": [], "questions": [] } so parsing never throws.
+ *
+ * Parsing on the frontend:
+ *   const { questions } = JSON.parse(raw);       // drop "concepts"
+ *   const clean = sanitizeQuizQuestions(questions); // from quiz-cleanup.ts
  */
 
-// ── System Prompts ──────────────────────────────────────────────────────
+// ── Types ───────────────────────────────────────────────────────────────
 
-const QUIZ_SYSTEM_PROMPT = "You are a helpful assistant that outputs JSON.";
+export type Difficulty = "easy" | "medium" | "hard";
+export type Mode = "quiz" | "flashcard";
 
-// ── User Prompts ────────────────────────────────────────────────────────
+// ── Constants ───────────────────────────────────────────────────────────
 
-function buildFlashcardPrompt(content: string, count: number): string {
-   return `
-You are an elite Study Assistant.
+/**
+ * Use alongside `response_format: { type: "json_object" }` in the Groq API
+ * call. The system prompt must mention "JSON" for json_object mode to activate.
+ * json_object mode requires a root object (not array), so all output is
+ * wrapped as { "concepts": [...], "questions": [...] }.
+ */
+export const QUIZ_SYSTEM_PROMPT =
+   "You are a quiz generation assistant. " +
+   "Always respond with a valid JSON object and nothing else.";
 
-TASK:
-Create high-quality FLASHCARDS from the provided text.
+/**
+ * Minimum number of questions/cards to generate.
+ * Change here to affect all builders.
+ */
+const MIN_QUESTION_COUNT = 15;
 
-CRITICAL RULES:
-1. FORMAT (Strict JSON):
-   - Return a JSON Array.
-   - Schema: [{"question": "Front of Card", "options": ["Back of Card"], "answer": "Back of Card", "explanation": "Context"}]
-   - NOTE: The "options" array must contain EXACTLY ONE string (the answer/back of card).
-   - "answer" must match that single option string.
+// ── Difficulty Guidance ─────────────────────────────────────────────────
 
-2. CONTENT QUALITY:
-   - FRONT (question): Must be a clear Term, Concept, or Question. (e.g. "Mitochondria function", "What is Isomorphism?")
-   - BACK (answer): Concise definition or answer (1-2 sentences max).
-   - SELF-CONTAINED: Do not use "According to the text". The card must make sense in isolation.
+const DIFFICULTY_GUIDANCE: Record<Difficulty, string> = {
+   easy: "Direct recall only — definitions, named facts, single-step identification.",
+   medium: "Application and comparison — cause-and-effect, relationships, use-case selection.",
+   hard: "Multi-step reasoning and edge cases — synthesis, exceptions, scenario analysis.",
+};
 
-3. QUANTITY:
-   - Generate AT LEAST ${Math.max(count, 15)} cards.
+// ── Shared Fragments ────────────────────────────────────────────────────
 
-TEXT CONTENT:
-${content}
-`.trim();
+/**
+ * Visual puzzle constraint shared by all quiz builders.
+ * Defined once so text-quiz and vision-quiz always stay in sync.
+ */
+const VISUAL_PUZZLE_CONSTRAINT =
+   'For mirror/water-image questions: wrap the original string in [MIRROR]...[/MIRROR] or ' +
+   '[WATER]...[/WATER] tags (e.g. [MIRROR]15bg82XQh[/MIRROR]). ' +
+   'Do not use Cyrillic or Unicode reflections. ' +
+   'Skip non-textual spatial puzzles (embedded figures, paper folding) entirely.';
+
+// ── Concrete Output Examples ────────────────────────────────────────────
+//
+// "concepts" array is Step 1 output embedded inside the JSON — guides the
+// model to spread coverage before generating questions. Strip it on the
+// frontend; only "questions" is needed by the UI.
+//
+// "type" field is included explicitly so sanitizeQuizQuestions (quiz-cleanup.ts)
+// never falls back to its default — keeps behaviour predictable across all paths.
+
+const QUIZ_EXAMPLE = `{
+  "concepts": [
+    "Mitochondria function",
+    "ATP production process"
+  ],
+  "questions": [
+    {
+      "concept": "Mitochondria function",
+      "type": "mcq",
+      "question": "Which organelle produces ATP through cellular respiration?",
+      "options": ["Mitochondria", "Ribosome", "Golgi apparatus", "Lysosome"],
+      "answer": "Mitochondria",
+      "explanation": "Mitochondria generate ATP via oxidative phosphorylation. Ribosomes synthesise proteins, Golgi packages them, and lysosomes handle waste digestion."
+    }
+  ]
+}`;
+
+const FLASHCARD_EXAMPLE = `{
+  "concepts": [
+    "Mitochondria",
+    "ATP"
+  ],
+  "questions": [
+    {
+      "concept": "Mitochondria",
+      "type": "flashcard",
+      "question": "Mitochondria",
+      "options": ["Organelle that generates ATP through cellular respiration"],
+      "answer": "Organelle that generates ATP through cellular respiration",
+      "explanation": "Often called the powerhouse of the cell; produces energy via oxidative phosphorylation."
+    }
+  ]
+}`;
+
+// ── Internal Helpers ────────────────────────────────────────────────────
+
+function resolveCount(count: number): number {
+   return Math.max(count, MIN_QUESTION_COUNT);
 }
 
-function buildQuizPrompt(content: string, count: number, difficulty: string): string {
-   const difficultyGuidance =
-      difficulty === "hard"
-         ? "Focus on complex scenarios, edge cases, and multi-step reasoning."
-         : "Focus on conceptual understanding and application.";
+// ── Text Prompts ────────────────────────────────────────────────────────
 
-   return `
-You are an elite AI Quiz Architect.
+function buildFlashcardPrompt(content: string, count: number, difficulty: Difficulty): string {
+   const target = resolveCount(count);
+   const guidance = DIFFICULTY_GUIDANCE[difficulty];
 
-TASK:
-Generate a high-quality, professional-grade multiple-choice quiz from the provided text.
+   return `Generate exactly ${target} flashcards from the text below.
+Difficulty: ${difficulty.toUpperCase()} — ${guidance}
 
-CRITICAL INSTRUCTIONS:
-1. QUANTITY & QUALITY:
-   - Generate AT LEAST ${Math.max(count, 15)} questions.
-   - DIFFICULTY: ${difficulty.toUpperCase()}.
-   - QUESTIONS MUST BE SELF-CONTAINED. Do not ask "According to the text..." or "What does the author say...". The question should stand alone as a test of knowledge.
-   - EASY: Definitions and basic facts.
-   - MEDIUM: Application and relationships.
-   - HARD: Synthesis and complex scenarios.
-   - ${difficultyGuidance}
+Step 1 — Fill the "concepts" array:
+List exactly ${target} distinct key concepts, terms, or ideas from the text.
+Draw from the full text — do not cluster on the opening paragraphs.
+Each concept must be unique. Do not repeat or rephrase the same idea.
 
-2. OPTION QUALITY:
-   - Exactly 4 options per question.
-   - Distractors must be PLAUSIBLE but clearly INCORRECT.
-   - Avoid "All of the above" unless absolutely appropriate.
-   - CONSTRAINTS: For visual puzzles (like "mirror image", "water image"), DO NOT use Cyrillic or Unicode characters. Instead, wrap the ORIGINAL unreflected string in tags: '[MIRROR]...[/MIRROR]' or '[WATER]...[/WATER]' (e.g. '[MIRROR]15bg82XQh[/MIRROR]'). The UI will render the visual reflection via CSS. For completely non-textual spatial puzzles (e.g., "embedded figure", "paper folding"), IGNORE and skip them.
+Step 2 — Fill the "questions" array:
+Create one flashcard per concept from Step 1.
+Each item's "concept" field must match an entry from the "concepts" array.
 
-3. EXPLANATIONS:
-   - Explain WHY the correct answer is right.
-   - Briefly explain why the distractors are incorrect.
+Rules:
+- Each card must be self-contained. Never write "According to the text".
+- "type" must be exactly "flashcard" for every item.
+- Front (question): the concept name or a clear question about it.
+- Back (answer): a concise definition or answer (1-2 sentences).
+- The "options" array contains exactly one string that matches "answer" exactly.
+  This keeps the shape consistent with quiz mode.
+- Do not stop early. Output all ${target} cards before finishing.
+- If the content is insufficient, return { "concepts": [], "questions": [] }.
 
-4. JSON FORMATTING:
-   - Return ONLY a raw JSON array.
-   - Structure: [{"question": "What is the capital of France?", "options": ["Paris", "London", "Berlin", "Madrid"], "answer": "Paris", "explanation": "Paris is the capital of France."}]
-   - "answer" MUST match the exact text of one option. NEVER output just the option letter (e.g., "A").
+Output format — follow this example exactly:
+${FLASHCARD_EXAMPLE}
 
-TEXT CONTENT:
-${content}
-`.trim();
+TEXT:
+${content}`;
 }
 
-// ── Vision Prompts (PDF with images / scanned docs) ─────────────────────
+function buildQuizPrompt(content: string, count: number, difficulty: Difficulty): string {
+   const target = resolveCount(count);
+   const guidance = DIFFICULTY_GUIDANCE[difficulty];
 
-function buildVisionFlashcardPrompt(count: number): string {
-   return `
-You are an elite Study Assistant.
-Analyze the provided PDF document.
+   return `Generate exactly ${target} multiple-choice questions from the text below.
+Difficulty: ${difficulty.toUpperCase()} — ${guidance}
 
-TASK:
-Extract key concepts, definitions, and visual facts to create high-quality FLASHCARDS.
+Step 1 — Fill the "concepts" array:
+List exactly ${target} distinct key concepts, facts, or ideas from the text.
+Draw from the full text — do not cluster on the opening paragraphs.
+Each concept must be unique. Do not repeat or rephrase the same idea.
 
-CRITICAL INSTRUCTIONS:
-1. QUANTITY: Generate AT LEAST ${Math.max(count, 15)} flashcards.
-2. FORMAT:
-   - Return a JSON array.
-   - Structure: [{"question": "Concept", "options": ["Definition"], "answer": "Definition", "explanation": "Context"}]
-   - 'question' is the Front. 'answer' is the Back.
-3. QUALITY:
-   - Front: Clear term/concept/diagram query.
-   - Back: Concise, accurate definition/answer.
-`.trim();
+Step 2 — Fill the "questions" array:
+Create one question per concept from Step 1.
+Each item's "concept" field must match an entry from the "concepts" array.
+
+Rules:
+- Questions must be self-contained. Never write "According to the text" or "The author says".
+- "type" must be exactly "mcq" for every item.
+- Provide exactly 4 options per question.
+- Distractors must be plausible but clearly wrong. Avoid "All of the above".
+- "answer" must be a character-for-character match with one of the option strings.
+- ${VISUAL_PUZZLE_CONSTRAINT}
+- Explanation: state why the correct answer is right and why each distractor is wrong.
+- Do not stop early. Output all ${target} questions before finishing.
+- If the content is insufficient, return { "concepts": [], "questions": [] }.
+
+Output format — follow this example exactly:
+${QUIZ_EXAMPLE}
+
+TEXT:
+${content}`;
 }
 
-function buildVisionQuizPrompt(count: number, difficulty: string): string {
-   return `
-You are an elite AI Quiz Architect.
-Analyze the provided PDF document (which may contain text, images, handwritten notes, or diagrams).
+// ── Vision Prompts (scanned PDFs / image-heavy docs) ───────────────────
 
-CORE OBJECTIVE:
-EXTRACT and GENERATE high-quality, professional-grade multiple-choice questions (MCQs) that accurately reflect the document's content.
+function buildVisionFlashcardPrompt(count: number, difficulty: Difficulty): string {
+   const target = resolveCount(count);
+   const guidance = DIFFICULTY_GUIDANCE[difficulty];
 
-CRITICAL INSTRUCTIONS:
-1. QUESTION DIVERSITY & DEPTH:
-   - Target: ${Math.max(count, 15)} questions.
-   - DIFFICULTY: ${difficulty.toUpperCase()}.
-   - EASY: Focus on terminology and basic concepts.
-   - MEDIUM: Focus on application, relationships between concepts, and analysis.
-   - HARD: Focus on synthesis, edge cases, complex diagrams, and multi-step reasoning.
-   - Use a mix of:
-     * Direct identification from text/images.
-     * Concept synthesis across pages.
-     * Scenario-based problem solving.
+   return `Analyze the provided PDF. Generate exactly ${target} flashcards from its content.
+Difficulty: ${difficulty.toUpperCase()} — ${guidance}
 
-2. OPTION QUALITY:
-   - Provide exactly 4 options per question.
-   - Distractors (wrong answers) MUST be plausible and related to the content, not obviously silly.
-   - Avoid "All of the above" or "None of the above" unless absolutely necessary.
-   - CONSTRAINTS: For visual puzzles (like "mirror image", "water image"), DO NOT use Cyrillic or Unicode characters. Instead, wrap the ORIGINAL unreflected string in tags: '[MIRROR]...[/MIRROR]' or '[WATER]...[/WATER]' (e.g. '[MIRROR]15bg82XQh[/MIRROR]'). The UI will render the visual reflection via CSS. For completely non-textual spatial puzzles (e.g., "embedded figure", "paper folding"), IGNORE and skip them.
+Step 1 — Fill the "concepts" array:
+List exactly ${target} distinct key concepts, terms, or ideas from the document.
+Draw from all sections and pages — do not cluster on the opening content.
+Each concept must be unique. Do not repeat or rephrase the same idea.
 
-3. EXPLANATIONS:
-   - Provide a comprehensive explanation for EACH question.
-   - Explain WHY the correct answer is right and why major distractors are wrong.
+Step 2 — Fill the "questions" array:
+Create one flashcard per concept from Step 1.
+Each item's "concept" field must match an entry from the "concepts" array.
 
-4. TECHNICAL SPECIFICATIONS:
-   - Return ONLY a raw JSON array.
-   - NO markdown formatting (no \`\`\`json blocks).
-   - STRUCTURE: [{"question": "What is the capital of France?", "options": ["Paris", "London", "Berlin", "Madrid"], "answer": "Paris", "explanation": "Paris is the capital of France."}]
-   - ACCURACY: The "answer" field MUST be a CHARACTER-FOR-CHARACTER match with one of the strings in the "options" array. NEVER output just the option letter (e.g., "A").
-`.trim();
+Rules:
+- Front (question): the concept name or a clear question about it.
+- Back (answer): a concise definition or answer (1-2 sentences).
+- "type" must be exactly "flashcard" for every item.
+- The "options" array contains exactly one string that matches "answer" exactly.
+- Do not stop early. Output all ${target} cards before finishing.
+- If the content is insufficient, return { "concepts": [], "questions": [] }.
+
+Output format — follow this example exactly:
+${FLASHCARD_EXAMPLE}`;
+}
+
+function buildVisionQuizPrompt(count: number, difficulty: Difficulty): string {
+   const target = resolveCount(count);
+   const guidance = DIFFICULTY_GUIDANCE[difficulty];
+
+   return `Analyze the provided PDF (may contain text, images, diagrams, or handwriting).
+Generate exactly ${target} multiple-choice questions from its content.
+Difficulty: ${difficulty.toUpperCase()} — ${guidance}
+
+Step 1 — Fill the "concepts" array:
+List exactly ${target} distinct key concepts, facts, or ideas from the document.
+Draw from all sections and pages — do not cluster on the opening content.
+Include concepts from text, diagrams, images, and cross-page synthesis.
+Each concept must be unique. Do not repeat or rephrase the same idea.
+
+Step 2 — Fill the "questions" array:
+Create one question per concept from Step 1.
+Each item's "concept" field must match an entry from the "concepts" array.
+
+Rules:
+- "type" must be exactly "mcq" for every item.
+- Provide exactly 4 options per question.
+- Distractors must be plausible and content-relevant. Avoid "All/None of the above".
+- "answer" must be a character-for-character match with one of the option strings.
+- ${VISUAL_PUZZLE_CONSTRAINT}
+- Explanation: state why the correct answer is right and why each distractor is wrong.
+- Do not stop early. Output all ${target} questions before finishing.
+- If the content is insufficient, return { "concepts": [], "questions": [] }.
+
+Output format — follow this example exactly:
+${QUIZ_EXAMPLE}`;
 }
 
 // ── Public API ──────────────────────────────────────────────────────────
 
 export class PromptBuilder {
-   /** System prompt shared by all providers. */
+   /**
+    * System prompt for the API call.
+    * Paired with \`response_format: { type: "json_object" }\`
+    */
    static getSystemPrompt(): string {
       return QUIZ_SYSTEM_PROMPT;
    }
 
    /**
-    * Build the user prompt for text-based quiz / flashcard generation.
-    *
-    * @param content  - Sanitised user content (already trimmed / sampled)
-    * @param count    - Target number of questions / cards
-    * @param difficulty - "easy" | "medium" | "hard"
-    * @param mode     - "quiz" | "flashcard"
+    * User prompt for text-based quiz / flashcard generation.
     */
    static buildUserPrompt(
       content: string,
@@ -163,25 +268,24 @@ export class PromptBuilder {
       difficulty: string,
       mode: "quiz" | "flashcard"
    ): string {
+      // Cast the string difficulty to our strongly typed Difficulty type
+      const typedDifficulty = (difficulty as Difficulty) || "medium";
       return mode === "flashcard"
-         ? buildFlashcardPrompt(content, count)
-         : buildQuizPrompt(content, count, difficulty);
+         ? buildFlashcardPrompt(content, count, typedDifficulty)
+         : buildQuizPrompt(content, count, typedDifficulty);
    }
 
    /**
-    * Build the user prompt for vision-based (scanned PDF) generation.
-    *
-    * @param count      - Target number of questions / cards
-    * @param difficulty - "easy" | "medium" | "hard"
-    * @param mode       - "quiz" | "flashcard"
+    * User prompt for vision-based (scanned PDF) generation.
     */
    static buildVisionPrompt(
       count: number,
       difficulty: string,
       mode: "quiz" | "flashcard"
    ): string {
+      const typedDifficulty = (difficulty as Difficulty) || "medium";
       return mode === "flashcard"
-         ? buildVisionFlashcardPrompt(count)
-         : buildVisionQuizPrompt(count, difficulty);
+         ? buildVisionFlashcardPrompt(count, typedDifficulty)
+         : buildVisionQuizPrompt(count, typedDifficulty);
    }
 }
