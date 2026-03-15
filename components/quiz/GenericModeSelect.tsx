@@ -8,12 +8,22 @@ import { NavigationPill } from "@/components/ui/NavigationPill";
 import { QuizTheme } from "@/lib/quiz-themes";
 import { PracticeModal } from "./modals/PracticeModal";
 import { ExamModal } from "./modals/ExamModal";
+import { Zap, Database, Code, Terminal } from "lucide-react";
 
 interface GenericModeSelectProps {
   config: QuizTheme;
 }
 
 const TimerIcon = () => <span className="text-5xl">⏳</span>;
+
+const ThemeIcon = ({ icon, className }: { icon: string; className?: string }) => {
+  const iconLower = icon.toLowerCase();
+  if (iconLower === "zap") return <Zap className={className} />;
+  if (iconLower === "database") return <Database className={className} />;
+  if (iconLower === "code") return <Code className={className} />;
+  if (iconLower === "terminal") return <Terminal className={className} />;
+  return <span className="text-2xl">{icon}</span>; // Fallback for emojis
+};
 
 export function GenericModeSelect({ config }: GenericModeSelectProps) {
   const router = useRouter();
@@ -48,7 +58,7 @@ export function GenericModeSelect({ config }: GenericModeSelectProps) {
           className="mb-8"
         >
           <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border backdrop-blur-sm transition-all duration-300 hover:scale-105 ${config.badge.className}`}>
-            <span className="text-2xl">{config.badge.icon}</span>
+            <ThemeIcon icon={config.badge.icon} className="w-6 h-6" />
             <span className="text-sm font-bold tracking-wider">{config.badge.text}</span>
           </div>
         </m.div>
@@ -94,7 +104,7 @@ export function GenericModeSelect({ config }: GenericModeSelectProps) {
           <ModeCard
             title="Practice Labs"
             description="Access comprehensive questions with immediate feedback."
-            icon={<span className="text-5xl">{config.cards.practice.icon}</span>}
+            icon={<ThemeIcon icon={config.cards.practice.icon} className="w-12 h-12" />}
             features={["Instant feedback", "Detailed explanations", "No time pressure"]}
             buttonText="Start Practice"
             gradient={config.cards.practice.gradient}

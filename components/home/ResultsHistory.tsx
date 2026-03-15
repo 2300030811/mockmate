@@ -50,7 +50,7 @@ export function ResultsHistory() {
       id="history"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="mt-20 text-left"
+      className="mt-12 text-left"
     >
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
@@ -63,23 +63,23 @@ export function ResultsHistory() {
         </div>
       </div>
 
-      <div className="space-y-12">
+      <div className="space-y-8">
         {/* Quiz Results */}
         {results.length > 0 && (
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-6 flex items-center gap-2">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-4 flex items-center gap-2">
               <Trophy className="w-4 h-4" /> Recent Quizzes
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <AnimatePresence mode="popLayout">
-                {results.map((result, idx) => (
+                {results.slice(0, 4).map((result, idx) => (
                   <m.div
                     key={result.id}
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: idx * 0.1 }}
                     whileHover={{ y: -5 }}
-                    className="group relative overflow-hidden bg-white/40 dark:bg-gray-900/40 backdrop-blur-xl border border-white/20 dark:border-gray-800 rounded-2xl p-5 shadow-sm hover:shadow-xl transition-all duration-300"
+                    className="group relative overflow-hidden bg-white/40 dark:bg-gray-900/40 backdrop-blur-xl border border-white/20 dark:border-gray-800 rounded-2xl p-4 shadow-sm hover:shadow-xl transition-all duration-300"
                   >
                     {/* Display and Link Logic */}
                     {(() => {
@@ -108,7 +108,7 @@ export function ResultsHistory() {
 
                       return (
                         <>
-                          <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center justify-between mb-3">
                             <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md ${
                               isArena ? 'bg-red-500/10 text-red-500' : isPDF ? 'bg-purple-500/10 text-purple-500' : 'bg-blue-500/10 text-blue-500'
                             }`}>
@@ -122,28 +122,28 @@ export function ResultsHistory() {
 
                           <div className="flex items-end justify-between">
                             <div>
-                              <p className="text-3xl font-black text-gray-900 dark:text-white">
+                              <p className="text-2xl font-black text-gray-900 dark:text-white">
                                 {Math.round((result.score / result.total_questions) * 100)}%
                               </p>
-                              <p className="text-sm text-gray-500 dark:text-gray-400">
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
                                 {result.score}/{result.total_questions} Correct
                               </p>
                             </div>
                             
                             <Link
                               href={href}
-                              className={`p-3 bg-gray-100 dark:bg-gray-800 rounded-xl transition-all duration-300 group-hover:text-white ${
+                              className={`p-2.5 bg-gray-100 dark:bg-gray-800 rounded-xl transition-all duration-300 group-hover:text-white ${
                                 isArena ? 'group-hover:bg-red-600' : isPDF ? 'group-hover:bg-purple-600' : 'group-hover:bg-blue-600'
                               }`}
                             >
-                              <RotateCcw className="w-5 h-5" />
+                              <RotateCcw className="w-4 h-4" />
                             </Link>
                           </div>
                         </>
                       );
                     })()}
 
-                    <div className="mt-4 h-1.5 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                    <div className="mt-3 h-1 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                       <m.div 
                         initial={{ width: 0 }}
                         animate={{ width: `${(result.score / result.total_questions) * 100}%` }}
@@ -165,21 +165,21 @@ export function ResultsHistory() {
         {/* Career Paths */}
         {careerPaths.length > 0 && (
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-6 flex items-center gap-2">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-4 flex items-center gap-2">
               <Map className="w-4 h-4" /> Career Roadmaps
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <AnimatePresence mode="popLayout">
-                {careerPaths.map((path, idx) => (
+                {careerPaths.slice(0, 4).map((path, idx) => (
                   <m.div
                     key={path.id}
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: idx * 0.1 }}
                     whileHover={{ y: -5 }}
-                    className="group relative overflow-hidden bg-white/40 dark:bg-gray-900/40 backdrop-blur-xl border border-white/20 dark:border-gray-800 rounded-2xl p-5 shadow-sm hover:shadow-xl transition-all duration-300"
+                    className="group relative overflow-hidden bg-white/40 dark:bg-gray-900/40 backdrop-blur-xl border border-white/20 dark:border-gray-800 rounded-2xl p-4 shadow-sm hover:shadow-xl transition-all duration-300"
                   >
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
                          <div className="p-1.5 bg-purple-500/10 rounded-lg">
                            <Briefcase className="w-4 h-4 text-purple-500" />
@@ -195,23 +195,23 @@ export function ResultsHistory() {
 
                     <div className="flex items-end justify-between">
                       <div>
-                        <p className="text-3xl font-black text-gray-900 dark:text-white">
+                        <p className="text-2xl font-black text-gray-900 dark:text-white">
                           {path.match_score}%
                         </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
                            Match Score
                         </p>
                       </div>
                       
                       <Link
                         href="/career-path"
-                        className="p-3 bg-gray-100 dark:bg-gray-800 rounded-xl group-hover:bg-purple-600 group-hover:text-white transition-all duration-300"
+                        className="p-2.5 bg-gray-100 dark:bg-gray-800 rounded-xl group-hover:bg-purple-600 group-hover:text-white transition-all duration-300"
                       >
-                        <ChevronRight className="w-5 h-5" />
+                        <ChevronRight className="w-4 h-4" />
                       </Link>
                     </div>
 
-                    <div className="mt-4 h-1.5 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                    <div className="mt-3 h-1 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                       <m.div 
                         initial={{ width: 0 }}
                         animate={{ width: `${path.match_score}%` }}

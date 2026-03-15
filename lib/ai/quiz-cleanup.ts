@@ -124,19 +124,40 @@ function levenshtein(a: string, b: string): number {
 }
 
 /**
- * Last ditch effort: Check if the explanation mentions exactly one of the options.
- * This handles cases where the AI says answer is "72 kg" (typo) but explanation says "... is 720 kg" (correct).
+ * Attempts to recover the correct answer from the explanation text.
+ *
+ * Previous behaviour: returned an option only when exactly one option appeared
+ * in the explanation. This broke with concept-first prompts because explanations
+ * now mention all four options (explaining why each distractor is wrong), so
+ * `found.length` was always > 1 and rescue always returned null.
+ *
+ * New behaviour: rank options by their first occurrence in the explanation.
+ * Models consistently state the correct answer before discussing distractors,
+ * so the earliest-mentioned option is the best rescue candidate.
+ * Still requires the winning option to appear strictly before any distractor —
+ * if two options tie at the same position we bail out rather than guess.
  */
 function rescueFromExplanation(options: string[], explanation: string): string | null {
   if (!explanation) return null;
-  // Count how many options appear in the explanation
-  // We check if the option string is present in the explanation
-  const found = options.filter(opt => explanation.includes(opt));
 
-  if (found.length === 1) {
-    return found[0];
-  }
-  return null;
+  // Map each option to its first index in the explanation (-1 = not mentioned)
+  const positions = options.map(opt => ({
+    opt,
+    pos: explanation.indexOf(opt),
+  })).filter(x => x.pos !== -1);
+
+  if (positions.length === 0) return null;
+
+  // Sort by earliest appearance
+  positions.sort((a, b) => a.pos - b.pos);
+
+  const first = positions[0];
+  const second = positions[1];
+
+  // Only rescue if the winner appears strictly before the runner-up
+  if (second && first.pos === second.pos) return null;
+
+  return first.opt;
 }
 
 export function sanitizeQuizQuestions(questions: unknown[]): GeneratedQuizQuestion[] {
