@@ -3,13 +3,13 @@
 import { QuizGenerator, AIProviderName } from "@/lib/ai/quiz-generator";
 import { getNextKey } from "@/utils/keyManager";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { safeJsonParse } from "@/utils/safeJson";
 import { GeneratedQuizResponseSchema, GeneratedQuizQuestion, GeneratedQuizResponse } from "@/lib/ai/models";
 import { sanitizeQuizQuestions } from "@/lib/ai/quiz-cleanup";
 import { StorageService } from "@/lib/services/storage";
 import { OCRService } from "@/lib/services/ocr";
 import { createClient } from "@/utils/supabase/server";
 import { rateLimit } from "@/lib/rate-limit";
+import { parseQuizResponse } from "@/lib/ai/response-parser";
 import { AppError } from "@/lib/exceptions";
 import { logger } from "@/lib/logger";
 import { PromptBuilder } from "@/lib/ai/prompt-builder";
@@ -47,10 +47,6 @@ export async function convertFileAction(formData: FormData) {
       if (value) chunks.push(value);
     }
     const buffer = Buffer.concat(chunks);
-
-    // --- AZURE BLOB STORAGE BACKUP (Fire & Forget) ---
-    // We don't await this so it doesn't slow down the user
-    void StorageService.uploadResumeBackup(buffer, file.name);
 
     // --- OCR EXTRACTION ---
     const { text, source } = await OCRService.extractText(buffer);
@@ -100,12 +96,12 @@ async function generateWithGeminiVision(apiKey: string, base64Pdf: string, count
   const response = await result.response;
   const text = response.text();
 
-  const parsed = safeJsonParse(text, GeneratedQuizResponseSchema);
-  if (!parsed) {
+  const questions = parseQuizResponse(text);
+  if (!questions) {
     throw new AppError("Failed to parse AI Vision response into valid Quiz JSON.", "AI_ERROR", 500);
   }
 
-  return parsed as GeneratedQuizResponse;
+  return questions;
 }
 
 /**
