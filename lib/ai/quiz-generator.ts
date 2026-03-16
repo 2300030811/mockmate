@@ -125,16 +125,17 @@ export class QuizGenerator {
     } else if (providerName === "openai") {
       providers.push(new OpenAIProvider());
     } else {
-      // Auto Strategy: Gemini -> Groq
-      providers.push(new GeminiProvider());
+      // Auto Strategy: Groq -> Gemini
+      // Groq is significantly faster for text-to-JSON tasks.
       providers.push(new GroqProvider());
+      providers.push(new GeminiProvider());
     }
 
     let lastError;
     
     // Request fewer questions if we are just testing, otherwise ask for a buffer!
-    // We request count + 30% to allow for filtering and randomness.
-    const targetCount = Math.ceil(count * 1.3);
+    // We request count + 15% to allow for filtering and randomness.
+    const targetCount = Math.ceil(count * 1.15);
 
     for (const provider of providers) {
       try {

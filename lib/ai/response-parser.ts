@@ -50,22 +50,38 @@ export function parseQuizResponse(raw: string): GeneratedQuizQuestion[] | null {
   let json: unknown;
   try {
     json = JSON.parse(text);
-  } catch {
+  } catch (err) {
+    console.error("❌ [ResponseParser] JSON.parse failed. Text snippet:", text.substring(0, 100) + "...");
+    console.error("Error details:", err);
     return null;
   }
 
   // 4. Unwrap { "questions": [...] } / { "flashcards": [...] } wrappers
   if (!Array.isArray(json) && json && typeof json === "object") {
     const obj = json as Record<string, unknown>;
-    const arrayKey = Object.keys(obj).find((key) => Array.isArray(obj[key]));
-    if (arrayKey) {
-      json = obj[arrayKey];
+    
+    // Prioritize known question keys
+    const priorityKeys = ["questions", "flashcards", "quiz", "cards"];
+    const priorityKey = priorityKeys.find(key => Array.isArray(obj[key]));
+    
+    if (priorityKey) {
+      json = obj[priorityKey];
+    } else {
+      // Fallback: search for ANY array
+      const anyArrayKey = Object.keys(obj).find((key) => Array.isArray(obj[key]));
+      if (anyArrayKey) {
+        json = obj[anyArrayKey];
+      }
     }
   }
 
   // 5. Validate with Zod schema
   const result = GeneratedQuizResponseSchema.safeParse(json);
-  return result.success ? result.data : null;
+  if (!result.success) {
+    console.warn("⚠️ [ResponseParser] Zod validation failed for AI response.");
+    return null;
+  }
+  return result.data;
 }
 
 /**
