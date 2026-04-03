@@ -6,19 +6,26 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 
 interface JobInputProps {
-  onAnalyze: (jobRole: string, company: string) => void;
+  onAnalyze: (jobRole: string, company: string, jobDescription?: string) => void;
   isLoading: boolean;
   hasFile: boolean;
+  buttonText?: string;
 }
 
-export const JobInput: React.FC<JobInputProps> = ({ onAnalyze, isLoading, hasFile }) => {
+export const JobInput: React.FC<JobInputProps> = ({ 
+  onAnalyze, 
+  isLoading, 
+  hasFile,
+  buttonText = "Analyze Career Path" 
+}) => {
   const [jobRole, setJobRole] = useState('');
   const [company, setCompany] = useState('');
+  const [jobDescription, setJobDescription] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (jobRole.trim() && hasFile) {
-      onAnalyze(jobRole, company);
+      onAnalyze(jobRole, company, jobDescription);
     }
   };
 
@@ -64,6 +71,22 @@ export const JobInput: React.FC<JobInputProps> = ({ onAnalyze, isLoading, hasFil
           </div>
         </div>
 
+        <div className="space-y-2">
+          <label className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
+            <Search size={16} />
+            Job Description <span className="text-xs opacity-50">(Optional - helps with ATS keyword match)</span>
+          </label>
+          <div className="relative">
+            <textarea
+              value={jobDescription}
+              onChange={(e) => setJobDescription(e.target.value)}
+              placeholder="Paste the job description here..."
+              rows={4}
+              className="w-full bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-lg py-3 px-4 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all resize-none"
+            />
+          </div>
+        </div>
+
         <div className="relative group">
           <Button 
             type="submit" 
@@ -79,7 +102,7 @@ export const JobInput: React.FC<JobInputProps> = ({ onAnalyze, isLoading, hasFil
             ) : (
               <span className="flex items-center gap-2">
                 <Search size={20} />
-                Analyze Career Path
+                {buttonText}
               </span>
             )}
           </Button>

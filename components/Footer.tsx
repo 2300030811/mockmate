@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Sparkles, Github, Linkedin } from "lucide-react";
+import { Sparkles, Users } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 export function Footer() {
@@ -77,35 +77,18 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Connect */}
+          {/* About */}
           <div>
             <h4 className="text-sm font-bold uppercase tracking-wider text-gray-900 dark:text-white mb-6">
-              Connect
+              
             </h4>
-            <div className="flex gap-4">
-              <button
-                onClick={() => {
-                  window.open("https://github.com/2300030811", "_blank");
-                  window.open("https://github.com/ktejaswanth", "_blank");
-                }}
-                className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-blue-600 hover:text-white transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
-                aria-label="GitHub Profiles"
-                title="GitHub Profiles"
-              >
-                <Github className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => {
-                  window.open("https://www.linkedin.com/in/mahesh-sai-bhima-038243286", "_blank");
-                  window.open("https://www.linkedin.com/in/ktejaswanth/", "_blank");
-                }}
-                className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-blue-700 hover:text-white transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
-                aria-label="LinkedIn Profiles"
-                title="LinkedIn Profiles"
-              >
-                <Linkedin className="w-5 h-5" />
-              </button>
-            </div>
+            <Link
+              href="/about"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-semibold hover:opacity-90 hover:scale-105 transition-all duration-200 shadow-md"
+            >
+              <Users className="w-4 h-4" />
+              Connect with Us
+            </Link>
           </div>
         </div>
 

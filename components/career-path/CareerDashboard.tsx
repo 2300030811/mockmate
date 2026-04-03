@@ -6,11 +6,15 @@ import { CheckCircle, BookOpen, ExternalLink, ArrowRight, Award, Target, Trendin
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { CareerAnalysisResult, SkillGap, RoleSuggestion } from '@/types/career';
+import { AtsScoreResult } from '@/types/ats-score';
+import { AtsScoreDashboard } from '@/components/career-path/AtsScoreDashboard';
+import { FixSuggestions } from '@/components/career-path/FixSuggestions';
 import Link from 'next/link';
 import { QUIZ_ROUTES } from '@/lib/constants';
 
 interface CareerDashboardProps {
   data: CareerAnalysisResult;
+  atsData?: AtsScoreResult;
 }
 
 interface StatCardProps {
@@ -419,7 +423,7 @@ const SkillGapCard = React.memo(({ gap, idx, getQuizLink }: SkillGapCardProps) =
 
 SkillGapCard.displayName = "SkillGapCard";
 
-type TabId = 'overview' | 'skills' | 'roles' | 'roadmap' | 'prep';
+type TabId = 'overview' | 'skills' | 'roles' | 'roadmap' | 'prep' | 'ats';
 
 const TABS: { id: TabId; label: string; shortLabel: string; icon: React.ElementType }[] = [
   { id: 'overview', label: 'Overview', shortLabel: 'Overview', icon: Sparkles },
@@ -427,6 +431,7 @@ const TABS: { id: TabId; label: string; shortLabel: string; icon: React.ElementT
   { id: 'roles', label: 'Role Explorer', shortLabel: 'Roles', icon: Compass },
   { id: 'roadmap', label: 'Learning Roadmap', shortLabel: 'Roadmap', icon: BookOpen },
   { id: 'prep', label: 'Interview & Resume', shortLabel: 'Prep', icon: MessageSquare },
+  { id: 'ats', label: 'ATS Score', shortLabel: 'ATS Score', icon: FileText },
 ];
 
 interface RoadmapTabProps {
@@ -583,7 +588,7 @@ const RoadmapTab = React.memo(function RoadmapTab({ roadmap, expandedSteps, togg
   );
 });
 
-export const CareerDashboard: React.FC<CareerDashboardProps> = ({ data }) => {
+export const CareerDashboard: React.FC<CareerDashboardProps> = ({ data, atsData }) => {
   const [activeTab, setActiveTab] = React.useState<TabId>('overview');
   const [expandedSteps, setExpandedSteps] = React.useState<number[]>([0]);
 
@@ -920,6 +925,25 @@ export const CareerDashboard: React.FC<CareerDashboardProps> = ({ data }) => {
                 <Card className="p-12 text-center bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
                   <MessageSquare className="mx-auto text-gray-300 dark:text-gray-600 mb-4" size={48} />
                   <p className="text-gray-500 dark:text-gray-400 font-medium">Interview and resume preparation content will appear here.</p>
+                </Card>
+              )}
+            </div>
+          )}
+
+          {/* ─── ATS SCORE TAB ─── */}
+          {activeTab === 'ats' && (
+            <div className="space-y-8">
+              {atsData ? (
+                <>
+                  <AtsScoreDashboard data={atsData} />
+                  {atsData.fixSuggestions && atsData.fixSuggestions.length > 0 && (
+                    <FixSuggestions suggestions={atsData.fixSuggestions} />
+                  )}
+                </>
+              ) : (
+                <Card className="p-12 text-center bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
+                  <FileText className="mx-auto text-gray-300 dark:text-gray-600 mb-4" size={48} />
+                  <p className="text-gray-500 dark:text-gray-400 font-medium">ATS Score data is not available for this analysis.</p>
                 </Card>
               )}
             </div>
