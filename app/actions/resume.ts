@@ -1,7 +1,7 @@
 "use server";
 
 import { Groq } from "groq-sdk";
-import { getNextKey } from "@/utils/keyManager";
+import { getNextKey, getNumKeys } from "@/utils/keyManager";
 import { OCRService } from "@/lib/services/ocr";
 import { RoastData, roastDataSchema, deriveMatchRating } from "../(main)/resume-roaster/types";
 import { sanitizePromptInput } from "@/utils/sanitize";

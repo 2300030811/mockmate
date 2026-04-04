@@ -2,11 +2,11 @@
 
 import { CareerAnalysisResult, Skill, SkillGap, LearningStep } from '@/types/career';
 import Groq from 'groq-sdk';
-import pdf from 'pdf-parse';
 import { env } from '@/lib/env'; 
+import { OCRService } from '@/lib/services/ocr';
 import { z } from 'zod';
 import { sanitizePromptInput } from '@/utils/sanitize';
-import { getNextKey } from '@/utils/keyManager';
+import { getNextKey, getNumKeys } from '@/utils/keyManager';
 import { fetchSalaryEstimate, EnrichedSalaryData } from '@/lib/services/salary-service';
 import { estimateExperienceYears } from '@/lib/career-utils';
 
@@ -87,8 +87,13 @@ export async function analyzeCareerPath(formData: FormData, jobRole: string, com
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     
-    const data = await pdf(buffer);
-    const resumeText = data.text;
+    // Extract text using Azure Document Intelligence (or fallback)
+    const { text: resumeText } = await OCRService.extractText(buffer);
+    
+    if (!resumeText || resumeText.length < 50) {
+      throw new Error("Resume content too short or unreadable. Please upload a clear text-based PDF.");
+    }
+
     const MAX_CHARS = 15000;
     const wasTruncated = resumeText.length > MAX_CHARS;
     const truncatedResume = resumeText.slice(0, MAX_CHARS);
@@ -107,36 +112,65 @@ export async function analyzeCareerPath(formData: FormData, jobRole: string, com
     let content: string | null = null;
     let providerUsed = "";
 
-    // --- Use Groq for analysis ---
-    try {
-        const groqApiKey = getNextKey("GROQ_API_KEY");
-        
-        if (!groqApiKey) throw new Error("No Groq API Keys available");
+    // --- AI Provider Cascade ---
+    const numGroqKeys = getNumKeys("GROQ_API_KEY") || 1;
+    let groqSuccess = false;
 
-        const groq = new Groq({ apiKey: groqApiKey });
+    for (let i = 0; i < numGroqKeys; i++) {
+        try {
+            const groqApiKey = getNextKey("GROQ_API_KEY");
+            if (!groqApiKey) throw new Error("No Groq API Keys available");
 
-        const completion = await groq.chat.completions.create({
-            model: "llama-3.3-70b-versatile",
-            messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: `Here is the candidate's resume text:\n\n${sanitizePromptInput(truncatedResume, 15000)}` }
-            ],
-            response_format: { type: "json_object" },
-            temperature: 0.4,
-        });
-        content = completion.choices[0]?.message?.content;
-        providerUsed = "Groq";
-
-    } catch (groqError: unknown) {
-        const msg = groqError instanceof Error ? groqError.message : String(groqError);
-        console.error(`🔥 [Analyze] Groq Failed: ${msg}`);
-        throw new Error(`AI analysis failed: ${msg}`);
+            const groq = new Groq({ apiKey: groqApiKey });
+            const completion = await groq.chat.completions.create({
+                model: "llama-3.3-70b-versatile",
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    { role: "user", content: `Here is the candidate's resume text:\n\n${sanitizePromptInput(truncatedResume, 15000)}` }
+                ],
+                response_format: { type: "json_object" },
+                temperature: 0.4,
+            });
+            content = completion.choices[0]?.message?.content || null;
+            if (content) {
+                providerUsed = "Groq";
+                groqSuccess = true;
+                break;
+            }
+        } catch (groqError: unknown) {
+            console.warn(`⚠️ [Analyze] Groq key ${i + 1} failed: ${groqError instanceof Error ? groqError.message : String(groqError)}`);
+        }
     }
 
+    if (!groqSuccess) {
+        console.warn(`⚠️ [Analyze] All Groq keys failed, attempting Gemini fallback...`);
+    }
 
-    
+    // --- Fallback to Gemini ---
     if (!content) {
-        throw new Error("Empty response from all AI providers");
+        try {
+            const geminiApiKey = process.env.GOOGLE_API_KEY;
+            if (geminiApiKey) {
+                const { GoogleGenerativeAI } = await import("@google/generative-ai");
+                const genAI = new GoogleGenerativeAI(geminiApiKey);
+                const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+                
+                const result = await model.generateContent([
+                    { text: systemPrompt + "\n\nUser Input:\n" + truncatedResume }
+                ]);
+                const responseText = result.response.text();
+                // Clean markdown from Gemini
+                content = responseText.replace(/```json\n?/, "").replace(/```\n?/, "").trim();
+                providerUsed = "Gemini";
+                console.log("✅ [Analyze] Gemini Fallback successful");
+            }
+        } catch (geminiError) {
+            console.error(`🔥 [Analyze] Gemini Fallback failed: ${geminiError instanceof Error ? geminiError.message : String(geminiError)}`);
+        }
+    }
+
+    if (!content) {
+        throw new Error("AI analysis failed: Connection error or all providers exhausted.");
     }
 
     const rawResult = JSON.parse(content);

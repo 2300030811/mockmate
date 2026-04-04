@@ -10,15 +10,20 @@ import { CareerAnalysisResult } from '@/types/career';
 import { m, AnimatePresence } from 'framer-motion';
 import { saveCareerPath } from '@/app/actions/career-save';
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Sparkles, Home } from 'lucide-react';
+import { ArrowLeft, Sparkles, Home, Target } from 'lucide-react';
 import Link from 'next/link';
 import { NavigationPill } from '@/components/ui/NavigationPill';
+import { analyzeAtsScoreAction } from '@/app/actions/ats-score';
+import { AtsScoreResult } from '@/types/ats-score';
+import { AtsScoreDashboard } from '@/components/career-path/AtsScoreDashboard';
+import { FixSuggestions } from '@/components/career-path/FixSuggestions';
 
 export default function CareerPathPage() {
   const router = useRouter();
   const [step, setStep] = useState<'upload' | 'analysis' | 'results'>('upload');
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<CareerAnalysisResult | null>(null);
+  const [atsResult, setAtsResult] = useState<AtsScoreResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [messageIndex, setMessageIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +41,7 @@ export default function CareerPathPage() {
     setFile(uploadedFile);
   }, []);
 
-  const handleAnalyze = React.useCallback(async (jobRole: string, company: string) => {
+  const handleAnalyze = React.useCallback(async (jobRole: string, company: string, jobDescription?: string) => {
     if (!file) return;
 
     setIsLoading(true);
@@ -47,11 +52,28 @@ export default function CareerPathPage() {
       const formData = new FormData();
       formData.append('file', file);
 
-      const data = await analyzeCareerPath(formData, jobRole, company);
-      setResult(data);
+      // Analyze Career Roadmap and ATS Optimization in parallel
+      const [careerPromise, atsPromise] = await Promise.allSettled([
+        analyzeCareerPath(formData, jobRole, company),
+        analyzeAtsScoreAction(formData, jobRole, company, jobDescription)
+      ]);
+
+      if (careerPromise.status === 'rejected') {
+        throw new Error(careerPromise.reason);
+      }
+
+      const careerData = careerPromise.value;
+      setResult(careerData);
+
+      if (atsPromise.status === 'fulfilled' && atsPromise.value?.data) {
+        setAtsResult(atsPromise.value.data);
+      } else if (atsPromise.status === 'rejected') {
+        console.warn("ATS Analysis failed while Career Analysis succeeded:", atsPromise.reason);
+      }
+
       // Auto-save to DB
-      if (data) {
-        const saveResult = await saveCareerPath(data);
+      if (careerData) {
+        const saveResult = await saveCareerPath(careerData);
         if (!saveResult.success && saveResult.error === "Authentication required to save career paths") {
           console.info("Guest user — career path not saved");
         }
@@ -69,6 +91,7 @@ export default function CareerPathPage() {
   const handleReset = React.useCallback(() => {
     setFile(null);
     setResult(null);
+    setAtsResult(null);
     setStep('upload');
   }, []);
 
@@ -82,11 +105,11 @@ export default function CareerPathPage() {
 
       <div className="max-w-6xl mx-auto relative z-10">
         <div className="mb-12 text-center text-balance">
-          <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 dark:from-blue-400 dark:via-purple-400 dark:to-pink-400 mb-4 flex items-center justify-center gap-3">
-            <Sparkles className="text-purple-600 dark:text-purple-400" />
+          <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-4 flex items-center justify-center gap-3">
+            <Sparkles className="text-blue-500 w-8 h-8" />
             AI Career Pathfinder
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 text-lg max-w-2xl mx-auto font-medium">
+          <p className="text-gray-500 dark:text-gray-400 text-lg max-w-2xl mx-auto font-medium">
             Upload your resume, tell us your dream job, and let AI build your personalized roadmap to success.
           </p>
         </div>
@@ -121,51 +144,30 @@ export default function CareerPathPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center py-20"
+              className="flex flex-col items-center justify-center py-32"
             >
-              <div className="relative w-32 h-32 mb-10">
-                {/* Neural Pulse Circles */}
-                <m.div
-                  animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0.1, 0.3] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                  className="absolute inset-0 bg-purple-500/20 rounded-full blur-2xl"
-                />
+              <div className="relative flex items-center justify-center w-24 h-24 mb-8">
                 <m.div
                   animate={{ rotate: 360 }}
-                  transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-                  className="absolute inset-0 border-2 border-dashed border-purple-500/30 rounded-full"
+                  transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                  className="absolute inset-0 border-4 border-gray-200 dark:border-gray-800 rounded-full border-t-blue-500 dark:border-t-blue-500"
                 />
-                <m.div
-                  animate={{ rotate: -360 }}
-                  transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-                  className="absolute inset-4 border border-blue-500/20 rounded-full border-t-blue-500"
-                />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Sparkles className="w-10 h-10 text-purple-500 animate-pulse" />
-                </div>
+                <Sparkles className="w-8 h-8 text-blue-500 animate-pulse" />
               </div>
 
               <div className="text-center space-y-4">
-                <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight italic">
-                  Neural Career Mapping
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
+                  Analyzing Your Profile
                 </h3>
-                <div className="flex flex-col items-center gap-2">
+                <div className="flex flex-col items-center gap-3">
                   <m.p
                     key={messageIndex}
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={{ opacity: 0, y: 5 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="text-purple-600 dark:text-purple-400 font-bold uppercase tracking-[0.2em] text-[10px]"
+                    className="text-gray-500 dark:text-gray-400 font-medium text-sm"
                   >
-                    {['Deconstructing Resume...', 'Mapping Market Trends...', 'Simulating Growth Paths...', 'Finalizing Roadmap...'][messageIndex]}
+                    {['Extracting skills and experience...', 'Aligning with market trends...', 'Generating ATS optimization plan...', 'Building career roadmap...'][messageIndex]}
                   </m.p>
-                  <div className="w-48 h-1 bg-gray-200 dark:bg-white/5 rounded-full overflow-hidden">
-                    <m.div
-                      initial={{ x: '-100%' }}
-                      animate={{ x: '100%' }}
-                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                      className="w-full h-full bg-gradient-to-r from-transparent via-purple-500 to-transparent"
-                    />
-                  </div>
                 </div>
               </div>
             </m.div>
@@ -175,15 +177,29 @@ export default function CareerPathPage() {
             <m.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
+              className="space-y-12"
             >
-              <button
-                onClick={handleReset}
-                className="mb-6 flex items-center gap-2 px-4 py-2 rounded-lg text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-all"
-              >
-                <ArrowLeft size={18} />
-                Analyze another role
-              </button>
-              <CareerDashboard data={result} />
+              <div className="flex items-center justify-between mb-8">
+                <button
+                  onClick={handleReset}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-all font-medium"
+                >
+                  <ArrowLeft size={18} />
+                  Analyze another role
+                </button>
+              </div>
+
+              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-300">
+                <div className="text-center mb-10 text-balance">
+                  <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+                    Career Roadmap & Insights
+                  </h2>
+                  <p className="text-gray-500 dark:text-gray-400 mt-2 max-w-2xl mx-auto">
+                    Your long-term upskilling and career progression path, generated based on your gap analysis.
+                  </p>
+                </div>
+                <CareerDashboard data={result} atsData={atsResult || undefined} />
+              </div>
             </m.div>
           )}
         </AnimatePresence>
