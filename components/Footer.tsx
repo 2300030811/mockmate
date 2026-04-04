@@ -86,7 +86,7 @@ export function Footer() {
               <button
                 onClick={() => {
                   window.open("https://github.com/2300030811", "_blank");
-                  window.open("https://github.com/ktejaswanth", "_blank");
+                  setTimeout(() => window.open("https://github.com/ktejaswanth", "_blank"), 100);
                 }}
                 className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-blue-600 hover:text-white transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
                 aria-label="GitHub Profiles"
@@ -97,7 +97,7 @@ export function Footer() {
               <button
                 onClick={() => {
                   window.open("https://www.linkedin.com/in/mahesh-sai-bhima-038243286", "_blank");
-                  window.open("https://www.linkedin.com/in/ktejaswanth/", "_blank");
+                  setTimeout(() => window.open("https://www.linkedin.com/in/ktejaswanth/", "_blank"), 100);
                 }}
                 className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-blue-700 hover:text-white transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
                 aria-label="LinkedIn Profiles"
