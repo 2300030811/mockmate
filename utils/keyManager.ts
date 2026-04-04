@@ -29,6 +29,10 @@ export class KeyManager {
   public hasKeys(): boolean {
     return this.keys.length > 0;
   }
+
+  public getCount(): number {
+    return this.keys.length;
+  }
 }
 
 // Cache KeyManager instances per env var name (singleton pattern)
@@ -41,4 +45,13 @@ export const getNextKey = (envVarName: string): string => {
     instanceCache.set(envVarName, manager);
   }
   return manager.getKey();
+};
+
+export const getNumKeys = (envVarName: string): number => {
+  let manager = instanceCache.get(envVarName);
+  if (!manager) {
+    manager = new KeyManager(envVarName);
+    instanceCache.set(envVarName, manager);
+  }
+  return manager.getCount();
 };
