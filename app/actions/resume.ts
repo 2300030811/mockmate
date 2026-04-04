@@ -89,56 +89,17 @@ Rules:
 - atsScore MUST be ${hasJD ? `${scoreLow}-${scoreHigh}` : "max 70"}.
 `;
 
-    let content = "";
-    
-    // --- Try Groq (Primary) - Attempt all keys if ratelimited ---
-    const numGroqKeys = getNumKeys("GROQ_API_KEY") || 1;
-    let groqSuccess = false;
+    const chatCompletion = await groq.chat.completions.create({
+      messages: [
+        { role: "system", content: `You are a Resume Analyst with a ${tone} style. Respond ONLY in valid JSON.` },
+        { role: "user", content: prompt },
+      ],
+      model: "llama-3.3-70b-versatile",
+      temperature: 0.6,
+      response_format: { type: "json_object" },
+    });
 
-    for (let i = 0; i < numGroqKeys; i++) {
-      try {
-        const currentKey = getNextKey("GROQ_API_KEY") || process.env.GROQ_API_KEY;
-        if (!currentKey) throw new Error("API Service missing.");
-        
-        const localGroq = new Groq({ apiKey: currentKey });
-        const chatCompletion = await localGroq.chat.completions.create({
-          messages: [
-            { role: "system", content: `You are a Resume Analyst with a ${tone} style. Respond ONLY in valid JSON.` },
-            { role: "user", content: prompt },
-          ],
-          model: "llama-3.3-70b-versatile",
-          temperature: 0.6,
-          response_format: { type: "json_object" },
-        });
-
-        content = chatCompletion.choices[0]?.message?.content || "";
-        if (content) {
-          groqSuccess = true;
-          break; // Exit the loop if successful
-        }
-      } catch (groqError: unknown) {
-        logger.warn(`Resume Roast: Groq key ${i + 1} failed: ${groqError instanceof Error ? groqError.message : String(groqError)}`);
-      }
-    }
-
-    // --- Fallback to Gemini ---
-    if (!groqSuccess) {
-      logger.warn("Resume Roast: All Groq keys failed, attempting Gemini fallback...");
-      const geminiApiKey = process.env.GOOGLE_API_KEY;
-      if (geminiApiKey) {
-        const { GoogleGenerativeAI } = await import("@google/generative-ai");
-        const genAI = new GoogleGenerativeAI(geminiApiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-        
-        const result = await model.generateContent([
-          { text: `System: You are a Resume Analyst with a ${tone} style. Respond ONLY in valid JSON.\n\nPrompt: ${prompt}` }
-        ]);
-        const responseText = result.response.text();
-        content = responseText.replace(/```json\n?/, "").replace(/```\n?/, "").trim();
-      } else {
-        throw new Error("API Service missing backup.");
-      }
-    }
+    const content = chatCompletion.choices[0]?.message?.content || "";
 
     try {
       const rawParsed = JSON.parse(content);

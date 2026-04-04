@@ -130,6 +130,11 @@ export async function saveQuizResult(data: {
                 .eq('id', existing.id);
 
             if (error) throw error;
+
+            if (redis) {
+                redis.del(`leaderboard:${data.category}:all-time`, `leaderboard:${data.category}:weekly`).catch(e => console.warn("Redis del failed:", e));
+            }
+
             revalidatePath("/");
             revalidatePath("/dashboard");
             return { success: true, updated: true };
@@ -177,6 +182,10 @@ export async function saveQuizResult(data: {
             // Non-fatal — the quiz result was saved, stats sync can be retried
             console.error("⚠️ Failed to sync profile stats:", syncErr);
           }
+        }
+
+        if (redis) {
+            redis.del(`leaderboard:${data.category}:all-time`, `leaderboard:${data.category}:weekly`).catch(e => console.warn("Redis del failed:", e));
         }
 
         revalidatePath("/");
