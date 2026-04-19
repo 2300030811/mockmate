@@ -6,6 +6,7 @@ import { m } from "framer-motion";
 import { getInterviewSessions } from "@/app/actions/interview-sessions";
 import { ArrowLeft, Clock, BrainCircuit, Target, Mic, Code2, Users, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { ClientDate } from "@/components/ui/ClientDate";
 
 interface SessionRow {
   id: string;
@@ -24,15 +25,13 @@ function formatDuration(seconds: number) {
   return `${m}m ${s.toString().padStart(2, "0")}s`;
 }
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+const DATE_OPTIONS: Intl.DateTimeFormatOptions = {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+};
 
 function scoreColor(score: number) {
   if (score > 80) return "text-green-400 bg-green-500/10 border-green-500/20";
@@ -180,7 +179,7 @@ export default function InterviewHistoryPage() {
                           <Clock size={12} />
                           {formatDuration(session.duration_seconds)}
                         </span>
-                        <span>{formatDate(session.created_at)}</span>
+                        <span><ClientDate date={session.created_at} options={DATE_OPTIONS} /></span>
                       </div>
                     </div>
                   </div>

@@ -57,7 +57,7 @@ export default function AtsScorePage() {
       const formData = new FormData();
       formData.append('file', file);
       
-      const response = await analyzeAtsScoreAction(formData, jobDescription);
+      const response = await analyzeAtsScoreAction(formData, jobRole, company, jobDescription);
       
       if (response.error || !response.data) {
         throw new Error(response.error || "Analysis failed");

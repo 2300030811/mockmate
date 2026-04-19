@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import { getRecentResults } from "@/app/actions/results";
 import { getRecentCareerPaths } from "@/app/actions/career-save";
+import { getRecentCareerOpsApplications, getRecentCareerOpsFollowUps } from "@/app/actions/career-ops";
 import { m, AnimatePresence } from "framer-motion";
-import { Trophy, Clock, ChevronRight, BarChart3, RotateCcw, Briefcase, Map } from "lucide-react";
+import { Trophy, Clock, ChevronRight, BarChart3, RotateCcw, Briefcase, Map, BellRing } from "lucide-react";
 import Link from "next/link";
+import type { CareerOpsApplicationItem, CareerOpsRecentActivityItem } from "@/types/career-ops";
 
 interface QuizResult {
   id: string;
@@ -23,26 +25,47 @@ interface CareerPathEntry {
   created_at: string;
 }
 
+const STATUS_STYLES: Record<string, string> = {
+  evaluated: "bg-slate-500/10 text-slate-500",
+  applied: "bg-blue-500/10 text-blue-500",
+  responded: "bg-cyan-500/10 text-cyan-500",
+  interview: "bg-indigo-500/10 text-indigo-500",
+  offer: "bg-emerald-500/10 text-emerald-500",
+  rejected: "bg-rose-500/10 text-rose-500",
+  discarded: "bg-amber-500/10 text-amber-500",
+  skip: "bg-gray-500/10 text-gray-500",
+};
+
 export function ResultsHistory() {
   const [results, setResults] = useState<QuizResult[]>([]);
   const [careerPaths, setCareerPaths] = useState<CareerPathEntry[]>([]);
+  const [trackerApps, setTrackerApps] = useState<CareerOpsApplicationItem[]>([]);
+  const [recentFollowUps, setRecentFollowUps] = useState<CareerOpsRecentActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadHistory() {
-      const [quizHistory, careerHistory] = await Promise.all([
+      const [quizHistory, careerHistory, trackerHistory, followUpHistory] = await Promise.all([
         getRecentResults(),
-        getRecentCareerPaths()
+        getRecentCareerPaths(),
+        getRecentCareerOpsApplications(4),
+        getRecentCareerOpsFollowUps(3)
       ]);
       setResults(quizHistory as QuizResult[]);
       setCareerPaths(careerHistory as CareerPathEntry[]);
+      setTrackerApps(trackerHistory);
+      setRecentFollowUps(followUpHistory);
       setLoading(false);
     }
     loadHistory();
   }, []);
 
   if (loading) return null;
-  const hasData = results.length > 0 || careerPaths.length > 0;
+  const hasData =
+    results.length > 0 ||
+    careerPaths.length > 0 ||
+    trackerApps.length > 0 ||
+    recentFollowUps.length > 0;
   if (!hasData) return null;
 
   return (
@@ -223,6 +246,80 @@ export function ResultsHistory() {
                 ))}
               </AnimatePresence>
             </div>
+          </div>
+        )}
+
+        {(trackerApps.length > 0 || recentFollowUps.length > 0) && (
+          <div>
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-4 flex items-center gap-2">
+              <Briefcase className="w-4 h-4" /> Application Tracker
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+              {trackerApps.map((application, idx) => {
+                const statusClass = STATUS_STYLES[application.status] || "bg-gray-500/10 text-gray-500";
+
+                return (
+                  <m.div
+                    key={application.id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: idx * 0.1 }}
+                    whileHover={{ y: -5 }}
+                    className="group relative overflow-hidden bg-white/40 dark:bg-gray-900/40 backdrop-blur-xl border border-white/20 dark:border-gray-800 rounded-2xl p-4 shadow-sm hover:shadow-xl transition-all duration-300"
+                  >
+                    <div className="flex items-start justify-between mb-3 gap-2">
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{application.jobRole}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{application.company}</p>
+                      </div>
+                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md ${statusClass}`}>
+                        {application.status}
+                      </span>
+                    </div>
+
+                    <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                      <p>
+                        Next follow-up: {application.nextFollowUpDate || "Not set"}
+                      </p>
+                      <p>
+                        Match score: {application.matchScore ?? "N/A"}
+                      </p>
+                    </div>
+
+                    <Link
+                      href="/career-path"
+                      className="inline-flex items-center gap-1 mt-3 text-xs font-bold text-blue-500 hover:text-blue-400 transition-colors"
+                    >
+                      Open Tracker <ChevronRight className="w-3 h-3" />
+                    </Link>
+                  </m.div>
+                );
+              })}
+            </div>
+
+            {recentFollowUps.length > 0 && (
+              <div className="rounded-2xl border border-blue-100 dark:border-blue-500/20 bg-blue-50/60 dark:bg-blue-500/5 p-4">
+                <p className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-300 mb-2 flex items-center gap-1.5">
+                  <BellRing className="w-3.5 h-3.5" /> Recent Follow-ups
+                </p>
+                <div className="space-y-2">
+                  {recentFollowUps.map((item) => (
+                    <div
+                      key={item.id}
+                      className="text-xs text-gray-700 dark:text-gray-300 flex items-center justify-between gap-3"
+                    >
+                      <span className="truncate">
+                        {item.jobRole} at {item.company}
+                      </span>
+                      <span className="text-blue-600 dark:text-blue-300 font-semibold uppercase tracking-wide">
+                        {item.channel} · {item.followedUpOn}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -28,19 +28,23 @@ jobs:
 
       - name: Run ESLint
         run: npm run lint
-        continue-on-error: true
 
       - name: Run Typecheck
         run: npx tsc --noEmit
-        continue-on-error: true
 
-      - name: Run Unit Tests (Vitest)
-        run: npm run test --run
-        continue-on-error: true
+      - name: Run Unit Tests with Coverage (Vitest)
+        run: npm run test:coverage
+
+      - name: Upload Coverage Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vitest-coverage
+          path: coverage
+          if-no-files-found: ignore
 
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
 
       - name: Run E2E Tests
         run: npx playwright test
-        continue-on-error: true

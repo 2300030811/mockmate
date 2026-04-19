@@ -1,5 +1,9 @@
 import { logger } from '@/lib/logger';
 import type { SalaryData } from '@/types/career';
+import {
+  buildRoleMatchCandidates,
+  normalizeRoleTitleForMatching,
+} from '@/lib/career-path/role-normalization';
 
 // Import salary datasets from external JSON — clean separation of concerns
 import indiaSalaries from '@/data/salaries.india.json';
@@ -56,57 +60,36 @@ function adjustForExperience(entry: SalaryEntry, years: number): SalaryEntry {
     median: Math.round(entry.max * 1.1),
   };
 }
-
-
-
-// ─── Fuzzy Title Matching ───────────────────────────────────────────────────
-
 // ─── Search Cache & Pre-processing ──────────────────────────────────────────
-const FUZZY_CACHE = new Map<string, { key: string; score: number } | null>();
 const db = indiaSalaries as SalaryDB;
 
-// Pre-process database keys into words for faster matching
-const processedKeys = Object.keys(db).map(key => ({
-  key,
-  words: key.split(/[\s\-\/\.]+/).filter(w => w.length >= 2)
-}));
+const normalizedKeyToOriginal = new Map<string, string>(
+  Object.keys(db).map((key) => [normalizeRoleTitleForMatching(key), key])
+);
 
-function fuzzyMatchTitle(normalizedTitle: string): { key: string; score: number } | null {
-  const cached = FUZZY_CACHE.get(normalizedTitle);
-  if (cached !== undefined) return cached;
-
-  const titleWords = normalizedTitle.split(/[\s\-\/\.]+/).filter(w => w.length >= 2);
-  let bestMatch: { key: string; score: number } | null = null;
-
-  for (const item of processedKeys) {
-    let score = 0;
-    for (const tw of titleWords) {
-      for (const kw of item.words) {
-        if (tw === kw) {
-          score += 3;
-        } else if (kw.includes(tw) || tw.includes(kw)) {
-          score += 2;
-        }
-      }
-    }
-    if (score > 0 && (!bestMatch || score > bestMatch.score)) {
-      bestMatch = { key: item.key, score };
+function findExactMatch(candidates: string[]): { key: string; confidence: SalaryConfidence } | null {
+  for (let idx = 0; idx < candidates.length; idx += 1) {
+    const candidate = candidates[idx];
+    const key = normalizedKeyToOriginal.get(candidate);
+    if (key) {
+      return {
+        key,
+        confidence: idx === 0 ? 'high' : 'medium',
+      };
     }
   }
 
-  const result = bestMatch && bestMatch.score >= 2 ? bestMatch : null;
-  FUZZY_CACHE.set(normalizedTitle, result);
-  return result;
+  return null;
 }
-
 // ─── Local Salary Lookup ────────────────────────────────────────────────────
 
 function lookupLocalSalary(
   jobTitle: string,
   experienceYears?: number
 ): { salary: SalaryData; confidence: SalaryConfidence; matchType: 'exact' | 'fuzzy' } | null {
-  const normalizedTitle = jobTitle.toLowerCase().trim();
-  const multiplier = 1.0; // Default to 1.0 as city data isn't collected yet
+  const candidates = buildRoleMatchCandidates(jobTitle);
+  if (candidates.length === 0) return null;
+
   const currency = 'INR';
   const sources = ['Glassdoor', 'AmbitionBox', 'Levels.fyi'];
 
@@ -115,18 +98,11 @@ function lookupLocalSalary(
   let matchType: 'exact' | 'fuzzy' = 'exact';
   let confidence: SalaryConfidence = 'high';
 
-  if (db[normalizedTitle]) {
-    entry = db[normalizedTitle];
+  const exactMatch = findExactMatch(candidates);
+  if (exactMatch) {
+    entry = db[exactMatch.key];
     matchType = 'exact';
-    confidence = 'high';
-  } else {
-    // 2. Fuzzy match
-    const fuzzy = fuzzyMatchTitle(normalizedTitle);
-    if (fuzzy) {
-      entry = db[fuzzy.key];
-      matchType = 'fuzzy';
-      confidence = fuzzy.score >= 4 ? 'high' : 'medium';
-    }
+    confidence = exactMatch.confidence;
   }
 
   if (!entry) return null;
@@ -155,8 +131,8 @@ function lookupLocalSalary(
  * Get salary estimate with confidence scoring.
  *
  * Strategy:
- *   1. Local DB (instant) — exact/fuzzy match with experience & location scaling
- *   2. Returns null only if no data at all — AI then estimates (LOW confidence)
+ *   1. Local DB (instant) — exact title/alias match with experience scaling
+ *   2. Returns null when role is not represented in JSON — AI then estimates
  */
 export function fetchSalaryEstimate(
   jobTitle: string,

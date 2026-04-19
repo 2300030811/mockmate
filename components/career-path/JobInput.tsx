@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Search, Briefcase, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { getRoleSuggestions } from '@/lib/career-path/role-suggestions';
 
 interface JobInputProps {
   onAnalyze: (jobRole: string, company: string, jobDescription?: string) => void;
@@ -18,14 +19,38 @@ export const JobInput: React.FC<JobInputProps> = ({
   hasFile,
   buttonText = "Analyze Career Path" 
 }) => {
+  const suggestionListId = React.useId();
   const [jobRole, setJobRole] = useState('');
   const [company, setCompany] = useState('');
   const [jobDescription, setJobDescription] = useState('');
 
+  const [errorInput, setErrorInput] = useState('');
+  const roleSuggestions = React.useMemo(() => getRoleSuggestions(jobRole, 8), [jobRole]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (jobRole.trim() && hasFile) {
-      onAnalyze(jobRole, company, jobDescription);
+      const cleanRole = jobRole.trim();
+      const lowerRole = cleanRole.toLowerCase();
+      const validAcronyms = ['ceo', 'cto', 'cfo', 'coo', 'cmo', 'cio', 'ciso', 'sre', 'sde', 'qae', 'dba', 'hr', 'pr', 'qa', 'vp', 'pm', 'ux', 'ui'];
+      
+      if (cleanRole.length <= 2 && !validAcronyms.includes(lowerRole)) {
+        setErrorInput("Job role is too short to be a valid profession.");
+        return;
+      }
+      
+      if (!/[aeiouy]/i.test(cleanRole) && cleanRole.length >= 3 && !validAcronyms.includes(lowerRole)) {
+        setErrorInput("Please enter a real job role (detected invalid input).");
+        return;
+      }
+
+      if (/^([a-zA-Z])\1+$/.test(cleanRole) || /asdf/i.test(cleanRole) || /qwer/i.test(cleanRole) || /zxcv/i.test(cleanRole)) {
+        setErrorInput("Please enter a real job role (keyboard mashing detected).");
+        return;
+      }
+
+      setErrorInput('');
+      onAnalyze(cleanRole, company.trim(), jobDescription.trim());
     }
   };
 
@@ -46,11 +71,26 @@ export const JobInput: React.FC<JobInputProps> = ({
                 value={jobRole}
                 onChange={(e) => setJobRole(e.target.value)}
                 placeholder="e.g. Full Stack Developer"
+                list={suggestionListId}
+                autoComplete="off"
                 maxLength={100}
-                className="w-full bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-lg py-3 px-4 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all"
+                className={`w-full bg-white dark:bg-black/20 border ${errorInput ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200 dark:border-white/10'} rounded-lg py-3 px-4 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all`}
                 required
               />
+              <datalist id={suggestionListId}>
+                {roleSuggestions.map((suggestion) => (
+                  <option key={suggestion.value} value={suggestion.value} />
+                ))}
+              </datalist>
             </div>
+            <p className="text-[11px] text-gray-500 dark:text-gray-400">
+              Role suggestions are based on the current India salary dataset.
+            </p>
+            {errorInput && (
+              <p className="text-red-500 dark:text-red-400 text-xs mt-1">
+                {errorInput}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">

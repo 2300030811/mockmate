@@ -27,9 +27,8 @@ describe("ATS Keyword Analysis", () => {
     // Note: 'aws' stems to 'aw' since the stemmer drops trailing 's'.
     expect(result.matched).toContain("aw");
     
-    // Bigrams are matched if they appear twice in JD (this one doesn't in the sample)
-    // "Machine learning" won't be in finalKeywords because freq is 1.
-    expect(result.jdKeywords).not.toContain("machine learning");
+    // For short JDs, the adaptive threshold keeps informative single-occurrence bigrams.
+    expect(result.jdKeywords).toContain("machine learning");
   });
 
   it("should detect resume sections", () => {

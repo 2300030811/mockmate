@@ -2,11 +2,12 @@
 
 import { m } from "framer-motion";
 import { TrendingUp, Calendar, ChevronDown, Loader2 } from "lucide-react";
-import { memo, useState, useCallback } from "react";
+import { memo, useState, useCallback, useEffect } from "react";
 import { ActivityItem } from "@/types/dashboard";
 import { calculateActivityXP } from "@/lib/scoring";
 import { getActivityPage } from "@/app/actions/dashboard";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { ClientDate } from "@/components/ui/ClientDate";
 
 /** Group activity items by relative date label */
 function groupByDate(items: ActivityItem[]): Record<string, ActivityItem[]> {
@@ -62,7 +63,7 @@ export const RecentActivity = memo(function RecentActivity({ activity }: { activ
       initial={prefersReduced ? false : { opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={prefersReduced ? { duration: 0 } : { delay: 0.2 }}
-      className="lg:col-span-2 space-y-6"
+      className="space-y-6"
     >
        <h2 className="text-xl font-bold flex items-center gap-2">
           <Calendar className="text-blue-500" /> Recent Activity
@@ -110,7 +111,7 @@ export const RecentActivity = memo(function RecentActivity({ activity }: { activ
                                    </span>
                                  )}
                                </p>
-                               <p className="text-xs text-gray-500">{new Date(act.completed_at).toLocaleDateString()}</p>
+                               <p className="text-xs text-gray-500"><ClientDate date={act.completed_at} /></p>
                              </div>
                            </div>
                            <div className="text-right">

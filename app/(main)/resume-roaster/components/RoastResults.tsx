@@ -17,6 +17,9 @@ interface RoastResultsProps {
   copied: boolean;
   onReset: () => void;
   onClearHistory: () => void;
+  onTrack?: () => void;
+  isTracking?: boolean;
+  trackerFeedback?: string | null;
 }
 
 export function RoastResults({
@@ -29,7 +32,10 @@ export function RoastResults({
   onCopy,
   copied,
   onReset,
-  onClearHistory
+  onClearHistory,
+  onTrack,
+  isTracking,
+  trackerFeedback
 }: RoastResultsProps) {
   return (
     <m.div
@@ -158,9 +164,32 @@ export function RoastResults({
            transition={{ delay: 0.4 }}
            className="bg-gray-900/50 border border-blue-500/10 rounded-[2.5rem] p-8 hover:border-blue-500/30 transition-all"
          >
-            <h3 className="text-xl font-bold text-blue-400 mb-6 flex items-center gap-3">
-              <Target size={24} className="text-blue-500" /> ATS Survival
-            </h3>
+             <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-blue-400 flex items-center gap-3">
+                  <Target size={24} className="text-blue-500" /> ATS Survival
+                </h3>
+                {onTrack && (
+                  <button
+                    onClick={onTrack}
+                    disabled={isTracking}
+                    className="px-3 py-1.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    {isTracking ? "Tracking..." : "Track this role"}
+                    <ArrowRight size={12} />
+                  </button>
+                )}
+             </div>
+
+             {trackerFeedback && (
+               <m.div 
+                 initial={{ opacity: 0, x: 10 }}
+                 animate={{ opacity: 1, x: 0 }}
+                 className="mb-6 p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-blue-300 text-[10px] font-bold flex items-center gap-2"
+               >
+                 <Check size={12} className="text-emerald-400" />
+                 {trackerFeedback}
+               </m.div>
+             )}
 
             {/* Disclaimer when no JD provided */}
             {!roastData.atsAnalysis.jobDescriptionProvided && (
@@ -199,6 +228,27 @@ export function RoastResults({
                       roastData.atsAnalysis.atsScore >= 45 ? 'bg-gradient-to-r from-blue-500 to-blue-400' : 'bg-gradient-to-r from-red-500 to-red-400'
                     }`}
                   />
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 mt-4">
+                  {[
+                    { label: "Format", value: roastData.atsAnalysis.formatScore },
+                    { label: "Content", value: roastData.atsAnalysis.contentScore },
+                    { label: "Keyword", value: roastData.atsAnalysis.keywordScore },
+                  ].map((item) => (
+                    <div key={item.label} className="rounded-xl border border-white/10 bg-white/5 px-2.5 py-2">
+                      <p className="text-[9px] uppercase font-black tracking-wider text-gray-500 mb-1">{item.label}</p>
+                      <p className="text-sm font-black text-white mb-1">{item.value}</p>
+                      <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
+                        <m.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${item.value}%` }}
+                          transition={{ delay: 0.7, duration: 0.6 }}
+                          className="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-400"
+                        />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
