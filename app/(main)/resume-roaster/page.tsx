@@ -240,21 +240,21 @@ ${roastData.suggestions.map((s) => `\u2022 ${s}`).join("\n")}
         <div className={cn("absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] blur-[120px] rounded-full animate-pulse delay-1000", isDark ? "bg-red-600/10" : "bg-red-500/5")} />
       </div>
 
-      <div className="relative z-10 max-w-6xl mx-auto px-4 py-20">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-16 md:py-20">
         {/* Header */}
         <m.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-16"
+          className="text-center mb-12 md:mb-14"
         >
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 mb-6 font-medium text-sm tracking-wider uppercase">
             <Flame size={16} className="animate-bounce" />
             Brutally Honest Analysis
           </div>
-          <h1 className={cn("text-5xl md:text-7xl font-black mb-6 bg-clip-text text-transparent bg-gradient-to-r", isDark ? "from-white via-orange-100 to-red-200" : "from-gray-900 via-orange-600 to-red-600")}>
+          <h1 className={cn("text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black mb-5 md:mb-6 bg-clip-text text-transparent bg-gradient-to-r", isDark ? "from-white via-orange-100 to-red-200" : "from-gray-900 via-orange-600 to-red-600")}>
             Resume Roaster
           </h1>
-          <p className={cn("text-xl max-w-2xl mx-auto leading-relaxed", isDark ? "text-gray-400" : "text-gray-600")}>
+          <p className={cn("text-lg md:text-xl max-w-2xl mx-auto leading-relaxed", isDark ? "text-gray-400" : "text-gray-600")}>
             Upload your resume and get roasted by our AI. We&apos;ll tell you exactly why you aren&apos;t getting those interviews.
           </p>
         </m.div>

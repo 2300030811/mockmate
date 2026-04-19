@@ -37,24 +37,27 @@ export function RoastResults({
   isTracking,
   trackerFeedback
 }: RoastResultsProps) {
+  const flawCount = roastData.criticalFlaws.length;
+  const winCount = roastData.winningPoints.length;
+
   return (
     <m.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="space-y-10 pb-20"
+      className="space-y-8 md:space-y-10 pb-16 md:pb-20"
     >
       {/* Top Score & Verdict Card */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 items-stretch">
          <m.div 
            initial={{ opacity: 0, x: -20 }}
            animate={{ opacity: 1, x: 0 }}
-           className="lg:col-span-8 bg-gray-900/80 border border-gray-800 rounded-[3rem] p-10 backdrop-blur-3xl relative overflow-hidden group hover:border-orange-500/20 transition-colors flex flex-col justify-between"
+           className="lg:col-span-7 bg-gray-900/80 border border-gray-800 rounded-[2.25rem] md:rounded-[3rem] p-6 sm:p-8 lg:p-9 backdrop-blur-3xl relative overflow-hidden group hover:border-orange-500/20 transition-colors flex flex-col justify-between"
          >
-            <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
+            <div className="absolute top-0 right-0 p-6 sm:p-10 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
               <Flame size={200} />
             </div>
             <div className="relative z-10">
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between mb-5 sm:mb-6">
                 <h2 className="text-xs font-black uppercase tracking-[0.2em] text-orange-500 flex items-center gap-2">
                   <Flame size={14} className="animate-pulse" /> The Brutal Verdict ({selectedTone})
                 </h2>
@@ -67,13 +70,13 @@ export function RoastResults({
                   {isSpeaking ? <VolumeX size={18} /> : <Volume2 size={18} />}
                 </button>
               </div>
-              <div className="text-3xl md:text-4xl font-black italic text-white leading-[1.3] drop-shadow-sm mb-12">
+              <div className="text-2xl sm:text-3xl md:text-4xl font-black italic text-white leading-[1.3] drop-shadow-sm mb-8 md:mb-10">
                 &quot;{roastData.brutalRoast}&quot;
               </div>
             </div>
 
             {/* Skill Breakdown Chart */}
-            <div className="relative z-10 grid grid-cols-2 sm:grid-cols-4 gap-6 pt-8 border-t border-white/5">
+            <div className="relative z-10 grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-5 pt-6 border-t border-white/5">
               {Object.entries(roastData.skillBreakdown || {}).map(([skill, score]: [string, number], idx) => (
                 <div key={skill} className="space-y-2">
                   <div className="flex justify-between items-end">
@@ -107,294 +110,326 @@ export function RoastResults({
          />
       </div>
 
-      {/* Analysis Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-         {/* Flaws Card */}
-         <m.div 
-           initial={{ opacity: 0, y: 20 }}
-           animate={{ opacity: 1, y: 0 }}
-           transition={{ delay: 0.2 }}
-           className="bg-gray-900/50 border border-red-500/10 rounded-[2.5rem] p-8 hover:border-red-500/30 transition-all flex flex-col"
-         >
-            <h3 className="text-xl font-bold text-red-400 mb-8 flex items-center gap-3">
-              <AlertCircle size={24} className="text-red-500" /> Critical Flaws
-            </h3>
-            <ul className="space-y-6 flex-1">
-              {roastData.criticalFlaws.length > 0 ? (
-                roastData.criticalFlaws.map((flaw: string, i: number) => (
-                  <li key={i} className="flex gap-4 group/item">
-                    <span className="text-red-500/50 shrink-0 font-black text-lg group-hover/item:text-red-500 transition-colors">{i+1}</span>
-                    <p className="text-base text-gray-300 leading-relaxed font-medium">{flaw}</p>
-                  </li>
-                ))
-              ) : (
-                <li className="text-gray-500 italic text-sm">No critical flaws detected — impressive!</li>
-              )}
-            </ul>
-         </m.div>
-
-         {/* Wins Card */}
-         <m.div 
-           initial={{ opacity: 0, y: 20 }}
-           animate={{ opacity: 1, y: 0 }}
-           transition={{ delay: 0.3 }}
-           className="bg-gray-900/50 border border-emerald-500/10 rounded-[2.5rem] p-8 hover:border-emerald-500/30 transition-all flex flex-col"
-         >
-            <h3 className="text-xl font-bold text-emerald-400 mb-8 flex items-center gap-3">
-              <Trophy size={24} className="text-emerald-500" /> Winning Points
-            </h3>
-            <ul className="space-y-6 flex-1">
-              {roastData.winningPoints.length > 0 ? (
-                roastData.winningPoints.map((win: string, i: number) => (
-                  <li key={i} className="flex gap-4 group/item">
-                    <span className="text-emerald-500/50 shrink-0 font-black text-lg group-hover/item:text-emerald-500 transition-colors">{i+1}</span>
-                    <p className="text-base text-gray-300 leading-relaxed font-medium">{win}</p>
-                  </li>
-                ))
-              ) : (
-                <li className="text-gray-500 italic text-sm">No standout strengths found — see suggestions below.</li>
-              )}
-            </ul>
-         </m.div>
-
-         {/* ATS Analysis */}
-         <m.div 
-           initial={{ opacity: 0, y: 20 }}
-           animate={{ opacity: 1, y: 0 }}
-           transition={{ delay: 0.4 }}
-           className="bg-gray-900/50 border border-blue-500/10 rounded-[2.5rem] p-8 hover:border-blue-500/30 transition-all"
-         >
-             <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-blue-400 flex items-center gap-3">
-                  <Target size={24} className="text-blue-500" /> ATS Survival
-                </h3>
-                {onTrack && (
-                  <button
-                    onClick={onTrack}
-                    disabled={isTracking}
-                    className="px-3 py-1.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                  >
-                    {isTracking ? "Tracking..." : "Track this role"}
-                    <ArrowRight size={12} />
-                  </button>
-                )}
-             </div>
-
-             {trackerFeedback && (
-               <m.div 
-                 initial={{ opacity: 0, x: 10 }}
-                 animate={{ opacity: 1, x: 0 }}
-                 className="mb-6 p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-blue-300 text-[10px] font-bold flex items-center gap-2"
-               >
-                 <Check size={12} className="text-emerald-400" />
-                 {trackerFeedback}
-               </m.div>
-             )}
-
-            {/* Disclaimer when no JD provided */}
-            {!roastData.atsAnalysis.jobDescriptionProvided && (
-              <div className="mb-6 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl text-yellow-400 text-xs flex items-start gap-2">
-                <AlertCircle size={14} className="shrink-0 mt-0.5" />
-                <span>No job description provided — ATS score is based on general best practices only. Add a job description for accurate keyword match analysis.</span>
-              </div>
-            )}
-
-            <div className="space-y-6">
-              {/* ATS Score + Match Rating */}
-              <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
-                <span className="text-[10px] font-black uppercase text-gray-500 block mb-3 tracking-[0.2em]">ATS Score</span>
-                <div className="flex items-end gap-3 mb-3">
-                  <span className={`text-4xl font-black tabular-nums ${
-                    roastData.atsAnalysis.atsScore >= 75 ? 'text-emerald-400' :
-                    roastData.atsAnalysis.atsScore >= 45 ? 'text-blue-400' : 'text-red-400'
-                  }`}>
-                    {roastData.atsAnalysis.atsScore}
-                  </span>
-                  <span className="text-gray-500 text-sm font-bold mb-1">/100</span>
-                  <span className={`ml-auto text-xs font-black uppercase px-3 py-1 rounded-lg ${
-                    roastData.atsAnalysis.matchRating === 'High' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 
-                    roastData.atsAnalysis.matchRating === 'Medium' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
-                  }`}>
-                    {roastData.atsAnalysis.matchRating}
-                  </span>
-                </div>
-                <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
-                  <m.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${roastData.atsAnalysis.atsScore}%` }}
-                    transition={{ delay: 0.6, duration: 1 }}
-                    className={`h-full rounded-full ${
-                      roastData.atsAnalysis.atsScore >= 75 ? 'bg-gradient-to-r from-emerald-500 to-emerald-400' :
-                      roastData.atsAnalysis.atsScore >= 45 ? 'bg-gradient-to-r from-blue-500 to-blue-400' : 'bg-gradient-to-r from-red-500 to-red-400'
-                    }`}
-                  />
-                </div>
-
-                <div className="grid grid-cols-3 gap-2 mt-4">
-                  {[
-                    { label: "Format", value: roastData.atsAnalysis.formatScore },
-                    { label: "Content", value: roastData.atsAnalysis.contentScore },
-                    { label: "Keyword", value: roastData.atsAnalysis.keywordScore },
-                  ].map((item) => (
-                    <div key={item.label} className="rounded-xl border border-white/10 bg-white/5 px-2.5 py-2">
-                      <p className="text-[9px] uppercase font-black tracking-wider text-gray-500 mb-1">{item.label}</p>
-                      <p className="text-sm font-black text-white mb-1">{item.value}</p>
-                      <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
-                        <m.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${item.value}%` }}
-                          transition={{ delay: 0.7, duration: 0.6 }}
-                          className="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-400"
-                        />
+      {/* Insights + Action Layout */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 md:gap-6 lg:gap-7 items-start">
+        <div className="xl:col-span-8 space-y-4 md:space-y-6 lg:space-y-7">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 items-start">
+            {/* Flaws Card */}
+            <m.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="bg-gray-900/50 border border-red-500/10 rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 hover:border-red-500/30 transition-all h-fit"
+            >
+              <h3 className="text-lg md:text-xl font-bold text-red-400 mb-5 md:mb-6 flex items-center gap-3 justify-between">
+                <span className="flex items-center gap-3">
+                  <AlertCircle size={22} className="text-red-500" /> Critical Flaws
+                </span>
+                <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg border border-red-500/25 bg-red-500/10 text-red-300">
+                  {flawCount}
+                </span>
+              </h3>
+              <ul className="space-y-3 md:space-y-4">
+                {roastData.criticalFlaws.length > 0 ? (
+                  roastData.criticalFlaws.map((flaw: string, i: number) => (
+                    <li
+                      key={i}
+                      className="group/item rounded-2xl border border-red-500/15 bg-red-500/[0.03] hover:bg-red-500/[0.08] transition-all px-4 py-3"
+                    >
+                      <div className="flex items-start gap-3.5">
+                        <span className="shrink-0 inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-red-500/30 bg-red-500/15 text-red-300 text-[10px] font-black tracking-wider">
+                          F{i + 1}
+                        </span>
+                        <p className="text-sm md:text-[15px] text-gray-300 leading-relaxed font-medium">{flaw}</p>
                       </div>
+                    </li>
+                  ))
+                ) : (
+                  <li className="rounded-2xl border border-emerald-500/25 bg-emerald-500/10 text-emerald-300 text-sm px-4 py-3.5 flex items-center gap-2">
+                    <Check size={15} className="shrink-0" /> No critical flaws detected. This resume is cleaner than average.
+                  </li>
+                )}
+              </ul>
+            </m.div>
+
+            {/* Wins Card */}
+            <m.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="bg-gray-900/50 border border-emerald-500/10 rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 hover:border-emerald-500/30 transition-all h-fit"
+            >
+              <h3 className="text-lg md:text-xl font-bold text-emerald-400 mb-5 md:mb-6 flex items-center gap-3 justify-between">
+                <span className="flex items-center gap-3">
+                  <Trophy size={22} className="text-emerald-500" /> Winning Points
+                </span>
+                <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg border border-emerald-500/25 bg-emerald-500/10 text-emerald-300">
+                  {winCount}
+                </span>
+              </h3>
+              <ul className="space-y-3 md:space-y-4">
+                {roastData.winningPoints.length > 0 ? (
+                  roastData.winningPoints.map((win: string, i: number) => (
+                    <li
+                      key={i}
+                      className="group/item rounded-2xl border border-emerald-500/15 bg-emerald-500/[0.03] hover:bg-emerald-500/[0.08] transition-all px-4 py-3"
+                    >
+                      <div className="flex items-start gap-3.5">
+                        <span className="shrink-0 inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/15 text-emerald-300 text-[10px] font-black tracking-wider">
+                          W{i + 1}
+                        </span>
+                        <p className="text-sm md:text-[15px] text-gray-300 leading-relaxed font-medium">{win}</p>
+                      </div>
+                    </li>
+                  ))
+                ) : (
+                  <li className="rounded-2xl border border-blue-500/25 bg-blue-500/10 text-blue-300 text-sm px-4 py-3.5 flex items-center gap-2">
+                    <Sparkles size={15} className="shrink-0" /> No standout strengths found yet. Use the roadmap below to create stronger signals.
+                  </li>
+                )}
+              </ul>
+            </m.div>
+          </div>
+
+          {/* Suggestions */}
+          <m.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.45 }}
+            className="bg-gray-900/80 border border-white/5 rounded-[2.25rem] md:rounded-[3rem] p-6 sm:p-8 md:p-10 backdrop-blur-3xl"
+          >
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6 mb-8 md:mb-10">
+              <h3 className="text-xl md:text-2xl font-black text-white flex items-center gap-4">
+                <div className="w-12 h-12 bg-indigo-500 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                  <Hammer size={24} className="text-white" />
+                </div>
+                Roadmap to Redemption
+              </h3>
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="text-xs font-bold text-gray-500 uppercase">
+                  {completedSuggestions.length} / {roastData.suggestions.length} Fixed
+                </div>
+                <button
+                  onClick={onCopy}
+                  aria-label={copied ? "Copied to clipboard" : "Copy roast to clipboard"}
+                  className="flex items-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all font-bold text-sm"
+                >
+                  {copied ? <Check size={16} className="text-emerald-400" /> : <Copy size={16} />}
+                  {copied ? "COPIED!" : "COPY ROAST"}
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              {roastData.suggestions.length > 0 ? (
+                roastData.suggestions.map((s: string, i: number) => {
+                  const isDone = completedSuggestions.includes(i);
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => onToggleSuggestion(i)}
+                      role="checkbox"
+                      aria-checked={isDone}
+                      className={`flex gap-5 p-6 rounded-3xl border transition-all cursor-pointer group select-none text-left w-full ${
+                        isDone
+                          ? "bg-emerald-500/10 border-emerald-500/30"
+                          : "bg-white/5 border-white/5 hover:border-indigo-500/30"
+                      }`}
+                    >
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-all ${
+                        isDone ? "bg-emerald-500 text-white" : "bg-indigo-500/10 text-indigo-400 group-hover:scale-110"
+                      }`}>
+                        {isDone ? <Check size={24} strokeWidth={3} /> : <Sparkles size={20} />}
+                      </div>
+                      <p className={`text-base leading-relaxed font-medium transition-all ${
+                        isDone ? "text-gray-400 line-through opacity-50" : "text-gray-300"
+                      }`}>{s}</p>
+                    </button>
+                  );
+                })
+              ) : (
+                <p className="text-gray-500 italic text-sm col-span-2">No suggestions generated.</p>
+              )}
+            </div>
+          </m.div>
+        </div>
+
+        {/* ATS Analysis */}
+        <m.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="xl:col-span-4 bg-gray-900/50 border border-blue-500/10 rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 hover:border-blue-500/30 transition-all xl:sticky xl:top-24"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-bold text-blue-400 flex items-center gap-3">
+              <Target size={24} className="text-blue-500" /> ATS Survival
+            </h3>
+            {onTrack && (
+              <button
+                onClick={onTrack}
+                disabled={isTracking}
+                className="px-3 py-1.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {isTracking ? "Tracking..." : "Track this role"}
+                <ArrowRight size={12} />
+              </button>
+            )}
+          </div>
+
+          {trackerFeedback && (
+            <m.div
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="mb-6 p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-blue-300 text-[10px] font-bold flex items-center gap-2"
+            >
+              <Check size={12} className="text-emerald-400" />
+              {trackerFeedback}
+            </m.div>
+          )}
+
+          {/* Disclaimer when no JD provided */}
+          {!roastData.atsAnalysis.jobDescriptionProvided && (
+            <div className="mb-6 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl text-yellow-400 text-xs flex items-start gap-2">
+              <AlertCircle size={14} className="shrink-0 mt-0.5" />
+              <span>No job description provided — ATS score is based on general best practices only. Add a job description for accurate keyword match analysis.</span>
+            </div>
+          )}
+
+          <div className="space-y-6">
+            {/* ATS Score + Match Rating */}
+            <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
+              <span className="text-[10px] font-black uppercase text-gray-500 block mb-3 tracking-[0.2em]">ATS Score</span>
+              <div className="flex items-end gap-3 mb-3">
+                <span className={`text-4xl font-black tabular-nums ${
+                  roastData.atsAnalysis.atsScore >= 75 ? "text-emerald-400" :
+                  roastData.atsAnalysis.atsScore >= 45 ? "text-blue-400" : "text-red-400"
+                }`}>
+                  {roastData.atsAnalysis.atsScore}
+                </span>
+                <span className="text-gray-500 text-sm font-bold mb-1">/100</span>
+                <span className={`ml-auto text-xs font-black uppercase px-3 py-1 rounded-lg ${
+                  roastData.atsAnalysis.matchRating === "High" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
+                  roastData.atsAnalysis.matchRating === "Medium" ? "bg-blue-500/10 text-blue-400 border border-blue-500/20" : "bg-red-500/10 text-red-400 border border-red-500/20"
+                }`}>
+                  {roastData.atsAnalysis.matchRating}
+                </span>
+              </div>
+              <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                <m.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${roastData.atsAnalysis.atsScore}%` }}
+                  transition={{ delay: 0.6, duration: 1 }}
+                  className={`h-full rounded-full ${
+                    roastData.atsAnalysis.atsScore >= 75 ? "bg-gradient-to-r from-emerald-500 to-emerald-400" :
+                    roastData.atsAnalysis.atsScore >= 45 ? "bg-gradient-to-r from-blue-500 to-blue-400" : "bg-gradient-to-r from-red-500 to-red-400"
+                  }`}
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 mt-4">
+                {[
+                  { label: "Format", value: roastData.atsAnalysis.formatScore },
+                  { label: "Content", value: roastData.atsAnalysis.contentScore },
+                  { label: "Keyword", value: roastData.atsAnalysis.keywordScore },
+                ].map((item) => (
+                  <div key={item.label} className="rounded-xl border border-white/10 bg-white/5 px-2.5 py-2">
+                    <p className="text-[9px] uppercase font-black tracking-wider text-gray-500 mb-1">{item.label}</p>
+                    <p className="text-sm font-black text-white mb-1">{item.value}</p>
+                    <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
+                      <m.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${item.value}%` }}
+                        transition={{ delay: 0.7, duration: 0.6 }}
+                        className="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-400"
+                      />
                     </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Present Keywords */}
+            {roastData.atsAnalysis.presentKeywords?.length > 0 && (
+              <div className="space-y-3">
+                <span className="text-[10px] font-black uppercase text-gray-400 block tracking-[0.2em]">Keywords Found</span>
+                <div className="flex flex-wrap gap-2">
+                  {roastData.atsAnalysis.presentKeywords.map((tag: string, i: number) => (
+                    <span key={i} className="px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-[11px] font-bold rounded-xl">
+                      {tag}
+                    </span>
                   ))}
                 </div>
               </div>
-
-              {/* Present Keywords */}
-              {roastData.atsAnalysis.presentKeywords?.length > 0 && (
-                <div className="space-y-3">
-                  <span className="text-[10px] font-black uppercase text-gray-400 block tracking-[0.2em]">Keywords Found</span>
-                  <div className="flex flex-wrap gap-2">
-                    {roastData.atsAnalysis.presentKeywords.map((tag: string, i: number) => (
-                      <span key={i} className="px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-[11px] font-bold rounded-xl">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {/* Missing Hard Skills */}
-              {roastData.atsAnalysis.missingHardSkills?.length > 0 && (
-                <div className="space-y-3">
-                  <span className="text-[10px] font-black uppercase text-gray-400 block tracking-[0.2em]">Hard Skills Missing</span>
-                  <div className="flex flex-wrap gap-2">
-                    {roastData.atsAnalysis.missingHardSkills.map((tag: string, i: number) => (
-                      <span key={i} className="px-3 py-1.5 bg-red-500/10 border border-red-500/20 text-red-300 text-[11px] font-bold rounded-xl">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Missing Soft Skills */}
-              {roastData.atsAnalysis.missingSoftSkills?.length > 0 && (
-                <div className="space-y-3">
-                  <span className="text-[10px] font-black uppercase text-gray-400 block tracking-[0.2em]">Soft Skills Missing</span>
-                  <div className="flex flex-wrap gap-2">
-                    {roastData.atsAnalysis.missingSoftSkills.map((tag: string, i: number) => (
-                      <span key={i} className="px-3 py-1.5 bg-orange-500/10 border border-orange-500/20 text-orange-300 text-[11px] font-bold rounded-xl">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Content & Structure Issues */}
-              {roastData.atsAnalysis.contentIssues?.length > 0 && (
-                <div className="pt-4 border-t border-white/5">
-                  <span className="text-[10px] font-black uppercase text-gray-500 block mb-3 tracking-[0.2em]">Content & Structure Issues</span>
-                  <ul className="space-y-2">
-                    {roastData.atsAnalysis.contentIssues.map((issue: string, i: number) => (
-                      <li key={i} className="text-xs text-gray-400 leading-relaxed flex gap-2">
-                        <span className="text-blue-500 shrink-0">•</span>
-                        {issue}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* ATS Tips */}
-              {roastData.atsAnalysis.atsTips?.length > 0 && (
-                <div className="pt-4 border-t border-white/5">
-                  <span className="text-[10px] font-black uppercase text-gray-500 block mb-3 tracking-[0.2em]">ATS Improvement Tips</span>
-                  <ul className="space-y-2">
-                    {roastData.atsAnalysis.atsTips.map((tip: string, i: number) => (
-                      <li key={i} className="text-xs text-blue-300 leading-relaxed flex gap-2">
-                        <span className="text-blue-500 shrink-0">{i + 1}.</span>
-                        {tip}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-         </m.div>
-      </div>
-
-      {/* Suggestions */}
-      <m.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-        className="bg-gray-900/80 border border-white/5 rounded-[3rem] p-10 backdrop-blur-3xl"
-      >
-         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
-           <h3 className="text-2xl font-black text-white flex items-center gap-4">
-              <div className="w-12 h-12 bg-indigo-500 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                <Hammer size={24} className="text-white" />
-              </div>
-              Roadmap to Redemption
-           </h3>
-           <div className="flex items-center gap-4">
-             <div className="text-xs font-bold text-gray-500 uppercase">
-               {completedSuggestions.length} / {roastData.suggestions.length} Fixed
-             </div>
-             <button 
-               onClick={onCopy}
-               aria-label={copied ? "Copied to clipboard" : "Copy roast to clipboard"}
-               className="flex items-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all font-bold text-sm"
-             >
-               {copied ? <Check size={16} className="text-emerald-400" /> : <Copy size={16} />}
-               {copied ? 'COPIED!' : 'COPY ROAST'}
-             </button>
-           </div>
-         </div>
-
-         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {roastData.suggestions.length > 0 ? (
-              roastData.suggestions.map((s: string, i: number) => {
-                const isDone = completedSuggestions.includes(i);
-                return (
-                  <button 
-                    key={i}
-                    onClick={() => onToggleSuggestion(i)}
-                    role="checkbox"
-                    aria-checked={isDone}
-                    className={`flex gap-5 p-6 rounded-3xl border transition-all cursor-pointer group select-none text-left w-full ${
-                      isDone 
-                        ? 'bg-emerald-500/10 border-emerald-500/30' 
-                        : 'bg-white/5 border-white/5 hover:border-indigo-500/30'
-                    }`}
-                  >
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-all ${
-                      isDone ? 'bg-emerald-500 text-white' : 'bg-indigo-500/10 text-indigo-400 group-hover:scale-110'
-                    }`}>
-                      {isDone ? <Check size={24} strokeWidth={3} /> : <Sparkles size={20} />}
-                    </div>
-                    <p className={`text-base leading-relaxed font-medium transition-all ${
-                      isDone ? 'text-gray-400 line-through opacity-50' : 'text-gray-300'
-                    }`}>{s}</p>
-                  </button>
-                );
-              })
-            ) : (
-              <p className="text-gray-500 italic text-sm col-span-2">No suggestions generated.</p>
             )}
-         </div>
-      </m.div>
+
+            {/* Missing Hard Skills */}
+            {roastData.atsAnalysis.missingHardSkills?.length > 0 && (
+              <div className="space-y-3">
+                <span className="text-[10px] font-black uppercase text-gray-400 block tracking-[0.2em]">Hard Skills Missing</span>
+                <div className="flex flex-wrap gap-2">
+                  {roastData.atsAnalysis.missingHardSkills.map((tag: string, i: number) => (
+                    <span key={i} className="px-3 py-1.5 bg-red-500/10 border border-red-500/20 text-red-300 text-[11px] font-bold rounded-xl">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Missing Soft Skills */}
+            {roastData.atsAnalysis.missingSoftSkills?.length > 0 && (
+              <div className="space-y-3">
+                <span className="text-[10px] font-black uppercase text-gray-400 block tracking-[0.2em]">Soft Skills Missing</span>
+                <div className="flex flex-wrap gap-2">
+                  {roastData.atsAnalysis.missingSoftSkills.map((tag: string, i: number) => (
+                    <span key={i} className="px-3 py-1.5 bg-orange-500/10 border border-orange-500/20 text-orange-300 text-[11px] font-bold rounded-xl">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Content & Structure Issues */}
+            {roastData.atsAnalysis.contentIssues?.length > 0 && (
+              <div className="pt-4 border-t border-white/5">
+                <span className="text-[10px] font-black uppercase text-gray-500 block mb-3 tracking-[0.2em]">Content & Structure Issues</span>
+                <ul className="space-y-2">
+                  {roastData.atsAnalysis.contentIssues.map((issue: string, i: number) => (
+                    <li key={i} className="text-xs text-gray-400 leading-relaxed flex gap-2">
+                      <span className="text-blue-500 shrink-0">•</span>
+                      {issue}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* ATS Tips */}
+            {roastData.atsAnalysis.atsTips?.length > 0 && (
+              <div className="pt-4 border-t border-white/5">
+                <span className="text-[10px] font-black uppercase text-gray-500 block mb-3 tracking-[0.2em]">ATS Improvement Tips</span>
+                <ul className="space-y-2">
+                  {roastData.atsAnalysis.atsTips.map((tip: string, i: number) => (
+                    <li key={i} className="text-xs text-blue-300 leading-relaxed flex gap-2">
+                      <span className="text-blue-500 shrink-0">{i + 1}.</span>
+                      {tip}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </m.div>
+      </div>
 
       {/* Footer Actions */}
       <m.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.7 }}
-        className="flex flex-col md:flex-row items-center justify-center gap-6 pt-10"
+        className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-6 pt-6 md:pt-8"
       >
          <button 
            onClick={onReset}
