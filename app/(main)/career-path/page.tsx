@@ -15,6 +15,7 @@ import { NavigationPill } from '@/components/ui/NavigationPill';
 import { analyzeAtsScoreAction } from '@/app/actions/ats-score';
 import { AtsScoreResult } from '@/types/ats-score';
 import { CareerOpsPanel } from '@/components/career-path/CareerOpsPanel';
+import { logger } from '@/lib/logger';
 
 export default function CareerPathPage() {
   const [step, setStep] = useState<'upload' | 'analysis' | 'results'>('upload');
@@ -76,7 +77,7 @@ export default function CareerPathPage() {
       if (careerData) {
         const saveResult = await saveCareerPath(careerData);
         if (!saveResult.success && saveResult.error === "Authentication required to save career paths") {
-          console.info("Guest user — career path not saved");
+          logger.info("Guest user — career path not saved");
         }
       }
       setStep('results');

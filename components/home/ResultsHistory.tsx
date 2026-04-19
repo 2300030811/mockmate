@@ -8,6 +8,7 @@ import { m, AnimatePresence } from "framer-motion";
 import { Trophy, Clock, ChevronRight, BarChart3, RotateCcw, Briefcase, Map, BellRing } from "lucide-react";
 import Link from "next/link";
 import type { CareerOpsApplicationItem, CareerOpsRecentActivityItem } from "@/types/career-ops";
+import { ClientDate } from "@/components/ui/ClientDate";
 
 interface QuizResult {
   id: string;
@@ -139,7 +140,7 @@ export function ResultsHistory() {
                             </span>
                             <div className="flex items-center gap-1.5 text-xs text-gray-500">
                               <Clock className="w-3 h-3" />
-                              {new Date(result.completed_at).toLocaleDateString()}
+                              <ClientDate date={result.completed_at} placeholder="..." />
                             </div>
                           </div>
 
@@ -212,7 +213,7 @@ export function ResultsHistory() {
                          </span>
                       </div>
                       <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                        {new Date(path.created_at).toLocaleDateString()}
+                        <ClientDate date={path.created_at} placeholder="..." />
                       </div>
                     </div>
 
@@ -279,8 +280,8 @@ export function ResultsHistory() {
                     </div>
 
                     <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
-                      <p>
-                        Next follow-up: {application.nextFollowUpDate || "Not set"}
+                      <p className="flex items-center gap-1.5">
+                        Next follow-up: {application.nextFollowUpDate ? <ClientDate date={application.nextFollowUpDate} /> : "Not set"}
                       </p>
                       <p>
                         Match score: {application.matchScore ?? "N/A"}
@@ -312,8 +313,8 @@ export function ResultsHistory() {
                       <span className="truncate">
                         {item.jobRole} at {item.company}
                       </span>
-                      <span className="text-blue-600 dark:text-blue-300 font-semibold uppercase tracking-wide">
-                        {item.channel} · {item.followedUpOn}
+                      <span className="text-blue-600 dark:text-blue-300 font-semibold uppercase tracking-wide flex items-center gap-1.5">
+                        {item.channel} · <ClientDate date={item.followedUpOn} />
                       </span>
                     </div>
                   ))}

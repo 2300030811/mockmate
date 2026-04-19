@@ -1,6 +1,7 @@
 import { Groq } from 'groq-sdk';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getNextKey } from "@/utils/keyManager";
+import { logger } from "@/lib/logger";
 
 export interface ChatMessage {
     role: 'system' | 'user' | 'assistant';
@@ -87,23 +88,23 @@ export class AIGateway {
 
         if (groqKey) {
             try {
-                console.log("🦁 Bob is using Groq...");
+                logger.info("🦁 Bob is using Groq...");
                 primaryStream = await this.createGroqStream(messages, systemPrompt, groqKey);
                 providerUsed = 'groq';
             } catch (groqErr: unknown) {
                 const message = groqErr instanceof Error ? groqErr.message : "Unknown error";
-                console.warn("⚠️ Bob Groq failed, falling back to Gemini:", message);
+                logger.warn("⚠️ Bob Groq failed, falling back to Gemini:", message);
             }
         }
 
         if (!primaryStream && geminiKey) {
             try {
-                console.log("🦁 Bob is using Gemini...");
+                logger.info("🦁 Bob is using Gemini...");
                 primaryStream = await this.createGeminiStream(messages, systemPrompt, geminiKey);
                 providerUsed = 'gemini';
             } catch (geminiErr: unknown) {
                 const message = geminiErr instanceof Error ? geminiErr.message : "Unknown error";
-                console.warn("⚠️ Bob Gemini failed:", message);
+                logger.warn("⚠️ Bob Gemini failed:", message);
             }
         }
 
@@ -129,7 +130,7 @@ export class AIGateway {
                 try {
                     await pumpStream(primaryStream as AsyncIterable<string>);
                 } catch (primaryStreamError) {
-                    console.error(`${providerUsed} stream error:`, primaryStreamError);
+                    logger.error(`${providerUsed} stream error:`, primaryStreamError);
 
                     if (providerUsed === 'groq' && geminiKey) {
                         try {
@@ -137,7 +138,7 @@ export class AIGateway {
                             const geminiFallbackStream = await AIGateway.createGeminiStream(messages, systemPrompt, geminiKey);
                             await pumpStream(geminiFallbackStream);
                         } catch (geminiStreamError) {
-                            console.error("Gemini fallback stream error:", geminiStreamError);
+                            logger.error("Gemini fallback stream error:", geminiStreamError);
                             if (!emittedAnyContent) {
                                 emitText("[Bob] I ran into a streaming issue. Please retry.");
                             } else {

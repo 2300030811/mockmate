@@ -6,10 +6,10 @@ import {
   MetricDetectionResult
 } from "@/utils/ats-keywords";
 import { computeWeightedAtsScore, deriveAtsMatchRating, AtsScoreResult } from "@/types/ats-score";
+import { clampScore } from "@/utils/math";
 
 const CORE_ATS_SECTIONS = ["summary", "experience", "education", "skills", "projects", "contact"];
 
-import { clampScore } from "@/utils/math";
 
 export interface AtsEngineResult {
   atsScore: number;

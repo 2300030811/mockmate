@@ -1,4 +1,5 @@
 import { GeminiProvider } from "./providers/gemini-provider";
+import { logger } from "@/lib/logger";
 import { GroqProvider } from "./providers/groq-provider";
 import { OpenAIProvider } from "./providers/openai-provider";
 import { GeneratedQuizQuestion } from "./models";
@@ -139,7 +140,7 @@ export class QuizGenerator {
 
     for (const provider of providers) {
       try {
-        console.log(`🤖 Attempting ${mode} generation with ${provider.constructor.name}...`);
+        logger.info(`🤖 Attempting ${mode} generation with ${provider.constructor.name}...`);
         
         // --- SMART CONTEXT LOGIC ---
         // Gemini supports 1M+ tokens. We can send the WHOLE file (up to ~500k chars safely).
@@ -147,10 +148,10 @@ export class QuizGenerator {
         let providerContext = content;
         
         if (provider instanceof GeminiProvider) {
-             console.log("🌌 Gemini Limit: Using Large Context (Up to 500k chars)");
+             logger.info("🌌 Gemini Limit: Using Large Context (Up to 500k chars)");
              providerContext = this.getSmartSample(content, 500000); 
         } else {
-             console.log("✂️ Standard Limit: Sampling Text (40k chars)");
+             logger.info("✂️ Standard Limit: Sampling Text (40k chars)");
              providerContext = this.getSmartSample(content, 40000);
         }
         
@@ -164,7 +165,7 @@ export class QuizGenerator {
         }
       } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
-        console.warn(`⚠️ [QuizGenerator] Provider failed:`, msg);
+        logger.warn(`⚠️ [QuizGenerator] Provider failed:`, msg);
         lastError = error;
         
         // If it's a quota error or explicit limit, skip to next
@@ -193,7 +194,7 @@ export class QuizGenerator {
         }
     }
 
-    console.error("❌ [QuizGenerator] Final Failure. Last Error:", lastError);
+    logger.error("❌ [QuizGenerator] Final Failure. Last Error:", lastError);
     throw new Error(`All providers failed. Last error: ${lastMsg}`);
   }
 }

@@ -97,8 +97,8 @@ export async function saveQuizResult(data: {
 
         const scoreToSave = calculatedScore;
 
-        // Check if there's a very recent result (last 15 minutes to allow time for user to submit nickname)
-        const recentTimeAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+        // Check if there's a very recent result (last 2 minutes to allow time for user to submit nickname)
+        const recentTimeAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
 
         // Use Admin Client to query without RLS blocking (or standard client works for read if policy exists)
         // But for consistency/speed in this privileged action, let's use adminDb for the write check too.

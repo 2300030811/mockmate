@@ -14,6 +14,7 @@ import {
   formatSalaryRange,
 } from '@/lib/services/salary-service';
 import { estimateExperienceYears } from '@/lib/career-utils';
+import { logger } from '@/lib/logger';
 
 
 // Zod schemas for AI response validation
@@ -245,7 +246,7 @@ export async function analyzeCareerPath(
                       text:
                         systemPrompt +
                         "\n\nUser Input:\n" +
-                        truncatedResume +
+                        sanitizePromptInput(truncatedResume, 15000) +
                         (sanitizedJobDescription ? `\n\nTarget Job Description:\n${sanitizedJobDescription}` : ""),
                     }
                 ]);
@@ -253,10 +254,10 @@ export async function analyzeCareerPath(
                 // Clean markdown from Gemini
                 content = responseText.replace(/```json\n?/, "").replace(/```\n?/, "").trim();
                 providerUsed = "Gemini";
-                console.log("✅ [Analyze] Gemini Fallback successful");
+                logger.info("✅ [Analyze] Gemini Fallback successful");
             }
         } catch (geminiError) {
-            console.error(`🔥 [Analyze] Gemini Fallback failed: ${geminiError instanceof Error ? geminiError.message : String(geminiError)}`);
+            logger.error(`🔥 [Analyze] Gemini Fallback failed: ${geminiError instanceof Error ? geminiError.message : String(geminiError)}`);
         }
     }
 
@@ -386,7 +387,7 @@ export async function analyzeCareerPath(
     // Safely log errors — avoid passing complex error objects to console.error
     // as Node's util.inspect can crash on certain object shapes (e.g., ZodError)
     const safeErrorString = error instanceof Error ? error.message : String(error);
-    console.error('🔥 [Analyze] Critical Error:', safeErrorString);
+    logger.error('🔥 [Analyze] Critical Error:', safeErrorString);
     
     let errorMessage = "Unknown error occurred";
     if (error instanceof Error) {
@@ -405,8 +406,12 @@ export async function analyzeCareerPath(
     if (error && typeof error === 'object' && 'response' in error) {
         const errWithResponse = error as { response?: { data?: unknown } };
         if (errWithResponse.response?.data) {
-             console.error('🔥 [Analyze] API Error Details:', errWithResponse.response.data);
+             logger.error('🔥 [Analyze] API Error Details:', errWithResponse.response.data);
         }
+    }
+    
+    if (safeErrorString === "INVALID_ROLE") {
+        throw error;
     }
     
     throw new Error(`Failed to analyze career path: ${errorMessage}`);

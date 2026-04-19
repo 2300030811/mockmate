@@ -12,7 +12,8 @@ BEGIN
   NEW.updated_at = timezone('utc'::text, now());
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql
+SET search_path = public;
 
 -- Canonical status check helper using text + CHECK constraints.
 -- Canonical statuses:

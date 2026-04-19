@@ -256,7 +256,7 @@ export async function createCareerOpsApplication(
     input.roleArchetype,
     inferRoleArchetype(jobRole)
   );
-  const targetLevel = compactText(input.targetLevel) || null;
+  const targetLevel = (compactText(input.targetLevel) || null)?.toLowerCase();
   const primaryBlocker = normalizePrimaryBlocker(
     input.primaryBlocker,
     inferPrimaryBlocker({

@@ -16,18 +16,8 @@ import {
   buildCareerOpsPatternInsights,
   emptyCareerOpsPatternInsights,
 } from "@/lib/career-ops/patterns";
+import { isMissingCareerOpsTableError } from "@/lib/career-ops/recompute";
 
-function isMissingCareerOpsTableError(error: { code?: string; message?: string } | null): boolean {
-  if (!error) return false;
-  const code = error.code ?? "";
-  const message = (error.message ?? "").toLowerCase();
-
-  return (
-    code === "42P01" ||
-    (message.includes("career_ops") &&
-      (message.includes("does not exist") || message.includes("relation")))
-  );
-}
 
 async function fetchDashboardData(userId: string, userEmail: string | undefined) {
   // Use admin client inside unstable_cache to bypass cookies usage requirement
@@ -165,10 +155,6 @@ async function fetchDashboardData(userId: string, userEmail: string | undefined)
   };
 }
 
-/**
- * Public server action that checks auth and returns cached dashboard data.
- * Cache is per-user with a 60-second TTL and tagged for on-demand revalidation.
- */
 export async function getDashboardData() {
   try {
     const supabase = createClient();

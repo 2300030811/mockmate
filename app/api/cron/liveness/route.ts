@@ -110,7 +110,38 @@ async function collectApplyControls(page: Page): Promise<string[]> {
   });
 }
 
+function isUrlAllowed(rawUrl: string): boolean {
+  try {
+    const url = new URL(rawUrl);
+    const hostname = url.hostname.toLowerCase();
+    
+    // Only allow HTTP/HTTPS
+    if (url.protocol !== "http:" && url.protocol !== "https:") return false;
+    
+    // Disallow loopback and common private ranges
+    const isPrivate = 
+      hostname === "localhost" || 
+      hostname === "127.0.0.1" || 
+      hostname === "::1" || 
+      hostname.endsWith(".local") ||
+      /^(10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(hostname);
+
+    return !isPrivate;
+  } catch {
+    return false;
+  }
+}
+
 async function checkPostingLiveness(page: Page, url: string): Promise<LivenessCheckResult> {
+  if (!isUrlAllowed(url)) {
+    return {
+      result: "uncertain",
+      reason: "unsafe or invalid URL blocked for navigation",
+      status: 0,
+      finalUrl: url,
+    };
+  }
+
   try {
     const response = await page.goto(url, {
       waitUntil: "domcontentloaded",
@@ -135,7 +166,7 @@ async function checkPostingLiveness(page: Page, url: string): Promise<LivenessCh
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     return {
-      result: "expired",
+      result: "uncertain",
       reason: `navigation error: ${message.split("\n")[0]}`,
       status: 0,
       finalUrl: url,
@@ -239,7 +270,18 @@ export async function GET(request: Request) {
     let failedUpdates = 0;
     const failures: string[] = [];
 
+    const startTime = Date.now();
+    const MAX_DURATION_MS = 50_000; // Stop processing after 50 seconds to safely stay within Vercel's 60s cron limit
+    const perItemBudgetMs = NAVIGATION_TIMEOUT_MS + SPA_HYDRATION_WAIT_MS + 2000;
+
     for (const posting of candidates.rows) {
+      // Check if we have enough time left for at least one more item
+      const elapsed = Date.now() - startTime;
+      if (elapsed + perItemBudgetMs > MAX_DURATION_MS) {
+          logger.warn(`[Cron Liveness] Budget exhausted (${elapsed}ms). Stopping early after ${checked} items.`);
+          break;
+      }
+
       const check = await checkPostingLiveness(page, posting.external_url);
       checked += 1;
 

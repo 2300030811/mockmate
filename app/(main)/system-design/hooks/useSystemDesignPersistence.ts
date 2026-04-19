@@ -10,6 +10,8 @@ interface PersistenceProps {
   setInitialHistory: (state: { nodes: Node[]; connections: Connection[]; groups: Group[] }) => void;
 }
 
+const emptyState = { nodes: [], connections: [], groups: [] };
+
 export function useSystemDesignPersistence({
   nodes,
   connections,
@@ -18,7 +20,6 @@ export function useSystemDesignPersistence({
   dispatch,
   setInitialHistory
 }: PersistenceProps) {
-  const emptyState = { nodes: [], connections: [], groups: [] };
   const [hasLoaded, setHasLoaded] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const tutorialTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -71,7 +72,8 @@ export function useSystemDesignPersistence({
     return () => {
       if (tutorialTimeoutRef.current) clearTimeout(tutorialTimeoutRef.current);
     };
-  }, [dispatch, setInitialHistory]);
+  }, [dispatch, setInitialHistory, setHasLoaded]);
+
 
   // Debounced Save
   useEffect(() => {

@@ -150,7 +150,7 @@ describe("analyzeCareerPath", () => {
     });
 
     await expect(analyzeCareerPath(buildFormData(), "NotARole", "Acme")).rejects.toThrow(
-      "Failed to analyze career path: INVALID_ROLE"
+      "INVALID_ROLE"
     );
   });
 

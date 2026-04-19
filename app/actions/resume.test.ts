@@ -242,6 +242,6 @@ describe("roastResumeAction", () => {
     );
 
     expect(result.data).toBeNull();
-    expect(result.error).toContain("Analysis failed:");
+    expect(result.error).toContain("Analysis failed. Providers are experiencing issues.");
   });
 });

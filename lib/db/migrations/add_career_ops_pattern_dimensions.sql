@@ -48,4 +48,33 @@ CREATE INDEX IF NOT EXISTS idx_career_ops_applications_primary_blocker
 CREATE INDEX IF NOT EXISTS idx_career_ops_applications_blocker_tags
   ON public.career_ops_applications USING GIN(blocker_tags);
 
+-- Normalize existing target_level values before adding constraint
+UPDATE public.career_ops_applications
+SET target_level = LOWER(TRIM(target_level))
+WHERE target_level IS NOT NULL;
+
+-- Flatten variations
+UPDATE public.career_ops_applications
+SET target_level = 'mid'
+WHERE target_level IN ('mid-level', 'intermediate');
+
+UPDATE public.career_ops_applications
+SET target_level = 'senior'
+WHERE target_level IN ('sr', 'sr.', 'senior-level');
+
+-- Add target_level constraint idempotently
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'career_ops_applications_target_level_check'
+    ) THEN 
+        ALTER TABLE public.career_ops_applications 
+        ADD CONSTRAINT career_ops_applications_target_level_check 
+        CHECK (
+          target_level IS NULL OR
+          target_level IN ('junior', 'mid', 'senior', 'lead', 'principal', 'staff', 'trainee', 'architect', 'unknown')
+        );
+    END IF;
+END $$;
+
 NOTIFY pgrst, 'reload schema';

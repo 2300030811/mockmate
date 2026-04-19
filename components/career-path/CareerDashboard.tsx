@@ -732,6 +732,12 @@ export const CareerDashboard: React.FC<CareerDashboardProps> = ({ data, atsData 
       md += `## Competitive Edge\n${data.competitiveEdge}\n\n`;
     }
 
+    if (data.levelStrategy) {
+      md += `## Leveling Strategy (Detected: ${data.levelStrategy.detectedLevel})\n`;
+      md += `- **Pitch:** ${data.levelStrategy.pitchStrategy}\n`;
+      md += `- **Mitigation:** ${data.levelStrategy.downlevelMitigation}\n\n`;
+    }
+
     if (data.suggestedRoles && data.suggestedRoles.length > 0) {
       md += `## Role Suggestions\n`;
       data.suggestedRoles.forEach(r => {
@@ -767,7 +773,20 @@ export const CareerDashboard: React.FC<CareerDashboardProps> = ({ data, atsData 
         if (q.category) md += `*Category: ${q.category}*\n`;
         md += `*Reason: ${q.reason}*\n\n`;
       });
+
+      if (data.interviewPrep.starStories && data.interviewPrep.starStories.length > 0) {
+        md += `## Recommended STAR Stories\n`;
+        data.interviewPrep.starStories.forEach(s => {
+          md += `### ${s.requirementMatch}\n`;
+          md += `**S/T:** ${s.situationTask}\n`;
+          md += `**Action:** ${s.action}\n`;
+          md += `**Result:** ${s.result}\n`;
+          if (s.seniorReflection) md += `*Reflection: ${s.seniorReflection}*\n\n`;
+          md += `\n`;
+        });
+      }
     }
+
 
     md += `---\n*Disclaimer: Salary data is aggregated from public job listings. Actual salaries may vary based on experience, location, and company factors.*`;
 

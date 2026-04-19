@@ -71,31 +71,50 @@ export function escapeHtml(text: string): string {
 }
 
 /**
- * Allow only safe URL protocols for user-controlled links.
+ * Allow only safe URL protocols for user-controlled links and escape for HTML safety.
  */
 export function sanitizeUrl(url: string, fallback: string = "#"): string {
   if (!url || typeof url !== "string") return fallback;
 
   const trimmed = url.trim();
   if (!trimmed) return fallback;
-  if (trimmed.startsWith("#") || trimmed.startsWith("/")) return trimmed;
-
-  // Accept bare domains by normalizing to https.
-  if (/^[a-z0-9.-]+\.[a-z]{2,}(\/.*)?$/i.test(trimmed)) {
-    return `https://${trimmed}`;
+  
+  // Internal anchors or relative paths
+  if (trimmed.startsWith("#") || (trimmed.startsWith("/") && !trimmed.startsWith("//"))) {
+    return escapeHtml(trimmed);
   }
 
-  try {
-    const parsed = new URL(trimmed);
-    if (parsed.protocol === "http:" || parsed.protocol === "https:" || parsed.protocol === "mailto:") {
-      return trimmed;
+  let finalUrl = "";
+
+  // Reject potential protocol-relative with leading slashes if not strictly handled
+  if (trimmed.startsWith("//")) {
+    finalUrl = `https:${trimmed}`;
+  } 
+  // Accept bare domains by normalizing to https. 
+  // Tightened to prevent common malformed host strings like "..com" or "-.com"
+  else if (/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+(\/.*)?$/i.test(trimmed)) {
+    finalUrl = `https://${trimmed}`;
+  }
+  else {
+    try {
+      const parsed = new URL(trimmed);
+      if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+        finalUrl = trimmed;
+      } else if (parsed.protocol === "mailto:") {
+        // Stricter mailto validation: ensure only one '@' and no complex headers
+        const mailPart = parsed.pathname;
+        if (/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(mailPart)) {
+            finalUrl = trimmed;
+        }
+      }
+    } catch {
+      finalUrl = fallback;
     }
-  } catch {
-    return fallback;
   }
 
-  return fallback;
+  return escapeHtml(finalUrl || fallback);
 }
+
 
 /**
  * Normalize text for ATS compatibility by converting problematic Unicode.

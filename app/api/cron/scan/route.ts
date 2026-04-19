@@ -210,19 +210,24 @@ export async function GET(request: Request) {
     const targets = await loadScanTargets(adminDb);
     runId = await startScanRun(adminDb, targets.length);
 
-    const settledResults = await Promise.allSettled(targets.map((target) => scanCompany(target)));
-
     const discoveredJobs: ScannedJob[] = [];
     const targetFailures: string[] = [];
-
-    settledResults.forEach((result, index) => {
-      const targetName = targets[index]?.name ?? `target-${index + 1}`;
-      if (result.status === "fulfilled") {
-        discoveredJobs.push(...result.value);
-      } else {
-        targetFailures.push(`${targetName}: ${summarizeUnknownError(result.reason)}`);
-      }
-    });
+    
+    // Process targets in chunks of 3 to avoid overwhelming outbound connections
+    const CONCURRENCY_LIMIT = 3;
+    for (let i = 0; i < targets.length; i += CONCURRENCY_LIMIT) {
+      const chunk = targets.slice(i, i + CONCURRENCY_LIMIT);
+      const chunkResults = await Promise.allSettled(chunk.map((target) => scanCompany(target)));
+      
+      chunkResults.forEach((result, index) => {
+        const targetName = chunk[index]?.name ?? `target-${i + index + 1}`;
+        if (result.status === "fulfilled") {
+          discoveredJobs.push(...result.value);
+        } else {
+          targetFailures.push(`${targetName}: ${summarizeUnknownError(result.reason)}`);
+        }
+      });
+    }
 
     const positiveKeywords = parseKeywords(process.env.SCAN_TITLE_KEYWORDS, DEFAULT_POSITIVE_KEYWORDS);
     const negativeKeywords = parseKeywords(process.env.SCAN_NEGATIVE_TITLE_KEYWORDS, DEFAULT_NEGATIVE_KEYWORDS);

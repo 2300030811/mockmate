@@ -12,10 +12,6 @@ import { rateLimit } from "@/lib/rate-limit";
 import { deriveAtsMatchRating } from "@/types/ats-score";
 import { computeAtsEngineScores } from "@/lib/ats-engine";
 import { clampScore } from "@/utils/math";
-import {
-  SectionPresence,
-  MetricDetectionResult,
-} from "@/utils/ats-keywords";
 
 
 export async function roastResumeAction(
@@ -69,6 +65,8 @@ JSON FORMAT:
 {
   "brutalRoast": "Paragraph referencing specific resume details.",
   "professionalScore": 0-100,
+  "jobTitle": "Extracted target role name",
+  "companyName": "Extracted target company name (if JD provided)",
   "skillBreakdown": { "clarity": 0-100, "impact": 0-100, "technical": 0-100, "layout": 0-100 },
   "criticalFlaws": ["list 5"],
   "winningPoints": ["list 5"],
@@ -90,6 +88,16 @@ Rules:
 
     let content = "";
     let errorLog = "";
+
+    let jobTitleFromJD = "";
+    let companyNameFromJD = "";
+    if (hasJD) {
+        // Simple heuristic extraction for better metadata consistency
+        const jdLines = jobDescription.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+        if (jdLines.length > 0) {
+            jobTitleFromJD = jdLines[0].substring(0, 100); // Assume first line might be title
+        }
+    }
 
     const numGroqKeys = getNumKeys("GROQ_API_KEY") || 1;
     for (let i = 0; i < numGroqKeys; i++) {
@@ -114,7 +122,8 @@ Rules:
         content = chatCompletion.choices[0]?.message?.content || "";
         if (content) break;
       } catch (groqErr) {
-        errorLog += `Groq key ${i + 1} failed: ${groqErr instanceof Error ? groqErr.message : String(groqErr)}. `;
+        logger.warn(`Resume roast: Groq key ${i + 1} failed`, groqErr);
+        errorLog += `provider_error_stream_${i + 1}; `;
       }
     }
 
@@ -131,8 +140,8 @@ Rules:
           .replace(/```(?:json)?\n?/gi, "")
           .trim();
       } catch (geminiErr) {
-        errorLog += `Gemini failed: ${geminiErr instanceof Error ? geminiErr.message : String(geminiErr)}. `;
-        logger.error("Resume roast: Gemini fallback failed.");
+        logger.error("Resume roast: Gemini fallback failed.", geminiErr);
+        errorLog += "fallback_provider_error; ";
       }
     }
 
@@ -140,7 +149,7 @@ Rules:
       return {
         data: null,
         raw: "",
-        error: `Analysis failed: ${errorLog || "No provider returned content."}`,
+        error: `Analysis failed. ${errorLog ? "Providers are experiencing issues." : "No provider returned content."}`,
       };
     }
 
@@ -153,6 +162,8 @@ Rules:
     const baseData: RoastData = {
       professionalScore: clampScore(parsedData.professionalScore ?? 50),
       brutalRoast: parsedData.brutalRoast ?? "Could not generate roast.",
+      jobTitle: parsedData.jobTitle || "",
+      companyName: parsedData.companyName || "",
       skillBreakdown: {
         clarity: clampScore(parsedData.skillBreakdown?.clarity ?? 50),
         impact: clampScore(parsedData.skillBreakdown?.impact ?? 50),

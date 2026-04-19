@@ -1,5 +1,6 @@
 
 import { BlobServiceClient } from "@azure/storage-blob";
+import { logger } from "@/lib/logger";
 
 // We'll lazy-load this to avoid build-time errors if env is missing
 function getClient() {
@@ -18,7 +19,7 @@ export class StorageService {
     try {
       const client = getClient();
       if (!client) {
-        console.warn("⚠️ StorageService: No Connection String found. Skipping backup.");
+        logger.warn("⚠️ StorageService: No Connection String found. Skipping backup.");
         return false;
       }
 
@@ -31,13 +32,13 @@ export class StorageService {
       
       const blockBlobClient = containerClient.getBlockBlobClient(blobName);
       
-      console.log(`🔹 Backing up resume to Azure Blob: ${blobName}`);
+      logger.info(`🔹 Backing up resume to Azure Blob: ${blobName}`);
       await blockBlobClient.uploadData(buffer);
-      console.log(`✅ Resume backup success.`);
+      logger.info(`✅ Resume backup success.`);
       return true;
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : String(error);
-      console.error("⚠️ StorageService Upload Error:", errMsg);
+      logger.error("⚠️ StorageService Upload Error:", errMsg);
       return false;
     }
   }
@@ -57,7 +58,7 @@ export class StorageService {
         const downloaded = await streamToBuffer(downloadBlockBlobResponse.readableStreamBody!);
         return JSON.parse(downloaded.toString());
     } catch (error) {
-        console.error(`StorageService Read Error (${blobName}):`, error);
+        logger.error(`StorageService Read Error (${blobName}):`, error);
         return null;
     }
   }
