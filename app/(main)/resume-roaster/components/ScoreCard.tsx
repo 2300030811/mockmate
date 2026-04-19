@@ -12,12 +12,12 @@ export const ScoreCard = ({ score }: ScoreCardProps) => (
   <m.div 
     initial={{ opacity: 0, scale: 0.95 }}
     animate={{ opacity: 1, scale: 1 }}
-    className="lg:col-span-4 bg-gradient-to-br from-orange-600 via-red-600 to-red-700 rounded-[3rem] p-8 flex flex-col items-center justify-center text-center shadow-2xl relative group overflow-hidden"
+    className="lg:col-span-5 bg-gradient-to-br from-orange-600 via-red-600 to-red-700 rounded-[2.25rem] md:rounded-[3rem] p-6 sm:p-8 flex flex-col items-center justify-center text-center shadow-2xl relative group overflow-hidden min-h-[18rem]"
   >
     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-from)_0%,_transparent_70%)] opacity-30 animate-pulse" />
     <span className="relative z-10 text-[10px] font-black uppercase tracking-[0.3em] text-orange-100/70 mb-2">Hireability Score</span>
     <div
-      className="relative z-10 text-8xl font-black text-white mb-2 tabular-nums"
+      className="relative z-10 text-6xl sm:text-7xl md:text-8xl font-black text-white mb-2 tabular-nums leading-none"
       aria-label={`Hireability score: ${score} out of 100`}
     >
       {score}

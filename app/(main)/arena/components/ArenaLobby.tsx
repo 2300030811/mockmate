@@ -6,6 +6,7 @@ import { ChevronRight, History, Swords, Globe, Database, Cloud, Terminal, Shield
 import { StatItem, RecentMatch } from "../types";
 import { getAvatarIcon } from "@/lib/icons";
 import { Button } from "@/components/ui/Button";
+import { ClientDate } from "@/components/ui/ClientDate";
 
 interface ArenaLobbyProps {
   stats: StatItem[];
@@ -152,7 +153,7 @@ export const ArenaLobby = React.memo(function ArenaLobby({
                         <div>
                            <div className="text-[10px] font-black text-white italic">{category} SECTOR</div>
                            <div className="text-[8px] font-bold text-gray-500 uppercase tracking-tighter">
-                             {new Date(match.completed_at).toLocaleDateString()}
+                             <ClientDate date={match.completed_at} />
                            </div>
                         </div>
                      </div>

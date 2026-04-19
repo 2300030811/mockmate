@@ -4,6 +4,7 @@ import { deleteResult } from "@/app/actions/admin";
 import { toast } from "sonner";
 import { useState, useTransition } from "react";
 import { Search, Trash2 } from "lucide-react";
+import { ClientDate } from "@/components/ui/ClientDate";
 
 interface Result {
   id: string;
@@ -114,7 +115,7 @@ export function LeaderboardTable({ results }: { results: Result[] }) {
                   {result.category}
                 </td>
                 <td className="p-4 align-middle text-gray-500">
-                  {new Date(result.completed_at).toLocaleDateString()}
+                  <ClientDate date={result.completed_at} />
                 </td>
                  <td className="p-4 align-middle text-xs font-mono opacity-40 truncate max-w-[100px]" title={result.session_id}>
                   {result.session_id}

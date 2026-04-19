@@ -45,6 +45,19 @@ export interface InterviewPrep {
     difficulty?: 'easy' | 'medium' | 'hard';
     category?: 'technical' | 'behavioral' | 'system-design';
   }[];
+  starStories?: {
+    requirementMatch: string;
+    situationTask: string;
+    action: string;
+    result: string;
+    seniorReflection: string;
+  }[];
+}
+
+export interface LevelStrategy {
+  detectedLevel: string;
+  pitchStrategy: string;
+  downlevelMitigation: string;
 }
 
 export interface ResumeSuggestion {
@@ -78,6 +91,7 @@ export interface CareerAnalysisResult {
   roadmap: LearningStep[];
   marketInsights?: MarketInsights;
   interviewPrep?: InterviewPrep;
+  levelStrategy?: LevelStrategy;
   resumeSuggestions?: ResumeSuggestion[];
   suggestedRoles?: RoleSuggestion[]; // AI-suggested alternative roles with match %
   wasTruncated?: boolean;

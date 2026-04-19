@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/server";
 import { QuizFactory } from "@/lib/strategies/QuizFactory";
 import { clearQuizCache } from "@/lib/quiz-cache";
 import { requireAdmin } from "@/lib/auth-utils";
+import { logger } from "@/lib/logger";
 
 const CATEGORIES = ["aws", "azure", "salesforce", "mongodb", "pcap", "oracle"];
 
@@ -15,7 +16,7 @@ export async function seedDatabase() {
 
   for (const category of CATEGORIES) {
     try {
-      console.log(`📡 Fetching and normalizing ${category} questions...`);
+      logger.info(`📡 Fetching and normalizing ${category} questions...`);
       
       // Use the Factory Pattern
       const source = QuizFactory.getSource(category);
@@ -26,7 +27,7 @@ export async function seedDatabase() {
         throw new Error("No questions found or parsing failed");
       }
 
-      console.log(`💾 Saving ${questions.length} questions to database...`);
+      logger.info(`💾 Saving ${questions.length} questions to database...`);
       const { error } = await supabase
         .from('quizzes')
         .upsert({ 
@@ -45,7 +46,7 @@ export async function seedDatabase() {
       results.push({ category, status: "success", count: questions.length });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
-      console.error(`❌ Failed to seed ${category}:`, message);
+      logger.error(`❌ Failed to seed ${category}:`, message);
       results.push({ category, status: "error", error: message });
     }
   }

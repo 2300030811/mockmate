@@ -392,7 +392,8 @@ export default function SystemDesignCanvas() {
     };
     window.addEventListener("keydown", down); window.addEventListener("keyup", up);
     return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); };
-  }, [deleteSelected, redo, undo, dispatch]);
+  }, [deleteSelected, redo, undo, saveDesign, dispatch]);
+
 
   const selectedItem = useMemo(() => {
     if (selectedType === "node") return nodes.find(n => n.id === selectedId) || null;

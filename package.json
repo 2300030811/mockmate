@@ -7,7 +7,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "vitest"
+    "lint:fix": "next lint --fix",
+    "type-check": "tsc --noEmit",
+    "test": "vitest",
+    "test:run": "vitest --run",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest run --coverage",
+    "verify:career-ops": "node scripts/verify-career-ops.mjs",
+    "doctor:career-ops": "node scripts/doctor-career-ops.mjs"
   },
   "dependencies": {
     "@azure/ai-form-recognizer": "^5.1.0",
@@ -64,6 +71,7 @@
     "@types/react": "18.2.7",
     "@types/react-dom": "18.2.4",
     "@types/react-syntax-highlighter": "^15.5.13",
+    "@vitest/coverage-v8": "^4.0.18",
     "autoprefixer": "^10.4.14",
     "eslint": "^8.57.1",
     "eslint-config-next": "^14.2.35",

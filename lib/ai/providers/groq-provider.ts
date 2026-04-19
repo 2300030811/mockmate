@@ -1,6 +1,7 @@
 import { AIProvider } from "./ai-provider";
 import { GeneratedQuizQuestion } from "../models";
 import { getNextKey } from "@/utils/keyManager";
+import { logger } from "@/lib/logger";
 import { wrapAsUserContent } from "@/utils/sanitize";
 import { PromptBuilder } from "../prompt-builder";
 import { parseQuizResponse, formatProviderError } from "../response-parser";
@@ -26,7 +27,7 @@ export class GroqProvider implements AIProvider {
 
             const groq = new Groq({ apiKey: currentKey });
 
-            console.log(`🤖 [GroqProvider] Attempt ${attempt + 1}/${MAX_RETRIES} using key ending in ...${currentKey.slice(-4)}`);
+            logger.info(`🤖 [GroqProvider] Attempt ${attempt + 1}/${MAX_RETRIES} using key ending in ...${currentKey.slice(-4)}`);
 
             // Timeout via AbortController
             const controller = new AbortController();
@@ -59,7 +60,7 @@ export class GroqProvider implements AIProvider {
             lastError = e;
             
             // Detailed Logging for Debugging
-            console.error(`❌ [GroqProvider] Attempt ${attempt + 1} Failed:`, errorMsg);
+            logger.error(`❌ [GroqProvider] Attempt ${attempt + 1} Failed:`, errorMsg);
 
             // If it's a 401 (Auth) or 400 (Bad Request), retrying might not help unless it's a different key
             // but for 429 (Rate Limit) or 500 (Server Error), retrying is good.

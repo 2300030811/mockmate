@@ -1,5 +1,6 @@
 
 import { parsePdf } from "@/lib/pdf-helper";
+import { logger } from "@/lib/logger";
 
 export class OCRService {
   /**
@@ -16,7 +17,7 @@ export class OCRService {
 
     if (azureEndpoint && azureKey) {
       try {
-        console.log("🔹 Attempting Azure Document Intelligence...");
+        logger.info("🔹 Attempting Azure Document Intelligence...");
         // Dynamic import to avoid module bundling issues if not used
         const { DocumentAnalysisClient, AzureKeyCredential } = await import("@azure/ai-form-recognizer");
         const client = new DocumentAnalysisClient(azureEndpoint, new AzureKeyCredential(azureKey));
@@ -26,24 +27,24 @@ export class OCRService {
 
         if (result && result.content) {
           text = result.content;
-          console.log(`✅ Azure extraction success: ${text.length} characters.`);
+          logger.info(`✅ Azure extraction success: ${text.length} characters.`);
           return { text, source: "azure" };
         }
       } catch (azureError: unknown) {
         const errMsg = azureError instanceof Error ? azureError.message : String(azureError);
-        console.warn("⚠️ Azure Document Intelligence failed, falling back to local:", errMsg);
+        logger.warn("⚠️ Azure Document Intelligence failed, falling back to local:", errMsg);
       }
     }
 
     // 2. Local Fallback (pdf-parse)
     try {
-      console.log("🔹 Attempting local pdf-parse...");
+      logger.info("🔹 Attempting local pdf-parse...");
       text = await parsePdf(buffer);
-      console.log(`✅ Extracted ${text.length} characters (local).`);
+      logger.info(`✅ Extracted ${text.length} characters (local).`);
       return { text, source: "local" };
     } catch (parseError: unknown) {
       const errMsg = parseError instanceof Error ? parseError.message : String(parseError);
-      console.warn("⚠️ Local pdf-parse failed:", errMsg);
+      logger.warn("⚠️ Local pdf-parse failed:", errMsg);
       // Return empty text so caller handles it as "failed extraction"
       return { text: "", source: "local" };
     }

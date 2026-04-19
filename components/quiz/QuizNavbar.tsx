@@ -24,7 +24,7 @@ const formatTime = (seconds: number) => {
 
 const QuizTimer = memo(({ seconds }: { seconds: number }) => {
   return (
-    <div className={`flex items-center gap-2 font-mono text-xl ${seconds < 300 ? 'text-red-500 animate-pulse' : 'text-gray-900 dark:text-white'
+    <div data-testid="exam-timer" className={`flex items-center gap-2 font-mono text-xl ${seconds < 300 ? 'text-red-500 animate-pulse' : 'text-gray-900 dark:text-white'
       }`}>
       <Clock className="w-5 h-5" />
       {formatTime(seconds)}

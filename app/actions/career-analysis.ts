@@ -5,10 +5,16 @@ import Groq from 'groq-sdk';
 import { env } from '@/lib/env'; 
 import { OCRService } from '@/lib/services/ocr';
 import { z } from 'zod';
-import { sanitizePromptInput } from '@/utils/sanitize';
+import { sanitizePromptInput, normalizeTextForATS } from '@/utils/sanitize';
 import { getNextKey, getNumKeys } from '@/utils/keyManager';
-import { fetchSalaryEstimate, EnrichedSalaryData } from '@/lib/services/salary-service';
+import {
+  fetchSalaryEstimate,
+  EnrichedSalaryData,
+  SalaryConfidence,
+  formatSalaryRange,
+} from '@/lib/services/salary-service';
 import { estimateExperienceYears } from '@/lib/career-utils';
+import { logger } from '@/lib/logger';
 
 
 // Zod schemas for AI response validation
@@ -55,7 +61,19 @@ const AnalysisSchema = z.object({
       reason: z.string(),
       difficulty: z.enum(["easy", "medium", "hard"]).optional(),
       category: z.enum(["technical", "behavioral", "system-design"]).optional()
-    }))
+    })),
+    starStories: z.array(z.object({
+      requirementMatch: z.string(),
+      situationTask: z.string(),
+      action: z.string(),
+      result: z.string(),
+      seniorReflection: z.string()
+    })).optional()
+  }).optional(),
+  levelStrategy: z.object({
+    detectedLevel: z.string(),
+    pitchStrategy: z.string(),
+    downlevelMitigation: z.string()
   }).optional(),
   resumeSuggestions: z.array(z.object({
     category: z.enum(["keyword", "experience", "structure"]).catch("keyword"),
@@ -74,7 +92,67 @@ const AnalysisSchema = z.object({
 
 import { CAREER_ANALYSIS_SYSTEM_PROMPT } from '@/lib/prompts';
 
-export async function analyzeCareerPath(formData: FormData, jobRole: string, company: string): Promise<CareerAnalysisResult> {
+function resolveTrustedSalaryContext(salaryData: EnrichedSalaryData | null) {
+  if (!salaryData) {
+    return {
+      trustedSalaryRange: null,
+      trustedConfidence: null,
+    } as const;
+  }
+
+  const salaryRange = formatSalaryRange(salaryData);
+  return {
+    trustedSalaryRange: salaryRange || null,
+    trustedConfidence: salaryData.confidence,
+  } as const;
+}
+
+function parseModelMarketInsights(input: unknown): CareerAnalysisResult['marketInsights'] | undefined {
+  if (!input || typeof input !== 'object') return undefined;
+
+  const candidate = input as Record<string, unknown>;
+  const demand =
+    candidate.demand === 'high' || candidate.demand === 'medium' || candidate.demand === 'low'
+      ? candidate.demand
+      : 'medium';
+  const confidence =
+    candidate.confidence === 'high' || candidate.confidence === 'medium' || candidate.confidence === 'low'
+      ? candidate.confidence
+      : 'medium';
+
+  return {
+    demand,
+    salaryRange: typeof candidate.salaryRange === 'string' ? candidate.salaryRange : '',
+    outlook: typeof candidate.outlook === 'string' ? candidate.outlook : '',
+    confidence,
+  };
+}
+
+function mergeMarketInsights(params: {
+  modelInsights?: CareerAnalysisResult['marketInsights'];
+  trustedSalaryRange: string | null;
+  trustedConfidence: SalaryConfidence | null;
+}): CareerAnalysisResult['marketInsights'] | undefined {
+  const { modelInsights, trustedSalaryRange, trustedConfidence } = params;
+
+  if (!modelInsights && !trustedSalaryRange) return undefined;
+
+  return {
+    demand: modelInsights?.demand || 'medium',
+    salaryRange: trustedSalaryRange || modelInsights?.salaryRange || '',
+    outlook:
+      modelInsights?.outlook ||
+      (trustedSalaryRange ? 'Salary benchmark sourced from local salary dataset.' : ''),
+    confidence: trustedConfidence || modelInsights?.confidence || 'low',
+  };
+}
+
+export async function analyzeCareerPath(
+  formData: FormData,
+  jobRole: string,
+  company: string,
+  jobDescription?: string
+): Promise<CareerAnalysisResult> {
   // Career analysis started
   try {
     const file = formData.get('file'); 
@@ -88,7 +166,10 @@ export async function analyzeCareerPath(formData: FormData, jobRole: string, com
     const buffer = Buffer.from(arrayBuffer);
     
     // Extract text using Azure Document Intelligence (or fallback)
-    const { text: resumeText } = await OCRService.extractText(buffer);
+    const { text: rawResumeText } = await OCRService.extractText(buffer);
+    
+    // Apply ATS Normalizer to strip bad invisible chars/quotes
+    const resumeText = normalizeTextForATS(rawResumeText || '');
     
     if (!resumeText || resumeText.length < 50) {
       throw new Error("Resume content too short or unreadable. Please upload a clear text-based PDF.");
@@ -103,11 +184,13 @@ export async function analyzeCareerPath(formData: FormData, jobRole: string, com
 
     // Fetch salary data from local DB (instant)
     const salaryData = fetchSalaryEstimate(jobRole, experienceYears);
+    const { trustedSalaryRange, trustedConfidence } = resolveTrustedSalaryContext(salaryData);
     const salaryDataStr = salaryData 
-      ? `REAL SALARY DATA (${salaryData.source}, confidence: ${(salaryData as EnrichedSalaryData).confidence || 'medium'}): Min: ${salaryData.currency} ${salaryData.min}, Median: ${salaryData.currency} ${salaryData.median}, Max: ${salaryData.currency} ${salaryData.max}. ${experienceYears !== undefined ? `Candidate has ~${experienceYears} years experience.` : ''}`
+      ? `REAL SALARY DATA (${salaryData.source}, confidence: ${salaryData.confidence || 'medium'}): Min: ${salaryData.currency} ${salaryData.min}, Median: ${salaryData.currency} ${salaryData.median}, Max: ${salaryData.currency} ${salaryData.max}. ${experienceYears !== undefined ? `Candidate has ~${experienceYears} years experience.` : ''}`
       : '';
 
-    const systemPrompt = CAREER_ANALYSIS_SYSTEM_PROMPT(jobRole, company, salaryDataStr);
+    const sanitizedJobDescription = jobDescription ? sanitizePromptInput(jobDescription, 3000) : '';
+    const systemPrompt = CAREER_ANALYSIS_SYSTEM_PROMPT(jobRole, company, salaryDataStr, sanitizedJobDescription);
 
     let content: string | null = null;
     let providerUsed = "";
@@ -126,7 +209,10 @@ export async function analyzeCareerPath(formData: FormData, jobRole: string, com
                 model: "llama-3.3-70b-versatile",
                 messages: [
                     { role: "system", content: systemPrompt },
-                    { role: "user", content: `Here is the candidate's resume text:\n\n${sanitizePromptInput(truncatedResume, 15000)}` }
+                    {
+                      role: "user",
+                      content: `Here is the candidate's resume text:\n\n${sanitizePromptInput(truncatedResume, 15000)}${sanitizedJobDescription ? `\n\nTarget Job Description:\n${sanitizedJobDescription}` : ''}`,
+                    }
                 ],
                 response_format: { type: "json_object" },
                 temperature: 0.4,
@@ -156,16 +242,22 @@ export async function analyzeCareerPath(formData: FormData, jobRole: string, com
                 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
                 
                 const result = await model.generateContent([
-                    { text: systemPrompt + "\n\nUser Input:\n" + truncatedResume }
+                    {
+                      text:
+                        systemPrompt +
+                        "\n\nUser Input:\n" +
+                        sanitizePromptInput(truncatedResume, 15000) +
+                        (sanitizedJobDescription ? `\n\nTarget Job Description:\n${sanitizedJobDescription}` : ""),
+                    }
                 ]);
                 const responseText = result.response.text();
                 // Clean markdown from Gemini
                 content = responseText.replace(/```json\n?/, "").replace(/```\n?/, "").trim();
                 providerUsed = "Gemini";
-                console.log("✅ [Analyze] Gemini Fallback successful");
+                logger.info("✅ [Analyze] Gemini Fallback successful");
             }
         } catch (geminiError) {
-            console.error(`🔥 [Analyze] Gemini Fallback failed: ${geminiError instanceof Error ? geminiError.message : String(geminiError)}`);
+            logger.error(`🔥 [Analyze] Gemini Fallback failed: ${geminiError instanceof Error ? geminiError.message : String(geminiError)}`);
         }
     }
 
@@ -174,6 +266,12 @@ export async function analyzeCareerPath(formData: FormData, jobRole: string, com
     }
 
     const rawResult = JSON.parse(content);
+    
+    // Explicitly reject if we forced a 0% gibberish match to prevent empty dashboard rendering
+    if (rawResult.matchScore === 0 && rawResult.competitiveEdge?.includes("INVALID ROLE DETECTED")) {
+        throw new Error("INVALID_ROLE");
+    }
+
     // Validate with Zod using safeParse
     const parseResult = AnalysisSchema.safeParse(rawResult);
     
@@ -189,6 +287,7 @@ export async function analyzeCareerPath(formData: FormData, jobRole: string, com
         interface RawGap { skill?: string; category?: string; importance?: string; recommendedQuiz?: string | null }
         interface RawResource { name?: string; url?: string; type?: string }
         interface RawStep { title?: string; description?: string; duration?: string; milestone?: string; priority?: string; estimatedHours?: number; resources?: RawResource[] }
+        const fallbackMarketInsights = parseModelMarketInsights(rawResult.marketInsights);
 
         const fallback: CareerAnalysisResult = {
             jobRole,
@@ -217,11 +316,13 @@ export async function analyzeCareerPath(formData: FormData, jobRole: string, com
                     type: (['course', 'article', 'project', 'video', 'documentation'].includes(res?.type ?? '') ? res!.type : 'article') as LearningStep['resources'][number]['type']
                 })) : []
             })) : [],
-            marketInsights: rawResult.marketInsights ? {
-                ...rawResult.marketInsights,
-                confidence: (salaryData as EnrichedSalaryData)?.confidence || rawResult.marketInsights?.confidence || 'medium',
-            } : undefined,
+            marketInsights: mergeMarketInsights({
+              modelInsights: fallbackMarketInsights,
+              trustedSalaryRange,
+              trustedConfidence,
+            }),
             interviewPrep: rawResult.interviewPrep,
+            levelStrategy: rawResult.levelStrategy,
             resumeSuggestions: rawResult.resumeSuggestions,
             strengths: Array.isArray(rawResult.strengths) ? rawResult.strengths : [],
             competitiveEdge: typeof rawResult.competitiveEdge === 'string' ? rawResult.competitiveEdge : undefined,
@@ -265,11 +366,13 @@ export async function analyzeCareerPath(formData: FormData, jobRole: string, com
           type: res.type
         }))
       })),
-      marketInsights: result.marketInsights ? {
-        ...result.marketInsights,
-        confidence: (salaryData as EnrichedSalaryData)?.confidence || result.marketInsights.confidence || 'medium',
-      } : undefined,
+      marketInsights: mergeMarketInsights({
+        modelInsights: result.marketInsights,
+        trustedSalaryRange,
+        trustedConfidence,
+      }),
       interviewPrep: result.interviewPrep,
+      levelStrategy: result.levelStrategy,
       resumeSuggestions: result.resumeSuggestions,
       strengths: result.strengths,
       competitiveEdge: result.competitiveEdge,
@@ -284,7 +387,7 @@ export async function analyzeCareerPath(formData: FormData, jobRole: string, com
     // Safely log errors — avoid passing complex error objects to console.error
     // as Node's util.inspect can crash on certain object shapes (e.g., ZodError)
     const safeErrorString = error instanceof Error ? error.message : String(error);
-    console.error('🔥 [Analyze] Critical Error:', safeErrorString);
+    logger.error('🔥 [Analyze] Critical Error:', safeErrorString);
     
     let errorMessage = "Unknown error occurred";
     if (error instanceof Error) {
@@ -303,8 +406,12 @@ export async function analyzeCareerPath(formData: FormData, jobRole: string, com
     if (error && typeof error === 'object' && 'response' in error) {
         const errWithResponse = error as { response?: { data?: unknown } };
         if (errWithResponse.response?.data) {
-             console.error('🔥 [Analyze] API Error Details:', errWithResponse.response.data);
+             logger.error('🔥 [Analyze] API Error Details:', errWithResponse.response.data);
         }
+    }
+    
+    if (safeErrorString === "INVALID_ROLE") {
+        throw error;
     }
     
     throw new Error(`Failed to analyze career path: ${errorMessage}`);

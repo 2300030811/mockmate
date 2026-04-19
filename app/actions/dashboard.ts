@@ -6,6 +6,18 @@ import { unstable_cache } from "next/cache";
 import { rateLimit } from "@/lib/rate-limit";
 import { getStreakMultiplier, calculateLevel } from "@/lib/scoring";
 import { isArenaCategory, parseArenaStatus, formatArenaCategoryLabel } from "@/lib/arena-category";
+import { logger } from "@/lib/logger";
+import {
+  buildCareerOpsTrackerSummary,
+  CareerOpsApplicationSnapshot,
+  emptyCareerOpsTrackerSummary,
+} from "@/lib/career-ops/summary";
+import {
+  buildCareerOpsPatternInsights,
+  emptyCareerOpsPatternInsights,
+} from "@/lib/career-ops/patterns";
+import { isMissingCareerOpsTableError } from "@/lib/career-ops/recompute";
+
 
 async function fetchDashboardData(userId: string, userEmail: string | undefined) {
   // Use admin client inside unstable_cache to bypass cookies usage requirement
@@ -13,8 +25,8 @@ async function fetchDashboardData(userId: string, userEmail: string | undefined)
   // Auth has already been verified outside unstable_cache
   const adminDb = createAdminClient();
 
-  // Parallel fetch: Profile (with stats), Quiz Results, Career Paths
-  const [profileResult, quizResultsResult, careerPathsResult] = await Promise.all([
+  // Parallel fetch: Profile (with stats), Quiz Results, Career Paths, Tracker Applications
+  const [profileResult, quizResultsResult, careerPathsResult, trackerResult] = await Promise.all([
     adminDb
       .from('profiles')
       .select('nickname, avatar_icon, role, created_at, xp, level, streak, elo')
@@ -32,11 +44,29 @@ async function fetchDashboardData(userId: string, userEmail: string | undefined)
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(10),
+    adminDb
+      .from('career_ops_applications')
+      .select('id, job_role, company, status, match_score, next_follow_up_date, updated_at, applied_on, role_archetype, target_level, primary_blocker, blocker_tags')
+      .eq('user_id', userId)
+      .order('updated_at', { ascending: false })
+      .limit(200),
   ]);
 
   const profile = profileResult.data;
   const quizResults = quizResultsResult.data;
   const careerPaths = careerPathsResult.data;
+
+  let tracker = emptyCareerOpsTrackerSummary();
+  let trackerInsights = emptyCareerOpsPatternInsights();
+  if (trackerResult.error) {
+    if (!isMissingCareerOpsTableError(trackerResult.error)) {
+      logger.warn("[Dashboard] Failed to load career_ops_applications.", trackerResult.error.message);
+    }
+  } else {
+    const trackerRows = (trackerResult.data as CareerOpsApplicationSnapshot[] | null) ?? [];
+    tracker = buildCareerOpsTrackerSummary(trackerRows);
+    trackerInsights = buildCareerOpsPatternInsights(trackerRows);
+  }
 
   // Read materialised stats from profile
   const totalXP = profile?.xp ?? 0;
@@ -119,16 +149,50 @@ async function fetchDashboardData(userId: string, userEmail: string | undefined)
       isArena: isArenaCategory(r.category),
       winStatus: parseArenaStatus(r.category)
     })).slice(0, 5) || [],
-    careerPaths: careerPaths?.slice(0, 3) || []
+    careerPaths: careerPaths?.slice(0, 3) || [],
+    tracker,
+    trackerInsights,
   };
 }
 
-/**
- * Public server action that checks auth and returns cached dashboard data.
- * Cache is per-user with a 60-second TTL and tagged for on-demand revalidation.
- */
 export async function getDashboardData() {
   try {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!url || !key) {
+      // In CI/PR builds, return safe fallback to avoid crashing SSR
+      return {
+        user: {
+          id: "ci-fallback",
+          email: undefined,
+          profile: {
+            nickname: undefined,
+            avatar_icon: undefined,
+            role: undefined,
+            created_at: undefined,
+          },
+        },
+        stats: {
+          totalTests: 0,
+          totalQuestions: 0,
+          avgScore: 0,
+          bestCategory: "N/A",
+          xp: 0,
+          streak: 0,
+          arenaWins: 0,
+          arenaLosses: 0,
+          elo: 1000,
+          level: 1,
+          streakMultiplier: 1,
+        },
+        recentActivity: [],
+        careerPaths: [],
+        tracker: emptyCareerOpsTrackerSummary(),
+        trackerInsights: emptyCareerOpsPatternInsights(),
+      };
+    }
+
     const supabase = createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 

@@ -83,51 +83,93 @@ const ResumeSection = React.memo(({ suggestions }: { suggestions: ResumeSuggesti
 
 ResumeSection.displayName = "ResumeSection";
 
-const InterviewPrepSection = React.memo(({ interviewPrep }: { interviewPrep: CareerAnalysisResult['interviewPrep'] & { topQuestions: any[] } }) => (
-    <div className="pt-8 space-y-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <MessageSquare className="text-blue-500 dark:text-blue-400" />
-            Interview Prep
-        </h2>
-        <div className="space-y-4">
-            {interviewPrep.topQuestions.map((q: any, idx: number) => {
-                const difficultyColor: Record<string, string> = {
-                  easy: 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-500/20',
-                  medium: 'bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-500/20',
-                  hard: 'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300 border-red-200 dark:border-red-500/20'
-                };
+const InterviewPrepSection = React.memo(({ interviewPrep }: { interviewPrep: CareerAnalysisResult['interviewPrep'] & { topQuestions: any[]; starStories?: any[] } }) => (
+    <div className="pt-8 space-y-8">
+        <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <MessageSquare className="text-blue-500 dark:text-blue-400" />
+                Interview Prep & Questions
+            </h2>
+            <div className="space-y-4">
+                {interviewPrep.topQuestions.map((q: any, idx: number) => {
+                    const difficultyColor: Record<string, string> = {
+                      easy: 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-500/20',
+                      medium: 'bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-500/20',
+                      hard: 'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300 border-red-200 dark:border-red-500/20'
+                    };
 
-                const categoryIcon: Record<string, string> = {
-                  technical: '⚙️',
-                  behavioral: '💬',
-                  'system-design': '🏗️'
-                };
+                    const categoryIcon: Record<string, string> = {
+                      technical: '⚙️',
+                      behavioral: '💬',
+                      'system-design': '🏗️'
+                    };
 
-                return (
-                  <Card key={idx} className="p-5 border-l-4 border-l-blue-500 bg-blue-50/50 dark:bg-blue-500/5 border-gray-200 dark:border-white/10">
-                      <div className="flex items-start justify-between mb-2">
-                        <h4 className="text-lg font-semibold text-gray-900 dark:text-white flex-1">&quot;{q.question}&quot;</h4>
-                        <div className="flex gap-2 ml-3">
-                          {q.difficulty && (
-                            <span className={`text-[10px] uppercase font-bold tracking-widest px-2 py-1 rounded border ${difficultyColor[q.difficulty as string] || ''}`}>
-                              {q.difficulty}
-                            </span>
-                          )}
-                          {q.category && (
-                            <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-1 rounded bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30">
-                              {categoryIcon[q.category as string] || ''} {q.category}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 italic">
-                          <span className="font-semibold text-blue-600 dark:text-blue-400 not-italic mr-2">Why this?</span>
-                          {q.reason}
-                      </p>
-                  </Card>
-                );
-            })}
+                    return (
+                      <Card key={idx} className="p-5 border-l-4 border-l-blue-500 bg-blue-50/50 dark:bg-blue-500/5 border-gray-200 dark:border-white/10">
+                          <div className="flex items-start justify-between mb-2">
+                            <h4 className="text-lg font-semibold text-gray-900 dark:text-white flex-1">&quot;{q.question}&quot;</h4>
+                            <div className="flex gap-2 ml-3">
+                              {q.difficulty && (
+                                <span className={`text-[10px] uppercase font-bold tracking-widest px-2 py-1 rounded border ${difficultyColor[q.difficulty as string] || ''}`}>
+                                  {q.difficulty}
+                                </span>
+                              )}
+                              {q.category && (
+                                <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-1 rounded bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30">
+                                  {categoryIcon[q.category as string] || ''} {q.category}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 italic">
+                              <span className="font-semibold text-blue-600 dark:text-blue-400 not-italic mr-2">Why this?</span>
+                              {q.reason}
+                          </p>
+                      </Card>
+                    );
+                })}
+            </div>
         </div>
+
+        {interviewPrep.starStories && interviewPrep.starStories.length > 0 && (
+            <div className="space-y-6 pt-4 border-t border-gray-200 dark:border-white/10">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <Sparkles className="text-yellow-500" />
+                    Recommended STAR Stories
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {interviewPrep.starStories.map((story: any, idx: number) => (
+                        <Card key={idx} className="p-5 bg-gradient-to-br from-yellow-50/50 to-orange-50/50 dark:from-yellow-500/5 dark:to-orange-500/5 border border-yellow-200/50 dark:border-yellow-500/20">
+                            <span className="text-[10px] uppercase font-black tracking-widest text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-500/20 px-2 py-1 rounded-sm block mb-3 w-max">
+                                {story.requirementMatch}
+                            </span>
+                            <div className="space-y-3">
+                                <div>
+                                    <span className="text-xs font-bold text-gray-500 dark:text-gray-400">Situation / Task</span>
+                                    <p className="text-sm text-gray-800 dark:text-gray-200 font-medium">{story.situationTask}</p>
+                                </div>
+                                <div>
+                                    <span className="text-xs font-bold text-gray-500 dark:text-gray-400">Action</span>
+                                    <p className="text-sm text-gray-800 dark:text-gray-200 font-medium">{story.action}</p>
+                                </div>
+                                <div>
+                                    <span className="text-xs font-bold text-gray-500 dark:text-gray-400">Result</span>
+                                    <p className="text-sm text-green-700 dark:text-green-400 font-bold italic">{story.result}</p>
+                                </div>
+                                {story.seniorReflection && (
+                                    <div className="mt-4 pt-3 border-t border-amber-200/50 dark:border-amber-500/20">
+                                        <span className="text-[10px] uppercase font-black tracking-widest text-purple-600 dark:text-purple-400 flex items-center gap-1 mb-1">
+                                            <Award size={10} /> Senior Reflection
+                                        </span>
+                                        <p className="text-sm text-purple-800 dark:text-purple-300 font-medium">{story.seniorReflection}</p>
+                                    </div>
+                                )}
+                            </div>
+                        </Card>
+                    ))}
+                </div>
+            </div>
+        )}
     </div>
 ));
 
@@ -378,6 +420,49 @@ const CompetitiveEdgeCard = React.memo(({ competitiveEdge }: { competitiveEdge?:
 });
 
 CompetitiveEdgeCard.displayName = "CompetitiveEdgeCard";
+
+const LevelStrategyCard = React.memo(({ levelStrategy }: { levelStrategy?: CareerAnalysisResult['levelStrategy'] }) => {
+  if (!levelStrategy) return null;
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2 uppercase tracking-tighter italic">
+        <Award className="text-pink-500" size={20} />
+        Leveling Strategy Tracker
+      </h2>
+      <Card className="p-6 bg-pink-50/50 dark:bg-pink-500/5 border-pink-200 dark:border-pink-500/10 shadow-sm relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-24 h-24 bg-pink-500/10 rounded-full blur-3xl -mr-10 -mt-10" />
+        <div className="space-y-4">
+            <div className="flex items-center gap-3">
+                <span className="text-[10px] font-black uppercase tracking-widest text-pink-600 dark:text-pink-400 bg-pink-100 dark:bg-pink-500/20 px-2.5 py-1 rounded-sm block">
+                    Detected Level
+                </span>
+                <span className="text-lg font-bold text-gray-900 dark:text-white">
+                    {levelStrategy.detectedLevel}
+                </span>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                <div className="space-y-2">
+                    <span className="text-xs font-bold text-gray-500 dark:text-gray-400">Positioning Pitch</span>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 font-medium">
+                        {levelStrategy.pitchStrategy}
+                    </p>
+                </div>
+                <div className="space-y-2">
+                    <span className="text-xs font-bold text-gray-500 dark:text-gray-400">Downlevel Mitigation</span>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 font-medium">
+                        {levelStrategy.downlevelMitigation}
+                    </p>
+                </div>
+            </div>
+        </div>
+      </Card>
+    </div>
+  );
+});
+
+LevelStrategyCard.displayName = "LevelStrategyCard";
 
 interface SkillGapCardProps {
   gap: SkillGap;
@@ -647,6 +732,12 @@ export const CareerDashboard: React.FC<CareerDashboardProps> = ({ data, atsData 
       md += `## Competitive Edge\n${data.competitiveEdge}\n\n`;
     }
 
+    if (data.levelStrategy) {
+      md += `## Leveling Strategy (Detected: ${data.levelStrategy.detectedLevel})\n`;
+      md += `- **Pitch:** ${data.levelStrategy.pitchStrategy}\n`;
+      md += `- **Mitigation:** ${data.levelStrategy.downlevelMitigation}\n\n`;
+    }
+
     if (data.suggestedRoles && data.suggestedRoles.length > 0) {
       md += `## Role Suggestions\n`;
       data.suggestedRoles.forEach(r => {
@@ -682,7 +773,20 @@ export const CareerDashboard: React.FC<CareerDashboardProps> = ({ data, atsData 
         if (q.category) md += `*Category: ${q.category}*\n`;
         md += `*Reason: ${q.reason}*\n\n`;
       });
+
+      if (data.interviewPrep.starStories && data.interviewPrep.starStories.length > 0) {
+        md += `## Recommended STAR Stories\n`;
+        data.interviewPrep.starStories.forEach(s => {
+          md += `### ${s.requirementMatch}\n`;
+          md += `**S/T:** ${s.situationTask}\n`;
+          md += `**Action:** ${s.action}\n`;
+          md += `**Result:** ${s.result}\n`;
+          if (s.seniorReflection) md += `*Reflection: ${s.seniorReflection}*\n\n`;
+          md += `\n`;
+        });
+      }
     }
+
 
     md += `---\n*Disclaimer: Salary data is aggregated from public job listings. Actual salaries may vary based on experience, location, and company factors.*`;
 
@@ -915,13 +1019,16 @@ export const CareerDashboard: React.FC<CareerDashboardProps> = ({ data, atsData 
           {/* ─── PREP TAB ─── */}
           {activeTab === 'prep' && (
             <div className="space-y-8">
+              {data.levelStrategy && (
+                <LevelStrategyCard levelStrategy={data.levelStrategy} />
+              )}
               {data.interviewPrep && (
                 <InterviewPrepSection interviewPrep={data.interviewPrep} />
               )}
               {data.resumeSuggestions && data.resumeSuggestions.length > 0 && (
                 <ResumeSection suggestions={data.resumeSuggestions} />
               )}
-              {!data.interviewPrep && (!data.resumeSuggestions || data.resumeSuggestions.length === 0) && (
+              {!data.levelStrategy && !data.interviewPrep && (!data.resumeSuggestions || data.resumeSuggestions.length === 0) && (
                 <Card className="p-12 text-center bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
                   <MessageSquare className="mx-auto text-gray-300 dark:text-gray-600 mb-4" size={48} />
                   <p className="text-gray-500 dark:text-gray-400 font-medium">Interview and resume preparation content will appear here.</p>

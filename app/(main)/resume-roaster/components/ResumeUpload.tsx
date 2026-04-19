@@ -40,7 +40,7 @@ export function ResumeUpload({
   loadingMessage
 }: ResumeUploadProps) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-7">
       {/* Upload Zone */}
       <m.div
         initial={{ opacity: 0, x: -20 }}
@@ -48,12 +48,12 @@ export function ResumeUpload({
         transition={{ delay: 0.1 }}
         className="space-y-6"
       >
-        <div className="bg-gray-900/50 border border-gray-800 rounded-3xl p-8 backdrop-blur-xl group hover:border-orange-500/30 transition-all">
+        <div className="bg-gray-900/50 border border-gray-800 rounded-3xl p-6 md:p-8 backdrop-blur-xl group hover:border-orange-500/30 transition-all">
           <h2 className="text-xl font-bold mb-6 flex items-center gap-3">
             <Upload className="text-orange-500" /> 1. Upload Resume
           </h2>
           
-          <div className={`relative border-2 border-dashed rounded-2xl p-10 transition-all ${
+          <div className={`relative border-2 border-dashed rounded-2xl p-8 md:p-10 transition-all ${
             file ? 'border-orange-500 bg-orange-500/5' : 'border-gray-800 hover:border-orange-500/50'
           }`}>
             <input
@@ -98,18 +98,18 @@ export function ResumeUpload({
         transition={{ delay: 0.2 }}
         className="space-y-6"
       >
-        <div className="bg-gray-900/50 border border-gray-800 rounded-3xl p-8 backdrop-blur-xl h-full flex flex-col group hover:border-blue-500/30 transition-all">
-          <div className="flex items-center justify-between mb-6">
+        <div className="bg-gray-900/50 border border-gray-800 rounded-3xl p-6 md:p-8 backdrop-blur-xl h-full flex flex-col group hover:border-blue-500/30 transition-all">
+          <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-xl font-bold flex items-center gap-3">
               <Briefcase className="text-blue-500" /> 2. Target Job
               <span className="text-[9px] font-black uppercase text-yellow-400 bg-yellow-500/10 border border-yellow-500/20 px-2 py-0.5 rounded-md tracking-wider ml-1">Recommended</span>
             </h2>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex gap-2 overflow-x-auto pb-1 sm:max-w-[58%] md:max-w-[65%]">
               {JOB_PRESETS.map((p) => (
                 <button
                   key={p.label}
                   onClick={() => setJobDescription(p.value)}
-                  className="px-3 py-1 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase rounded-lg transition-all"
+                  className="px-3 py-1 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase rounded-lg transition-all shrink-0"
                 >
                   {p.label}
                 </button>
@@ -120,7 +120,7 @@ export function ResumeUpload({
             placeholder="Paste the job description here for accurate ATS keyword matching..."
             value={jobDescription}
             onChange={(e) => setJobDescription(e.target.value)}
-            className="flex-1 w-full min-h-[160px] bg-gray-800/50 border border-gray-700 rounded-2xl p-6 text-gray-200 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none transition-all mb-2 font-mono text-sm leading-relaxed"
+            className="flex-1 w-full min-h-[150px] bg-gray-800/50 border border-gray-700 rounded-2xl p-5 md:p-6 text-gray-200 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none transition-all mb-2 font-mono text-sm leading-relaxed"
           />
           {!jobDescription && (
             <p className="text-[10px] text-gray-500 italic mb-2 px-1">
@@ -137,7 +137,7 @@ export function ResumeUpload({
       </m.div>
 
       {/* Action Button */}
-      <div className="lg:col-span-2 space-y-8 pt-8 flex flex-col items-center">
+      <div className="lg:col-span-2 space-y-6 pt-6 md:pt-8 flex flex-col items-center">
         <div className="bg-gray-900/50 border border-gray-800 p-2 rounded-2xl inline-flex gap-1 backdrop-blur-xl">
           {["Brutal", "Constructive", "Sarcastic"].map((t) => (
             <button
@@ -160,7 +160,7 @@ export function ResumeUpload({
           disabled={!file || isRoasting}
           aria-label={isRoasting ? "Analyzing resume" : "Start resume analysis"}
           className={`
-            relative group px-12 py-5 rounded-full font-black text-xl transition-all overflow-hidden
+            relative group px-10 sm:px-12 py-4 sm:py-5 rounded-full font-black text-lg sm:text-xl transition-all overflow-hidden
             ${!file ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-gradient-to-r from-orange-600 to-red-600 text-white hover:scale-105 active:scale-95 shadow-2xl shadow-orange-600/20'}
           `}
         >

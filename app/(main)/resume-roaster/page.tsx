@@ -3,12 +3,14 @@
 import { useState, useEffect } from "react";
 import { m } from "framer-motion";
 import { roastResumeAction } from "@/app/actions/resume";
+import { addCareerPathToTracker } from "@/app/actions/career-ops";
 import { NavigationPill } from "@/components/ui/NavigationPill";
 import { Flame } from "lucide-react";
 
 import { ResumeUpload } from "./components/ResumeUpload";
 import { RoastResults } from "./components/RoastResults";
 import { RoastData } from "./types";
+import { hydrateRoastData } from "./utils/hydrateRoastData";
 import { useSpeech } from "./hooks/useSpeech";
 import { useMemeAudio } from "./hooks/useMemeAudio";
 import { useTheme } from "next-themes";
@@ -44,6 +46,8 @@ export default function ResumeRoasterPage() {
   const [copied, setCopied] = useState(false);
   const [selectedTone, setSelectedTone] = useState("Brutal");
   const [completedSuggestions, setCompletedSuggestions] = useState<number[]>([]);
+  const [isTracking, setIsTracking] = useState(false);
+  const [trackerFeedback, setTrackerFeedback] = useState<string | null>(null);
 
   const { isSpeaking, speak, stop } = useSpeech();
   const { playBeforeUpload, playWhileLoading, playAfterLoading, stopAudio } = useMemeAudio();
@@ -57,20 +61,10 @@ export default function ResumeRoasterPage() {
   useEffect(() => {
     const saved = localStorage.getItem("last-resume-roast");
     if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (
-          parsed &&
-          typeof parsed === "object" &&
-          typeof parsed.professionalScore === "number" &&
-          parsed.atsAnalysis &&
-          typeof parsed.atsAnalysis.atsScore === "number"
-        ) {
-          setRoastData(parsed as RoastData);
-        } else {
-          localStorage.removeItem("last-resume-roast");
-        }
-      } catch {
+      const hydrated = hydrateRoastData(saved);
+      if (hydrated) {
+        setRoastData(hydrated);
+      } else {
         localStorage.removeItem("last-resume-roast");
       }
     }
@@ -170,6 +164,9 @@ export default function ResumeRoasterPage() {
 
 Score: ${roastData.professionalScore}/100
 ATS Score: ${roastData.atsAnalysis?.atsScore ?? "N/A"}/100 (${roastData.atsAnalysis?.matchRating ?? "N/A"})
+- Format Score: ${roastData.atsAnalysis?.formatScore ?? "N/A"}
+- Content Score: ${roastData.atsAnalysis?.contentScore ?? "N/A"}
+- Keyword Score: ${roastData.atsAnalysis?.keywordScore ?? "N/A"}
 
 Skill Breakdown:
 - Clarity: ${roastData.skillBreakdown?.clarity || 0}%
@@ -189,6 +186,34 @@ ${roastData.suggestions.map((s) => `\u2022 ${s}`).join("\n")}
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleTrack = async () => {
+    if (!roastData) return;
+    setIsTracking(true);
+    setTrackerFeedback(null);
+
+    try {
+      const result = await addCareerPathToTracker({
+        jobRole: roastData.jobTitle || "Resume Roast Candidate",
+        company: roastData.companyName || "General",
+        matchScore: roastData.professionalScore,
+        atsScore: roastData.atsAnalysis?.atsScore ?? null,
+        notes: `Resume Roaster feedback was analyzed for this role using ${selectedTone} tone.`,
+      });
+
+      if (result.success) {
+        setTrackerFeedback("Saved to tracker!");
+        setTimeout(() => setTrackerFeedback(null), 5000);
+      } else {
+        setError(result.error || "Failed to save to tracker.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("An unexpected error occurred while saving.");
+    } finally {
+      setIsTracking(false);
+    }
   };
 
   const reset = () => {
@@ -215,21 +240,21 @@ ${roastData.suggestions.map((s) => `\u2022 ${s}`).join("\n")}
         <div className={cn("absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] blur-[120px] rounded-full animate-pulse delay-1000", isDark ? "bg-red-600/10" : "bg-red-500/5")} />
       </div>
 
-      <div className="relative z-10 max-w-6xl mx-auto px-4 py-20">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-16 md:py-20">
         {/* Header */}
         <m.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-16"
+          className="text-center mb-12 md:mb-14"
         >
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 mb-6 font-medium text-sm tracking-wider uppercase">
             <Flame size={16} className="animate-bounce" />
             Brutally Honest Analysis
           </div>
-          <h1 className={cn("text-5xl md:text-7xl font-black mb-6 bg-clip-text text-transparent bg-gradient-to-r", isDark ? "from-white via-orange-100 to-red-200" : "from-gray-900 via-orange-600 to-red-600")}>
+          <h1 className={cn("text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black mb-5 md:mb-6 bg-clip-text text-transparent bg-gradient-to-r", isDark ? "from-white via-orange-100 to-red-200" : "from-gray-900 via-orange-600 to-red-600")}>
             Resume Roaster
           </h1>
-          <p className={cn("text-xl max-w-2xl mx-auto leading-relaxed", isDark ? "text-gray-400" : "text-gray-600")}>
+          <p className={cn("text-lg md:text-xl max-w-2xl mx-auto leading-relaxed", isDark ? "text-gray-400" : "text-gray-600")}>
             Upload your resume and get roasted by our AI. We&apos;ll tell you exactly why you aren&apos;t getting those interviews.
           </p>
         </m.div>
@@ -259,6 +284,9 @@ ${roastData.suggestions.map((s) => `\u2022 ${s}`).join("\n")}
             copied={copied}
             onReset={reset}
             onClearHistory={clearHistory}
+            onTrack={handleTrack}
+            isTracking={isTracking}
+            trackerFeedback={trackerFeedback}
           />
         )}
       </div>

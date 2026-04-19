@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { sanitizePromptInput } from "@/utils/sanitize";
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
+import { logger } from "@/lib/logger";
 import { DAILY_PROBLEMS } from "@/utils/daily-problems";
 import { calculateStreak } from "@/utils/streak";
 import { rateLimit } from "@/lib/rate-limit";
@@ -55,7 +56,7 @@ export async function getBobChallengeHint(problemTitle: string, userCode: string
 
         return { markdown: chatCompletion.choices[0]?.message?.content || "Bob is thinking..." };
     } catch (error) {
-        console.error("Hint Error (Groq):", error);
+        logger.error("Hint Error (Groq):", error);
         return { markdown: "Bob is currently compiling his thoughts... (Service Unavailable)" };
     }
 }
@@ -132,7 +133,7 @@ export async function submitChallenge(problemTitle: string, code: string, langua
             try {
                 result = JSON.parse(jsonMatch[0]);
             } catch (parseError) {
-                console.error("Failed to parse LLM JSON output:", parseError);
+                logger.error("Failed to parse LLM JSON output:", parseError);
                 throw new Error("Invalid JSON from AI judge");
             }
 
@@ -178,7 +179,7 @@ export async function submitChallenge(problemTitle: string, code: string, langua
                         });
 
                         if (insertError) {
-                            console.error("❌ Failed to insert challenge result:", insertError);
+                            logger.error("❌ Failed to insert challenge result:", insertError);
                         } else {
                             revalidatePath('/dashboard');
                             revalidatePath('/');
@@ -190,7 +191,7 @@ export async function submitChallenge(problemTitle: string, code: string, langua
         }
         throw new Error("Invalid JSON from Groq");
     } catch (error) {
-        console.error("Submission Error (Groq):", error);
+        logger.error("Submission Error (Groq):", error);
         return {
             success: false,
             score: 0,
@@ -279,7 +280,7 @@ export async function syncDailyChallenge(points: number) {
 
         const userNickname = profile?.nickname || 'User';
 
-        console.log(`[Sync] Restoring missing daily challenge for user ${user.id}`);
+        logger.info(`[Sync] Restoring missing daily challenge for user ${user.id}`);
         // Fix: Use score=1, total_questions=1 to avoid inflating avgScore
         const { error } = await adminDb.from('quiz_results').insert({
             user_id: user.id,
@@ -292,7 +293,7 @@ export async function syncDailyChallenge(points: number) {
         });
 
         if (error) {
-            console.error("[Sync] Failed to restore challenge:", error);
+            logger.error("[Sync] Failed to restore challenge:", error);
             return { success: false, errorMessage: error.message || JSON.stringify(error) };
         }
 

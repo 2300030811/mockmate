@@ -1,4 +1,5 @@
 import { GeneratedQuizQuestion } from "./models";
+import { logger } from "@/lib/logger";
 
 /**
  * Normalizes a string for comparison by removing whitespace and lowercasing.
@@ -184,7 +185,7 @@ export function sanitizeQuizQuestions(questions: unknown[]): GeneratedQuizQuesti
 
     // Skip questions with empty text or no options
     if (!sanitizedQuestion.question || sanitizedQuestion.options.length === 0) {
-      console.warn(`🗑️ [QuizCleanup] Dropped question with empty text or no options`);
+      logger.warn(`🗑️ [QuizCleanup] Dropped question with empty text or no options`);
       continue;
     }
 
@@ -192,18 +193,18 @@ export function sanitizeQuizQuestions(questions: unknown[]): GeneratedQuizQuesti
     const bestMatch = findBestMatch(sanitizedQuestion.options, sanitizedQuestion.answer, sanitizedQuestion.explanation);
     if (bestMatch) {
       if (bestMatch !== sanitizedQuestion.answer) {
-        console.log(`🔧 [QuizCleanup] Fixed answer: "${sanitizedQuestion.answer}" -> "${bestMatch}"`);
+        logger.info(`🔧 [QuizCleanup] Fixed answer: "${sanitizedQuestion.answer}" -> "${bestMatch}"`);
       }
       sanitizedQuestion.answer = bestMatch;
     } else {
       // Try to rescue from explanation
       const rescued = rescueFromExplanation(sanitizedQuestion.options, sanitizedQuestion.explanation);
       if (rescued) {
-        console.log(`🚑 [QuizCleanup] RESCUED answer via Explanation: "${sanitizedQuestion.answer}" -> "${rescued}"`);
+        logger.info(`🚑 [QuizCleanup] RESCUED answer via Explanation: "${sanitizedQuestion.answer}" -> "${rescued}"`);
         sanitizedQuestion.answer = rescued;
       } else {
         // Drop the question — it's unanswerable
-        console.warn(`🗑️ [QuizCleanup] DROPPED unanswerable question: "${sanitizedQuestion.question}" — answer "${sanitizedQuestion.answer}" not in options: ${JSON.stringify(sanitizedQuestion.options)}`);
+        logger.warn(`🗑️ [QuizCleanup] DROPPED unanswerable question: "${sanitizedQuestion.question}" — answer "${sanitizedQuestion.answer}" not in options: ${JSON.stringify(sanitizedQuestion.options)}`);
         continue;
       }
     }
@@ -216,7 +217,7 @@ export function sanitizeQuizQuestions(questions: unknown[]): GeneratedQuizQuesti
   const deduped = result.filter((q) => {
     const fp = questionFingerprint(q.question);
     if (seen.has(fp)) {
-      console.warn(`🗑️ [QuizCleanup] Dropped duplicate question: "${q.question}"`);
+      logger.warn(`🗑️ [QuizCleanup] Dropped duplicate question: "${q.question}"`);
       return false;
     }
     seen.add(fp);

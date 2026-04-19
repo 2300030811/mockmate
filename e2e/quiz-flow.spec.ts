@@ -1,16 +1,20 @@
 import { test, expect } from '@playwright/test';
 
+const awsQuestionsUrl = process.env.AWS_QUESTIONS_URL;
+
 test.describe('Quiz Core Flow', () => {
+    test.skip(!awsQuestionsUrl, 'AWS_QUESTIONS_URL is not set for E2E');
+
     test('should navigate to AWS practice quiz and complete it', async ({ page }) => {
         // Go to home
         await page.goto('/');
         
         // Find AWS quiz card/link (assuming it's on main page or navigation)
         // FeatureCards usually has links
-        await page.click('text=AWS Certified'); 
+        await page.getByRole('link', { name: /aws certified/i }).first().click();
 
         // Wait for quiz shell
-        await expect(page.locator('text=Question 1 of')).toBeVisible();
+        await expect(page.getByText(/Question 1 of/i)).toBeVisible({ timeout: 15000 });
 
         // Check for timer (should be hidden in practice, but present in shell structure maybe?)
         // The UniversalQuizShell renders QuizNavbar which has timeRemaining
@@ -41,7 +45,6 @@ test.describe('Quiz Core Flow', () => {
         await page.goto('/aws-quiz?mode=exam&count=5');
 
         // Check for timer in navbar
-        const timer = page.locator('.flex.items-center.gap-2.bg-red-500\\/10'); // Based on QuizNavbar classes
-        await expect(timer).toBeVisible();
+        await expect(page.getByTestId('exam-timer')).toBeVisible({ timeout: 10000 });
     });
 });

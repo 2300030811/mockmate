@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/scan",
+      "schedule": "0 1 * * *"
+    },
+    {
+      "path": "/api/cron/liveness",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/cadence",
+      "schedule": "0 3 * * *"
+    }
+  ]
+}
