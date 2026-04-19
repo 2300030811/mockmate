@@ -156,13 +156,23 @@ async function fetchDashboardData(userId: string, userEmail: string | undefined)
 }
 
 export async function getDashboardData() {
+  try {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
     if (!url || !key) {
       // In CI/PR builds, return safe fallback to avoid crashing SSR
       return {
-        user: null,
+        user: {
+          id: "ci-fallback",
+          email: undefined,
+          profile: {
+            nickname: undefined,
+            avatar_icon: undefined,
+            role: undefined,
+            created_at: undefined,
+          },
+        },
         stats: {
           totalTests: 0,
           totalQuestions: 0,
