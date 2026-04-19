@@ -28,8 +28,8 @@ export function DashboardSkeleton() {
         </div>
 
         {/* Stats Grid Skeleton */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          {Array.from({ length: 5 }).map((_, i) => (
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="p-6 rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-100/50 dark:bg-gray-900/30 flex flex-col items-center gap-2">
               <Skeleton className="w-8 h-8 rounded-full mb-2" />
               <Skeleton className="h-7 w-16" />
@@ -68,6 +68,36 @@ export function DashboardSkeleton() {
               <div className="grid grid-cols-4 gap-2">
                 {Array.from({ length: 4 }).map((_, i) => (
                   <Skeleton key={i} className="w-12 h-12 rounded-xl mx-auto" />
+                ))}
+              </div>
+            </div>
+
+            {/* Career Ops Tracker Skeleton */}
+            <div className="bg-white/70 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-lg dark:shadow-none">
+              <Skeleton className="h-4 w-40 mb-6" />
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton key={i} className="h-14 w-full rounded-xl" />
+                ))}
+              </div>
+              <div className="space-y-2">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton key={i} className="h-16 w-full rounded-xl" />
+                ))}
+              </div>
+            </div>
+
+            {/* Career Ops Insights Skeleton */}
+            <div className="bg-white/70 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-lg dark:shadow-none">
+              <Skeleton className="h-4 w-36 mb-4" />
+              <div className="grid grid-cols-2 gap-2 mb-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Skeleton key={i} className="h-14 w-full rounded-lg" />
+                ))}
+              </div>
+              <div className="space-y-2">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton key={i} className="h-12 w-full rounded-lg" />
                 ))}
               </div>
             </div>

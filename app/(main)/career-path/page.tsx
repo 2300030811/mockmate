@@ -9,24 +9,24 @@ import { analyzeCareerPath } from '@/app/actions/career-analysis';
 import { CareerAnalysisResult } from '@/types/career';
 import { m, AnimatePresence } from 'framer-motion';
 import { saveCareerPath } from '@/app/actions/career-save';
-import { useRouter } from "next/navigation";
-import { ArrowLeft, Sparkles, Home, Target } from 'lucide-react';
-import Link from 'next/link';
+import { addCareerPathToTracker } from '@/app/actions/career-ops';
+import { ArrowLeft, Sparkles } from 'lucide-react';
 import { NavigationPill } from '@/components/ui/NavigationPill';
 import { analyzeAtsScoreAction } from '@/app/actions/ats-score';
 import { AtsScoreResult } from '@/types/ats-score';
-import { AtsScoreDashboard } from '@/components/career-path/AtsScoreDashboard';
-import { FixSuggestions } from '@/components/career-path/FixSuggestions';
+import { CareerOpsPanel } from '@/components/career-path/CareerOpsPanel';
 
 export default function CareerPathPage() {
-  const router = useRouter();
   const [step, setStep] = useState<'upload' | 'analysis' | 'results'>('upload');
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<CareerAnalysisResult | null>(null);
   const [atsResult, setAtsResult] = useState<AtsScoreResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isTracking, setIsTracking] = useState(false);
   const [messageIndex, setMessageIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [trackerFeedback, setTrackerFeedback] = useState<string | null>(null);
+  const [trackerRefreshSignal, setTrackerRefreshSignal] = useState(0);
 
   React.useEffect(() => {
     if (step === 'analysis') {
@@ -47,6 +47,7 @@ export default function CareerPathPage() {
     setIsLoading(true);
     setStep('analysis');
     setError(null);
+    setTrackerFeedback(null);
 
     try {
       const formData = new FormData();
@@ -54,7 +55,7 @@ export default function CareerPathPage() {
 
       // Analyze Career Roadmap and ATS Optimization in parallel
       const [careerPromise, atsPromise] = await Promise.allSettled([
-        analyzeCareerPath(formData, jobRole, company),
+        analyzeCareerPath(formData, jobRole, company, jobDescription),
         analyzeAtsScoreAction(formData, jobRole, company, jobDescription)
       ]);
 
@@ -79,9 +80,12 @@ export default function CareerPathPage() {
         }
       }
       setStep('results');
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      setError("Failed to analyze resume. Please try again.");
+      const isInvalid = error?.message?.includes('INVALID_ROLE') || error?.toString().includes('INVALID_ROLE');
+      setError(isInvalid 
+          ? "The AI determined that the target job role is invalid or non-existent. Please try again with a real profession." 
+          : "Failed to analyze resume. Please try again.");
       setStep('upload');
     } finally {
       setIsLoading(false);
@@ -92,8 +96,47 @@ export default function CareerPathPage() {
     setFile(null);
     setResult(null);
     setAtsResult(null);
+    setTrackerFeedback(null);
     setStep('upload');
   }, []);
+
+  const handleTrackRole = React.useCallback(async () => {
+    if (!result) return;
+
+    setIsTracking(true);
+    setTrackerFeedback(null);
+
+    try {
+      const tracked = await addCareerPathToTracker({
+        jobRole: result.jobRole,
+        company: result.company,
+        matchScore: result.matchScore,
+        atsScore: atsResult?.atsScore ?? null,
+        targetLevel: result.levelStrategy?.detectedLevel,
+        missingSkills: result.missingSkills,
+      });
+
+      if (!tracked.success) {
+        setTrackerFeedback(tracked.error || "Could not add this role to tracker.");
+        return;
+      }
+
+      const nextFollowUp = tracked.data?.nextFollowUpDate
+        ? ` Next follow-up: ${tracked.data.nextFollowUpDate}.`
+        : "";
+      const atsSnapshot = atsResult
+        ? ` ATS ${atsResult.atsScore}/100 (${atsResult.matchRating}).`
+        : "";
+
+      setTrackerFeedback(`Role added to tracker.${atsSnapshot}${nextFollowUp}`);
+      setTrackerRefreshSignal((value) => value + 1);
+    } catch (trackError) {
+      console.error(trackError);
+      setTrackerFeedback("Could not add this role to tracker.");
+    } finally {
+      setIsTracking(false);
+    }
+  }, [result, atsResult]);
 
   return (
     <div className="min-h-screen relative transition-colors duration-500 bg-gradient-to-br from-gray-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950 pt-24 px-4 sm:px-6">
@@ -187,7 +230,21 @@ export default function CareerPathPage() {
                   <ArrowLeft size={18} />
                   Analyze another role
                 </button>
+
+                <button
+                  onClick={handleTrackRole}
+                  disabled={isTracking}
+                  className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold text-sm hover:bg-blue-500 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isTracking ? 'Saving...' : 'Track this role'}
+                </button>
               </div>
+
+              {trackerFeedback && (
+                <div className="rounded-xl border border-blue-500/20 bg-blue-500/10 px-4 py-3 text-sm text-blue-700 dark:text-blue-300 font-medium">
+                  {trackerFeedback}
+                </div>
+              )}
 
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-300">
                 <div className="text-center mb-10 text-balance">
@@ -198,6 +255,7 @@ export default function CareerPathPage() {
                     Your long-term upskilling and career progression path, generated based on your gap analysis.
                   </p>
                 </div>
+                <CareerOpsPanel refreshSignal={trackerRefreshSignal} />
                 <CareerDashboard data={result} atsData={atsResult || undefined} />
               </div>
             </m.div>

@@ -97,8 +97,8 @@ export async function saveQuizResult(data: {
 
         const scoreToSave = calculatedScore;
 
-        // Check if there's a very recent result (last 1 minute)
-        const oneMinuteAgo = new Date(Date.now() - 60 * 1000).toISOString();
+        // Check if there's a very recent result (last 15 minutes to allow time for user to submit nickname)
+        const recentTimeAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
 
         // Use Admin Client to query without RLS blocking (or standard client works for read if policy exists)
         // But for consistency/speed in this privileged action, let's use adminDb for the write check too.
@@ -107,7 +107,7 @@ export async function saveQuizResult(data: {
             .select('id')
             .eq('category', data.category)
             .eq('score', scoreToSave)
-            .gt('completed_at', oneMinuteAgo);
+            .gt('completed_at', recentTimeAgo);
 
         if (userId) {
             query = query.eq('user_id', userId);
@@ -149,7 +149,7 @@ export async function saveQuizResult(data: {
                 user_id: userId,
                 category: data.category,
                 score: scoreToSave,
-                total_questions: questions.length, // Ensure strict consistency with server-side count
+                total_questions: data.totalQuestions, // Ensure strict consistency with client-provided exam amount
                 nickname: finalNickname,
                 completed_at: new Date().toISOString()
             })),
@@ -175,7 +175,7 @@ export async function saveQuizResult(data: {
               userId,
               type: syncType,
               score: scoreToSave,
-              totalQuestions: data.arenaTotalQuestions || questions.length,
+              totalQuestions: data.arenaTotalQuestions || data.totalQuestions,
               arenaStatus: winStatus,
             });
           } catch (syncErr) {

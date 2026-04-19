@@ -52,3 +52,78 @@ export function wrapAsUserContent(content: string, label: string = "USER_CONTENT
   const sanitized = sanitizePromptInput(content);
   return `<${label}>\n${sanitized}\n</${label}>`;
 }
+
+/**
+ * Escape user-provided text before interpolating into HTML templates.
+ */
+export function escapeHtml(text: string): string {
+  if (!text || typeof text !== "string") return "";
+
+  const htmlEntities: Record<string, string> = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  };
+
+  return text.replace(/[&<>"']/g, (char) => htmlEntities[char]);
+}
+
+/**
+ * Allow only safe URL protocols for user-controlled links.
+ */
+export function sanitizeUrl(url: string, fallback: string = "#"): string {
+  if (!url || typeof url !== "string") return fallback;
+
+  const trimmed = url.trim();
+  if (!trimmed) return fallback;
+  if (trimmed.startsWith("#") || trimmed.startsWith("/")) return trimmed;
+
+  // Accept bare domains by normalizing to https.
+  if (/^[a-z0-9.-]+\.[a-z]{2,}(\/.*)?$/i.test(trimmed)) {
+    return `https://${trimmed}`;
+  }
+
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:" || parsed.protocol === "mailto:") {
+      return trimmed;
+    }
+  } catch {
+    return fallback;
+  }
+
+  return fallback;
+}
+
+/**
+ * Normalize text for ATS compatibility by converting problematic Unicode.
+ * ATS parsers and legacy systems often fail on em-dashes, smart quotes,
+ * zero-width characters, and non-breaking spaces.
+ * 
+ * @param text Raw parsed text from a resume PDF or API
+ * @returns Clean, ATS-friendly string
+ */
+export function normalizeTextForATS(text: string): string {
+  if (!text) return text;
+  let t = text;
+  // Dash variants -> standard hyphen
+  t = t.replace(/\u2014/g, '-'); // em-dash
+  t = t.replace(/\u2013/g, '-'); // en-dash
+  
+  // Smart quotes -> straight quotes
+  t = t.replace(/[\u201C\u201D\u201E\u201F]/g, '"');
+  t = t.replace(/[\u2018\u2019\u201A\u201B]/g, "'");
+  
+  // Ellipsis
+  t = t.replace(/\u2026/g, '...');
+  
+  // Invisible characters / Zero-width
+  t = t.replace(/[\u200B\u200C\u200D\u2060\uFEFF]/g, '');
+  
+  // Non-breaking space -> standard space
+  t = t.replace(/\u00A0/g, ' ');
+  
+  return t;
+}

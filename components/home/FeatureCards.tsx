@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { m } from "framer-motion";
 import { InteractiveCard } from "@/components/ui/Card";
-import { BrainCircuit, Mic, Trophy, Rocket, Flame, Layers, Swords, Code2 } from "lucide-react";
+import { BrainCircuit, Mic, Trophy, Rocket, Flame, Layers, Swords, Code2, FileText } from "lucide-react";
 
 const features = [
   {
@@ -59,6 +59,15 @@ const features = [
     gradient: "from-orange-500 to-red-500",
     shadow: "shadow-red-500/20",
     delay: 0.5
+  },
+  {
+    Icon: FileText,
+    title: "Resume Builder",
+    description: "Generate a polished PDF resume from structured profile details",
+    href: "/resume-builder",
+    gradient: "from-cyan-500 to-blue-500",
+    shadow: "shadow-cyan-500/20",
+    delay: 0.55
   },
   {
     Icon: Layers,

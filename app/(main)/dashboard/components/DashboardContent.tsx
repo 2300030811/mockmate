@@ -5,6 +5,8 @@ import { StatsGrid } from "./StatsGrid";
 import { RecentActivity } from "./RecentActivity";
 import { Badges } from "./Badges";
 import { CareerPaths } from "./CareerPaths";
+import { CareerOpsTracker } from "./CareerOpsTracker";
+import { CareerOpsInsights } from "./CareerOpsInsights";
 import { DashboardData } from "@/types/dashboard";
 
 export function DashboardContent({ data }: { data: DashboardData }) {
@@ -16,17 +18,24 @@ export function DashboardContent({ data }: { data: DashboardData }) {
         <div className="absolute bottom-0 right-0 w-full h-96 bg-purple-400/10 dark:bg-purple-600/5 blur-[120px] will-change-transform" />
       </div>
 
-      <div className="max-w-6xl mx-auto relative z-10 space-y-8">
+      <div className="max-w-7xl mx-auto relative z-10 space-y-6">
         <ProfileHeader data={data} />
         <StatsGrid stats={data.stats} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <RecentActivity activity={data.recentActivity} />
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+          <div className="xl:col-span-8">
+            <RecentActivity activity={data.recentActivity} />
+          </div>
 
-          <div className="space-y-8">
+          <div className="xl:col-span-4 space-y-6">
             <Badges stats={data.stats} />
             <CareerPaths paths={data.careerPaths} />
           </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          <CareerOpsTracker tracker={data.tracker} />
+          <CareerOpsInsights insights={data.trackerInsights} />
         </div>
       </div>
     </div>

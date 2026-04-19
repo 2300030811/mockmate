@@ -20,6 +20,7 @@ const HIDDEN_ROUTE_PATTERNS = [
   "/system-design",
   "/career-path",
   "/resume-roaster",
+  "/resume-builder",
   "/certification",
   "/project-mode",
 ];

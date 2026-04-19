@@ -1,4 +1,25 @@
 import { z } from "zod";
+import { clampScore } from "@/utils/math";
+
+export const ATS_SCORE_WEIGHTS = {
+  format: 0.25,
+  content: 0.35,
+  keyword: 0.4,
+} as const;
+
+
+export function computeWeightedAtsScore(params: {
+  formatScore: number;
+  contentScore: number;
+  keywordScore: number;
+}): number {
+  const weighted =
+    params.formatScore * ATS_SCORE_WEIGHTS.format +
+    params.contentScore * ATS_SCORE_WEIGHTS.content +
+    params.keywordScore * ATS_SCORE_WEIGHTS.keyword;
+
+  return clampScore(weighted);
+}
 
 export interface AtsScoreResult {
   atsScore: number;
@@ -50,6 +71,7 @@ export const fixSuggestionSchema = z.object({
 
 export const atsScoreSchema = z.object({
   atsScore: z.number().min(0).max(100),
+  matchRating: z.enum(['High', 'Medium', 'Low']).optional(),
   formatScore: z.number().min(0).max(100),
   contentScore: z.number().min(0).max(100),
   keywordScore: z.number().min(0).max(100),

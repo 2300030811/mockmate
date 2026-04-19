@@ -1,3 +1,5 @@
+import type { CareerOpsPatternInsights, CareerOpsTrackerSummary } from "@/types/career-ops";
+
 export interface DashboardStats {
   xp: number;
   totalTests: number;
@@ -58,4 +60,6 @@ export interface DashboardData {
   stats: DashboardStats;
   recentActivity: ActivityItem[];
   careerPaths: CareerPath[];
+  tracker: CareerOpsTrackerSummary;
+  trackerInsights: CareerOpsPatternInsights;
 }

@@ -7,7 +7,12 @@ import { OCRService } from "@/lib/services/ocr";
 import { sanitizePromptInput } from "@/utils/sanitize";
 import { logger } from "@/lib/logger";
 import { rateLimit } from "@/lib/rate-limit";
-import { atsScoreSchema, AtsScoreResult, deriveAtsMatchRating } from "@/types/ats-score";
+import {
+  atsScoreSchema,
+  AtsScoreResult,
+  computeWeightedAtsScore,
+  deriveAtsMatchRating,
+} from "@/types/ats-score";
 
 const SYSTEM_PROMPT = `You are an elite Applicant Tracking System (ATS) optimization engine. 
 Your goal is to parse resumes with the precision of a top-tier recruiter and the technical depth of an ATS parser like Workday or Greenhouse.
@@ -148,7 +153,7 @@ TASK: Return the ATS optimization report JSON. Be brutally honest in grading. If
           content = result.response.text();
           
           // Clean up potential markdown blocks from Gemini response
-          content = content.replace(/```json\n?/, "").replace(/```\n?/, "").trim();
+          content = content.replace(/```(?:json)?\n?/gi, "").trim();
         } else {
           throw new Error("Gemini API Key missing");
         }
@@ -172,9 +177,17 @@ TASK: Return the ATS optimization report JSON. Be brutally honest in grading. If
         return { data: null, error: "AI returned invalid format. Please try again." };
       }
 
+      // Recompute ATS score from provider component scores to keep formula deterministic.
+      const atsScore = computeWeightedAtsScore({
+        formatScore: validated.data.formatScore,
+        contentScore: validated.data.contentScore,
+        keywordScore: validated.data.keywordScore,
+      });
+
       const result: AtsScoreResult = {
         ...validated.data,
-        matchRating: deriveAtsMatchRating(validated.data.atsScore),
+        atsScore,
+        matchRating: deriveAtsMatchRating(atsScore),
       };
 
       return { data: result };

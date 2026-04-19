@@ -191,12 +191,13 @@ export function extractAndMatchKeywords(
     .sort((a, b) => b[1] - a[1])
     .slice(0, 60);
 
+  const bigramMinCount = jdTokens.length < 150 ? 1 : 2;
   const finalKeywords: string[] = [];
   for (let i = 0; i < sortedKeywords.length; i++) {
     const [kw, count] = sortedKeywords[i];
     const isBigram = kw.includes(" ");
-    // Keep unigrams, and bigrams that appear at least twice
-    if (!isBigram || count >= 2) {
+    // Keep unigrams, and bigrams that meet the adaptive threshold
+    if (!isBigram || count >= bigramMinCount) {
       finalKeywords.push(kw);
     }
     if (finalKeywords.length >= 50) break;

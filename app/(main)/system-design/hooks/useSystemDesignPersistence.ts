@@ -18,6 +18,7 @@ export function useSystemDesignPersistence({
   dispatch,
   setInitialHistory
 }: PersistenceProps) {
+  const emptyState = { nodes: [], connections: [], groups: [] };
   const [hasLoaded, setHasLoaded] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const tutorialTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -40,16 +41,24 @@ export function useSystemDesignPersistence({
         });
         setInitialHistory({ nodes: p.nodes || [], connections: p.connections || [], groups: p.groups || [] });
       } catch (e) {
+        localStorage.removeItem('mockmate-design-pro-v3');
         const old = localStorage.getItem('mockmate-design-pro');
         if (old) {
-          const p = JSON.parse(old);
-          const initial = { nodes: p.nodes || [], connections: p.connections || [], groups: p.groups || [] };
-          dispatch({ type: "LOAD_STATE", state: initial });
-          setInitialHistory(initial);
+          try {
+            const p = JSON.parse(old);
+            const initial = { nodes: p.nodes || [], connections: p.connections || [], groups: p.groups || [] };
+            dispatch({ type: "LOAD_STATE", state: initial });
+            setInitialHistory(initial);
+          } catch {
+            localStorage.removeItem('mockmate-design-pro');
+            setInitialHistory(emptyState);
+          }
+        } else {
+          setInitialHistory(emptyState);
         }
       }
     } else {
-      setInitialHistory({ nodes: [], connections: [], groups: [] });
+      setInitialHistory(emptyState);
     }
     setHasLoaded(true);
 

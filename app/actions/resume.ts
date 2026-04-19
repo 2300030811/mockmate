@@ -1,17 +1,22 @@
 "use server";
 
 import { Groq } from "groq-sdk";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getNextKey, getNumKeys } from "@/utils/keyManager";
 import { OCRService } from "@/lib/services/ocr";
-import { RoastData, roastDataSchema, deriveMatchRating } from "../(main)/resume-roaster/types";
+import { RoastData, roastDataSchema } from "../(main)/resume-roaster/types";
 import { sanitizePromptInput } from "@/utils/sanitize";
+import { safeJsonParse } from "@/utils/safeJson";
 import { logger } from "@/lib/logger";
 import { rateLimit } from "@/lib/rate-limit";
+import { deriveAtsMatchRating } from "@/types/ats-score";
+import { computeAtsEngineScores } from "@/lib/ats-engine";
+import { clampScore } from "@/utils/math";
 import {
-  extractAndMatchKeywords,
-  detectSections,
-  detectQuantifiedAchievements,
+  SectionPresence,
+  MetricDetectionResult,
 } from "@/utils/ats-keywords";
+
 
 export async function roastResumeAction(
   formData: FormData,
@@ -34,25 +39,19 @@ export async function roastResumeAction(
       return { data: null, raw: "", error: "Resume content too short or unreadable." };
     }
 
-    const apiKey = getNextKey("GROQ_API_KEY") || process.env.GROQ_API_KEY;
-    if (!apiKey) return { data: null, raw: "", error: "API Service missing." };
-
-    const groq = new Groq({ apiKey });
     const hasJD = !!jobDescription && jobDescription.trim().length > 20;
 
-    // --- Deterministic Analysis (Optimized to run once) ---
-    const kwResult = hasJD ? extractAndMatchKeywords(resumeText, jobDescription!) : null;
-    const sections = kwResult ? kwResult.sections : detectSections(resumeText);
-    const metrics = kwResult ? kwResult.metrics : detectQuantifiedAchievements(resumeText);
-
-    const scoreLow = kwResult ? Math.max(0, kwResult.matchPercent - 10) : 0;
-    const scoreHigh = kwResult ? Math.min(100, kwResult.matchPercent + 10) : 70;
+    // --- Deterministic Analysis (Optimized via Unified Engine) ---
+    const engineResult = computeAtsEngineScores({
+      resumeText,
+      jobDescription: hasJD ? jobDescription : undefined,
+    });
 
     const analysisContext = `
-SECTIONS: ${sections.present.join(", ") || "None detected"}
-MISSING: ${sections.missing.join(", ") || "None"}
-METRICS: ${metrics.summary}
-${kwResult ? `KEYWORDS: ${kwResult.summary}\nCONSTRAINT: atsScore MUST be ${scoreLow}-${scoreHigh}.` : "No JD provided. Max atsScore: 70."}
+SECTIONS: ${engineResult.sections.present.join(", ") || "None detected"}
+MISSING: ${engineResult.sections.missing.join(", ") || "None"}
+METRICS: ${engineResult.metrics.summary}
+${hasJD ? `KEYWORDS: Found ${engineResult.presentKeywords.length}. Match: ${engineResult.keywordScore}%` : "No JD provided. Max keywordScore: 70."}
 `;
 
     const prompt = `
@@ -64,7 +63,7 @@ TONE: ${tone}
 ${analysisContext}
 
 TASK: Return a JSON roast and ATS analysis. Ensure atsScore reflects the keyword match and metric density.
-skillBreakdown.impact should correlate with metrics found (${metrics.metricSignals}).
+skillBreakdown.impact should correlate with metrics found (${engineResult.metrics.metricSignals}).
 
 JSON FORMAT:
 {
@@ -86,39 +85,111 @@ JSON FORMAT:
 
 Rules:
 - Strictly JSON only.
-- atsScore MUST be ${hasJD ? `${scoreLow}-${scoreHigh}` : "max 70"}.
+- Note: atsScore will be validated against deterministic engine analysis.
 `;
 
-    const chatCompletion = await groq.chat.completions.create({
-      messages: [
-        { role: "system", content: `You are a Resume Analyst with a ${tone} style. Respond ONLY in valid JSON.` },
-        { role: "user", content: prompt },
-      ],
-      model: "llama-3.3-70b-versatile",
-      temperature: 0.6,
-      response_format: { type: "json_object" },
-    });
+    let content = "";
+    let errorLog = "";
 
-    const content = chatCompletion.choices[0]?.message?.content || "";
+    const numGroqKeys = getNumKeys("GROQ_API_KEY") || 1;
+    for (let i = 0; i < numGroqKeys; i++) {
+      try {
+        const apiKey = getNextKey("GROQ_API_KEY") || process.env.GROQ_API_KEY;
+        if (!apiKey) throw new Error("Groq API Key missing");
 
-    try {
-      const rawParsed = JSON.parse(content);
-      const validated = roastDataSchema.safeParse(rawParsed);
-      
-      const baseData = validated.success ? validated.data : roastDataSchema.parse(rawParsed);
-      const roastData: RoastData = {
-        ...baseData,
-        atsAnalysis: {
-          ...baseData.atsAnalysis,
-          matchRating: deriveMatchRating(baseData.atsAnalysis.atsScore),
-          jobDescriptionProvided: hasJD,
-        },
-      };
-      return { data: roastData, raw: content };
-    } catch (e) {
-      logger.error("JSON processing failed:", e);
-      return { data: null, raw: "", error: "Analysis failed to parse. Please try again." };
+        const groq = new Groq({ apiKey });
+        const chatCompletion = await groq.chat.completions.create({
+          messages: [
+            {
+              role: "system",
+              content: `You are a Resume Analyst with a ${tone} style. Respond ONLY in valid JSON.`,
+            },
+            { role: "user", content: prompt },
+          ],
+          model: "llama-3.3-70b-versatile",
+          temperature: 0.6,
+          response_format: { type: "json_object" },
+        });
+
+        content = chatCompletion.choices[0]?.message?.content || "";
+        if (content) break;
+      } catch (groqErr) {
+        errorLog += `Groq key ${i + 1} failed: ${groqErr instanceof Error ? groqErr.message : String(groqErr)}. `;
+      }
     }
+
+    if (!content) {
+      logger.warn("Resume roast: All Groq keys failed, attempting Gemini fallback...");
+      try {
+        const geminiApiKey = process.env.GOOGLE_API_KEY;
+        if (!geminiApiKey) throw new Error("Gemini API Key missing");
+
+        const genAI = new GoogleGenerativeAI(geminiApiKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const result = await model.generateContent([{ text: prompt }]);
+        content = result.response.text()
+          .replace(/```(?:json)?\n?/gi, "")
+          .trim();
+      } catch (geminiErr) {
+        errorLog += `Gemini failed: ${geminiErr instanceof Error ? geminiErr.message : String(geminiErr)}. `;
+        logger.error("Resume roast: Gemini fallback failed.");
+      }
+    }
+
+    if (!content) {
+      return {
+        data: null,
+        raw: "",
+        error: `Analysis failed: ${errorLog || "No provider returned content."}`,
+      };
+    }
+
+    const parsedData = safeJsonParse(content, roastDataSchema);
+    if (!parsedData) {
+      logger.error("Resume roast: failed to parse model output into RoastData schema.");
+      return { data: null, raw: content, error: "Analysis failed to parse. Please try again." };
+    }
+
+    const baseData: RoastData = {
+      professionalScore: clampScore(parsedData.professionalScore ?? 50),
+      brutalRoast: parsedData.brutalRoast ?? "Could not generate roast.",
+      skillBreakdown: {
+        clarity: clampScore(parsedData.skillBreakdown?.clarity ?? 50),
+        impact: clampScore(parsedData.skillBreakdown?.impact ?? 50),
+        technical: clampScore(parsedData.skillBreakdown?.technical ?? 50),
+        layout: clampScore(parsedData.skillBreakdown?.layout ?? 50),
+      },
+      criticalFlaws: parsedData.criticalFlaws ?? [],
+      winningPoints: parsedData.winningPoints ?? [],
+      atsAnalysis: {
+        atsScore: clampScore(parsedData.atsAnalysis?.atsScore ?? 0),
+        matchRating: deriveAtsMatchRating(clampScore(parsedData.atsAnalysis?.atsScore ?? 0)),
+        formatScore: clampScore(parsedData.atsAnalysis?.formatScore ?? 50),
+        contentScore: clampScore(parsedData.atsAnalysis?.contentScore ?? 50),
+        keywordScore: clampScore(parsedData.atsAnalysis?.keywordScore ?? 50),
+        missingHardSkills: parsedData.atsAnalysis?.missingHardSkills ?? [],
+        missingSoftSkills: parsedData.atsAnalysis?.missingSoftSkills ?? [],
+        presentKeywords: parsedData.atsAnalysis?.presentKeywords ?? [],
+        contentIssues: parsedData.atsAnalysis?.contentIssues ?? [],
+        atsTips: parsedData.atsAnalysis?.atsTips ?? [],
+        jobDescriptionProvided: Boolean(parsedData.atsAnalysis?.jobDescriptionProvided),
+      },
+      suggestions: parsedData.suggestions ?? [],
+    };
+
+    const roastData: RoastData = {
+      ...baseData,
+      atsAnalysis: {
+        ...baseData.atsAnalysis,
+        atsScore: engineResult.atsScore,
+        formatScore: engineResult.formatScore,
+        contentScore: engineResult.contentScore,
+        keywordScore: engineResult.keywordScore,
+        matchRating: engineResult.matchRating,
+        jobDescriptionProvided: hasJD,
+      },
+    };
+    return { data: roastData, raw: content };
   } catch (error: unknown) {
     logger.error("Roast Error:", error);
     return { data: null, raw: "", error: "Failed to roast resume." };
