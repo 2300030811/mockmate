@@ -156,7 +156,33 @@ async function fetchDashboardData(userId: string, userEmail: string | undefined)
 }
 
 export async function getDashboardData() {
-  try {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!url || !key) {
+      // In CI/PR builds, return safe fallback to avoid crashing SSR
+      return {
+        user: null,
+        stats: {
+          totalTests: 0,
+          totalQuestions: 0,
+          avgScore: 0,
+          bestCategory: "N/A",
+          xp: 0,
+          streak: 0,
+          arenaWins: 0,
+          arenaLosses: 0,
+          elo: 1000,
+          level: 1,
+          streakMultiplier: 1,
+        },
+        recentActivity: [],
+        careerPaths: [],
+        tracker: emptyCareerOpsTrackerSummary(),
+        trackerInsights: emptyCareerOpsPatternInsights(),
+      };
+    }
+
     const supabase = createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
