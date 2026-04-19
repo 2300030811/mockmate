@@ -253,7 +253,7 @@ export const ProjectWorkspace = React.memo(function ProjectWorkspace({
       {/* Mobile Bottom Toolbar (only visible on mobile) */}
       <div className="md:hidden h-12 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 flex items-center justify-between px-3 gap-2 overflow-x-auto">
         {/* File Picker Dropdown - click-based for touch devices */}
-        <div className="relative">
+        <div className="relative z-50">
           <button
             onClick={() => setShowFilePicker((prev) => !prev)}
             className="h-8 px-3 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md text-xs font-medium flex items-center gap-1.5 transition-all whitespace-nowrap"
@@ -265,9 +265,9 @@ export const ProjectWorkspace = React.memo(function ProjectWorkspace({
           </button>
           {showFilePicker && (
             <>
-              <div className="fixed inset-0 z-40" onClick={() => setShowFilePicker(false)} />
+              <div className="fixed inset-0 z-30" onClick={() => setShowFilePicker(false)} />
               <div
-                className="absolute bottom-full left-0 mb-2 flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-800 z-50 max-h-48 overflow-y-auto min-w-[180px]"
+                className="absolute bottom-full left-0 mb-2 flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-800 z-[60] max-h-48 overflow-y-auto min-w-[180px]"
                 role="listbox"
               >
                 {Object.keys(sandpack.files).map((fileName) => (

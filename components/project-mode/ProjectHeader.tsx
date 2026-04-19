@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { m, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useSandpack } from "@codesandbox/sandpack-react";
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 
 interface ProjectHeaderProps {
@@ -43,6 +43,19 @@ export const ProjectHeader = React.memo(function ProjectHeader({
   const { sandpack } = useSandpack();
   const [isResetting, setIsResetting] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+  useEffect(() => {
+    if (!showResetConfirm) return;
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setShowResetConfirm(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [showResetConfirm]);
 
   const handleReset = useCallback(() => {
     setShowResetConfirm(false);

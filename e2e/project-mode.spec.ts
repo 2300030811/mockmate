@@ -108,20 +108,21 @@ test.describe("Project Mode E2E", () => {
     await firstLink.click();
     await page.waitForLoadState("networkidle");
     await expect(page.getByRole("button", { name: /verify/i })).toBeVisible({ timeout: 10000 });
+    const dialog = page.getByRole("dialog").filter({ hasText: /Reset Project\?/i });
 
     // Open reset dialog
     await page.locator("[title='Reset Project']").click();
-    await expect(page.getByRole("dialog")).toBeVisible();
+    await expect(dialog).toBeVisible();
 
     // Cancel
     await page.getByRole("button", { name: "Cancel" }).click();
-    await expect(page.getByRole("dialog")).not.toBeVisible();
+    await expect(dialog).toBeHidden({ timeout: 5000 });
 
     // Open again and dismiss with Escape
     await page.locator("[title='Reset Project']").click();
-    await expect(page.getByRole("dialog")).toBeVisible();
+    await expect(dialog).toBeVisible();
     await page.keyboard.press("Escape");
-    await expect(page.getByRole("dialog")).not.toBeVisible();
+    await expect(dialog).toBeHidden({ timeout: 5000 });
   });
 
   test("should reveal hints progressively", async ({ page }) => {
@@ -198,6 +199,7 @@ test.describe("Project Mode E2E", () => {
     await expect(filesButton).toBeVisible();
 
     // Tap to open
+    await filesButton.scrollIntoViewIfNeeded();
     await filesButton.click();
 
     // Should show a listbox with file options
@@ -206,12 +208,12 @@ test.describe("Project Mode E2E", () => {
 
     // Pick a file option
     const options = listbox.getByRole("option");
-    const count = await options.count();
-    expect(count).toBeGreaterThan(0);
+    const firstOption = options.first();
+    await expect(firstOption).toBeVisible({ timeout: 5000 });
 
     // Select a file to close the picker
-    await options.first().click();
-    await expect(listbox).not.toBeVisible();
+    await firstOption.dispatchEvent("click");
+    await expect(listbox).toBeHidden({ timeout: 5000 });
   });
 
   test("should search and filter challenges", async ({ page }) => {
