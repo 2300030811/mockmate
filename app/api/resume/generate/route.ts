@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server';
-import { chromium, type Browser } from 'playwright';
+import sparticuzChromium from '@sparticuz/chromium';
+import { chromium, type Browser, type BrowserContext } from 'playwright-core';
 import path from 'path';
 import fs from 'fs/promises';
+import { pathToFileURL } from 'url';
 import { escapeHtml, sanitizeUrl } from '@/utils/sanitize';
 import { resumeGeneratePayloadSchema } from './schema';
+
+export const runtime = 'nodejs';
 
 const DEFAULT_RESUME_PDF_TIMEOUT_MS = 25000;
 
@@ -31,6 +35,18 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string)
   return Promise.race([promise, timeoutPromise]).finally(() => {
     if (timeoutId) clearTimeout(timeoutId);
   }) as Promise<T>;
+}
+
+function getRemainingTimeoutMs(deadline: number, timeoutMessage: string): number {
+  const remaining = deadline - Date.now();
+  if (remaining <= 0) {
+    throw new Error(timeoutMessage);
+  }
+  return remaining;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function hasSectionContent(content: string): boolean {
@@ -63,9 +79,79 @@ function renderSkillsList(skills: string[]): string {
   `;
 }
 
+function renderContactRow(input: {
+  email: string;
+  phone: string;
+  location: string;
+  linkedinUrl: string;
+  portfolioUrl: string;
+}): string {
+  const parts: string[] = [];
+
+  if (input.email) {
+    parts.push(`<span>${escapeHtml(input.email)}</span>`);
+  }
+
+  if (input.phone) {
+    parts.push(`<span>${escapeHtml(input.phone)}</span>`);
+  }
+
+  if (input.linkedinUrl !== '#') {
+    parts.push(`<a href="${input.linkedinUrl}">LinkedIn</a>`);
+  }
+
+  if (input.portfolioUrl !== '#') {
+    parts.push(`<a href="${input.portfolioUrl}">Portfolio</a>`);
+  }
+
+  if (input.location) {
+    parts.push(`<span>${escapeHtml(input.location)}</span>`);
+  }
+
+  return parts.join('<span class="separator">|</span>');
+}
+
+function injectBaseHref(html: string, baseHref: string): string {
+  if (/<base\s/i.test(html)) return html;
+
+  const escapedBaseHref = escapeHtml(baseHref);
+  return html.replace('<head>', `<head>\n<base href="${escapedBaseHref}">`);
+}
+
+function isVercelRuntime(): boolean {
+  return process.env.VERCEL === '1';
+}
+
+function getLocalChromiumExecutablePath(): string | undefined {
+  const raw = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
+  if (!raw) return undefined;
+
+  const normalized = raw.trim();
+  return normalized.length > 0 ? normalized : undefined;
+}
+
+async function launchPdfBrowser(): Promise<Browser> {
+  if (isVercelRuntime()) {
+    return chromium.launch({
+      args: sparticuzChromium.args,
+      executablePath: await sparticuzChromium.executablePath(),
+      headless: true,
+    });
+  }
+
+  const localExecutablePath = getLocalChromiumExecutablePath();
+
+  return chromium.launch({
+    headless: true,
+    ...(localExecutablePath ? { executablePath: localExecutablePath } : {}),
+  });
+}
+
 export async function POST(req: Request) {
   const timeoutMs = getResumePdfTimeoutMs();
+  const deadline = Date.now() + timeoutMs;
   let browser: Browser | null = null;
+  let context: BrowserContext | null = null;
 
   try {
     let payload: unknown;
@@ -86,10 +172,14 @@ export async function POST(req: Request) {
 
     // 1. Read the template
     const templatePath = path.join(process.cwd(), 'templates', 'resume-base.html');
+    const templateBaseUrl = new URL('./', pathToFileURL(templatePath)).href;
     let html = await fs.readFile(templatePath, 'utf-8');
 
     const linkedinUrl = sanitizeUrl(data.linkedin, '#');
     const portfolioUrl = sanitizeUrl(data.portfolio, '#');
+    const email = compactText(data.email || 'email@example.com');
+    const phone = compactText(data.phone || '');
+    const location = compactText(data.location || 'Remote');
 
     const experienceItems = data.experience
       .map((experienceItem) => {
@@ -195,13 +285,16 @@ export async function POST(req: Request) {
       .filter(Boolean)
       .join('');
 
+    const competencyLimit = 18;
     const cleanSkills = data.skills
       .map((skill) => compactText(skill))
       .filter(Boolean)
       .slice(0, 60);
 
+    const additionalSkills = cleanSkills.slice(competencyLimit);
+
     const competenciesMarkup = cleanSkills
-      .slice(0, 18)
+      .slice(0, competencyLimit)
       .map((skill) => `<span class="competency-tag">${escapeHtml(skill)}</span>`)
       .join(' ');
 
@@ -210,12 +303,13 @@ export async function POST(req: Request) {
       '{{LANG}}': 'en',
       '{{NAME}}': escapeHtml(data.name || 'Candidate Name'),
       '{{PAGE_WIDTH}}': '800px',
-      '{{EMAIL}}': escapeHtml(data.email || 'email@example.com'),
-      '{{LINKEDIN_URL}}': linkedinUrl,
-      '{{LINKEDIN_DISPLAY}}': linkedinUrl === '#' ? '' : 'LinkedIn',
-      '{{PORTFOLIO_URL}}': portfolioUrl,
-      '{{PORTFOLIO_DISPLAY}}': portfolioUrl === '#' ? '' : 'Portfolio',
-      '{{LOCATION}}': escapeHtml(data.location || 'Remote'),
+      '{{CONTACT_ROW}}': renderContactRow({
+        email,
+        phone,
+        location,
+        linkedinUrl,
+        portfolioUrl,
+      }),
 
       '{{SUMMARY_SECTION}}': renderSection(
         'Summary',
@@ -230,34 +324,41 @@ export async function POST(req: Request) {
       '{{PROJECTS_SECTION}}': renderSection('Projects', projectItems, true),
       '{{EDUCATION_SECTION}}': renderSection('Education', educationItems, true),
       '{{CERTIFICATIONS_SECTION}}': renderSection('Certifications', certificationItems, true),
-      '{{SKILLS_SECTION}}': renderSection('Skills', renderSkillsList(cleanSkills), true),
+      '{{SKILLS_SECTION}}': renderSection('Additional Skills', renderSkillsList(additionalSkills), true),
     };
 
     for (const [key, value] of Object.entries(replacements)) {
-      html = html.replace(new RegExp(key, 'g'), value);
+      html = html.replace(new RegExp(escapeRegExp(key), 'g'), () => value);
     }
+
+    const htmlWithBaseHref = injectBaseHref(html, templateBaseUrl);
 
     // 3. Generate PDF using Playwright
     browser = await withTimeout(
-      chromium.launch({ headless: true }),
-      timeoutMs,
+      launchPdfBrowser(),
+      getRemainingTimeoutMs(deadline, 'Timed out launching browser for PDF generation.'),
       'Timed out launching browser for PDF generation.'
     );
+    context = await withTimeout(
+      browser.newContext({ baseURL: templateBaseUrl }),
+      getRemainingTimeoutMs(deadline, 'Timed out creating browser context for PDF generation.'),
+      'Timed out creating browser context for PDF generation.'
+    );
     const page = await withTimeout(
-      browser.newPage(),
-      timeoutMs,
+      context.newPage(),
+      getRemainingTimeoutMs(deadline, 'Timed out opening page for PDF generation.'),
       'Timed out opening page for PDF generation.'
     );
 
     await withTimeout(
-      page.setContent(html, { waitUntil: 'networkidle' }),
-      timeoutMs,
+      page.setContent(htmlWithBaseHref, { waitUntil: 'networkidle' }),
+      getRemainingTimeoutMs(deadline, 'Timed out rendering resume HTML content.'),
       'Timed out rendering resume HTML content.'
     );
     // Wait for fonts to load
     await withTimeout(
       page.evaluate(() => document.fonts.ready),
-      timeoutMs,
+      getRemainingTimeoutMs(deadline, 'Timed out waiting for resume fonts to load.'),
       'Timed out waiting for resume fonts to load.'
     );
 
@@ -272,12 +373,12 @@ export async function POST(req: Request) {
           left: '0.6in',
         },
       }),
-      timeoutMs,
+      getRemainingTimeoutMs(deadline, 'Timed out generating resume PDF.'),
       'Timed out generating resume PDF.'
     );
 
     // 4. Return the PDF
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(new Uint8Array(pdfBuffer), {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': 'attachment; filename="resume.pdf"',
@@ -289,6 +390,14 @@ export async function POST(req: Request) {
     const message = error instanceof Error ? error.message : 'Unexpected PDF generation failure.';
     return NextResponse.json({ error: message }, { status: 500 });
   } finally {
+    if (context) {
+      try {
+        await context.close();
+      } catch (closeError) {
+        console.error('PDF Context Cleanup Error:', closeError);
+      }
+    }
+
     if (browser) {
       try {
         await browser.close();

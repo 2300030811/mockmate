@@ -22,6 +22,7 @@ import {
 import { NavigationPill } from "@/components/ui/NavigationPill";
 
 type ExperienceDraft = {
+  id: string;
   company: string;
   role: string;
   period: string;
@@ -29,6 +30,7 @@ type ExperienceDraft = {
 };
 
 type ProjectDraft = {
+  id: string;
   title: string;
   period: string;
   description: string;
@@ -37,6 +39,7 @@ type ProjectDraft = {
 };
 
 type EducationDraft = {
+  id: string;
   program: string;
   institution: string;
   period: string;
@@ -44,6 +47,7 @@ type EducationDraft = {
 };
 
 type CertificationDraft = {
+  id: string;
   name: string;
   issuer: string;
   year: string;
@@ -57,6 +61,7 @@ const MAX_CERTIFICATION_ITEMS = 10;
 
 const MAX_NAME_LENGTH = 120;
 const MAX_EMAIL_LENGTH = 160;
+const MAX_PHONE_LENGTH = 40;
 const MAX_LINKEDIN_LENGTH = 300;
 const MAX_PORTFOLIO_LENGTH = 300;
 const MAX_LOCATION_LENGTH = 120;
@@ -85,14 +90,14 @@ const MAX_CERTIFICATION_NAME_LENGTH = 140;
 const MAX_CERTIFICATION_ISSUER_LENGTH = 140;
 const MAX_CERTIFICATION_YEAR_LENGTH = 20;
 
-const EMPTY_EXPERIENCE: ExperienceDraft = {
+const EMPTY_EXPERIENCE: Omit<ExperienceDraft, "id"> = {
   company: "",
   role: "",
   period: "",
   highlightsText: "",
 };
 
-const EMPTY_PROJECT: ProjectDraft = {
+const EMPTY_PROJECT: Omit<ProjectDraft, "id"> = {
   title: "",
   period: "",
   description: "",
@@ -100,14 +105,14 @@ const EMPTY_PROJECT: ProjectDraft = {
   techStackText: "",
 };
 
-const EMPTY_EDUCATION: EducationDraft = {
+const EMPTY_EDUCATION: Omit<EducationDraft, "id"> = {
   program: "",
   institution: "",
   period: "",
   details: "",
 };
 
-const EMPTY_CERTIFICATION: CertificationDraft = {
+const EMPTY_CERTIFICATION: Omit<CertificationDraft, "id"> = {
   name: "",
   issuer: "",
   year: "",
@@ -116,6 +121,7 @@ const EMPTY_CERTIFICATION: CertificationDraft = {
 type ResumeGeneratePayload = {
   name: string;
   email: string;
+  phone: string;
   linkedin: string;
   portfolio: string;
   location: string;
@@ -150,6 +156,7 @@ type ResumeGeneratePayload = {
 type ResumeBuilderDraft = {
   name: string;
   email: string;
+  phone: string;
   linkedin: string;
   portfolio: string;
   location: string;
@@ -164,6 +171,7 @@ type ResumeBuilderDraft = {
 const SAMPLE_DRAFT: ResumeBuilderDraft = {
   name: "Alex Johnson",
   email: "alex.johnson@example.com",
+  phone: "+91 98765 43210",
   linkedin: "https://linkedin.com/in/alex-johnson",
   portfolio: "https://alex-builds.dev",
   location: "Bengaluru, India",
@@ -173,6 +181,7 @@ const SAMPLE_DRAFT: ResumeBuilderDraft = {
     "TypeScript, React, Next.js, Node.js, PostgreSQL, Supabase, Redis, Playwright, Tailwind CSS, API Design",
   experiences: [
     {
+      id: "sample-exp-1",
       company: "NovaStack",
       role: "Senior Software Engineer",
       period: "Jan 2023 - Present",
@@ -180,6 +189,7 @@ const SAMPLE_DRAFT: ResumeBuilderDraft = {
         "Reduced API response latency by 42% through query optimization and caching.\nLed migration from pages router to app router, improving release cycle speed by 30%.\nMentored 4 engineers and introduced testing standards that cut production regressions by 35%.",
     },
     {
+      id: "sample-exp-2",
       company: "BlueOrbit Labs",
       role: "Software Engineer",
       period: "Jul 2020 - Dec 2022",
@@ -189,6 +199,7 @@ const SAMPLE_DRAFT: ResumeBuilderDraft = {
   ],
   projects: [
     {
+      id: "sample-project-1",
       title: "Mock Interview Arena",
       period: "2025",
       description:
@@ -199,6 +210,7 @@ const SAMPLE_DRAFT: ResumeBuilderDraft = {
   ],
   education: [
     {
+      id: "sample-education-1",
       program: "B.Tech in Computer Science",
       institution: "RV College of Engineering",
       period: "2016 - 2020",
@@ -207,6 +219,7 @@ const SAMPLE_DRAFT: ResumeBuilderDraft = {
   ],
   certifications: [
     {
+      id: "sample-cert-1",
       name: "AWS Certified Solutions Architect - Associate",
       issuer: "Amazon Web Services",
       year: "2024",
@@ -241,6 +254,22 @@ function textOrEmpty(value: unknown): string {
   return typeof value === "string" ? value : "";
 }
 
+function createDraftId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function draftIdOrNew(value: unknown): string {
+  if (typeof value === "string" && value.trim().length > 0) {
+    return value;
+  }
+
+  return createDraftId();
+}
+
 function draftTimestampLabel(value: Date | null): string {
   if (!value) return "Not saved yet";
   return `Saved ${value.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
@@ -265,7 +294,13 @@ function moveItemInArray<T>(items: T[], index: number, direction: -1 | 1): T[] {
 function previewSnippet(value: string, max: number): string {
   const normalized = value.trim();
   if (normalized.length <= max) return normalized;
-  return `${normalized.slice(0, max).trimEnd()}...`;
+
+  const truncated = normalized.slice(0, max).trimEnd();
+  const lastSpace = truncated.lastIndexOf(" ");
+  const safeWordBoundary = Math.floor(max * 0.8);
+  const boundaryAware = lastSpace > safeWordBoundary ? truncated.slice(0, lastSpace) : truncated;
+
+  return `${boundaryAware.trimEnd()}...`;
 }
 
 function hasExperienceContent(item: ExperienceDraft): boolean {
@@ -325,16 +360,23 @@ function extractFirstZodError(details: unknown): string | null {
 export default function ResumeBuilderPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [linkedin, setLinkedin] = useState("");
   const [portfolio, setPortfolio] = useState("");
   const [location, setLocation] = useState("");
   const [summary, setSummary] = useState("");
   const [skillsInput, setSkillsInput] = useState("");
 
-  const [experiences, setExperiences] = useState<ExperienceDraft[]>([{ ...EMPTY_EXPERIENCE }]);
-  const [projects, setProjects] = useState<ProjectDraft[]>([{ ...EMPTY_PROJECT }]);
-  const [education, setEducation] = useState<EducationDraft[]>([{ ...EMPTY_EDUCATION }]);
-  const [certifications, setCertifications] = useState<CertificationDraft[]>([{ ...EMPTY_CERTIFICATION }]);
+  const [experiences, setExperiences] = useState<ExperienceDraft[]>([
+    { id: createDraftId(), ...EMPTY_EXPERIENCE },
+  ]);
+  const [projects, setProjects] = useState<ProjectDraft[]>([{ id: createDraftId(), ...EMPTY_PROJECT }]);
+  const [education, setEducation] = useState<EducationDraft[]>([
+    { id: createDraftId(), ...EMPTY_EDUCATION },
+  ]);
+  const [certifications, setCertifications] = useState<CertificationDraft[]>([
+    { id: createDraftId(), ...EMPTY_CERTIFICATION },
+  ]);
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -354,6 +396,7 @@ export default function ResumeBuilderPage() {
 
       setName(textOrEmpty(parsed.name));
       setEmail(textOrEmpty(parsed.email));
+      setPhone(textOrEmpty(parsed.phone));
       setLinkedin(textOrEmpty(parsed.linkedin));
       setPortfolio(textOrEmpty(parsed.portfolio));
       setLocation(textOrEmpty(parsed.location));
@@ -363,6 +406,7 @@ export default function ResumeBuilderPage() {
       if (Array.isArray(parsed.experiences) && parsed.experiences.length > 0) {
         setExperiences(
           parsed.experiences.map((item) => ({
+            id: draftIdOrNew(item?.id),
             company: textOrEmpty(item?.company),
             role: textOrEmpty(item?.role),
             period: textOrEmpty(item?.period),
@@ -374,6 +418,7 @@ export default function ResumeBuilderPage() {
       if (Array.isArray(parsed.projects) && parsed.projects.length > 0) {
         setProjects(
           parsed.projects.map((item) => ({
+            id: draftIdOrNew(item?.id),
             title: textOrEmpty(item?.title),
             period: textOrEmpty(item?.period),
             description: textOrEmpty(item?.description),
@@ -386,6 +431,7 @@ export default function ResumeBuilderPage() {
       if (Array.isArray(parsed.education) && parsed.education.length > 0) {
         setEducation(
           parsed.education.map((item) => ({
+            id: draftIdOrNew(item?.id),
             program: textOrEmpty(item?.program),
             institution: textOrEmpty(item?.institution),
             period: textOrEmpty(item?.period),
@@ -397,6 +443,7 @@ export default function ResumeBuilderPage() {
       if (Array.isArray(parsed.certifications) && parsed.certifications.length > 0) {
         setCertifications(
           parsed.certifications.map((item) => ({
+            id: draftIdOrNew(item?.id),
             name: textOrEmpty(item?.name),
             issuer: textOrEmpty(item?.issuer),
             year: textOrEmpty(item?.year),
@@ -419,6 +466,7 @@ export default function ResumeBuilderPage() {
       const draft: ResumeBuilderDraft = {
         name,
         email,
+        phone,
         linkedin,
         portfolio,
         location,
@@ -438,6 +486,7 @@ export default function ResumeBuilderPage() {
   }, [
     name,
     email,
+    phone,
     linkedin,
     portfolio,
     location,
@@ -545,13 +594,13 @@ export default function ResumeBuilderPage() {
   const addExperience = () => {
     setExperiences((current) => {
       if (current.length >= MAX_EXPERIENCE_ITEMS) return current;
-      return [...current, { ...EMPTY_EXPERIENCE }];
+      return [...current, { id: createDraftId(), ...EMPTY_EXPERIENCE }];
     });
   };
 
   const removeExperience = (index: number) => {
     setExperiences((current) => {
-      if (current.length === 1) return [{ ...EMPTY_EXPERIENCE }];
+      if (current.length === 1) return [{ id: createDraftId(), ...EMPTY_EXPERIENCE }];
       return current.filter((_, itemIndex) => itemIndex !== index);
     });
   };
@@ -569,13 +618,13 @@ export default function ResumeBuilderPage() {
   const addProject = () => {
     setProjects((current) => {
       if (current.length >= MAX_PROJECT_ITEMS) return current;
-      return [...current, { ...EMPTY_PROJECT }];
+      return [...current, { id: createDraftId(), ...EMPTY_PROJECT }];
     });
   };
 
   const removeProject = (index: number) => {
     setProjects((current) => {
-      if (current.length === 1) return [{ ...EMPTY_PROJECT }];
+      if (current.length === 1) return [{ id: createDraftId(), ...EMPTY_PROJECT }];
       return current.filter((_, itemIndex) => itemIndex !== index);
     });
   };
@@ -593,13 +642,13 @@ export default function ResumeBuilderPage() {
   const addEducation = () => {
     setEducation((current) => {
       if (current.length >= MAX_EDUCATION_ITEMS) return current;
-      return [...current, { ...EMPTY_EDUCATION }];
+      return [...current, { id: createDraftId(), ...EMPTY_EDUCATION }];
     });
   };
 
   const removeEducation = (index: number) => {
     setEducation((current) => {
-      if (current.length === 1) return [{ ...EMPTY_EDUCATION }];
+      if (current.length === 1) return [{ id: createDraftId(), ...EMPTY_EDUCATION }];
       return current.filter((_, itemIndex) => itemIndex !== index);
     });
   };
@@ -617,13 +666,13 @@ export default function ResumeBuilderPage() {
   const addCertification = () => {
     setCertifications((current) => {
       if (current.length >= MAX_CERTIFICATION_ITEMS) return current;
-      return [...current, { ...EMPTY_CERTIFICATION }];
+      return [...current, { id: createDraftId(), ...EMPTY_CERTIFICATION }];
     });
   };
 
   const removeCertification = (index: number) => {
     setCertifications((current) => {
-      if (current.length === 1) return [{ ...EMPTY_CERTIFICATION }];
+      if (current.length === 1) return [{ id: createDraftId(), ...EMPTY_CERTIFICATION }];
       return current.filter((_, itemIndex) => itemIndex !== index);
     });
   };
@@ -635,15 +684,16 @@ export default function ResumeBuilderPage() {
   const resetForm = () => {
     setName("");
     setEmail("");
+    setPhone("");
     setLinkedin("");
     setPortfolio("");
     setLocation("");
     setSummary("");
     setSkillsInput("");
-    setExperiences([{ ...EMPTY_EXPERIENCE }]);
-    setProjects([{ ...EMPTY_PROJECT }]);
-    setEducation([{ ...EMPTY_EDUCATION }]);
-    setCertifications([{ ...EMPTY_CERTIFICATION }]);
+    setExperiences([{ id: createDraftId(), ...EMPTY_EXPERIENCE }]);
+    setProjects([{ id: createDraftId(), ...EMPTY_PROJECT }]);
+    setEducation([{ id: createDraftId(), ...EMPTY_EDUCATION }]);
+    setCertifications([{ id: createDraftId(), ...EMPTY_CERTIFICATION }]);
     setError(null);
     setSuccessMessage(null);
     setLastSavedAt(null);
@@ -651,17 +701,40 @@ export default function ResumeBuilderPage() {
   };
 
   const loadSampleData = () => {
+    const hasContent = Boolean(
+      name.trim() ||
+        email.trim() ||
+        phone.trim() ||
+        linkedin.trim() ||
+        portfolio.trim() ||
+        location.trim() ||
+        summary.trim() ||
+        parsedSkills.length > 0 ||
+        experiences.some((item) => hasExperienceContent(item)) ||
+        projects.some((item) => hasProjectContent(item)) ||
+        education.some((item) => hasEducationContent(item)) ||
+        certifications.some((item) => hasCertificationContent(item))
+    );
+
+    if (
+      hasContent &&
+      !window.confirm("This will replace your current entries with sample data. Continue?")
+    ) {
+      return;
+    }
+
     setName(SAMPLE_DRAFT.name);
     setEmail(SAMPLE_DRAFT.email);
+    setPhone(SAMPLE_DRAFT.phone);
     setLinkedin(SAMPLE_DRAFT.linkedin);
     setPortfolio(SAMPLE_DRAFT.portfolio);
     setLocation(SAMPLE_DRAFT.location);
     setSummary(SAMPLE_DRAFT.summary);
     setSkillsInput(SAMPLE_DRAFT.skillsInput);
-    setExperiences(SAMPLE_DRAFT.experiences);
-    setProjects(SAMPLE_DRAFT.projects);
-    setEducation(SAMPLE_DRAFT.education);
-    setCertifications(SAMPLE_DRAFT.certifications);
+    setExperiences(SAMPLE_DRAFT.experiences.map((item) => ({ ...item, id: createDraftId() })));
+    setProjects(SAMPLE_DRAFT.projects.map((item) => ({ ...item, id: createDraftId() })));
+    setEducation(SAMPLE_DRAFT.education.map((item) => ({ ...item, id: createDraftId() })));
+    setCertifications(SAMPLE_DRAFT.certifications.map((item) => ({ ...item, id: createDraftId() })));
     setError(null);
     setSuccessMessage("Sample profile loaded. Customize and generate your own PDF.");
   };
@@ -669,7 +742,7 @@ export default function ResumeBuilderPage() {
   const clearSavedDraft = () => {
     localStorage.removeItem(RESUME_DRAFT_STORAGE_KEY);
     setLastSavedAt(null);
-    setSuccessMessage("Saved local draft cleared.");
+    setSuccessMessage("Saved draft cleared. Current form remains on screen and will autosave on your next edit.");
   };
 
   const buildPayload = (): ResumeGeneratePayload => {
@@ -741,6 +814,7 @@ export default function ResumeBuilderPage() {
     return {
       name: clampText(name, MAX_NAME_LENGTH),
       email: clampText(email, MAX_EMAIL_LENGTH),
+      phone: clampText(phone, MAX_PHONE_LENGTH),
       linkedin: clampText(linkedin, MAX_LINKEDIN_LENGTH),
       portfolio: clampText(portfolio, MAX_PORTFOLIO_LENGTH),
       location: clampText(location, MAX_LOCATION_LENGTH),
@@ -774,6 +848,17 @@ export default function ResumeBuilderPage() {
     event.preventDefault();
     setError(null);
     setSuccessMessage(null);
+
+    if (!name.trim()) {
+      setError("Full name is required to generate a resume.");
+      return;
+    }
+
+    if (!email.trim()) {
+      setError("Email is required to generate a resume.");
+      return;
+    }
+
     setIsGenerating(true);
 
     try {
@@ -885,6 +970,22 @@ export default function ResumeBuilderPage() {
 
                 <label className="space-y-1.5">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center justify-between gap-3">
+                    <span>Phone</span>
+                    <span className={`text-[10px] font-semibold ${counterTone(phone.length, MAX_PHONE_LENGTH)}`}>
+                      {phone.length}/{MAX_PHONE_LENGTH}
+                    </span>
+                  </span>
+                  <input
+                    value={phone}
+                    onChange={(event) => setPhone(event.target.value)}
+                    maxLength={MAX_PHONE_LENGTH}
+                    className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70 px-3 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                    placeholder="+1 555 123 4567"
+                  />
+                </label>
+
+                <label className="space-y-1.5">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center justify-between gap-3">
                     <span>LinkedIn URL</span>
                     <span className={`text-[10px] font-semibold ${counterTone(linkedin.length, MAX_LINKEDIN_LENGTH)}`}>
                       {linkedin.length}/{MAX_LINKEDIN_LENGTH}
@@ -991,7 +1092,7 @@ export default function ResumeBuilderPage() {
               <div className="space-y-4">
                 {experiences.map((item, index) => (
                   <div
-                    key={`exp-${index}`}
+                    key={item.id}
                     className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-950/30 p-4 space-y-3"
                   >
                     <div className="flex items-center justify-between gap-2">
@@ -1081,7 +1182,7 @@ export default function ResumeBuilderPage() {
               <div className="space-y-4">
                 {projects.map((item, index) => (
                   <div
-                    key={`project-${index}`}
+                    key={item.id}
                     className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-950/30 p-4 space-y-3"
                   >
                     <div className="flex items-center justify-between gap-2">
@@ -1179,7 +1280,7 @@ export default function ResumeBuilderPage() {
               <div className="space-y-4">
                 {education.map((item, index) => (
                   <div
-                    key={`education-${index}`}
+                    key={item.id}
                     className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-950/30 p-4 space-y-3"
                   >
                     <div className="flex items-center justify-between gap-2">
@@ -1269,7 +1370,7 @@ export default function ResumeBuilderPage() {
               <div className="space-y-3">
                 {certifications.map((item, index) => (
                   <div
-                    key={`cert-${index}`}
+                    key={item.id}
                     className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-950/30 p-4 grid grid-cols-1 md:grid-cols-3 gap-3"
                   >
                     <input
@@ -1388,7 +1489,7 @@ export default function ResumeBuilderPage() {
                       {name.trim() || "Your Name"}
                     </p>
                     <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
-                      {[location.trim(), email.trim()].filter(Boolean).join(" • ") ||
+                      {[location.trim(), phone.trim(), email.trim()].filter(Boolean).join(" • ") ||
                         "Location • email@example.com"}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-1.5">
@@ -1602,7 +1703,7 @@ export default function ResumeBuilderPage() {
                 onClick={clearSavedDraft}
                 className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/40 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold text-sm px-4 py-2.5 transition-colors"
               >
-                Clear Saved Draft
+                Clear Saved Draft Only
               </button>
 
               <Link

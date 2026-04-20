@@ -121,7 +121,7 @@ We leverage Next.js Route Groups to maintain a clean, high-performance architect
 ## 🏁 Getting Started
 
 ### 📦 Prerequisites
-- **Node.js**: v18.0 or later
+- **Node.js**: v20.11 or later
 - **Supabase**: Account & Project (PostgreSQL + Auth)
 - **AI Keys**: Groq API Key and/or Google AI Studio Key
 
@@ -152,6 +152,10 @@ We leverage Next.js Route Groups to maintain a clean, high-performance architect
    ```bash
    npm run dev
    ```
+
+### 📄 Resume PDF Runtime Notes
+- **Vercel Production**: PDF generation uses `playwright-core` with `@sparticuz/chromium` for serverless compatibility.
+- **Local Development**: If Chromium is not auto-discovered, set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` in `.env.local` to your local browser executable path.
 
 ---
 
