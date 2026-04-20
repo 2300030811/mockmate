@@ -3,6 +3,19 @@
 import { createClient } from "@/utils/supabase/server";
 import { logger } from "@/lib/logger";
 
+function shouldSuppressAuthWarning(err: unknown): boolean {
+  if (err instanceof Error) {
+    const dynamicDigest = (err as Error & { digest?: string }).digest;
+    return (
+      err.message === "Request timed out" ||
+      dynamicDigest === "DYNAMIC_SERVER_USAGE" ||
+      err.message.includes("Dynamic server usage:")
+    );
+  }
+
+  return false;
+}
+
 /**
  * Checks if the current user is authenticated and returns their user object.
  * Returns null if not authenticated.
@@ -13,9 +26,9 @@ export async function requireAuth() {
     const { data: { user }, error } = await supabase.auth.getUser();
     if (error || !user) return null;
     return user;
-  } catch (err: any) {
-    if (err?.message !== 'Request timed out') {
-      logger.warn("requireAuth failed with error:", err.message);
+  } catch (err: unknown) {
+    if (!shouldSuppressAuthWarning(err)) {
+      logger.warn("requireAuth failed with error:", err);
     }
     return null;
   }
@@ -38,9 +51,9 @@ export async function requireAdmin(): Promise<boolean> {
       .single();
 
     return profile?.role === "admin";
-  } catch (err: any) {
-    if (err?.message !== 'Request timed out') {
-      logger.warn("requireAdmin failed with error:", err.message);
+  } catch (err: unknown) {
+    if (!shouldSuppressAuthWarning(err)) {
+      logger.warn("requireAdmin failed with error:", err);
     }
     return false;
   }

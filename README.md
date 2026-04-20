@@ -53,9 +53,10 @@ Beyond our flagship systems, MockMate provides a comprehensive toolkit for every
 
 ### 📄 AI Resume Builder
 Generate professional, ATS-optimized resumes in seconds.
-- **Dynamic Formatting**: Choose from industry-standard templates.
+- **Dynamic Formatting**: Choose between `Modern Gradient` and `RenderCV Classic` templates.
 - **Export to PDF**: Integrated PDF generation engine for instant downloads.
 - **AI Bullet Points**: Transform plain task descriptions into high-impact, metric-driven achievements.
+- **Extended Resume Data**: Supports Publications, Languages + Technologies split, and Custom sections.
 
 ### 🎓 Certification Hub
 Master industry-standard certifications with our dedicated practice environment.
@@ -156,6 +157,7 @@ We leverage Next.js Route Groups to maintain a clean, high-performance architect
 ### 📄 Resume PDF Runtime Notes
 - **Vercel Production**: PDF generation uses `playwright-core` with `@sparticuz/chromium` for serverless compatibility.
 - **Local Development**: If Chromium is not auto-discovered, set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` in `.env.local` to your local browser executable path.
+- **Template Selection**: The resume API accepts `templateId` (`base` or `rendercv`) in the JSON payload.
 
 ---
 

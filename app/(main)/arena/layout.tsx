@@ -1,6 +1,8 @@
 import { requireAuth } from "@/lib/auth-utils";
 import { Metadata } from "next";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Arena | MockMate",
   description: "Challenge other developers in real-time 1v1 quiz battles. Test your coding skills and rise through the ranks.",
