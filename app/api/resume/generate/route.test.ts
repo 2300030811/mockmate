@@ -72,11 +72,36 @@ describe("POST /api/resume/generate", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("Content-Type")).toBe("application/pdf");
     expect(response.headers.get("Content-Disposition")).toContain("resume.pdf");
+    expect(readFileMock).toHaveBeenCalledWith(expect.stringContaining("resume-base.html"), "utf-8");
     expect(executablePathMock).not.toHaveBeenCalled();
     expect(browser.newContext).toHaveBeenCalledTimes(1);
     expect(context.close).toHaveBeenCalledTimes(1);
     expect(browser.close).toHaveBeenCalledTimes(1);
     expect(page.pdf).toHaveBeenCalledTimes(1);
+  });
+
+  it("loads RenderCV template when templateId is rendercv", async () => {
+    readFileMock.mockResolvedValue("<html><body>{{NAME}}</body></html>");
+
+    const page = {
+      setContent: vi.fn().mockResolvedValue(undefined),
+      evaluate: vi.fn().mockResolvedValue(undefined),
+      pdf: vi.fn().mockResolvedValue(Buffer.from("pdf-content")),
+    };
+    const context = {
+      newPage: vi.fn().mockResolvedValue(page),
+      close: vi.fn().mockResolvedValue(undefined),
+    };
+    const browser = {
+      newContext: vi.fn().mockResolvedValue(context),
+      close: vi.fn().mockResolvedValue(undefined),
+    };
+    launchMock.mockResolvedValue(browser as never);
+
+    const response = await POST(makeRequest({ name: "Jane Doe", templateId: "rendercv" }));
+
+    expect(response.status).toBe(200);
+    expect(readFileMock).toHaveBeenCalledWith(expect.stringContaining("resume-rendercv.html"), "utf-8");
   });
 
   it("uses PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH outside Vercel runtime", async () => {
@@ -181,6 +206,15 @@ describe("POST /api/resume/generate", () => {
     expect(body.error).toBe("Invalid resume payload.");
     expect(readFileMock).not.toHaveBeenCalled();
     expect(launchMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 for unsupported templateId", async () => {
+    const response = await POST(makeRequest({ name: "Jane Doe", templateId: "legacy" }));
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body.error).toBe("Invalid resume payload.");
+    expect(readFileMock).not.toHaveBeenCalled();
   });
 
   it("escapes HTML fields and sanitizes unsafe URLs before rendering", async () => {

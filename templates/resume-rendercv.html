@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="{{LANG}}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{NAME}} - Resume</title>
+<style>
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    background: #ffffff;
+    color: #101010;
+    font-family: "Charter", "Times New Roman", Georgia, serif;
+    font-size: 12.5px;
+    line-height: 1.38;
+  }
+
+  .page {
+    width: 100%;
+    max-width: var(--page-width, 645px);
+    margin: 0 auto;
+    padding: 0;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 10px;
+  }
+
+  .header h1 {
+    margin: 0;
+    font-size: 33px;
+    font-weight: 700;
+    letter-spacing: 0;
+    line-height: 1.1;
+  }
+
+  .contact-row {
+    margin-top: 7px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 2px 8px;
+    font-size: 12px;
+    line-height: 1.3;
+  }
+
+  .contact-row a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .contact-row .separator {
+    color: #8d8d8d;
+  }
+
+  .section {
+    margin-top: 10px;
+  }
+
+  .section-title {
+    margin-bottom: 5px;
+    font-size: 1.1em;
+    font-weight: 700;
+    letter-spacing: 0;
+    border-bottom: 1px solid #2b2b2b;
+    padding-bottom: 2px;
+  }
+
+  .summary-text {
+    margin-top: 1px;
+    font-size: 1em;
+    line-height: 1.4;
+  }
+
+  .job,
+  .project,
+  .edu-item,
+  .cert-item,
+  .publication-item {
+    margin-bottom: 7px;
+  }
+
+  .job-header,
+  .edu-header,
+  .cert-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+  }
+
+  .job-company,
+  .project-title,
+  .edu-title,
+  .publication-title,
+  .cert-title {
+    font-weight: 700;
+    font-size: 1.05em;
+    color: #101010;
+  }
+
+  .job-period,
+  .edu-year,
+  .cert-year {
+    font-size: 0.95em;
+    color: #3a3a3a;
+    white-space: nowrap;
+  }
+
+  .job-role,
+  .project-desc,
+  .edu-desc,
+  .publication-authors,
+  .publication-venue,
+  .project-tech,
+  .edu-org {
+    margin-top: 2px;
+    color: #1f1f1f;
+    font-size: 0.98em;
+  }
+
+  .publication-link {
+    margin-top: 2px;
+    display: inline-block;
+    color: #1f1f1f;
+    text-decoration: none;
+    font-size: 0.95em;
+  }
+
+  ul {
+    margin: 3px 0 0;
+    padding-left: 17px;
+  }
+
+  li {
+    margin-bottom: 1px;
+    line-height: 1.35;
+    font-size: 0.98em;
+  }
+
+  .tech-row {
+    font-size: 0.98em;
+    margin-bottom: 1px;
+    line-height: 1.35;
+  }
+
+  .skills-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+  }
+
+  .skill-item {
+    font-size: 0.98em;
+  }
+
+  .skill-category {
+    font-weight: 700;
+  }
+
+  .custom-text-block {
+    display: grid;
+    gap: 4px;
+  }
+
+  .custom-text-line {
+    margin: 0;
+    font-size: 0.98em;
+    line-height: 1.35;
+  }
+
+  .avoid-break,
+  .job,
+  .project,
+  .edu-item,
+  .cert-item,
+  .publication-item {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+</style>
+</head>
+<body>
+  <div class="page" style="--page-width: {{PAGE_WIDTH}};">
+    <div class="header avoid-break">
+      <h1>{{NAME}}</h1>
+      <div class="contact-row">{{CONTACT_ROW}}</div>
+    </div>
+
+    {{SUMMARY_SECTION}}
+    {{EXPERIENCE_SECTION}}
+    {{PROJECTS_SECTION}}
+    {{EDUCATION_SECTION}}
+    {{PUBLICATIONS_SECTION}}
+    {{CERTIFICATIONS_SECTION}}
+    {{TECHNOLOGIES_SECTION}}
+    {{SKILLS_SECTION}}
+    {{CUSTOM_SECTIONS}}
+  </div>
+</body>
+</html>

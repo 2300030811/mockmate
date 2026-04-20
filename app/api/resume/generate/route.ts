@@ -5,11 +5,30 @@ import path from 'path';
 import fs from 'fs/promises';
 import { pathToFileURL } from 'url';
 import { escapeHtml, sanitizeUrl } from '@/utils/sanitize';
-import { resumeGeneratePayloadSchema } from './schema';
+import { resumeGeneratePayloadSchema, type ResumeCustomSectionStyle, type ResumeTemplateId } from './schema';
 
 export const runtime = 'nodejs';
 
 const DEFAULT_RESUME_PDF_TIMEOUT_MS = 25000;
+
+const TEMPLATE_FILE_BY_ID: Record<ResumeTemplateId, string> = {
+  base: 'resume-base.html',
+  rendercv: 'resume-rendercv.html',
+};
+
+type PublicationInput = {
+  title: string;
+  date: string;
+  authors: string;
+  venue: string;
+  link: string;
+};
+
+type CustomSectionInput = {
+  title: string;
+  style: ResumeCustomSectionStyle;
+  entries: string[];
+};
 
 function getResumePdfTimeoutMs(): number {
   const raw = process.env.RESUME_PDF_TIMEOUT_MS;
@@ -79,7 +98,102 @@ function renderSkillsList(skills: string[]): string {
   `;
 }
 
+function renderPublicationsList(publications: PublicationInput[]): string {
+  return publications
+    .map((publication) => {
+      const title = compactText(publication.title || '');
+      const date = compactText(publication.date || '');
+      const authors = compactText(publication.authors || '');
+      const venue = compactText(publication.venue || '');
+      const link = sanitizeUrl(publication.link || '', '#');
+
+      if (!title && !date && !authors && !venue && link === '#') return '';
+
+      return `
+        <div class="publication-item">
+          <div class="job-header">
+            <span class="publication-title">${escapeHtml(title || 'Publication')}</span>
+            <span class="job-period">${escapeHtml(date)}</span>
+          </div>
+          ${authors ? `<div class="publication-authors">${escapeHtml(authors)}</div>` : ''}
+          ${venue ? `<div class="publication-venue">${escapeHtml(venue)}</div>` : ''}
+          ${link !== '#' ? `<a href="${link}" class="publication-link">${escapeHtml(link)}</a>` : ''}
+        </div>
+      `;
+    })
+    .filter(Boolean)
+    .join('');
+}
+
+function renderTechnologiesSplit(languages: string[], technologies: string[]): string {
+  const rows: string[] = [];
+
+  if (languages.length > 0) {
+    rows.push(
+      `<div class="tech-row"><span class="skill-category">Languages:</span> ${languages
+        .map((language) => escapeHtml(language))
+        .join(', ')}</div>`
+    );
+  }
+
+  if (technologies.length > 0) {
+    rows.push(
+      `<div class="tech-row"><span class="skill-category">Technologies:</span> ${technologies
+        .map((technology) => escapeHtml(technology))
+        .join(', ')}</div>`
+    );
+  }
+
+  return rows.join('');
+}
+
+function renderCustomSections(sections: CustomSectionInput[]): string {
+  const seenSectionKeys = new Set<string>();
+
+  return sections
+    .map((section) => {
+      const title = compactText(section.title || '');
+      const entries = (section.entries ?? []).map((entry) => compactText(entry)).filter(Boolean).slice(0, 20);
+      if (!title || entries.length === 0) return '';
+
+      const dedupeKey = `${title.toLowerCase()}::${section.style}::${entries
+        .map((entry) => entry.toLowerCase())
+        .join('||')}`;
+      if (seenSectionKeys.has(dedupeKey)) return '';
+      seenSectionKeys.add(dedupeKey);
+
+      const content =
+        section.style === 'text'
+          ? `<div class="custom-text-block">${entries
+              .map((entry) => `<p class="custom-text-line">${escapeHtml(entry)}</p>`)
+              .join('')}</div>`
+          : `<ul>${entries.map((entry) => `<li>${escapeHtml(entry)}</li>`).join('')}</ul>`;
+
+      return renderSection(title, content, true);
+    })
+    .filter(Boolean)
+    .join('');
+}
+
+function getContactLinkLabel(url: string, fallbackLabel: string): string {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.host.replace(/^www\./i, '').toLowerCase();
+
+    if (host.includes('linkedin.com')) return 'LinkedIn';
+    if (host.includes('github.com')) return 'GitHub';
+    if (host.includes('gitlab.com')) return 'GitLab';
+    if (host.includes('behance.net')) return 'Behance';
+    if (host.includes('medium.com')) return 'Medium';
+
+    return fallbackLabel;
+  } catch {
+    return fallbackLabel;
+  }
+}
+
 function renderContactRow(input: {
+  templateId: ResumeTemplateId;
   email: string;
   phone: string;
   location: string;
@@ -88,25 +202,33 @@ function renderContactRow(input: {
 }): string {
   const parts: string[] = [];
 
-  if (input.email) {
-    parts.push(`<span>${escapeHtml(input.email)}</span>`);
+  const pushText = (value: string) => {
+    if (value) {
+      parts.push(`<span>${escapeHtml(value)}</span>`);
+    }
+  };
+
+  const pushLink = (url: string, label: string) => {
+    if (url !== '#') {
+      parts.push(`<a href="${url}">${escapeHtml(label)}</a>`);
+    }
+  };
+
+  if (input.templateId === 'rendercv') {
+    pushText(input.location);
+    pushText(input.email);
+    pushText(input.phone);
+    pushLink(input.portfolioUrl, getContactLinkLabel(input.portfolioUrl, 'Portfolio'));
+    pushLink(input.linkedinUrl, getContactLinkLabel(input.linkedinUrl, 'LinkedIn'));
+
+    return parts.join('<span class="separator">|</span>');
   }
 
-  if (input.phone) {
-    parts.push(`<span>${escapeHtml(input.phone)}</span>`);
-  }
-
-  if (input.linkedinUrl !== '#') {
-    parts.push(`<a href="${input.linkedinUrl}">LinkedIn</a>`);
-  }
-
-  if (input.portfolioUrl !== '#') {
-    parts.push(`<a href="${input.portfolioUrl}">Portfolio</a>`);
-  }
-
-  if (input.location) {
-    parts.push(`<span>${escapeHtml(input.location)}</span>`);
-  }
+  pushText(input.email);
+  pushText(input.phone);
+  pushLink(input.linkedinUrl, 'LinkedIn');
+  pushLink(input.portfolioUrl, 'Portfolio');
+  pushText(input.location);
 
   return parts.join('<span class="separator">|</span>');
 }
@@ -171,15 +293,16 @@ export async function POST(req: Request) {
     const data = parsedPayload.data;
 
     // 1. Read the template
-    const templatePath = path.join(process.cwd(), 'templates', 'resume-base.html');
+    const templateFilename = TEMPLATE_FILE_BY_ID[data.templateId];
+    const templatePath = path.join(process.cwd(), 'templates', templateFilename);
     const templateBaseUrl = new URL('./', pathToFileURL(templatePath)).href;
     let html = await fs.readFile(templatePath, 'utf-8');
 
     const linkedinUrl = sanitizeUrl(data.linkedin, '#');
     const portfolioUrl = sanitizeUrl(data.portfolio, '#');
-    const email = compactText(data.email || 'email@example.com');
+    const email = compactText(data.email || '');
     const phone = compactText(data.phone || '');
-    const location = compactText(data.location || 'Remote');
+    const location = compactText(data.location || '');
 
     const experienceItems = data.experience
       .map((experienceItem) => {
@@ -291,6 +414,23 @@ export async function POST(req: Request) {
       .filter(Boolean)
       .slice(0, 60);
 
+    const cleanLanguages = data.languages
+      .map((language) => compactText(language))
+      .filter(Boolean)
+      .slice(0, 30);
+
+    const cleanTechnologies = data.technologies
+      .map((technology) => compactText(technology))
+      .filter(Boolean)
+      .slice(0, 40);
+
+    const publicationItems = renderPublicationsList(data.publications);
+    const customSectionsMarkup = renderCustomSections(data.customSections);
+
+    if (cleanLanguages.length === 0 && cleanTechnologies.length === 0 && cleanSkills.length > 0) {
+      cleanTechnologies.push(...cleanSkills.slice(0, 20));
+    }
+
     const additionalSkills = cleanSkills.slice(competencyLimit);
 
     const competenciesMarkup = cleanSkills
@@ -298,12 +438,18 @@ export async function POST(req: Request) {
       .map((skill) => `<span class="competency-tag">${escapeHtml(skill)}</span>`)
       .join(' ');
 
+    const skillsSectionTitle = data.templateId === 'rendercv' ? 'Skills' : 'Additional Skills';
+    const skillsForSection = data.templateId === 'rendercv' ? cleanSkills : additionalSkills;
+    const shouldRenderSkillsSection =
+      data.templateId === 'rendercv' ? cleanLanguages.length === 0 && cleanTechnologies.length === 0 : true;
+
     // 2. Replace placeholders
     const replacements: Record<string, string> = {
       '{{LANG}}': 'en',
       '{{NAME}}': escapeHtml(data.name || 'Candidate Name'),
-      '{{PAGE_WIDTH}}': '800px',
+      '{{PAGE_WIDTH}}': data.templateId === 'rendercv' ? '645px' : '800px',
       '{{CONTACT_ROW}}': renderContactRow({
+        templateId: data.templateId,
         email,
         phone,
         location,
@@ -324,7 +470,16 @@ export async function POST(req: Request) {
       '{{PROJECTS_SECTION}}': renderSection('Projects', projectItems, true),
       '{{EDUCATION_SECTION}}': renderSection('Education', educationItems, true),
       '{{CERTIFICATIONS_SECTION}}': renderSection('Certifications', certificationItems, true),
-      '{{SKILLS_SECTION}}': renderSection('Additional Skills', renderSkillsList(additionalSkills), true),
+      '{{PUBLICATIONS_SECTION}}': renderSection('Publications', publicationItems, true),
+      '{{TECHNOLOGIES_SECTION}}': renderSection(
+        'Technologies',
+        renderTechnologiesSplit(cleanLanguages, cleanTechnologies),
+        true
+      ),
+      '{{SKILLS_SECTION}}': shouldRenderSkillsSection
+        ? renderSection(skillsSectionTitle, renderSkillsList(skillsForSection), true)
+        : '',
+      '{{CUSTOM_SECTIONS}}': customSectionsMarkup,
     };
 
     for (const [key, value] of Object.entries(replacements)) {
@@ -362,16 +517,26 @@ export async function POST(req: Request) {
       'Timed out waiting for resume fonts to load.'
     );
 
+    const pdfMargins =
+      data.templateId === 'rendercv'
+        ? {
+            top: '0.79in',
+            right: '0.79in',
+            bottom: '0.79in',
+            left: '0.79in',
+          }
+        : {
+            top: '0.6in',
+            right: '0.6in',
+            bottom: '0.6in',
+            left: '0.6in',
+          };
+
     const pdfBuffer = await withTimeout(
       page.pdf({
         format: 'a4',
         printBackground: true,
-        margin: {
-          top: '0.6in',
-          right: '0.6in',
-          bottom: '0.6in',
-          left: '0.6in',
-        },
+        margin: pdfMargins,
       }),
       getRemainingTimeoutMs(deadline, 'Timed out generating resume PDF.'),
       'Timed out generating resume PDF.'

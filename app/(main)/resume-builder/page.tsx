@@ -53,6 +53,39 @@ type CertificationDraft = {
   year: string;
 };
 
+type ResumeTemplateId = "base" | "rendercv";
+
+type PublicationDraft = {
+  id: string;
+  title: string;
+  date: string;
+  authors: string;
+  venue: string;
+  link: string;
+};
+
+type CustomSectionStyle = "bullets" | "text";
+
+type CustomSectionDraft = {
+  id: string;
+  title: string;
+  style: CustomSectionStyle;
+  entriesText: string;
+};
+
+const TEMPLATE_OPTIONS: Array<{ id: ResumeTemplateId; label: string; description: string }> = [
+  {
+    id: "base",
+    label: "Modern Gradient",
+    description: "Current template with color accents and compact badges.",
+  },
+  {
+    id: "rendercv",
+    label: "RenderCV Classic",
+    description: "Overleaf-inspired professional layout with ruled sections.",
+  },
+];
+
 const RESUME_DRAFT_STORAGE_KEY = "resume-builder-draft-v1";
 const MAX_EXPERIENCE_ITEMS = 8;
 const MAX_PROJECT_ITEMS = 8;
@@ -68,6 +101,8 @@ const MAX_LOCATION_LENGTH = 120;
 const MAX_SUMMARY_LENGTH = 2500;
 const MAX_SKILL_LENGTH = 80;
 const MAX_SKILLS = 60;
+const MAX_LANGUAGE_ITEMS = 30;
+const MAX_TECHNOLOGY_ITEMS = 40;
 
 const MAX_EXPERIENCE_COMPANY_LENGTH = 120;
 const MAX_EXPERIENCE_ROLE_LENGTH = 120;
@@ -89,6 +124,18 @@ const MAX_EDUCATION_DETAILS_LENGTH = 300;
 const MAX_CERTIFICATION_NAME_LENGTH = 140;
 const MAX_CERTIFICATION_ISSUER_LENGTH = 140;
 const MAX_CERTIFICATION_YEAR_LENGTH = 20;
+
+const MAX_PUBLICATION_ITEMS = 10;
+const MAX_PUBLICATION_TITLE_LENGTH = 180;
+const MAX_PUBLICATION_DATE_LENGTH = 80;
+const MAX_PUBLICATION_AUTHORS_LENGTH = 320;
+const MAX_PUBLICATION_VENUE_LENGTH = 180;
+const MAX_PUBLICATION_LINK_LENGTH = 300;
+
+const MAX_CUSTOM_SECTIONS = 6;
+const MAX_CUSTOM_SECTION_TITLE_LENGTH = 80;
+const MAX_CUSTOM_SECTION_ENTRY_LENGTH = 400;
+const MAX_CUSTOM_SECTION_ENTRIES = 20;
 
 const EMPTY_EXPERIENCE: Omit<ExperienceDraft, "id"> = {
   company: "",
@@ -118,7 +165,22 @@ const EMPTY_CERTIFICATION: Omit<CertificationDraft, "id"> = {
   year: "",
 };
 
+const EMPTY_PUBLICATION: Omit<PublicationDraft, "id"> = {
+  title: "",
+  date: "",
+  authors: "",
+  venue: "",
+  link: "",
+};
+
+const EMPTY_CUSTOM_SECTION: Omit<CustomSectionDraft, "id"> = {
+  title: "",
+  style: "bullets",
+  entriesText: "",
+};
+
 type ResumeGeneratePayload = {
+  templateId: ResumeTemplateId;
   name: string;
   email: string;
   phone: string;
@@ -127,6 +189,8 @@ type ResumeGeneratePayload = {
   location: string;
   summary: string;
   skills: string[];
+  languages: string[];
+  technologies: string[];
   experience: Array<{
     company: string;
     role: string;
@@ -151,9 +215,22 @@ type ResumeGeneratePayload = {
     issuer: string;
     year: string;
   }>;
+  publications: Array<{
+    title: string;
+    date: string;
+    authors: string;
+    venue: string;
+    link: string;
+  }>;
+  customSections: Array<{
+    title: string;
+    style: CustomSectionStyle;
+    entries: string[];
+  }>;
 };
 
 type ResumeBuilderDraft = {
+  templateId: ResumeTemplateId;
   name: string;
   email: string;
   phone: string;
@@ -162,13 +239,18 @@ type ResumeBuilderDraft = {
   location: string;
   summary: string;
   skillsInput: string;
+  languagesInput: string;
+  technologiesInput: string;
   experiences: ExperienceDraft[];
   projects: ProjectDraft[];
   education: EducationDraft[];
   certifications: CertificationDraft[];
+  publications: PublicationDraft[];
+  customSections: CustomSectionDraft[];
 };
 
 const SAMPLE_DRAFT: ResumeBuilderDraft = {
+  templateId: "rendercv",
   name: "Alex Johnson",
   email: "alex.johnson@example.com",
   phone: "+91 98765 43210",
@@ -179,6 +261,8 @@ const SAMPLE_DRAFT: ResumeBuilderDraft = {
     "Product-focused full stack engineer with 5+ years shipping SaaS platforms end-to-end. Strong in TypeScript, React, and backend architecture with a track record of improving performance, reliability, and developer velocity.",
   skillsInput:
     "TypeScript, React, Next.js, Node.js, PostgreSQL, Supabase, Redis, Playwright, Tailwind CSS, API Design",
+  languagesInput: "TypeScript, JavaScript, SQL, Python",
+  technologiesInput: "Next.js, React, Node.js, PostgreSQL, Supabase, Redis, Playwright",
   experiences: [
     {
       id: "sample-exp-1",
@@ -223,6 +307,25 @@ const SAMPLE_DRAFT: ResumeBuilderDraft = {
       name: "AWS Certified Solutions Architect - Associate",
       issuer: "Amazon Web Services",
       year: "2024",
+    },
+  ],
+  publications: [
+    {
+      id: "sample-publication-1",
+      title: "Scaling Session-Aware Learning Platforms with Event-Driven Analytics",
+      date: "Sep 2024",
+      authors: "A. Johnson, S. Rao",
+      venue: "Engineering Systems Journal",
+      link: "https://doi.org/10.1109/TASC.2023.3340648",
+    },
+  ],
+  customSections: [
+    {
+      id: "sample-custom-1",
+      title: "Leadership",
+      style: "bullets",
+      entriesText:
+        "Led a cross-functional team of 6 engineers for a migration initiative.\nCreated onboarding playbooks that reduced new-hire ramp-up time by 35%.",
     },
   ],
 };
@@ -327,6 +430,23 @@ function hasCertificationContent(item: CertificationDraft): boolean {
   return Boolean(item.name.trim() || item.issuer.trim() || item.year.trim());
 }
 
+function hasPublicationContent(item: PublicationDraft): boolean {
+  return Boolean(
+    item.title.trim() || item.date.trim() || item.authors.trim() || item.venue.trim() || item.link.trim()
+  );
+}
+
+function customSectionEntries(value: string): string[] {
+  return toLines(value)
+    .map((entry) => clampText(entry, MAX_CUSTOM_SECTION_ENTRY_LENGTH))
+    .filter(Boolean)
+    .slice(0, MAX_CUSTOM_SECTION_ENTRIES);
+}
+
+function hasCustomSectionContent(item: CustomSectionDraft): boolean {
+  return Boolean(item.title.trim() && customSectionEntries(item.entriesText).length > 0);
+}
+
 function extractFirstZodError(details: unknown): string | null {
   if (!details || typeof details !== "object") return null;
 
@@ -358,6 +478,7 @@ function extractFirstZodError(details: unknown): string | null {
 }
 
 export default function ResumeBuilderPage() {
+  const [templateId, setTemplateId] = useState<ResumeTemplateId>("base");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -366,6 +487,8 @@ export default function ResumeBuilderPage() {
   const [location, setLocation] = useState("");
   const [summary, setSummary] = useState("");
   const [skillsInput, setSkillsInput] = useState("");
+  const [languagesInput, setLanguagesInput] = useState("");
+  const [technologiesInput, setTechnologiesInput] = useState("");
 
   const [experiences, setExperiences] = useState<ExperienceDraft[]>([
     { id: createDraftId(), ...EMPTY_EXPERIENCE },
@@ -376,6 +499,12 @@ export default function ResumeBuilderPage() {
   ]);
   const [certifications, setCertifications] = useState<CertificationDraft[]>([
     { id: createDraftId(), ...EMPTY_CERTIFICATION },
+  ]);
+  const [publications, setPublications] = useState<PublicationDraft[]>([
+    { id: createDraftId(), ...EMPTY_PUBLICATION },
+  ]);
+  const [customSections, setCustomSections] = useState<CustomSectionDraft[]>([
+    { id: createDraftId(), ...EMPTY_CUSTOM_SECTION },
   ]);
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -394,6 +523,8 @@ export default function ResumeBuilderPage() {
 
       const parsed = JSON.parse(rawDraft) as Partial<ResumeBuilderDraft>;
 
+      setTemplateId(parsed.templateId === "rendercv" ? "rendercv" : "base");
+
       setName(textOrEmpty(parsed.name));
       setEmail(textOrEmpty(parsed.email));
       setPhone(textOrEmpty(parsed.phone));
@@ -402,6 +533,8 @@ export default function ResumeBuilderPage() {
       setLocation(textOrEmpty(parsed.location));
       setSummary(textOrEmpty(parsed.summary));
       setSkillsInput(textOrEmpty(parsed.skillsInput));
+      setLanguagesInput(textOrEmpty(parsed.languagesInput));
+      setTechnologiesInput(textOrEmpty(parsed.technologiesInput));
 
       if (Array.isArray(parsed.experiences) && parsed.experiences.length > 0) {
         setExperiences(
@@ -451,6 +584,30 @@ export default function ResumeBuilderPage() {
         );
       }
 
+      if (Array.isArray(parsed.publications) && parsed.publications.length > 0) {
+        setPublications(
+          parsed.publications.map((item) => ({
+            id: draftIdOrNew(item?.id),
+            title: textOrEmpty(item?.title),
+            date: textOrEmpty(item?.date),
+            authors: textOrEmpty(item?.authors),
+            venue: textOrEmpty(item?.venue),
+            link: textOrEmpty(item?.link),
+          }))
+        );
+      }
+
+      if (Array.isArray(parsed.customSections) && parsed.customSections.length > 0) {
+        setCustomSections(
+          parsed.customSections.map((item) => ({
+            id: draftIdOrNew(item?.id),
+            title: textOrEmpty(item?.title),
+            style: item?.style === "text" ? "text" : "bullets",
+            entriesText: textOrEmpty(item?.entriesText),
+          }))
+        );
+      }
+
       setLastSavedAt(new Date());
     } catch {
       localStorage.removeItem(RESUME_DRAFT_STORAGE_KEY);
@@ -464,6 +621,7 @@ export default function ResumeBuilderPage() {
 
     const timeoutId = window.setTimeout(() => {
       const draft: ResumeBuilderDraft = {
+        templateId,
         name,
         email,
         phone,
@@ -472,10 +630,14 @@ export default function ResumeBuilderPage() {
         location,
         summary,
         skillsInput,
+        languagesInput,
+        technologiesInput,
         experiences,
         projects,
         education,
         certifications,
+        publications,
+        customSections,
       };
 
       localStorage.setItem(RESUME_DRAFT_STORAGE_KEY, JSON.stringify(draft));
@@ -484,6 +646,7 @@ export default function ResumeBuilderPage() {
 
     return () => window.clearTimeout(timeoutId);
   }, [
+    templateId,
     name,
     email,
     phone,
@@ -492,10 +655,14 @@ export default function ResumeBuilderPage() {
     location,
     summary,
     skillsInput,
+    languagesInput,
+    technologiesInput,
     experiences,
     projects,
     education,
     certifications,
+    publications,
+    customSections,
     isDraftReady,
   ]);
 
@@ -508,7 +675,27 @@ export default function ResumeBuilderPage() {
     [skillsInput]
   );
 
+  const parsedLanguages = useMemo(
+    () =>
+      toSkills(languagesInput)
+        .map((language) => clampText(language, MAX_SKILL_LENGTH))
+        .filter(Boolean)
+        .slice(0, MAX_LANGUAGE_ITEMS),
+    [languagesInput]
+  );
+
+  const parsedTechnologies = useMemo(
+    () =>
+      toSkills(technologiesInput)
+        .map((technology) => clampText(technology, MAX_SKILL_LENGTH))
+        .filter(Boolean)
+        .slice(0, MAX_TECHNOLOGY_ITEMS),
+    [technologiesInput]
+  );
+
   const skillCount = parsedSkills.length;
+  const languageCount = parsedLanguages.length;
+  const technologyCount = parsedTechnologies.length;
   const experienceCount = useMemo(
     () => experiences.filter((item) => hasExperienceContent(item)).length,
     [experiences]
@@ -518,6 +705,14 @@ export default function ResumeBuilderPage() {
   const certificationCount = useMemo(
     () => certifications.filter((item) => hasCertificationContent(item)).length,
     [certifications]
+  );
+  const publicationCount = useMemo(
+    () => publications.filter((item) => hasPublicationContent(item)).length,
+    [publications]
+  );
+  const customSectionCount = useMemo(
+    () => customSections.filter((item) => hasCustomSectionContent(item)).length,
+    [customSections]
   );
 
   const previewExperiences = useMemo(
@@ -535,6 +730,14 @@ export default function ResumeBuilderPage() {
   const previewCertifications = useMemo(
     () => certifications.filter((item) => hasCertificationContent(item)).slice(0, 2),
     [certifications]
+  );
+  const previewPublications = useMemo(
+    () => publications.filter((item) => hasPublicationContent(item)).slice(0, 2),
+    [publications]
+  );
+  const previewCustomSections = useMemo(
+    () => customSections.filter((item) => hasCustomSectionContent(item)).slice(0, 2),
+    [customSections]
   );
 
   const previewExperienceItems = useMemo(
@@ -583,6 +786,28 @@ export default function ResumeBuilderPage() {
         year: clampText(item.year, MAX_CERTIFICATION_YEAR_LENGTH),
       })),
     [previewCertifications]
+  );
+
+  const previewPublicationItems = useMemo(
+    () =>
+      previewPublications.map((item) => ({
+        title: clampText(item.title, MAX_PUBLICATION_TITLE_LENGTH),
+        date: clampText(item.date, MAX_PUBLICATION_DATE_LENGTH),
+        authors: clampText(item.authors, MAX_PUBLICATION_AUTHORS_LENGTH),
+        venue: clampText(item.venue, MAX_PUBLICATION_VENUE_LENGTH),
+        link: clampText(item.link, MAX_PUBLICATION_LINK_LENGTH),
+      })),
+    [previewPublications]
+  );
+
+  const previewCustomSectionItems = useMemo(
+    () =>
+      previewCustomSections.map((item) => ({
+        title: clampText(item.title, MAX_CUSTOM_SECTION_TITLE_LENGTH),
+        style: item.style,
+        entries: customSectionEntries(item.entriesText).slice(0, 3),
+      })),
+    [previewCustomSections]
   );
 
   const updateExperience = (index: number, patch: Partial<ExperienceDraft>) => {
@@ -681,7 +906,56 @@ export default function ResumeBuilderPage() {
     setCertifications((current) => moveItemInArray(current, index, direction));
   };
 
+  const updatePublication = (index: number, patch: Partial<PublicationDraft>) => {
+    setPublications((current) =>
+      current.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item))
+    );
+  };
+
+  const addPublication = () => {
+    setPublications((current) => {
+      if (current.length >= MAX_PUBLICATION_ITEMS) return current;
+      return [...current, { id: createDraftId(), ...EMPTY_PUBLICATION }];
+    });
+  };
+
+  const removePublication = (index: number) => {
+    setPublications((current) => {
+      if (current.length === 1) return [{ id: createDraftId(), ...EMPTY_PUBLICATION }];
+      return current.filter((_, itemIndex) => itemIndex !== index);
+    });
+  };
+
+  const movePublication = (index: number, direction: -1 | 1) => {
+    setPublications((current) => moveItemInArray(current, index, direction));
+  };
+
+  const updateCustomSection = (index: number, patch: Partial<CustomSectionDraft>) => {
+    setCustomSections((current) =>
+      current.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item))
+    );
+  };
+
+  const addCustomSection = () => {
+    setCustomSections((current) => {
+      if (current.length >= MAX_CUSTOM_SECTIONS) return current;
+      return [...current, { id: createDraftId(), ...EMPTY_CUSTOM_SECTION }];
+    });
+  };
+
+  const removeCustomSection = (index: number) => {
+    setCustomSections((current) => {
+      if (current.length === 1) return [{ id: createDraftId(), ...EMPTY_CUSTOM_SECTION }];
+      return current.filter((_, itemIndex) => itemIndex !== index);
+    });
+  };
+
+  const moveCustomSection = (index: number, direction: -1 | 1) => {
+    setCustomSections((current) => moveItemInArray(current, index, direction));
+  };
+
   const resetForm = () => {
+    setTemplateId("base");
     setName("");
     setEmail("");
     setPhone("");
@@ -690,10 +964,14 @@ export default function ResumeBuilderPage() {
     setLocation("");
     setSummary("");
     setSkillsInput("");
+    setLanguagesInput("");
+    setTechnologiesInput("");
     setExperiences([{ id: createDraftId(), ...EMPTY_EXPERIENCE }]);
     setProjects([{ id: createDraftId(), ...EMPTY_PROJECT }]);
     setEducation([{ id: createDraftId(), ...EMPTY_EDUCATION }]);
     setCertifications([{ id: createDraftId(), ...EMPTY_CERTIFICATION }]);
+    setPublications([{ id: createDraftId(), ...EMPTY_PUBLICATION }]);
+    setCustomSections([{ id: createDraftId(), ...EMPTY_CUSTOM_SECTION }]);
     setError(null);
     setSuccessMessage(null);
     setLastSavedAt(null);
@@ -702,6 +980,7 @@ export default function ResumeBuilderPage() {
 
   const loadSampleData = () => {
     const hasContent = Boolean(
+      templateId !== "base" ||
       name.trim() ||
         email.trim() ||
         phone.trim() ||
@@ -710,10 +989,14 @@ export default function ResumeBuilderPage() {
         location.trim() ||
         summary.trim() ||
         parsedSkills.length > 0 ||
+        parsedLanguages.length > 0 ||
+        parsedTechnologies.length > 0 ||
         experiences.some((item) => hasExperienceContent(item)) ||
         projects.some((item) => hasProjectContent(item)) ||
         education.some((item) => hasEducationContent(item)) ||
-        certifications.some((item) => hasCertificationContent(item))
+        certifications.some((item) => hasCertificationContent(item)) ||
+        publications.some((item) => hasPublicationContent(item)) ||
+        customSections.some((item) => hasCustomSectionContent(item))
     );
 
     if (
@@ -723,6 +1006,7 @@ export default function ResumeBuilderPage() {
       return;
     }
 
+    setTemplateId(SAMPLE_DRAFT.templateId);
     setName(SAMPLE_DRAFT.name);
     setEmail(SAMPLE_DRAFT.email);
     setPhone(SAMPLE_DRAFT.phone);
@@ -731,10 +1015,14 @@ export default function ResumeBuilderPage() {
     setLocation(SAMPLE_DRAFT.location);
     setSummary(SAMPLE_DRAFT.summary);
     setSkillsInput(SAMPLE_DRAFT.skillsInput);
+    setLanguagesInput(SAMPLE_DRAFT.languagesInput);
+    setTechnologiesInput(SAMPLE_DRAFT.technologiesInput);
     setExperiences(SAMPLE_DRAFT.experiences.map((item) => ({ ...item, id: createDraftId() })));
     setProjects(SAMPLE_DRAFT.projects.map((item) => ({ ...item, id: createDraftId() })));
     setEducation(SAMPLE_DRAFT.education.map((item) => ({ ...item, id: createDraftId() })));
     setCertifications(SAMPLE_DRAFT.certifications.map((item) => ({ ...item, id: createDraftId() })));
+    setPublications(SAMPLE_DRAFT.publications.map((item) => ({ ...item, id: createDraftId() })));
+    setCustomSections(SAMPLE_DRAFT.customSections.map((item) => ({ ...item, id: createDraftId() })));
     setError(null);
     setSuccessMessage("Sample profile loaded. Customize and generate your own PDF.");
   };
@@ -811,7 +1099,35 @@ export default function ResumeBuilderPage() {
       .filter((item) => item.name.length > 0 || item.issuer.length > 0 || item.year.length > 0)
       .slice(0, 20);
 
+    const trimmedPublications = publications
+      .map((item) => ({
+        title: clampText(item.title, MAX_PUBLICATION_TITLE_LENGTH),
+        date: clampText(item.date, MAX_PUBLICATION_DATE_LENGTH),
+        authors: clampText(item.authors, MAX_PUBLICATION_AUTHORS_LENGTH),
+        venue: clampText(item.venue, MAX_PUBLICATION_VENUE_LENGTH),
+        link: clampText(item.link, MAX_PUBLICATION_LINK_LENGTH),
+      }))
+      .filter(
+        (item) =>
+          item.title.length > 0 ||
+          item.date.length > 0 ||
+          item.authors.length > 0 ||
+          item.venue.length > 0 ||
+          item.link.length > 0
+      )
+      .slice(0, MAX_PUBLICATION_ITEMS);
+
+    const trimmedCustomSections = customSections
+      .map((item) => ({
+        title: clampText(item.title, MAX_CUSTOM_SECTION_TITLE_LENGTH),
+        style: item.style,
+        entries: customSectionEntries(item.entriesText),
+      }))
+      .filter((item) => item.title.length > 0 && item.entries.length > 0)
+      .slice(0, MAX_CUSTOM_SECTIONS);
+
     return {
+      templateId,
       name: clampText(name, MAX_NAME_LENGTH),
       email: clampText(email, MAX_EMAIL_LENGTH),
       phone: clampText(phone, MAX_PHONE_LENGTH),
@@ -820,10 +1136,14 @@ export default function ResumeBuilderPage() {
       location: clampText(location, MAX_LOCATION_LENGTH),
       summary: clampText(summary, MAX_SUMMARY_LENGTH),
       skills: parsedSkills,
+      languages: parsedLanguages,
+      technologies: parsedTechnologies,
       experience: trimmedExperiences,
       projects: trimmedProjects,
       education: trimmedEducation,
       certifications: trimmedCertifications,
+      publications: trimmedPublications,
+      customSections: trimmedCustomSections,
     };
   };
 
@@ -933,6 +1253,26 @@ export default function ResumeBuilderPage() {
               <h2 className="text-sm font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 flex items-center gap-2 mb-4">
                 <FileText size={15} /> Identity
               </h2>
+
+              <label className="space-y-1.5 block mb-4">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                  Resume template
+                </span>
+                <select
+                  value={templateId}
+                  onChange={(event) => setTemplateId(event.target.value === "rendercv" ? "rendercv" : "base")}
+                  className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70 px-3 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                >
+                  {TEMPLATE_OPTIONS.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                  {TEMPLATE_OPTIONS.find((option) => option.id === templateId)?.description}
+                </p>
+              </label>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <label className="space-y-1.5">
@@ -1071,6 +1411,40 @@ export default function ResumeBuilderPage() {
                     placeholder="TypeScript, React, Next.js, Supabase, PostgreSQL, Playwright"
                   />
                 </label>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <label className="space-y-1.5 block">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center justify-between gap-3">
+                      <span>Languages (comma-separated)</span>
+                      <span className={`text-[10px] font-semibold ${counterTone(parsedLanguages.length, MAX_LANGUAGE_ITEMS)}`}>
+                        {parsedLanguages.length}/{MAX_LANGUAGE_ITEMS}
+                      </span>
+                    </span>
+                    <textarea
+                      value={languagesInput}
+                      onChange={(event) => setLanguagesInput(event.target.value)}
+                      maxLength={MAX_LANGUAGE_ITEMS * (MAX_SKILL_LENGTH + 2)}
+                      className="w-full min-h-[90px] rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70 px-3 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 resize-y"
+                      placeholder="TypeScript, JavaScript, SQL, Python"
+                    />
+                  </label>
+
+                  <label className="space-y-1.5 block">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center justify-between gap-3">
+                      <span>Technologies (comma-separated)</span>
+                      <span className={`text-[10px] font-semibold ${counterTone(parsedTechnologies.length, MAX_TECHNOLOGY_ITEMS)}`}>
+                        {parsedTechnologies.length}/{MAX_TECHNOLOGY_ITEMS}
+                      </span>
+                    </span>
+                    <textarea
+                      value={technologiesInput}
+                      onChange={(event) => setTechnologiesInput(event.target.value)}
+                      maxLength={MAX_TECHNOLOGY_ITEMS * (MAX_SKILL_LENGTH + 2)}
+                      className="w-full min-h-[90px] rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70 px-3 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 resize-y"
+                      placeholder="Next.js, React, Node.js, PostgreSQL, Redis"
+                    />
+                  </label>
+                </div>
               </div>
             </section>
 
@@ -1425,6 +1799,186 @@ export default function ResumeBuilderPage() {
                 ))}
               </div>
             </section>
+
+            <section className="bg-white/70 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 backdrop-blur-md shadow-lg dark:shadow-none transition-colors duration-300">
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <h2 className="text-sm font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                  <BookOpenCheck size={15} /> Publications
+                </h2>
+                <button
+                  type="button"
+                  onClick={addPublication}
+                  disabled={publications.length >= MAX_PUBLICATION_ITEMS}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-cyan-700 dark:text-cyan-300 hover:bg-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <Plus size={12} /> Add publication
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {publications.map((item, index) => (
+                  <div
+                    key={item.id}
+                    className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-950/30 p-4 space-y-3"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs font-black uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                        Publication {index + 1}
+                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => movePublication(index, -1)}
+                          disabled={index === 0}
+                          className="inline-flex items-center justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white/70 dark:bg-black/20 p-1.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                          aria-label="Move publication up"
+                        >
+                          <ChevronUp size={13} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => movePublication(index, 1)}
+                          disabled={index === publications.length - 1}
+                          className="inline-flex items-center justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white/70 dark:bg-black/20 p-1.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                          aria-label="Move publication down"
+                        >
+                          <ChevronDown size={13} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removePublication(index)}
+                          className="inline-flex items-center gap-1 rounded-md border border-rose-500/30 bg-rose-500/10 px-2 py-1 text-[10px] font-black uppercase tracking-wider text-rose-700 dark:text-rose-300 hover:bg-rose-500/20 transition-colors"
+                        >
+                          <Trash2 size={11} /> Remove
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <input
+                        value={item.title}
+                        onChange={(event) => updatePublication(index, { title: event.target.value })}
+                        maxLength={MAX_PUBLICATION_TITLE_LENGTH}
+                        className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                        placeholder="Publication title"
+                      />
+                      <input
+                        value={item.date}
+                        onChange={(event) => updatePublication(index, { date: event.target.value })}
+                        maxLength={MAX_PUBLICATION_DATE_LENGTH}
+                        className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                        placeholder="Sep 2024"
+                      />
+                      <input
+                        value={item.authors}
+                        onChange={(event) => updatePublication(index, { authors: event.target.value })}
+                        maxLength={MAX_PUBLICATION_AUTHORS_LENGTH}
+                        className="md:col-span-2 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                        placeholder="Author list"
+                      />
+                      <input
+                        value={item.venue}
+                        onChange={(event) => updatePublication(index, { venue: event.target.value })}
+                        maxLength={MAX_PUBLICATION_VENUE_LENGTH}
+                        className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                        placeholder="Journal / Conference"
+                      />
+                      <input
+                        value={item.link}
+                        onChange={(event) => updatePublication(index, { link: event.target.value })}
+                        maxLength={MAX_PUBLICATION_LINK_LENGTH}
+                        className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                        placeholder="https://doi.org/..."
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="bg-white/70 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 backdrop-blur-md shadow-lg dark:shadow-none transition-colors duration-300">
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <h2 className="text-sm font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                  <ListChecks size={15} /> Custom Sections
+                </h2>
+                <button
+                  type="button"
+                  onClick={addCustomSection}
+                  disabled={customSections.length >= MAX_CUSTOM_SECTIONS}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-cyan-700 dark:text-cyan-300 hover:bg-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <Plus size={12} /> Add section
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {customSections.map((item, index) => (
+                  <div
+                    key={item.id}
+                    className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-950/30 p-4 space-y-3"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs font-black uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                        Section {index + 1}
+                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => moveCustomSection(index, -1)}
+                          disabled={index === 0}
+                          className="inline-flex items-center justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white/70 dark:bg-black/20 p-1.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                          aria-label="Move custom section up"
+                        >
+                          <ChevronUp size={13} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveCustomSection(index, 1)}
+                          disabled={index === customSections.length - 1}
+                          className="inline-flex items-center justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white/70 dark:bg-black/20 p-1.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                          aria-label="Move custom section down"
+                        >
+                          <ChevronDown size={13} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeCustomSection(index)}
+                          className="inline-flex items-center gap-1 rounded-md border border-rose-500/30 bg-rose-500/10 px-2 py-1 text-[10px] font-black uppercase tracking-wider text-rose-700 dark:text-rose-300 hover:bg-rose-500/20 transition-colors"
+                        >
+                          <Trash2 size={11} /> Remove
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <input
+                        value={item.title}
+                        onChange={(event) => updateCustomSection(index, { title: event.target.value })}
+                        maxLength={MAX_CUSTOM_SECTION_TITLE_LENGTH}
+                        className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                        placeholder="Section title"
+                      />
+                      <select
+                        value={item.style}
+                        onChange={(event) => updateCustomSection(index, { style: event.target.value === "text" ? "text" : "bullets" })}
+                        className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                      >
+                        <option value="bullets">Bullet list</option>
+                        <option value="text">Text paragraphs</option>
+                      </select>
+                    </div>
+
+                    <textarea
+                      value={item.entriesText}
+                      onChange={(event) => updateCustomSection(index, { entriesText: event.target.value })}
+                      maxLength={MAX_CUSTOM_SECTION_ENTRY_LENGTH * MAX_CUSTOM_SECTION_ENTRIES}
+                      className="w-full min-h-[110px] rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 resize-y"
+                      placeholder={"One entry per line\nMentored 8 junior engineers\nCreated internal onboarding guides"}
+                    />
+                  </div>
+                ))}
+              </div>
+            </section>
           </div>
 
           <aside className="space-y-6 xl:sticky xl:top-24">
@@ -1435,9 +1989,29 @@ export default function ResumeBuilderPage() {
               <div className="space-y-2.5">
                 <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/40 px-3 py-2.5 flex items-center justify-between">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                    Template
+                  </span>
+                  <span className="text-sm font-black text-gray-900 dark:text-white">
+                    {templateId === "rendercv" ? "RenderCV" : "Modern"}
+                  </span>
+                </div>
+                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/40 px-3 py-2.5 flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                     Skills
                   </span>
                   <span className="text-sm font-black text-gray-900 dark:text-white">{skillCount}</span>
+                </div>
+                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/40 px-3 py-2.5 flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                    Languages
+                  </span>
+                  <span className="text-sm font-black text-gray-900 dark:text-white">{languageCount}</span>
+                </div>
+                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/40 px-3 py-2.5 flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                    Technologies
+                  </span>
+                  <span className="text-sm font-black text-gray-900 dark:text-white">{technologyCount}</span>
                 </div>
                 <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/40 px-3 py-2.5 flex items-center justify-between">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
@@ -1463,6 +2037,18 @@ export default function ResumeBuilderPage() {
                   </span>
                   <span className="text-sm font-black text-gray-900 dark:text-white">{certificationCount}</span>
                 </div>
+                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/40 px-3 py-2.5 flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                    Publications
+                  </span>
+                  <span className="text-sm font-black text-gray-900 dark:text-white">{publicationCount}</span>
+                </div>
+                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/40 px-3 py-2.5 flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                    Custom Sections
+                  </span>
+                  <span className="text-sm font-black text-gray-900 dark:text-white">{customSectionCount}</span>
+                </div>
               </div>
 
               <div className="mt-4 space-y-2 text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed">
@@ -1487,6 +2073,9 @@ export default function ResumeBuilderPage() {
                   <div className="border-b border-gray-200 dark:border-gray-700 pb-3">
                     <p className="text-base font-black text-gray-900 dark:text-white leading-tight">
                       {name.trim() || "Your Name"}
+                    </p>
+                    <p className="text-[10px] font-semibold text-cyan-700 dark:text-cyan-300 mt-1 uppercase tracking-wider">
+                      {templateId === "rendercv" ? "RenderCV Classic Template" : "Modern Gradient Template"}
                     </p>
                     <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
                       {[location.trim(), phone.trim(), email.trim()].filter(Boolean).join(" • ") ||
@@ -1540,6 +2129,36 @@ export default function ResumeBuilderPage() {
                             </span>
                           )}
                         </>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-black/20 px-2.5 py-2">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">
+                        Languages
+                      </p>
+                      {parsedLanguages.length === 0 ? (
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400">Not added</p>
+                      ) : (
+                        <p className="text-[10px] text-gray-700 dark:text-gray-300 leading-relaxed">
+                          {parsedLanguages.slice(0, 8).join(" • ")}
+                          {parsedLanguages.length > 8 ? ` • +${parsedLanguages.length - 8} more` : ""}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-black/20 px-2.5 py-2">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">
+                        Technologies
+                      </p>
+                      {parsedTechnologies.length === 0 ? (
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400">Not added</p>
+                      ) : (
+                        <p className="text-[10px] text-gray-700 dark:text-gray-300 leading-relaxed">
+                          {parsedTechnologies.slice(0, 8).join(" • ")}
+                          {parsedTechnologies.length > 8 ? ` • +${parsedTechnologies.length - 8} more` : ""}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -1648,6 +2267,44 @@ export default function ResumeBuilderPage() {
                             {item.year ? ` (${item.year})` : ""}
                           </p>
                         ))
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-black/20 px-2.5 py-2">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">
+                        Publications
+                      </p>
+                      {previewPublicationItems.length === 0 ? (
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400">Not added</p>
+                      ) : (
+                        <div className="space-y-1.5">
+                          {previewPublicationItems.map((item, index) => (
+                            <p key={`preview-publication-${index}`} className="text-[10px] text-gray-700 dark:text-gray-300 leading-relaxed">
+                              {item.title || "Publication"}
+                              {item.date ? ` (${item.date})` : ""}
+                            </p>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-black/20 px-2.5 py-2">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">
+                        Custom Sections
+                      </p>
+                      {previewCustomSectionItems.length === 0 ? (
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400">Not added</p>
+                      ) : (
+                        <div className="space-y-1.5">
+                          {previewCustomSectionItems.map((item, index) => (
+                            <p key={`preview-custom-${index}`} className="text-[10px] text-gray-700 dark:text-gray-300 leading-relaxed">
+                              {item.title || "Section"}
+                              {item.entries[0] ? `: ${previewSnippet(item.entries[0], 70)}` : ""}
+                            </p>
+                          ))}
+                        </div>
                       )}
                     </div>
                   </div>
