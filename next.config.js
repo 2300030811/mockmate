@@ -9,7 +9,14 @@ const nextConfig = {
 
   experimental: {
     // Packages that should only run in Node.js (not bundled for Edge)
-    serverComponentsExternalPackages: ['pdf-parse', '@azure/storage-blob', '@azure/ai-form-recognizer', 'groq-sdk'],
+    serverComponentsExternalPackages: [
+      'pdf-parse',
+      '@azure/storage-blob',
+      '@azure/ai-form-recognizer',
+      'groq-sdk',
+      'playwright-core',
+      '@sparticuz/chromium',
+    ],
 
     serverActions: {
       // Extra allowed origins for reverse-proxy / preview deployments

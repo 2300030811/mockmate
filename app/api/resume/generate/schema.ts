@@ -31,6 +31,7 @@ const certificationItemSchema = z.object({
 export const resumeGeneratePayloadSchema = z.object({
   name: z.string().trim().max(120).optional().default(""),
   email: z.string().trim().max(160).optional().default(""),
+  phone: z.string().trim().max(40).optional().default(""),
   linkedin: z.string().trim().max(300).optional().default(""),
   portfolio: z.string().trim().max(300).optional().default(""),
   location: z.string().trim().max(120).optional().default(""),
