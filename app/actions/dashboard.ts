@@ -18,6 +18,12 @@ import {
 } from "@/lib/career-ops/patterns";
 import { isMissingCareerOpsTableError } from "@/lib/career-ops/recompute";
 
+function isExpectedDynamicServerUsageError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  const dynamicDigest = (err as Error & { digest?: string }).digest;
+  return dynamicDigest === "DYNAMIC_SERVER_USAGE" || err.message.includes("Dynamic server usage:");
+}
+
 
 async function fetchDashboardData(userId: string, userEmail: string | undefined) {
   // Use admin client inside unstable_cache to bypass cookies usage requirement
@@ -216,7 +222,9 @@ export async function getDashboardData() {
 
     return await getCachedDashboard();
   } catch (err) {
-    console.error("[Dashboard] Unexpected error:", err instanceof Error ? err.message : err);
+    if (!isExpectedDynamicServerUsageError(err)) {
+      console.error("[Dashboard] Unexpected error:", err instanceof Error ? err.message : err);
+    }
     return null;
   }
 }

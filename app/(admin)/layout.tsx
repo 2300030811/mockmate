@@ -5,6 +5,8 @@ import { LayoutDashboard, Trophy, LogOut } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import { AdminMobileNav } from "./AdminMobileNav";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminLayout({
   children,
 }: {

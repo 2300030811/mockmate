@@ -4,6 +4,8 @@ import { getDashboardData } from "@/app/actions/dashboard";
 import { DashboardContent } from "./components/DashboardContent";
 import { DashboardSkeleton } from "./components/DashboardSkeleton";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Dashboard - MockMate",
   description: "View your quiz stats, streaks, badges, and recent activity.",
