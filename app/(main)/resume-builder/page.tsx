@@ -357,6 +357,10 @@ function textOrEmpty(value: unknown): string {
   return typeof value === "string" ? value : "";
 }
 
+function normalizeTemplateId(value: unknown): ResumeTemplateId {
+  return value === "rendercv" ? "rendercv" : "base";
+}
+
 function createDraftId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
@@ -523,7 +527,7 @@ export default function ResumeBuilderPage() {
 
       const parsed = JSON.parse(rawDraft) as Partial<ResumeBuilderDraft>;
 
-      setTemplateId(parsed.templateId === "rendercv" ? "rendercv" : "base");
+      setTemplateId(normalizeTemplateId(parsed.templateId));
 
       setName(textOrEmpty(parsed.name));
       setEmail(textOrEmpty(parsed.email));
@@ -1033,7 +1037,7 @@ export default function ResumeBuilderPage() {
     setSuccessMessage("Saved draft cleared. Current form remains on screen and will autosave on your next edit.");
   };
 
-  const buildPayload = (): ResumeGeneratePayload => {
+  const buildPayload = (selectedTemplateId: ResumeTemplateId = templateId): ResumeGeneratePayload => {
     const trimmedExperiences = experiences
       .map((item) => {
         const highlights = toLines(item.highlightsText)
@@ -1127,7 +1131,7 @@ export default function ResumeBuilderPage() {
       .slice(0, MAX_CUSTOM_SECTIONS);
 
     return {
-      templateId,
+      templateId: selectedTemplateId,
       name: clampText(name, MAX_NAME_LENGTH),
       email: clampText(email, MAX_EMAIL_LENGTH),
       phone: clampText(phone, MAX_PHONE_LENGTH),
@@ -1182,7 +1186,17 @@ export default function ResumeBuilderPage() {
     setIsGenerating(true);
 
     try {
-      const payload = buildPayload();
+      const templateField = event.currentTarget.elements.namedItem("templateId");
+      const selectedTemplateId =
+        templateField instanceof HTMLSelectElement
+          ? normalizeTemplateId(templateField.value)
+          : templateId;
+
+      if (selectedTemplateId !== templateId) {
+        setTemplateId(selectedTemplateId);
+      }
+
+      const payload = buildPayload(selectedTemplateId);
 
       const response = await fetch("/api/resume/generate", {
         method: "POST",
@@ -1259,8 +1273,9 @@ export default function ResumeBuilderPage() {
                   Resume template
                 </span>
                 <select
+                  name="templateId"
                   value={templateId}
-                  onChange={(event) => setTemplateId(event.target.value === "rendercv" ? "rendercv" : "base")}
+                  onChange={(event) => setTemplateId(normalizeTemplateId(event.target.value))}
                   className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70 px-3 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
                 >
                   {TEMPLATE_OPTIONS.map((option) => (
