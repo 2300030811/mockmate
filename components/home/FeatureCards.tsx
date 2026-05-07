@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { m } from "framer-motion";
 import { InteractiveCard } from "@/components/ui/Card";
-import { BrainCircuit, Mic, Trophy, Rocket, Flame, Layers, Swords, Code2, FileText } from "lucide-react";
+import { BrainCircuit, Mic, Trophy, Rocket, Flame, Layers, Swords, Code2, FileText, Globe } from "lucide-react";
 
 const features = [
   {
@@ -70,6 +70,15 @@ const features = [
     delay: 0.55
   },
   {
+    Icon: Globe,
+    title: "Portfolio Builder",
+    description: "Create a stunning portfolio website instantly with Portnova",
+    href: "https://portnova.vercel.app/",
+    gradient: "from-teal-500 to-emerald-500",
+    shadow: "shadow-teal-500/20",
+    delay: 0.58
+  },
+  {
     Icon: Layers,
     title: "System Design",
     description: "Interactive canvas to design and review architectures",
@@ -107,6 +116,7 @@ export function FeatureCards() {
           <Link
             href={feature.href}
             className="group relative block h-full"
+            {...(feature.href.startsWith('http') ? { target: "_blank", rel: "noopener noreferrer" } : {})}
           >
             <InteractiveCard className="h-full flex flex-col items-center text-center p-8 overflow-hidden">
               
