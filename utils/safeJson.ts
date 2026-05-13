@@ -37,9 +37,9 @@ export function safeJsonParse<T>(
     const json = JSON.parse(cleanText);
     const result = schema.safeParse(json);
     if (result.success) return result.data;
-    console.error("SafeJSON Validation Failed:", result.error);
-  } catch (e) {
-    console.error("SafeJSON Parse Failed:", e);
+    console.error("SafeJSON Validation Failed:", result.error.message || result.error);
+  } catch (e: any) {
+    console.error("SafeJSON Parse Failed:", e.message || e);
   }
 
   return null;

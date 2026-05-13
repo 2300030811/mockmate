@@ -59,8 +59,8 @@ const atsAnalysisLLMSchema = z.object({
 export const roastDataSchema = z.object({
   professionalScore: z.number().min(0).max(100).default(50),
   brutalRoast: z.string().default("Could not generate roast."),
-  jobTitle: z.string().optional().default(""),
-  companyName: z.string().optional().default(""),
+  jobTitle: z.string().nullable().optional(),
+  companyName: z.string().nullable().optional(),
   skillBreakdown: skillBreakdownSchema.default({
     clarity: 50,
     impact: 50,
