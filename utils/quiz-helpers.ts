@@ -52,10 +52,12 @@ export const shuffleArray = <T>(array: T[]): T[] => {
 };
 
 export const selectExamQuestionsAzureStyle = (questions: QuizQuestion[], targetTotal: number): QuizQuestion[] => {
-    const mcqs = questions.filter((q) => q.type && q.type.toLowerCase() === "mcq");
+    const mcqTypes = ['mcq', 'msq', 'single', 'multi'];
+    const isMcqQuestion = (q: QuizQuestion) => q.type && mcqTypes.includes(q.type.toLowerCase());
+    
+    const mcqs = questions.filter(isMcqQuestion);
     const others = questions.filter((q) => {
-      const isMcq = q.type && q.type.toLowerCase() === "mcq";
-      if (isMcq) return false;
+      if (isMcqQuestion(q)) return false;
       
       // Filter out Hotspots that don't have a structured answer
       if (q.type === "hotspot") {
@@ -93,16 +95,13 @@ export const selectExamQuestionsAzureStyle = (questions: QuizQuestion[], targetT
 export function checkAnswer(q: QuizQuestion, uAns: QuizAnswer): boolean {
     if (uAns === undefined) return false;
 
-    if (q.type === 'mcq' || !q.type) { // Default to MCQ if no type
-      if (typeof uAns === 'string' && uAns === q.answer) return true;
-      if (Array.isArray(uAns) && Array.isArray(q.answer)) {
-          return uAns.length === q.answer.length && uAns.every(v => (q.answer as string[]).includes(v));
-      }
-      // AWS legacy check
-      if (Array.isArray(uAns) && typeof q.answer === 'string') {
-          const sorted = [...uAns].sort().join("");
-          return sorted === q.answer;
-      }
+    const mcqTypes = ['mcq', 'MSQ', 'single', 'multi'];
+
+    if (!q.type || mcqTypes.includes(q.type)) { // Default to MCQ if no type
+      const correctAnswers = getCorrectAnswers(q as any);
+      const userAnswers = Array.isArray(uAns) ? uAns : [uAns];
+      return correctAnswers.length === userAnswers.length && 
+             userAnswers.every(v => correctAnswers.includes(String(v).toUpperCase()));
     } else if (q.type === 'hotspot') {
       if (typeof q.answer === 'object' && q.answer !== null && uAns && typeof uAns === 'object' && !Array.isArray(uAns)) {
           const answerRecord = q.answer as Record<string, "Yes" | "No">;
@@ -156,6 +155,8 @@ export const getCorrectAnswers = (question: { answer: string | string[] | Record
   } else if (typeof rawAnswer === 'string') {
       if (rawAnswer.includes(',')) {
           rawArray = rawAnswer.split(',').map(s => s.trim());
+      } else if (/^[A-Z]{2,}$/i.test(rawAnswer)) {
+          rawArray = rawAnswer.toUpperCase().split('');
       } else {
           rawArray = [rawAnswer];
       }

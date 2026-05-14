@@ -8,6 +8,7 @@ import { withRetry } from "@/lib/retry";
 import { rateLimit } from "@/lib/rate-limit";
 
 import { getRawQuestions } from "@/app/actions/quiz";
+export { getRawQuestions };
 import { checkAnswer } from "@/utils/quiz-helpers";
 
 import { ActivityItem, LeaderboardItem } from "@/types/dashboard";
@@ -97,8 +98,8 @@ export async function saveQuizResult(data: {
 
         const scoreToSave = calculatedScore;
 
-        // Check if there's a very recent result (last 2 minutes to allow time for user to submit nickname)
-        const recentTimeAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+        // Check if there's a recent result (last 30 minutes to allow time for user to review answers then submit nickname)
+        const recentTimeAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
 
         // Use Admin Client to query without RLS blocking (or standard client works for read if policy exists)
         // But for consistency/speed in this privileged action, let's use adminDb for the write check too.
@@ -120,7 +121,8 @@ export async function saveQuizResult(data: {
             query = query.eq('session_id', data.sessionId);
         }
 
-        const { data: existing } = await query.maybeSingle();
+        const { data: existingRecords } = await query.order('completed_at', { ascending: false }).limit(1);
+        const existing = existingRecords?.[0];
 
         if (existing) {
             // Use Admin Client to UPDATE
@@ -229,19 +231,31 @@ export async function getRecentResults(sessionId?: string): Promise<ActivityItem
 }
 
 export async function updateQuizResultNickname(id: string, nickname: string) {
-    const supabase = createClient();
+    const adminDb = createAdminClient();
     try {
         const validation = validateNickname(nickname);
         if (!validation.success) {
             return { success: false, error: validation.error };
         }
 
-        const { error } = await supabase
+        // Fetch category to invalidate cache
+        const { data: resultData } = await adminDb
+            .from('quiz_results')
+            .select('category')
+            .eq('id', id)
+            .single();
+
+        const { error } = await adminDb
             .from('quiz_results')
             .update({ nickname })
             .eq('id', id);
 
         if (error) throw error;
+        
+        if (redis && resultData?.category) {
+            redis.del(`leaderboard:${resultData.category}:all-time`, `leaderboard:${resultData.category}:weekly`).catch(e => console.warn("Redis del failed:", e));
+        }
+
         revalidatePath("/");
         return { success: true };
     } catch (error: unknown) {
@@ -275,6 +289,7 @@ export async function getLeaderboard(category: string, timeframe: 'all-time' | '
             .eq('category', category)
             .not('nickname', 'is', null)
             .neq('nickname', '')
+            .neq('nickname', 'Guest')
             .gt('score', 0);
 
         if (timeframe === 'weekly') {
@@ -330,8 +345,8 @@ export async function getLeaderboard(category: string, timeframe: 'all-time' | '
         }
 
         return finalResults;
-    } catch (error: unknown) {
-        console.error("❌ Failed to fetch leaderboard:", error instanceof Error ? error.message : "Unknown error");
+    } catch (error: any) {
+        console.error("❌ Failed to fetch leaderboard:", error?.message || JSON.stringify(error) || "Unknown error");
         return [];
     }
 }
