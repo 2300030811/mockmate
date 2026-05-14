@@ -8,6 +8,7 @@ import { withRetry } from "@/lib/retry";
 import { rateLimit } from "@/lib/rate-limit";
 
 import { getRawQuestions } from "@/app/actions/quiz";
+export { getRawQuestions };
 import { checkAnswer } from "@/utils/quiz-helpers";
 
 import { ActivityItem, LeaderboardItem } from "@/types/dashboard";

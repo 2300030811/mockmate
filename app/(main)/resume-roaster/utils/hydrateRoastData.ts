@@ -19,6 +19,8 @@ export function hydrateRoastData(serialized: string | null): RoastData | null {
 
     return {
       ...baseData,
+      jobTitle: baseData.jobTitle ?? undefined,
+      companyName: baseData.companyName ?? undefined,
       atsAnalysis: {
         ...baseData.atsAnalysis,
         atsScore,
