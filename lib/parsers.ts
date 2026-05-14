@@ -206,8 +206,10 @@ function normalizeQuestion(q: RawQuestion): QuizQuestion | null {
     // Detect MSQ if answer is multiple
     if (Array.isArray(newQ.answer) && (newQ.answer as any[]).length > 1) {
         newQ.type = "MSQ";
-    } else if (qType === 'multiple' || qType === 'msq') {
+    } else if (qType === 'multiple' || qType === 'msq' || qType === 'multi') {
         newQ.type = "MSQ";
+    } else if (qType === 'single') {
+        newQ.type = "mcq";
     }
 
     if (
