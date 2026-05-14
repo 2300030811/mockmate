@@ -155,6 +155,8 @@ export const getCorrectAnswers = (question: { answer: string | string[] | Record
   } else if (typeof rawAnswer === 'string') {
       if (rawAnswer.includes(',')) {
           rawArray = rawAnswer.split(',').map(s => s.trim());
+      } else if (/^[A-Z]{2,}$/i.test(rawAnswer)) {
+          rawArray = rawAnswer.toUpperCase().split('');
       } else {
           rawArray = [rawAnswer];
       }

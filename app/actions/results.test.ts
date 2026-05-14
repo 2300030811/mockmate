@@ -78,9 +78,16 @@ function buildAdminDb(params?: {
   });
   const quizEq = vi.fn().mockReturnThis();
   const quizGt = vi.fn().mockReturnThis();
+  const quizOrder = vi.fn().mockReturnThis();
+  const quizLimit = vi.fn().mockResolvedValue({
+    data: params?.existingResultId ? [{ id: params.existingResultId }] : [],
+    error: null,
+  });
   const quizSelect = vi.fn().mockReturnValue({
     eq: quizEq,
     gt: quizGt,
+    order: quizOrder,
+    limit: quizLimit,
     maybeSingle: quizMaybeSingle,
   });
 
