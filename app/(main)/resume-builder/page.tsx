@@ -1495,7 +1495,17 @@ export default function ResumeBuilderPage() {
     setIsGenerating(true);
 
     try {
-      const payload = buildPayload(templateId);
+      const templateField = event.currentTarget.elements.namedItem("templateId");
+      const selectedTemplateId =
+        templateField instanceof HTMLSelectElement
+          ? normalizeTemplateId(templateField.value)
+          : templateId;
+
+      if (selectedTemplateId !== templateId) {
+        setTemplateId(selectedTemplateId);
+      }
+
+      const payload = buildPayload(selectedTemplateId);
 
       const response = await fetch("/api/resume/generate", {
         method: "POST",
