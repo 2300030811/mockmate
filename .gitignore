@@ -61,3 +61,8 @@ mongodb1.json
 
 # LLM Scratch
 /scratch/
+
+# Reference Repositories
+/Resume-Matcher-main/
+/career-ops-main/
+/hiring-agent-main/

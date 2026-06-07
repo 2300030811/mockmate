@@ -8,9 +8,10 @@ import { QuizMode } from "@/types";
 function PCAPQuizContent() {
   const searchParams = useSearchParams();
   const modeParam = searchParams?.get("mode");
+  const countParam = searchParams?.get("count");
   const mode: QuizMode = (modeParam === "exam") ? "exam" : "practice";
 
-  return <UniversalQuizShell category="pcap" mode={mode} />;
+  return <UniversalQuizShell category="pcap" mode={mode} count={countParam} />;
 }
 
 export default function PCAPQuizPage() {

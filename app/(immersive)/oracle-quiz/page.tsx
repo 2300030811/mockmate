@@ -8,9 +8,10 @@ import { QuizMode } from "@/types";
 function OracleQuizContent() {
   const searchParams = useSearchParams();
   const modeParam = searchParams?.get("mode");
+  const countParam = searchParams?.get("count");
   const mode: QuizMode = (modeParam === "exam") ? "exam" : "practice";
 
-  return <UniversalQuizShell category="oracle" mode={mode} />;
+  return <UniversalQuizShell category="oracle" mode={mode} count={countParam} />;
 }
 
 export default function OracleQuizPage() {

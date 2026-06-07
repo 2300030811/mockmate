@@ -19,6 +19,7 @@ const nextConfig = {
     ],
 
     serverActions: {
+      bodySizeLimit: '8mb',
       // Extra allowed origins for reverse-proxy / preview deployments
       allowedOrigins: (() => {
         try {

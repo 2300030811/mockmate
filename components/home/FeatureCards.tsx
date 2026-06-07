@@ -52,6 +52,15 @@ const features = [
     delay: 0.4
   },
   {
+    Icon: Target,
+    title: "ATS Score Optimizer",
+    description: "Deep technical evaluation & precise ATS keyword matching",
+    href: "/ats-optimizer",
+    gradient: "from-blue-400 to-indigo-500",
+    shadow: "shadow-indigo-500/20",
+    delay: 0.45
+  },
+  {
     Icon: Flame,
     title: "Resume Roaster",
     description: "Brutally honest AI analysis of your resume & ATS score",

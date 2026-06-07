@@ -8,9 +8,10 @@ import { m, AnimatePresence } from 'framer-motion';
 
 interface ResumeUploadProps {
   onUpload: (file: File) => void;
+  onRemove?: () => void;
 }
 
-export const ResumeUpload: React.FC<ResumeUploadProps> = ({ onUpload }) => {
+export const ResumeUpload: React.FC<ResumeUploadProps> = ({ onUpload, onRemove }) => {
   const [dragActive, setDragActive] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
@@ -59,9 +60,11 @@ export const ResumeUpload: React.FC<ResumeUploadProps> = ({ onUpload }) => {
 
   const removeFile = () => {
     setFile(null);
+    setFileError(null);
     if (inputRef.current) {
       inputRef.current.value = '';
     }
+    onRemove?.();
   };
 
   return (

@@ -8,9 +8,10 @@ import { QuizMode } from "@/types";
 function AzureQuizContent() {
   const searchParams = useSearchParams();
   const modeParam = searchParams?.get("mode");
+  const countParam = searchParams?.get("count");
   const mode: QuizMode = (modeParam === "exam") ? "exam" : "practice";
 
-  return <UniversalQuizShell category="azure" mode={mode} />;
+  return <UniversalQuizShell category="azure" mode={mode} count={countParam} />;
 }
 
 export default function AzureQuizPage() {

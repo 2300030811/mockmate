@@ -40,6 +40,9 @@
     ".next/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "Resume-Matcher-main",
+    "career-ops-main",
+    "hiring-agent-main"
   ]
 }

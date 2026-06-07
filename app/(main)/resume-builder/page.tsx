@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { m } from "framer-motion";
 import {
@@ -14,12 +14,21 @@ import {
   FileText,
   GraduationCap,
   ListChecks,
+
   Plus,
   Sparkles,
   Trash2,
   TriangleAlert,
+  Upload,
+  Wand2,
+  X,
+  MessageSquareText,
 } from "lucide-react";
+import { parseResumeAction } from "@/app/actions/resume";
+import { generateCoverLetterAction, generateOutreachMessageAction } from "@/app/actions/cover-letter";
+import { processWizardTurnAction } from "@/app/actions/resume-wizard";
 import { NavigationPill } from "@/components/ui/NavigationPill";
+import { PaginatedPreview } from "@/components/resume-preview/paginated-preview";
 
 type ExperienceDraft = {
   id: string;
@@ -512,6 +521,26 @@ export default function ResumeBuilderPage() {
   ]);
 
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isTailoring, setIsTailoring] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [isTailoringModalOpen, setIsTailoringModalOpen] = useState(false);
+  const [isCoverLetterModalOpen, setIsCoverLetterModalOpen] = useState(false);
+  const [clJobDescription, setClJobDescription] = useState("");
+  const [generatedCoverLetter, setGeneratedCoverLetter] = useState("");
+  const [generatedOutreach, setGeneratedOutreach] = useState("");
+  const [isGeneratingCL, setIsGeneratingCL] = useState(false);
+  
+  const [isWizardModalOpen, setIsWizardModalOpen] = useState(false);
+  const [wizardMessages, setWizardMessages] = useState<{role: 'ai'|'user', content: string}[]>([
+    { role: 'ai', content: "Hi! I'm your resume building assistant. Let's build your master resume. What's your name, and what kind of role are you targeting?" }
+  ]);
+  const [wizardInput, setWizardInput] = useState("");
+  const [currentWizardSection, setCurrentWizardSection] = useState("intro");
+  const [isWizardLoading, setIsWizardLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const [jobDescription, setJobDescription] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isDraftReady, setIsDraftReady] = useState(false);
@@ -669,6 +698,19 @@ export default function ResumeBuilderPage() {
     customSections,
     isDraftReady,
   ]);
+
+  const setDraft = (data: any) => {
+    setName(data.name || name);
+    setEmail(data.email || email);
+    setPhone(data.phone || phone);
+    setLocation(data.location || location);
+    setLinkedin(data.linkedin || linkedin);
+    setPortfolio(data.portfolio || portfolio);
+    setSummary(data.summary || summary);
+    setSkillsInput(Array.isArray(data.skills) ? data.skills.join(", ") : skillsInput);
+    setLanguagesInput(Array.isArray(data.languages) ? data.languages.join(", ") : languagesInput);
+    setTechnologiesInput(Array.isArray(data.technologies) ? data.technologies.join(", ") : technologiesInput);
+  };
 
   const parsedSkills = useMemo(
     () =>
@@ -1165,7 +1207,274 @@ export default function ResumeBuilderPage() {
       // Fall back to generic error if body is not JSON.
     }
 
-    return "Failed to generate resume PDF. Please check your entries and try again.";
+    return "Failed to process request. Please check your entries and try again.";
+  };
+
+  const handleTailor = async () => {
+    if (!jobDescription.trim()) {
+      setError("Please paste a Job Description first.");
+      return;
+    }
+
+    try {
+      setIsTailoring(true);
+      setError(null);
+      setSuccessMessage(null);
+
+      const payload = buildPayload(templateId);
+
+      const response = await fetch("/api/resume/tailor", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ baseResume: payload, jobDescription }),
+      });
+
+      if (!response.ok) {
+        const message = await parseApiError(response);
+        throw new Error(message);
+      }
+
+      const data = await response.json();
+
+      if (data.summary) setSummary(data.summary);
+      if (data.skills) setSkillsInput(data.skills.join(", "));
+      if (data.technologies) setTechnologiesInput(data.technologies.join(", "));
+
+      if (data.experience) {
+        setExperiences(
+          data.experience.map((item: any) => ({
+            id: createDraftId(),
+            company: item.company || "",
+            period: item.period || "",
+            role: item.role || "",
+            highlightsText: (item.highlights || []).join("\n"),
+          }))
+        );
+      }
+
+      if (data.projects) {
+        setProjects(
+          data.projects.map((item: any) => ({
+            id: createDraftId(),
+            title: item.title || "",
+            period: item.period || "",
+            description: item.description || "",
+            link: item.link || "",
+            techStackText: (item.techStack || []).join(", "),
+          }))
+        );
+      }
+
+      setSuccessMessage("Resume tailored successfully to match the Job Description!");
+      setIsTailoringModalOpen(false);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to tailor resume. Please try again.");
+    } finally {
+      setIsTailoring(false);
+    }
+  };
+
+  const handleGenerateCoverLetter = async () => {
+    if (!clJobDescription.trim()) return;
+    setIsGeneratingCL(true);
+    setGeneratedCoverLetter("");
+    setGeneratedOutreach("");
+    try {
+      const resumeJson = JSON.stringify(buildPayload());
+      const [clRes, outRes] = await Promise.all([
+        generateCoverLetterAction(resumeJson, clJobDescription),
+        generateOutreachMessageAction(resumeJson, clJobDescription)
+      ]);
+      
+      if (clRes.data) setGeneratedCoverLetter(clRes.data);
+      if (outRes.data) setGeneratedOutreach(outRes.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsGeneratingCL(false);
+    }
+  };
+
+  const handleWizardSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!wizardInput.trim()) return;
+
+    const userMessage = wizardInput;
+    setWizardInput("");
+    setWizardMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    setIsWizardLoading(true);
+
+    try {
+      const resumeJson = JSON.stringify(buildPayload());
+      const res = await processWizardTurnAction(resumeJson, currentWizardSection, userMessage);
+      
+      if (res.error) {
+        setWizardMessages(prev => [...prev, { role: 'ai', content: "I encountered an error. Could you try answering that again?" }]);
+        return;
+      }
+
+      if (res.data) {
+        const data = res.data.resume_data;
+        if (data) {
+          if (data.name) setName(data.name);
+          if (data.email) setEmail(data.email);
+          if (data.phone) setPhone(data.phone);
+          if (data.location) setLocation(data.location);
+          if (data.linkedin) setLinkedin(data.linkedin);
+          if (data.portfolio) setPortfolio(data.portfolio);
+          if (data.summary) setSummary(data.summary);
+          if (data.skills) setSkillsInput(data.skills.join(", "));
+          if (data.technologies) setTechnologiesInput(data.technologies.join(", "));
+
+          if (data.experience && data.experience.length > 0) {
+            setExperiences(
+              data.experience.map((item: any) => ({
+                id: createDraftId(),
+                company: item.company || "",
+                period: item.period || "",
+                role: item.role || "",
+                highlightsText: (item.highlights || []).join("\n"),
+              }))
+            );
+          }
+
+          if (data.projects && data.projects.length > 0) {
+            setProjects(
+              data.projects.map((item: any) => ({
+                id: createDraftId(),
+                title: item.title || "",
+                period: item.period || "",
+                description: item.description || "",
+                link: item.link || "",
+                techStackText: (item.techStack || []).join(", "),
+              }))
+            );
+          }
+          
+          if (data.education && data.education.length > 0) {
+            setEducation(
+              data.education.map((item: any) => ({
+                id: createDraftId(),
+                program: item.program || "",
+                institution: item.institution || "",
+                period: item.period || "",
+                details: item.details || "",
+              }))
+            );
+          }
+        }
+        
+        // Add the next question
+        const nextQ = res.data.next_question;
+        if (nextQ) {
+          setWizardMessages(prev => [...prev, { role: 'ai', content: nextQ.text }]);
+          setCurrentWizardSection(nextQ.section);
+        }
+
+        if (res.data.is_complete) {
+          setWizardMessages(prev => [...prev, { role: 'ai', content: "It looks like we have all the basics! You can close this chat and review your resume, or keep giving me more details." }]);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      setWizardMessages(prev => [...prev, { role: 'ai', content: "Something went wrong. Let's try again." }]);
+    } finally {
+      setIsWizardLoading(false);
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+    }
+  };
+
+  const handleFileImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsImporting(true);
+      setError(null);
+      setSuccessMessage(null);
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const result = await parseResumeAction(formData);
+
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      const data = result.data;
+      if (!data) throw new Error("No data returned from AI parsing.");
+
+      if (data.name) setName(data.name);
+      if (data.email) setEmail(data.email);
+      if (data.phone) setPhone(data.phone);
+      if (data.location) setLocation(data.location);
+      if (data.linkedin) setLinkedin(data.linkedin);
+      if (data.portfolio) setPortfolio(data.portfolio);
+      if (data.summary) setSummary(data.summary);
+      if (data.skills) setSkillsInput(data.skills.join(", "));
+      if (data.technologies) setTechnologiesInput(data.technologies.join(", "));
+
+      if (data.experience && data.experience.length > 0) {
+        setExperiences(
+          data.experience.map((item: any) => ({
+            id: createDraftId(),
+            company: item.company || "",
+            period: item.period || "",
+            role: item.role || "",
+            highlightsText: (item.highlights || []).join("\n"),
+          }))
+        );
+      }
+
+      if (data.projects && data.projects.length > 0) {
+        setProjects(
+          data.projects.map((item: any) => ({
+            id: createDraftId(),
+            title: item.title || "",
+            period: item.period || "",
+            description: item.description || "",
+            link: item.link || "",
+            techStackText: (item.techStack || []).join(", "),
+          }))
+        );
+      }
+      
+      if (data.education && data.education.length > 0) {
+        setEducation(
+          data.education.map((item: any) => ({
+            id: createDraftId(),
+            program: item.program || "",
+            institution: item.institution || "",
+            period: item.period || "",
+            details: item.details || "",
+          }))
+        );
+      }
+      
+      if (data.certifications && data.certifications.length > 0) {
+        setCertifications(
+          data.certifications.map((item: any) => ({
+            id: createDraftId(),
+            name: item.name || "",
+            issuer: item.issuer || "",
+            year: item.year || "",
+          }))
+        );
+      }
+
+      setSuccessMessage("Resume imported successfully!");
+    } catch (err: any) {
+      setError(err.message || "Failed to import resume.");
+    } finally {
+      setIsImporting(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
   };
 
   const handleGenerate = async (event: FormEvent<HTMLFormElement>) => {
@@ -1254,10 +1563,10 @@ export default function ResumeBuilderPage() {
             <Sparkles size={13} /> Resume Builder
           </div>
           <h1 className="text-4xl md:text-5xl font-black tracking-tight text-gray-900 dark:text-white mb-3">
-            Build a polished resume PDF in minutes
+            Build a polished, AI-tailored resume in seconds
           </h1>
           <p className="text-gray-600 dark:text-gray-400 max-w-3xl mx-auto text-sm md:text-base leading-relaxed">
-            Fill your details once, generate a clean resume instantly, and download it as PDF using the built-in template engine.
+            Import your existing resume, let the AI automatically tailor it to any job description, and download a beautifully formatted PDF instantly.
           </p>
         </m.header>
 
@@ -1997,6 +2306,86 @@ export default function ResumeBuilderPage() {
           </div>
 
           <aside className="space-y-6 xl:sticky xl:top-24">
+            <section className="bg-white/70 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-3xl p-4 backdrop-blur-md shadow-lg dark:shadow-none transition-colors duration-300 space-y-2.5">
+              <button
+                type="submit"
+                disabled={isGenerating}
+                className="w-full rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-black text-sm uppercase tracking-wider px-4 py-3 transition-all inline-flex items-center justify-center gap-2"
+              >
+                <Download size={15} /> {isGenerating ? "Generating..." : "Generate PDF"}
+              </button>
+              
+              <input 
+                type="file" 
+                accept=".pdf,.txt,.md" 
+                ref={fileInputRef} 
+                onChange={handleFileImport} 
+                className="hidden" 
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isImporting}
+                className="w-full rounded-xl bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 text-blue-600 dark:text-blue-400 font-bold text-sm px-4 py-3 transition-colors inline-flex items-center justify-center gap-2"
+              >
+                <Upload size={15} /> {isImporting ? "Importing..." : "Import Profile"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsTailoringModalOpen(true)}
+                className="w-full rounded-xl bg-purple-600/10 hover:bg-purple-600/20 border border-purple-500/30 text-purple-600 dark:text-purple-400 font-bold text-sm px-4 py-3 transition-colors inline-flex items-center justify-center gap-2"
+              >
+                <Wand2 size={15} /> Tailor with AI
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsCoverLetterModalOpen(true)}
+                className="w-full rounded-xl bg-teal-600/10 hover:bg-teal-600/20 border border-teal-500/30 text-teal-600 dark:text-teal-400 font-bold text-sm px-4 py-3 transition-colors inline-flex items-center justify-center gap-2"
+              >
+                <FileText size={15} /> Cover Letter & Outreach
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsWizardModalOpen(true)}
+                className="w-full rounded-xl bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/30 text-indigo-600 dark:text-indigo-400 font-bold text-sm px-4 py-3 transition-colors inline-flex items-center justify-center gap-2"
+              >
+                <MessageSquareText size={15} /> Chat to Build
+              </button>
+
+              <button
+                type="button"
+                onClick={loadSampleData}
+                className="w-full rounded-xl border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 font-bold text-sm px-4 py-2.5 transition-colors"
+              >
+                Load Sample Profile
+              </button>
+
+              <button
+                type="button"
+                onClick={resetForm}
+                className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/40 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold text-sm px-4 py-2.5 transition-colors"
+              >
+                Reset Form
+              </button>
+
+              <button
+                type="button"
+                onClick={clearSavedDraft}
+                className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/40 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold text-sm px-4 py-2.5 transition-colors"
+              >
+                Clear Saved Draft Only
+              </button>
+
+              <Link
+                href="/resume-roaster"
+                className="block w-full rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold text-sm px-4 py-2.5 transition-colors text-center"
+              >
+                Need ATS critique first?
+              </Link>
+            </section>
             <section className="bg-white/70 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 backdrop-blur-md shadow-lg dark:shadow-none transition-colors duration-300">
               <h2 className="text-sm font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-4">
                 Quick Snapshot
@@ -2083,252 +2472,27 @@ export default function ResumeBuilderPage() {
                 </span>
               </div>
 
-              <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/40 p-4">
-                <div className="max-h-[34rem] overflow-y-auto pr-1 space-y-4">
-                  <div className="border-b border-gray-200 dark:border-gray-700 pb-3">
-                    <p className="text-base font-black text-gray-900 dark:text-white leading-tight">
-                      {name.trim() || "Your Name"}
-                    </p>
-                    <p className="text-[10px] font-semibold text-cyan-700 dark:text-cyan-300 mt-1 uppercase tracking-wider">
-                      {templateId === "rendercv" ? "RenderCV Classic Template" : "Modern Gradient Template"}
-                    </p>
-                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
-                      {[location.trim(), phone.trim(), email.trim()].filter(Boolean).join(" • ") ||
-                        "Location • email@example.com"}
-                    </p>
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      {linkedin.trim() && (
-                        <span className="text-[10px] font-medium px-2 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300">
-                          LinkedIn: {previewSnippet(clampText(linkedin, MAX_LINKEDIN_LENGTH), 34)}
-                        </span>
-                      )}
-                      {portfolio.trim() && (
-                        <span className="text-[10px] font-medium px-2 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300">
-                          Portfolio: {previewSnippet(clampText(portfolio, MAX_PORTFOLIO_LENGTH), 34)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">
-                      Summary
-                    </p>
-                    <p className="text-[11px] text-gray-700 dark:text-gray-300 leading-relaxed">
-                      {summary.trim()
-                        ? previewSnippet(clampText(summary, MAX_SUMMARY_LENGTH), 300)
-                        : "Add your professional summary to preview your narrative here."}
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">
-                      Skills
-                    </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {parsedSkills.length === 0 ? (
-                        <span className="text-[10px] text-gray-500 dark:text-gray-400">No skills added yet</span>
-                      ) : (
-                        <>
-                          {parsedSkills.slice(0, 12).map((skill, index) => (
-                            <span
-                              key={`preview-skill-${index}-${skill}`}
-                              className="text-[10px] font-semibold px-2 py-1 rounded-md border border-cyan-500/20 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300"
-                            >
-                              {skill}
-                            </span>
-                          ))}
-                          {parsedSkills.length > 12 && (
-                            <span className="text-[10px] font-semibold px-2 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300">
-                              +{parsedSkills.length - 12} more
-                            </span>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-black/20 px-2.5 py-2">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">
-                        Languages
-                      </p>
-                      {parsedLanguages.length === 0 ? (
-                        <p className="text-[10px] text-gray-500 dark:text-gray-400">Not added</p>
-                      ) : (
-                        <p className="text-[10px] text-gray-700 dark:text-gray-300 leading-relaxed">
-                          {parsedLanguages.slice(0, 8).join(" • ")}
-                          {parsedLanguages.length > 8 ? ` • +${parsedLanguages.length - 8} more` : ""}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-black/20 px-2.5 py-2">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">
-                        Technologies
-                      </p>
-                      {parsedTechnologies.length === 0 ? (
-                        <p className="text-[10px] text-gray-500 dark:text-gray-400">Not added</p>
-                      ) : (
-                        <p className="text-[10px] text-gray-700 dark:text-gray-300 leading-relaxed">
-                          {parsedTechnologies.slice(0, 8).join(" • ")}
-                          {parsedTechnologies.length > 8 ? ` • +${parsedTechnologies.length - 8} more` : ""}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">
-                      Experience
-                    </p>
-                    {previewExperienceItems.length === 0 ? (
-                      <p className="text-[10px] text-gray-500 dark:text-gray-400">No roles added yet</p>
-                    ) : (
-                      <div className="space-y-2.5">
-                        {previewExperienceItems.map((item, index) => (
-                          <div
-                            key={`preview-exp-${index}`}
-                            className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-black/20 px-2.5 py-2"
-                          >
-                            <p className="text-[11px] font-semibold text-gray-800 dark:text-gray-200">
-                              {item.role || "Role"}
-                              {item.company ? ` • ${item.company}` : ""}
-                            </p>
-                            <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-1">{item.period || "Period"}</p>
-                            {item.highlights.length > 0 && (
-                              <div className="space-y-1">
-                                {item.highlights.map((highlight, highlightIndex) => (
-                                  <p
-                                    key={`preview-exp-highlight-${index}-${highlightIndex}`}
-                                    className="text-[10px] text-gray-600 dark:text-gray-300 leading-relaxed"
-                                  >
-                                    • {previewSnippet(highlight, 120)}
-                                  </p>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">
-                      Projects
-                    </p>
-                    {previewProjectItems.length === 0 ? (
-                      <p className="text-[10px] text-gray-500 dark:text-gray-400">No projects added yet</p>
-                    ) : (
-                      <div className="space-y-2.5">
-                        {previewProjectItems.map((item, index) => (
-                          <div
-                            key={`preview-project-${index}`}
-                            className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-black/20 px-2.5 py-2"
-                          >
-                            <p className="text-[11px] font-semibold text-gray-800 dark:text-gray-200">
-                              {item.title || "Project"}
-                              {item.period ? ` • ${item.period}` : ""}
-                            </p>
-                            <p className="text-[10px] text-gray-600 dark:text-gray-300 leading-relaxed mt-1">
-                              {item.description
-                                ? previewSnippet(item.description, 120)
-                                : "Add project details to preview impact."}
-                            </p>
-                            {item.techStack.length > 0 && (
-                              <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1.5">
-                                {item.techStack.join(" • ")}
-                              </p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-black/20 px-2.5 py-2">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">
-                        Education
-                      </p>
-                      {previewEducationItems.length === 0 ? (
-                        <p className="text-[10px] text-gray-500 dark:text-gray-400">Not added</p>
-                      ) : (
-                        previewEducationItems.map((item, index) => (
-                          <p key={`preview-education-${index}`} className="text-[10px] text-gray-700 dark:text-gray-300">
-                            {item.program || "Program"}
-                            {item.institution ? `, ${item.institution}` : ""}
-                            {item.period ? ` (${item.period})` : ""}
-                          </p>
-                        ))
-                      )}
-                    </div>
-
-                    <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-black/20 px-2.5 py-2">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">
-                        Certifications
-                      </p>
-                      {previewCertificationItems.length === 0 ? (
-                        <p className="text-[10px] text-gray-500 dark:text-gray-400">Not added</p>
-                      ) : (
-                        previewCertificationItems.map((item, index) => (
-                          <p
-                            key={`preview-cert-${index}`}
-                            className="text-[10px] text-gray-700 dark:text-gray-300 leading-relaxed"
-                          >
-                            {item.name || "Certification"}
-                            {item.issuer ? ` • ${item.issuer}` : ""}
-                            {item.year ? ` (${item.year})` : ""}
-                          </p>
-                        ))
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-black/20 px-2.5 py-2">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">
-                        Publications
-                      </p>
-                      {previewPublicationItems.length === 0 ? (
-                        <p className="text-[10px] text-gray-500 dark:text-gray-400">Not added</p>
-                      ) : (
-                        <div className="space-y-1.5">
-                          {previewPublicationItems.map((item, index) => (
-                            <p key={`preview-publication-${index}`} className="text-[10px] text-gray-700 dark:text-gray-300 leading-relaxed">
-                              {item.title || "Publication"}
-                              {item.date ? ` (${item.date})` : ""}
-                            </p>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-black/20 px-2.5 py-2">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">
-                        Custom Sections
-                      </p>
-                      {previewCustomSectionItems.length === 0 ? (
-                        <p className="text-[10px] text-gray-500 dark:text-gray-400">Not added</p>
-                      ) : (
-                        <div className="space-y-1.5">
-                          {previewCustomSectionItems.map((item, index) => (
-                            <p key={`preview-custom-${index}`} className="text-[10px] text-gray-700 dark:text-gray-300 leading-relaxed">
-                              {item.title || "Section"}
-                              {item.entries[0] ? `: ${previewSnippet(item.entries[0], 70)}` : ""}
-                            </p>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
+              <div className="h-[40rem] w-full mt-4">
+                <PaginatedPreview
+                  name={name}
+                  templateId={templateId}
+                  location={location}
+                  phone={phone}
+                  email={email}
+                  linkedin={linkedin}
+                  portfolio={portfolio}
+                  summary={summary}
+                  skills={parsedSkills}
+                  languages={parsedLanguages}
+                  technologies={parsedTechnologies}
+                  experienceItems={experiences}
+                  projectItems={projects}
+                  educationItems={education}
+                  certificationItems={certifications}
+                  publicationItems={publications}
+                  customSectionItems={customSections}
+                />
               </div>
-
-              <p className="mt-3 text-[10px] text-gray-500 dark:text-gray-400">
-                Preview shows the first 2 entries from each section to keep it readable while you edit.
-              </p>
             </section>
 
             {error && (
@@ -2345,49 +2509,203 @@ export default function ResumeBuilderPage() {
               </section>
             )}
 
-            <section className="bg-white/70 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-3xl p-4 backdrop-blur-md shadow-lg dark:shadow-none transition-colors duration-300 space-y-2.5">
-              <button
-                type="submit"
-                disabled={isGenerating}
-                className="w-full rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-black text-sm uppercase tracking-wider px-4 py-3 transition-all inline-flex items-center justify-center gap-2"
-              >
-                <Download size={15} /> {isGenerating ? "Generating..." : "Generate PDF"}
-              </button>
 
-              <button
-                type="button"
-                onClick={loadSampleData}
-                className="w-full rounded-xl border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 font-bold text-sm px-4 py-2.5 transition-colors"
-              >
-                Load Sample Profile
-              </button>
-
-              <button
-                type="button"
-                onClick={resetForm}
-                className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/40 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold text-sm px-4 py-2.5 transition-colors"
-              >
-                Reset Form
-              </button>
-
-              <button
-                type="button"
-                onClick={clearSavedDraft}
-                className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/40 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold text-sm px-4 py-2.5 transition-colors"
-              >
-                Clear Saved Draft Only
-              </button>
-
-              <Link
-                href="/resume-roaster"
-                className="block w-full rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold text-sm px-4 py-2.5 transition-colors text-center"
-              >
-                Need ATS critique first?
-              </Link>
-            </section>
           </aside>
         </form>
       </div>
+
+      {isTailoringModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
+          <m.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-800 w-full max-w-2xl overflow-hidden"
+          >
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50">
+              <h3 className="text-lg font-black tracking-wide text-gray-900 dark:text-white flex items-center gap-2">
+                <Wand2 size={20} className="text-purple-500" /> Auto-Tailor Resume
+              </h3>
+              <button
+                onClick={() => setIsTailoringModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                disabled={isTailoring}
+              >
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                Paste the Job Description below. Our AI will automatically rewrite your Professional Summary, 
+                reorder your Experience bullets based on relevance, and select the top matching Skills and Projects.
+                <strong className="block mt-2 text-purple-600 dark:text-purple-400">Your form state will be instantly updated. Make sure you load your base profile first!</strong>
+              </p>
+              
+              <textarea
+                value={jobDescription}
+                onChange={(e) => setJobDescription(e.target.value)}
+                placeholder="Paste the target Job Description here..."
+                className="w-full h-48 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 p-4 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500/40 resize-none font-mono"
+                disabled={isTailoring}
+              />
+            </div>
+            
+            <div className="p-6 border-t border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 flex justify-end gap-3">
+              <button
+                onClick={() => setIsTailoringModalOpen(false)}
+                disabled={isTailoring}
+                className="px-5 py-2.5 rounded-xl font-bold text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleTailor}
+                disabled={isTailoring || !jobDescription.trim()}
+                className="px-5 py-2.5 rounded-xl font-black text-sm text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+              >
+                {isTailoring ? "Tailoring..." : "Tailor Resume"}
+              </button>
+            </div>
+          </m.div>
+        </div>
+      )}
+
+      {isCoverLetterModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
+          <m.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-800 w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+          >
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50">
+              <h3 className="text-lg font-black tracking-wide text-gray-900 dark:text-white flex items-center gap-2">
+                <FileText size={20} className="text-teal-500" /> Cover Letter & Outreach Generator
+              </h3>
+              <button
+                onClick={() => setIsCoverLetterModalOpen(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto space-y-6">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                  Target Job Description
+                </label>
+                <textarea
+                  value={clJobDescription}
+                  onChange={(e) => setClJobDescription(e.target.value)}
+                  placeholder="Paste the job description here..."
+                  className="w-full h-32 px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all resize-none text-sm"
+                />
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleGenerateCoverLetter}
+                  disabled={isGeneratingCL || !clJobDescription.trim()}
+                  className="rounded-xl bg-teal-600 hover:bg-teal-500 disabled:opacity-50 text-white font-bold px-6 py-3 transition-colors flex items-center gap-2"
+                >
+                  <Wand2 size={16} /> {isGeneratingCL ? "Generating..." : "Generate Materials"}
+                </button>
+              </div>
+
+              {generatedCoverLetter && (
+                <div className="space-y-4">
+                  <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 p-5 rounded-2xl">
+                    <h4 className="font-bold text-gray-900 dark:text-white mb-3">Tailored Cover Letter</h4>
+                    <textarea 
+                      className="w-full h-64 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 text-sm"
+                      value={generatedCoverLetter}
+                      onChange={(e) => setGeneratedCoverLetter(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 p-5 rounded-2xl">
+                    <h4 className="font-bold text-gray-900 dark:text-white mb-3">LinkedIn Cold Outreach Message</h4>
+                    <textarea 
+                      className="w-full h-32 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 text-sm"
+                      value={generatedOutreach}
+                      onChange={(e) => setGeneratedOutreach(e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </m.div>
+        </div>
+      )}
+
+      {isWizardModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
+          <m.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-800 w-full max-w-2xl h-[80vh] flex flex-col overflow-hidden"
+          >
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 flex-shrink-0">
+              <div>
+                <h3 className="text-lg font-black tracking-wide text-gray-900 dark:text-white flex items-center gap-2">
+                  <MessageSquareText size={20} className="text-indigo-500" /> Resume Wizard
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Chat with AI to build your master resume progressively.</p>
+              </div>
+              <button
+                onClick={() => setIsWizardModalOpen(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {wizardMessages.map((msg, i) => (
+                <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[80%] rounded-2xl p-4 text-sm ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-bl-none'}`}>
+                    {msg.content}
+                  </div>
+                </div>
+              ))}
+              {isWizardLoading && (
+                <div className="flex justify-start">
+                  <div className="max-w-[80%] rounded-2xl p-4 bg-gray-100 dark:bg-gray-800 text-gray-500 text-sm rounded-bl-none flex items-center gap-2">
+                    <span className="animate-pulse">●</span>
+                    <span className="animate-pulse animation-delay-200">●</span>
+                    <span className="animate-pulse animation-delay-400">●</span>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 flex-shrink-0">
+              <form onSubmit={handleWizardSubmit} className="flex gap-2">
+                <input
+                  type="text"
+                  value={wizardInput}
+                  onChange={(e) => setWizardInput(e.target.value)}
+                  placeholder="Type your answer here..."
+                  className="flex-1 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all text-sm"
+                  disabled={isWizardLoading}
+                />
+                <button
+                  type="submit"
+                  disabled={isWizardLoading || !wizardInput.trim()}
+                  className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold rounded-xl transition-colors"
+                >
+                  Send
+                </button>
+              </form>
+              <div className="mt-2 text-xs text-center text-gray-500">
+                You can close this chat at any time. Your resume updates in real-time in the background!
+              </div>
+            </div>
+          </m.div>
+        </div>
+      )}
     </div>
   );
 }
