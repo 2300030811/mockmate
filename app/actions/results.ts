@@ -37,8 +37,8 @@ export async function saveQuizResult(data: {
 
     try {
         const { data: { user } } = await withRetry(
-          () => supabase.auth.getUser(),
-          { retries: 1, baseDelay: 1000, label: "Save result auth" }
+            () => supabase.auth.getUser(),
+            { retries: 1, baseDelay: 1000, label: "Save result auth" }
         ).then(r => r).catch(() => ({ data: { user: null } }));
         const userId = user?.id || null;
 
@@ -144,46 +144,46 @@ export async function saveQuizResult(data: {
 
         // Use Admin Client to INSERT
         const { error } = await withRetry(
-          () => Promise.resolve(adminDb
-            .from('quiz_results')
-            .insert({
-                session_id: data.sessionId,
-                user_id: userId,
-                category: data.category,
-                score: scoreToSave,
-                total_questions: data.totalQuestions, // Ensure strict consistency with client-provided exam amount
-                nickname: finalNickname,
-                completed_at: new Date().toISOString()
-            })),
-          { retries: 2, baseDelay: 1000, label: "Insert quiz result" }
+            () => Promise.resolve(adminDb
+                .from('quiz_results')
+                .insert({
+                    session_id: data.sessionId,
+                    user_id: userId,
+                    category: data.category,
+                    score: scoreToSave,
+                    total_questions: data.totalQuestions, // Ensure strict consistency with client-provided exam amount
+                    nickname: finalNickname,
+                    completed_at: new Date().toISOString()
+                })),
+            { retries: 2, baseDelay: 1000, label: "Insert quiz result" }
         );
 
         if (error) throw error;
 
         // ── Sync XP, Streak, Elo on profiles ──
         if (userId) {
-          try {
-            const isArena = data.category.includes("arena") || !!data.arenaStatus;
-            const { parseArenaStatus } = await import("@/lib/arena-category");
-            const winStatus = data.arenaStatus || parseArenaStatus(data.category);
+            try {
+                const isArena = data.category.includes("arena") || !!data.arenaStatus;
+                const { parseArenaStatus } = await import("@/lib/arena-category");
+                const winStatus = data.arenaStatus || parseArenaStatus(data.category);
 
-            const syncType = isArena && winStatus
-              ? "arena" as const
-              : data.category === "daily-challenge"
-                ? "daily-challenge" as const
-                : "quiz" as const;
+                const syncType = isArena && winStatus
+                    ? "arena" as const
+                    : data.category === "daily-challenge"
+                        ? "daily-challenge" as const
+                        : "quiz" as const;
 
-            await syncProfileStats({
-              userId,
-              type: syncType,
-              score: scoreToSave,
-              totalQuestions: data.arenaTotalQuestions || data.totalQuestions,
-              arenaStatus: winStatus,
-            });
-          } catch (syncErr) {
-            // Non-fatal — the quiz result was saved, stats sync can be retried
-            console.error("⚠️ Failed to sync profile stats:", syncErr);
-          }
+                await syncProfileStats({
+                    userId,
+                    type: syncType,
+                    score: scoreToSave,
+                    totalQuestions: data.arenaTotalQuestions || data.totalQuestions,
+                    arenaStatus: winStatus,
+                });
+            } catch (syncErr) {
+                // Non-fatal — the quiz result was saved, stats sync can be retried
+                console.error("⚠️ Failed to sync profile stats:", syncErr);
+            }
         }
 
         if (redis) {
@@ -218,8 +218,8 @@ export async function getRecentResults(sessionId?: string): Promise<ActivityItem
         }
 
         const { data, error } = await withRetry(
-          () => Promise.resolve(query),
-          { retries: 2, baseDelay: 1000, label: "Fetch results" }
+            () => Promise.resolve(query),
+            { retries: 2, baseDelay: 1000, label: "Fetch results" }
         );
 
         if (error) throw error;
@@ -251,7 +251,7 @@ export async function updateQuizResultNickname(id: string, nickname: string) {
             .eq('id', id);
 
         if (error) throw error;
-        
+
         if (redis && resultData?.category) {
             redis.del(`leaderboard:${resultData.category}:all-time`, `leaderboard:${resultData.category}:weekly`).catch(e => console.warn("Redis del failed:", e));
         }
