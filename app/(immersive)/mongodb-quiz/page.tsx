@@ -9,9 +9,10 @@ import { QuizMode } from "@/types";
 function MongoDBQuizContent() {
   const searchParams = useSearchParams();
   const modeParam = searchParams?.get("mode");
+  const countParam = searchParams?.get("count");
   const mode: QuizMode = (modeParam === "exam") ? "exam" : "practice";
 
-  return <UniversalQuizShell category="mongodb" mode={mode} />;
+  return <UniversalQuizShell category="mongodb" mode={mode} count={countParam} />;
 }
 
 export default function MongoDBQuizPage() {

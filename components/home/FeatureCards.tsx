@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { m } from "framer-motion";
 import { InteractiveCard } from "@/components/ui/Card";
-import { BrainCircuit, Mic, Trophy, Rocket, Flame, Layers, Swords, Code2, FileText, Globe } from "lucide-react";
+import { BrainCircuit, Mic, Trophy, Rocket, Flame, Layers, Swords, Code2, FileText, Globe, Target } from "lucide-react";
 
 const features = [
   {
@@ -50,6 +50,15 @@ const features = [
     gradient: "from-orange-400 to-amber-500",
     shadow: "shadow-orange-500/20",
     delay: 0.4
+  },
+  {
+    Icon: Target,
+    title: "ATS Score Optimizer",
+    description: "Deep technical evaluation & precise ATS keyword matching",
+    href: "/ats-optimizer",
+    gradient: "from-blue-400 to-indigo-500",
+    shadow: "shadow-indigo-500/20",
+    delay: 0.45
   },
   {
     Icon: Flame,

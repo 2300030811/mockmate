@@ -42,6 +42,10 @@ export default function CareerPathPage() {
     setFile(uploadedFile);
   }, []);
 
+  const handleRemoveFile = React.useCallback(() => {
+    setFile(null);
+  }, []);
+
   const handleAnalyze = React.useCallback(async (jobRole: string, company: string, jobDescription?: string) => {
     if (!file) return;
 
@@ -171,7 +175,7 @@ export default function CareerPathPage() {
                   {error}
                 </div>
               )}
-              <ResumeUpload onUpload={handleUpload} />
+              <ResumeUpload onUpload={handleUpload} onRemove={handleRemoveFile} />
 
               {file && (
                 <JobInput

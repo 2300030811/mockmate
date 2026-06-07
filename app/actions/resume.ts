@@ -12,6 +12,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { deriveAtsMatchRating } from "@/types/ats-score";
 import { computeAtsEngineScores } from "@/lib/ats-engine";
 import { clampScore } from "@/utils/math";
+import { resumeGeneratePayloadSchema } from "../api/resume/generate/schema";
 
 
 export async function roastResumeAction(
@@ -204,5 +205,88 @@ Rules:
   } catch (error: unknown) {
     logger.error("Roast Error:", error);
     return { data: null, raw: "", error: "Failed to roast resume." };
+  }
+}
+
+export async function parseResumeAction(
+  formData: FormData
+): Promise<{ data: any | null; error?: string }> {
+  try {
+    const { success: withinLimit, message: limitMsg } = await rateLimit("default");
+    if (!withinLimit) {
+      return { data: null, error: limitMsg || "Rate limit exceeded." };
+    }
+
+    const file = formData.get("file") as File;
+    if (!file || !(file instanceof File)) throw new Error("No file uploaded");
+
+    let resumeText = "";
+    if (file.type === "application/pdf") {
+      const arrayBuffer = await file.arrayBuffer();
+      const ocrResult = await OCRService.extractText(Buffer.from(arrayBuffer));
+      resumeText = ocrResult.text;
+    } else {
+      resumeText = await file.text();
+    }
+
+    if (resumeText.length < 50) {
+      return { data: null, error: "Resume content too short or unreadable." };
+    }
+
+    const prompt = `You are an expert Resume Parser. Your task is to extract information from the raw resume text provided and map it strictly to the requested JSON schema.
+    
+CRITICAL RULES:
+1. NEVER invent, hallucinate, or assume any information that is not explicitly in the text.
+2. If a field is not present in the text, leave it blank or as an empty array.
+3. Extract Name, Email, Phone, Location, Summary, Skills, Technologies, Experience (company, role, period, highlights), Projects, Education, and Certifications.
+4. Output strictly valid JSON matching the schema.
+
+RAW RESUME TEXT:
+${sanitizePromptInput(resumeText, 25000)}
+`;
+
+    let content = "";
+    
+    const numGroqKeys = getNumKeys("GROQ_API_KEY") || 1;
+    for (let i = 0; i < numGroqKeys; i++) {
+      try {
+        const apiKey = getNextKey("GROQ_API_KEY") || process.env.GROQ_API_KEY;
+        if (!apiKey) throw new Error("Groq API Key missing");
+
+        const groq = new Groq({ apiKey });
+        const chatCompletion = await groq.chat.completions.create({
+          messages: [
+            {
+              role: "system",
+              content: "You extract resume text into structured JSON format.",
+            },
+            { role: "user", content: prompt },
+          ],
+          model: "llama-3.3-70b-versatile",
+          temperature: 0.1,
+          response_format: { type: "json_object" },
+        });
+
+        content = chatCompletion.choices[0]?.message?.content || "";
+        if (content) break;
+      } catch (groqErr) {
+        logger.warn(`Resume parse: Groq key ${i + 1} failed`, groqErr);
+      }
+    }
+
+    if (!content) {
+      return { data: null, error: "Failed to parse resume with AI." };
+    }
+
+    const parsedData = safeJsonParse(content, resumeGeneratePayloadSchema);
+    if (!parsedData) {
+      logger.error("Resume parse: failed to parse model output into ResumeGeneratePayload schema.");
+      return { data: null, error: "Analysis failed to parse. Please try again." };
+    }
+
+    return { data: parsedData };
+  } catch (error: unknown) {
+    logger.error("Parse Error:", error);
+    return { data: null, error: "Failed to parse resume." };
   }
 }

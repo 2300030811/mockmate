@@ -190,21 +190,29 @@ export function AtsScoreDashboard({ data }: AtsScoreDashboardProps) {
         <div className="bg-emerald-50 dark:bg-emerald-500/5 border border-emerald-100 dark:border-emerald-500/10 rounded-3xl p-6 shadow-sm">
           <h3 className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mb-5">Present Keywords</h3>
           <div className="flex flex-wrap gap-2">
-            {data.presentKeywords.map((kw, i) => (
-              <span key={i} className="px-3 py-1.5 bg-emerald-100/50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold rounded-xl lowercase">
-                {kw}
-              </span>
-            ))}
+            {data.presentKeywords.length > 0 ? (
+              data.presentKeywords.map((kw, i) => (
+                <span key={i} className="px-3 py-1.5 bg-emerald-100/50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold rounded-xl lowercase">
+                  {kw}
+                </span>
+              ))
+            ) : (
+              <p className="text-xs text-gray-500 dark:text-gray-400">No target keywords were confidently detected.</p>
+            )}
           </div>
         </div>
         <div className="bg-red-50 dark:bg-red-500/5 border border-red-100 dark:border-red-500/10 rounded-3xl p-6 shadow-sm">
           <h3 className="text-xs font-bold uppercase tracking-widest text-red-600 dark:text-red-400 mb-5">Missing Keywords</h3>
           <div className="flex flex-wrap gap-2">
-            {data.missingKeywords.map((kw, i) => (
-              <span key={i} className="px-3 py-1.5 bg-red-100/50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-700 dark:text-red-300 text-[10px] font-bold rounded-xl lowercase">
-                {kw}
-              </span>
-            ))}
+            {data.missingKeywords.length > 0 ? (
+              data.missingKeywords.map((kw, i) => (
+                <span key={i} className="px-3 py-1.5 bg-red-100/50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-700 dark:text-red-300 text-[10px] font-bold rounded-xl lowercase">
+                  {kw}
+                </span>
+              ))
+            ) : (
+              <p className="text-xs text-gray-500 dark:text-gray-400">No high-priority missing keywords were found.</p>
+            )}
           </div>
         </div>
       </m.div>

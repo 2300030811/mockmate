@@ -8,9 +8,10 @@ import { QuizMode } from "@/types";
 function AWSQuizContent() {
   const searchParams = useSearchParams();
   const modeParam = searchParams?.get("mode");
+  const countParam = searchParams?.get("count");
   const mode: QuizMode = (modeParam === "exam") ? "exam" : "practice";
 
-  return <UniversalQuizShell category="aws" mode={mode} />;
+  return <UniversalQuizShell category="aws" mode={mode} count={countParam} />;
 }
 
 export default function AWSQuizPage() {
