@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { m } from "framer-motion";
 import { InteractiveCard } from "@/components/ui/Card";
-import { BrainCircuit, Mic, Trophy, Rocket, Flame, Layers, Swords, Code2, FileText, Globe } from "lucide-react";
+import { BrainCircuit, Mic, Trophy, Rocket, Flame, Layers, Swords, Code2, FileText, Globe, Target } from "lucide-react";
 
 const features = [
   {
