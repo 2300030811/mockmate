@@ -27,7 +27,6 @@ import {
 import { parseResumeAction } from "@/app/actions/resume";
 import { generateCoverLetterAction, generateOutreachMessageAction } from "@/app/actions/cover-letter";
 import { processWizardTurnAction } from "@/app/actions/resume-wizard";
-import { tailorResumeAction } from "@/app/actions/resume-tailor";
 import { NavigationPill } from "@/components/ui/NavigationPill";
 import { PaginatedPreview } from "@/components/resume-preview/paginated-preview";
 
@@ -1223,20 +1222,27 @@ export default function ResumeBuilderPage() {
       setSuccessMessage(null);
 
       const payload = buildPayload(templateId);
-      const result = await tailorResumeAction(JSON.stringify(payload), jobDescription);
 
-      if (result.error) {
-        throw new Error(result.error);
+      const response = await fetch("/api/resume/tailor", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ baseResume: payload, jobDescription }),
+      });
+
+      if (!response.ok) {
+        const message = await parseApiError(response);
+        throw new Error(message);
       }
 
-      const data = result.data;
-      if (!data) throw new Error("No data returned from AI tailoring.");
+      const data = await response.json();
 
       if (data.summary) setSummary(data.summary);
       if (data.skills) setSkillsInput(data.skills.join(", "));
       if (data.technologies) setTechnologiesInput(data.technologies.join(", "));
 
-      if (data.experience && data.experience.length > 0) {
+      if (data.experience) {
         setExperiences(
           data.experience.map((item: any) => ({
             id: createDraftId(),
@@ -1248,7 +1254,7 @@ export default function ResumeBuilderPage() {
         );
       }
 
-      if (data.projects && data.projects.length > 0) {
+      if (data.projects) {
         setProjects(
           data.projects.map((item: any) => ({
             id: createDraftId(),
@@ -1263,9 +1269,9 @@ export default function ResumeBuilderPage() {
 
       setSuccessMessage("Resume tailored successfully to match the Job Description!");
       setIsTailoringModalOpen(false);
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      setError(err.message || "Failed to tailor resume. Please try again.");
+      alert("Failed to tailor resume. Please try again.");
     } finally {
       setIsTailoring(false);
     }
@@ -1276,26 +1282,17 @@ export default function ResumeBuilderPage() {
     setIsGeneratingCL(true);
     setGeneratedCoverLetter("");
     setGeneratedOutreach("");
-    setError(null);
     try {
       const resumeJson = JSON.stringify(buildPayload());
       const [clRes, outRes] = await Promise.all([
         generateCoverLetterAction(resumeJson, clJobDescription),
         generateOutreachMessageAction(resumeJson, clJobDescription)
       ]);
-
-      if (clRes.error && outRes.error) {
-        throw new Error(clRes.error || outRes.error);
-      }
-
+      
       if (clRes.data) setGeneratedCoverLetter(clRes.data);
-      else if (clRes.error) setError(`Cover letter: ${clRes.error}`);
-
       if (outRes.data) setGeneratedOutreach(outRes.data);
-      else if (outRes.error) setError(`Outreach: ${outRes.error}`);
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      setError(err.message || "Failed to generate materials. Please try again.");
     } finally {
       setIsGeneratingCL(false);
     }

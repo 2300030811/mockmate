@@ -1,6 +1,8 @@
 "use server";
 
-import { generateText, AI_MODELS } from "@/lib/ai/gateway";
+import { Groq } from "groq-sdk";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getNextKey, getNumKeys } from "@/utils/keyManager";
 import { OCRService } from "@/lib/services/ocr";
 import { sanitizePromptInput } from "@/utils/sanitize";
 import { logger } from "@/lib/logger";
@@ -216,21 +218,65 @@ export async function analyzeDeepEvalAction(
     });
 
     let content = "";
-    try {
-      const result = await generateText(
-        [{ role: "user", content: prompt }],
-        DEEP_EVAL_SYSTEM_PROMPT,
-        "auto",
-        {
-          model: AI_MODELS.STRUCTURED,
+
+    // 5. Try Groq (Primary), rotating through all keys.
+    const numGroqKeys = getNumKeys("GROQ_API_KEY") || 1;
+    let groqSuccess = false;
+
+    for (let i = 0; i < numGroqKeys; i++) {
+      try {
+        const apiKey = getNextKey("GROQ_API_KEY") || process.env.GROQ_API_KEY;
+        if (!apiKey) throw new Error("Groq API Key missing");
+
+        const groq = new Groq({ apiKey });
+        const chatCompletion = await groq.chat.completions.create({
+          messages: [
+            { role: "system", content: DEEP_EVAL_SYSTEM_PROMPT },
+            { role: "user", content: prompt },
+          ],
+          model: "llama-3.3-70b-versatile",
           temperature: 0.1,
-          maxTokens: 4000,
-          responseFormat: { type: "json_object" },
+          response_format: { type: "json_object" },
+        });
+
+        content = chatCompletion.choices[0]?.message?.content || "";
+        if (content) {
+          groqSuccess = true;
+          break;
         }
-      );
-      content = result.content;
-    } catch (err) {
-      logger.error("[DeepEval] AI Gateway failed:", err);
+      } catch (groqErr) {
+        logger.warn(
+          `[DeepEval] Groq key ${i + 1} failed:`,
+          groqErr instanceof Error ? groqErr.message : String(groqErr)
+        );
+      }
+    }
+
+    if (!groqSuccess) {
+      logger.warn("[DeepEval] All Groq keys failed, attempting Gemini fallback...");
+    }
+
+    // 6. Try Gemini (Fallback)
+    if (!content) {
+      try {
+        const geminiApiKey = process.env.GOOGLE_API_KEY;
+        if (geminiApiKey) {
+          const genAI = new GoogleGenerativeAI(geminiApiKey);
+          const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+          const result = await model.generateContent([
+            { text: DEEP_EVAL_SYSTEM_PROMPT + "\n\n" + prompt },
+          ]);
+          content = result.response.text();
+
+          // Clean up potential markdown blocks from Gemini response
+          content = content.replace(/```(?:json)?\n?/gi, "").trim();
+        } else {
+          throw new Error("Gemini API Key missing");
+        }
+      } catch (geminiErr) {
+        logger.error("[DeepEval] Gemini fallback failed:", geminiErr);
+      }
     }
 
     if (!content) {
