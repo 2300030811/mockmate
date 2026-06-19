@@ -1,17 +1,14 @@
 "use server";
 
-import { Groq } from "groq-sdk";
-import { getNextKey } from "@/utils/keyManager";
 import { revalidatePath } from "next/cache";
-import { sanitizePromptInput } from "@/utils/sanitize";
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
-import { logger } from "@/lib/logger";
-import { DAILY_PROBLEMS } from "@/utils/daily-problems";
-import { calculateStreak } from "@/utils/streak";
 import { rateLimit } from "@/lib/rate-limit";
-import { getStreakMultiplier } from "@/lib/scoring";
-import { syncProfileStats } from "@/lib/profile-sync";
+import { challengeService } from "@/lib/services/challenge-service";
+import { DAILY_PROBLEMS } from "@/utils/daily-problems";
+import { sanitizePromptInput } from "@/utils/sanitize";
+import { generateText, AI_MODELS } from "@/lib/ai/gateway";
+import { logger } from "@/lib/logger";
 
 export async function getBobChallengeHint(problemTitle: string, userCode: string, language: string) {
     try {
@@ -25,11 +22,6 @@ export async function getBobChallengeHint(problemTitle: string, userCode: string
         if (!problem) {
             return { markdown: "I couldn't find that problem. Stop messing with the system!" };
         }
-
-        const apiKey = getNextKey("GROQ_API_KEY") || process.env.GROQ_API_KEY;
-        if (!apiKey) throw new Error("Groq API Service configuration missing.");
-
-        const groq = new Groq({ apiKey });
 
         const sanitizedCode = sanitizePromptInput(userCode, 10000);
         const prompt = `
@@ -47,20 +39,23 @@ export async function getBobChallengeHint(problemTitle: string, userCode: string
         - Keep it brief (2-3 sentences max).
      `;
 
-        const chatCompletion = await groq.chat.completions.create({
-            messages: [{ role: "user", content: prompt }],
-            model: "llama-3.1-8b-instant", // Smaller model for simple hints
-            temperature: 0.7,
-            max_tokens: 200,
-        });
+        const result = await generateText(
+            [{ role: "user", content: prompt }],
+            "You are Bob, a senior software engineer mentoring a junior.",
+            "auto",
+            {
+                model: AI_MODELS.FAST,
+                temperature: 0.7,
+                maxTokens: 200,
+            }
+        );
 
-        return { markdown: chatCompletion.choices[0]?.message?.content || "Bob is thinking..." };
+        return { markdown: result.content || "Bob is thinking..." };
     } catch (error) {
-        logger.error("Hint Error (Groq):", error);
+        logger.error("Hint Error (Gateway):", error);
         return { markdown: "Bob is currently compiling his thoughts... (Service Unavailable)" };
     }
 }
-
 
 export async function submitChallenge(problemTitle: string, code: string, language: string, output: string) {
     try {
@@ -75,123 +70,29 @@ export async function submitChallenge(problemTitle: string, code: string, langua
             };
         }
 
-        const problem = DAILY_PROBLEMS.find(p => p.title === problemTitle);
-        if (!problem) {
-            return {
-                success: false,
-                score: 0,
-                efficiency: "N/A",
-                feedback: "Invalid problem selected. Please try a valid daily challenge."
-            };
+        const supabase = createClient();
+        const adminDb = createAdminClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        const userId = user?.id || null;
+
+        const result = await challengeService.submitChallenge(
+            supabase,
+            adminDb,
+            userId,
+            problemTitle,
+            code,
+            language,
+            output
+        );
+
+        if (result.success && userId) {
+            revalidatePath('/dashboard');
+            revalidatePath('/');
         }
 
-        const apiKey = getNextKey("GROQ_API_KEY") || process.env.GROQ_API_KEY;
-        if (!apiKey) throw new Error("Groq API Service configuration missing.");
-
-        const groq = new Groq({ apiKey });
-
-        const sanitizedCode = sanitizePromptInput(code, 20000);
-        const sanitizedOutput = sanitizePromptInput(output, 5000);
-        const prompt = `
-            You are an automated code judge.
-            Problem: "${sanitizePromptInput(problemTitle, 200)}"
-            User Code:
-            <USER_CODE>
-            ${sanitizedCode}
-            </USER_CODE>
-            Execution Output:
-            <USER_OUTPUT>${sanitizedOutput}</USER_OUTPUT>
-
-            Evaluate the solution based on:
-            1. Correctness (Does it solve the problem? Strict check.)
-            2. Efficiency (Big O time/space)
-            3. Code Style (Cleanliness)
-
-            Return a JSON object:
-            {
-               "success": boolean,
-               "score": number (0-100),
-               "efficiency": string (e.g., "O(n)"),
-               "feedback": string (One sentence summary)
-            }
-            ONLY RETURN JSON.
-        `;
-
-        const chatCompletion = await groq.chat.completions.create({
-            messages: [{ role: "user", content: prompt }],
-            model: "llama-3.3-70b-versatile",
-            temperature: 0.1,
-            max_tokens: 500,
-            response_format: { type: "json_object" },
-        });
-
-        const text = chatCompletion.choices[0]?.message?.content || "";
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-
-        if (jsonMatch) {
-            let result;
-            try {
-                result = JSON.parse(jsonMatch[0]);
-            } catch (parseError) {
-                logger.error("Failed to parse LLM JSON output:", parseError);
-                throw new Error("Invalid JSON from AI judge");
-            }
-
-            // Server-Side Persistence for Daily Streak
-            if (result.success) {
-                const supabase = createClient();
-                const adminDb = createAdminClient();
-                const { data: { user } } = await supabase.auth.getUser();
-
-                if (user) {
-                    const todayStart = new Date();
-                    todayStart.setHours(0, 0, 0, 0);
-
-                    const { data: existing } = await adminDb
-                        .from('quiz_results')
-                        .select('id')
-                        .eq('user_id', user.id)
-                        .eq('category', 'daily-challenge')
-                        .gte('completed_at', todayStart.toISOString())
-                        .maybeSingle();
-
-                    if (!existing) {
-                        const problem = DAILY_PROBLEMS.find(p => p.title === problemTitle);
-                        const points = problem ? problem.points : 10;
-
-                        // Fetch nickname required by DB constraint
-                        const { data: profile } = await adminDb
-                            .from('profiles')
-                            .select('nickname')
-                            .eq('id', user.id)
-                            .single();
-
-                        const userNickname = profile?.nickname || 'User';
-
-                        const { error: insertError } = await adminDb.from('quiz_results').insert({
-                            nickname: userNickname,
-                            user_id: user.id,
-                            session_id: `user_session_${user.id}`, // Replaced dummy ID with user-bound ID
-                            category: 'daily-challenge',
-                            score: points,
-                            total_questions: points,
-                            completed_at: new Date().toISOString()
-                        });
-
-                        if (insertError) {
-                            logger.error("❌ Failed to insert challenge result:", insertError);
-                        } else {
-                            revalidatePath('/dashboard');
-                            revalidatePath('/');
-                        }
-                    }
-                }
-            }
-            return result;
-        }
-        throw new Error("Invalid JSON from Groq");
+        return result;
     } catch (error) {
-        logger.error("Submission Error (Groq):", error);
+        logger.error("Submission Error (Gateway):", error);
         return {
             success: false,
             score: 0,
@@ -208,47 +109,12 @@ export async function getServerDailyStats() {
 
     if (!user) return { streak: 0, points: 0, solvedToday: false, xp: 0, level: 1, elo: 1000, streakMultiplier: 1.0 };
 
-    // Fetch profile stats (materialised) + daily-challenge results for solvedToday check
-    const [profileResult, dailyResult] = await Promise.all([
-      adminDb
-        .from('profiles')
-        .select('xp, level, streak, elo')
-        .eq('id', user.id)
-        .single(),
-      adminDb
-        .from('quiz_results')
-        .select('completed_at, score')
-        .eq('user_id', user.id)
-        .eq('category', 'daily-challenge')
-        .order('completed_at', { ascending: false })
-        .limit(1),
-    ]);
-
-    const profile = profileResult.data;
-    const streak = profile?.streak ?? 0;
-    const xp = profile?.xp ?? 0;
-    const level = profile?.level ?? 1;
-    const elo = profile?.elo ?? 1000;
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    let solvedToday = false;
-    if (dailyResult.data && dailyResult.data.length > 0) {
-      const lastSolved = new Date(dailyResult.data[0].completed_at);
-      lastSolved.setHours(0, 0, 0, 0);
-      solvedToday = lastSolved.getTime() === today.getTime();
+    try {
+        return await challengeService.getServerDailyStats(adminDb, user.id);
+    } catch (err) {
+        logger.error("Failed to fetch daily stats:", err);
+        return { streak: 0, points: 0, solvedToday: false, xp: 0, level: 1, elo: 1000, streakMultiplier: 1.0 };
     }
-
-    return {
-      streak,
-      points: xp, // renamed for clarity — total XP
-      solvedToday,
-      xp,
-      level,
-      elo,
-      streakMultiplier: getStreakMultiplier(streak),
-    };
 }
 
 export async function syncDailyChallenge(points: number) {
@@ -258,62 +124,13 @@ export async function syncDailyChallenge(points: number) {
 
     if (!user) return { success: false };
 
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-
-    // Check if record exists
-    const { data: existing } = await adminDb
-        .from('quiz_results')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('category', 'daily-challenge')
-        .gte('completed_at', todayStart.toISOString())
-        .maybeSingle();
-
-    if (!existing) {
-        // Fetch nickname required by DB constraint
-        const { data: profile } = await adminDb
-            .from('profiles')
-            .select('nickname, xp, streak, last_activity_at')
-            .eq('id', user.id)
-            .single();
-
-        const userNickname = profile?.nickname || 'User';
-
-        logger.info(`[Sync] Restoring missing daily challenge for user ${user.id}`);
-        // Fix: Use score=1, total_questions=1 to avoid inflating avgScore
-        const { error } = await adminDb.from('quiz_results').insert({
-            user_id: user.id,
-            nickname: userNickname,
-            session_id: `user_session_${user.id}`,
-            category: 'daily-challenge',
-            score: 1,
-            total_questions: 1,
-            completed_at: new Date().toISOString()
-        });
-
-        if (error) {
-            logger.error("[Sync] Failed to restore challenge:", error);
-            return { success: false, errorMessage: error.message || JSON.stringify(error) };
-        }
-
-        // Sync XP and streak on profiles
-        try {
-            await syncProfileStats({
-                userId: user.id,
-                type: "daily-challenge",
-                score: 1,
-                totalQuestions: 1,
-                dailyPoints: points,
-            });
-        } catch (syncErr) {
-            console.error("\u26A0\uFE0F Failed to sync daily challenge stats (sync):", syncErr);
-        }
-
+    try {
+        const result = await challengeService.syncDailyChallenge(supabase, adminDb, user.id, points);
         revalidatePath('/dashboard');
         revalidatePath('/');
+        return result;
+    } catch (err: any) {
+        logger.error("syncDailyChallenge error:", err);
+        return { success: false, errorMessage: err.message || "Unknown error" };
     }
-
-    return { success: true };
 }
-

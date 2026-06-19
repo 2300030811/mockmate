@@ -14,7 +14,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    exclude: ['e2e/**/*', 'node_modules/**/*'],
+    exclude: ['e2e/**/*', 'node_modules/**/*', 'Resume-Matcher-main/**/*', 'career-ops-main/**/*', 'hiring-agent-main/**/*'],
     setupFiles: ['./vitest.setup.ts'],
     coverage: {
       provider: 'v8',
@@ -23,6 +23,9 @@ export default defineConfig({
       exclude: [
         'e2e/**/*',
         'node_modules/**/*',
+        'Resume-Matcher-main/**/*',
+        'career-ops-main/**/*',
+        'hiring-agent-main/**/*',
         '**/*.d.ts',
         '**/*.config.*',
         '**/*.test.*',

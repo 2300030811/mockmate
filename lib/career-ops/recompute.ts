@@ -6,6 +6,7 @@ import {
   normalizeCareerOpsStatus,
   todayIsoDate,
 } from "@/lib/career-ops/status";
+import { careerOpsRepository } from "../db/career-ops-repository";
 
 export const ACTIVE_CAREER_OPS_STATUSES: CareerOpsApplicationStatus[] = [
   "evaluated",
@@ -133,115 +134,111 @@ function selectCadenceRowsToUpdate(rows: CareerOpsCadenceUpdateRow[]): CareerOps
 }
 
 export async function recomputeCadenceForUser(params: {
-  db: SupabaseLike;
+  db: any;
   userId: string;
   limit?: number;
 }): Promise<CareerOpsCadenceRecomputeResult> {
   const normalizedLimit = normalizeLimit(params.limit);
 
-  const { data: applicationData, error: applicationsError } = await params.db
-    .from("career_ops_applications")
-    .select("id, user_id, status, next_follow_up_date, applied_on")
-    .eq("user_id", params.userId)
-    .in("status", ACTIVE_CAREER_OPS_STATUSES)
-    .order("updated_at", { ascending: false })
-    .limit(normalizedLimit);
+  try {
+    const applicationData = await careerOpsRepository.getApplicationsForCadenceRecompute(
+      params.db,
+      params.userId,
+      ACTIVE_CAREER_OPS_STATUSES,
+      normalizedLimit
+    );
 
-  if (applicationsError) {
+    const applications = (applicationData as CareerOpsCadenceApplicationRow[] | null) ?? [];
+    if (applications.length === 0) {
+      return {
+        success: true,
+        data: {
+          updatedCount: 0,
+          skippedCount: 0,
+          failedCount: 0,
+          processedCount: 0,
+        },
+      };
+    }
+
+    const applicationIds = applications.map((row) => row.id);
+    let followUpData: CareerOpsCadenceFollowUpRow[] = [];
+    try {
+      const data = await careerOpsRepository.getFollowUpsForApplications(
+        params.db,
+        params.userId,
+        applicationIds
+      );
+      followUpData = data || [];
+    } catch (followUpsError: any) {
+      if (isMissingCareerOpsTableError(followUpsError)) {
+        return {
+          success: false,
+          missingTable: true,
+          error: followUpsError.message,
+        };
+      }
+
+      logger.warn(
+        "[CareerOps] Failed to fetch follow-ups during cadence recompute.",
+        followUpsError.message
+      );
+    }
+
+    const followUps = (followUpData as CareerOpsCadenceFollowUpRow[] | null) ?? [];
+    const cadenceRows = buildCadenceUpdateRows(applications, followUps);
+    const rowsToUpdate = selectCadenceRowsToUpdate(cadenceRows);
+    const skippedCount = applications.length - rowsToUpdate.length;
+
+    if (rowsToUpdate.length === 0) {
+      return {
+        success: true,
+        data: {
+          updatedCount: 0,
+          skippedCount,
+          failedCount: 0,
+          processedCount: applications.length,
+        },
+      };
+    }
+
+    const settled = await Promise.allSettled(
+      rowsToUpdate.map((row) =>
+        careerOpsRepository.updateApplicationNextFollowUpDate(
+          params.db,
+          row.applicationId,
+          row.userId,
+          row.targetDate
+        )
+      )
+    );
+
+    let updatedCount = 0;
+    let failedCount = 0;
+
+    for (const result of settled) {
+      if (result.status === "rejected") {
+        failedCount += 1;
+        continue;
+      }
+
+      updatedCount += 1;
+    }
+
+    return {
+      success: true,
+      data: {
+        updatedCount,
+        skippedCount,
+        failedCount,
+        processedCount: applications.length,
+      },
+    };
+  } catch (applicationsError: any) {
     return {
       success: false,
       missingTable: isMissingCareerOpsTableError(applicationsError),
       error: applicationsError.message,
     };
   }
-
-  const applications = (applicationData as CareerOpsCadenceApplicationRow[] | null) ?? [];
-  if (applications.length === 0) {
-    return {
-      success: true,
-      data: {
-        updatedCount: 0,
-        skippedCount: 0,
-        failedCount: 0,
-        processedCount: 0,
-      },
-    };
-  }
-
-  const applicationIds = applications.map((row) => row.id);
-  const { data: followUpData, error: followUpsError } = await params.db
-    .from("career_ops_follow_ups")
-    .select("application_id, followed_up_on")
-    .eq("user_id", params.userId)
-    .in("application_id", applicationIds)
-    .order("followed_up_on", { ascending: false });
-
-  if (followUpsError) {
-    if (isMissingCareerOpsTableError(followUpsError)) {
-      return {
-        success: false,
-        missingTable: true,
-        error: followUpsError.message,
-      };
-    }
-
-    logger.warn(
-      "[CareerOps] Failed to fetch follow-ups during cadence recompute.",
-      followUpsError.message
-    );
-  }
-
-  const followUps = (followUpData as CareerOpsCadenceFollowUpRow[] | null) ?? [];
-  const cadenceRows = buildCadenceUpdateRows(applications, followUps);
-  const rowsToUpdate = selectCadenceRowsToUpdate(cadenceRows);
-  const skippedCount = applications.length - rowsToUpdate.length;
-
-  if (rowsToUpdate.length === 0) {
-    return {
-      success: true,
-      data: {
-        updatedCount: 0,
-        skippedCount,
-        failedCount: 0,
-        processedCount: applications.length,
-      },
-    };
-  }
-
-  const settled = await Promise.allSettled(
-    rowsToUpdate.map((row) =>
-      params.db
-        .from("career_ops_applications")
-        .update({ next_follow_up_date: row.targetDate })
-        .eq("id", row.applicationId)
-        .eq("user_id", row.userId)
-    )
-  );
-
-  let updatedCount = 0;
-  let failedCount = 0;
-
-  for (const result of settled) {
-    if (result.status === "rejected") {
-      failedCount += 1;
-      continue;
-    }
-
-    if (result.value.error) {
-      failedCount += 1;
-      continue;
-    }
-
-    updatedCount += 1;
-  }
-
-  return {
-    success: true,
-    data: {
-      updatedCount,
-      skippedCount,
-      failedCount,
-      processedCount: applications.length,
-    },
-  };
 }

@@ -3,9 +3,9 @@
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { validateNickname } from "@/utils/moderation";
 import { NICKNAME_REGEX, NICKNAME_REGEX_MESSAGE } from "@/lib/constants";
 import { rateLimit } from "@/lib/rate-limit";
+import { profileService } from "@/lib/services/profile-service";
 
 const profileSchema = z.object({
   nickname: z.string().min(2, "Nickname must be at least 2 characters").max(20, "Nickname must be at most 20 characters").regex(NICKNAME_REGEX, NICKNAME_REGEX_MESSAGE),
@@ -28,11 +28,6 @@ export async function updateProfile(prevState: ProfileState, formData: FormData)
     return { error: result.error.errors[0].message };
   }
 
-  const validation = validateNickname(nickname);
-  if (!validation.success) {
-      return { error: validation.error };
-  }
-
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -46,16 +41,13 @@ export async function updateProfile(prevState: ProfileState, formData: FormData)
     return { error: "Too many update attempts. Please wait a moment." };
   }
 
-  const { error } = await supabase
-    .from("profiles")
-    .update({ 
+  try {
+    await profileService.updateProfile(supabase, user.id, {
       nickname: result.data.nickname,
-      avatar_icon: result.data.avatar_icon 
-    })
-    .eq("id", user.id);
-
-  if (error) {
-    return { error: error.message };
+      avatar_icon: result.data.avatar_icon,
+    });
+  } catch (error: any) {
+    return { error: error.message || "Failed to update profile" };
   }
 
   revalidatePath("/", "layout");
@@ -76,36 +68,13 @@ export async function exportUserData() {
     return { error: "Not authenticated." };
   }
 
-  const [profileResult, quizResultsResult, careerPathsResult] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .single(),
-    supabase
-      .from("quiz_results")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("completed_at", { ascending: false }),
-    supabase
-      .from("career_paths")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false }),
-  ]);
-
-  return {
-    success: true,
-    data: {
-      exportedAt: new Date().toISOString(),
-      user: {
-        id: user.id,
-        email: user.email,
-        created_at: user.created_at,
-      },
-      profile: profileResult.data,
-      quizResults: quizResultsResult.data || [],
-      careerPaths: careerPathsResult.data || [],
-    },
-  };
+  try {
+    const data = await profileService.exportUserData(supabase, user.id);
+    return {
+      success: true,
+      data,
+    };
+  } catch (err: any) {
+    return { error: err.message || "Failed to export user data" };
+  }
 }

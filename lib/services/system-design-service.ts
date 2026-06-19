@@ -1,5 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { Node, Connection, Group } from "../../app/(main)/system-design/types";
+import { systemDesignRepository } from "@/lib/db/system-design-repository";
 
 export type SystemDesign = {
     id?: string;
@@ -22,57 +23,46 @@ export const SystemDesignService = {
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
 
-        // Get session ID from cookies if user is guest
-        // For now, we'll assume the middleware/client handles session_id if needed
-
         const payload = {
             ...design,
             user_id: user?.id || design.user_id || null,
         };
 
-        if (design.id) {
-            const { data, error } = await supabase
-                .from('system_designs')
-                .update(payload)
-                .eq('id', design.id)
-                .select()
-                .single();
-            return { data, error };
-        } else {
-            const { data, error } = await supabase
-                .from('system_designs')
-                .insert(payload)
-                .select()
-                .single();
-            return { data, error };
+        try {
+            const data = await systemDesignRepository.saveDesign(supabase, payload);
+            return { data, error: null };
+        } catch (error: any) {
+            return { data: null, error };
         }
     },
 
     async getDesigns() {
         const supabase = createClient();
-        const { data, error } = await supabase
-            .from('system_designs')
-            .select('*')
-            .order('updated_at', { ascending: false });
-        return { data, error };
+        try {
+            const data = await systemDesignRepository.getDesigns(supabase);
+            return { data, error: null };
+        } catch (error: any) {
+            return { data: null, error };
+        }
     },
 
     async getDesignById(id: string) {
         const supabase = createClient();
-        const { data, error } = await supabase
-            .from('system_designs')
-            .select('*')
-            .eq('id', id)
-            .single();
-        return { data, error };
+        try {
+            const data = await systemDesignRepository.getDesignById(supabase, id);
+            return { data, error: null };
+        } catch (error: any) {
+            return { data: null, error };
+        }
     },
 
     async deleteDesign(id: string) {
         const supabase = createClient();
-        const { error } = await supabase
-            .from('system_designs')
-            .delete()
-            .eq('id', id);
-        return { error };
+        try {
+            await systemDesignRepository.deleteDesign(supabase, id);
+            return { error: null };
+        } catch (error: any) {
+            return { error };
+        }
     }
 };

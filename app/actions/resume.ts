@@ -1,8 +1,6 @@
 "use server";
 
-import { Groq } from "groq-sdk";
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import { getNextKey, getNumKeys } from "@/utils/keyManager";
+import { generateText } from "@/lib/ai/gateway";
 import { OCRService } from "@/lib/services/ocr";
 import { RoastData, roastDataSchema } from "../(main)/resume-roaster/types";
 import { sanitizePromptInput } from "@/utils/sanitize";
@@ -13,6 +11,9 @@ import { deriveAtsMatchRating } from "@/types/ats-score";
 import { computeAtsEngineScores } from "@/lib/ats-engine";
 import { clampScore } from "@/utils/math";
 import { resumeGeneratePayloadSchema } from "../api/resume/generate/schema";
+
+import { Groq } from "groq-sdk";
+import { getNextKey, getNumKeys } from "@/utils/keyManager";
 
 
 export async function roastResumeAction(
@@ -100,50 +101,18 @@ Rules:
         }
     }
 
-    const numGroqKeys = getNumKeys("GROQ_API_KEY") || 1;
-    for (let i = 0; i < numGroqKeys; i++) {
-      try {
-        const apiKey = getNextKey("GROQ_API_KEY") || process.env.GROQ_API_KEY;
-        if (!apiKey) throw new Error("Groq API Key missing");
-
-        const groq = new Groq({ apiKey });
-        const chatCompletion = await groq.chat.completions.create({
-          messages: [
-            {
-              role: "system",
-              content: `You are a Resume Analyst with a ${tone} style. Respond ONLY in valid JSON.`,
-            },
-            { role: "user", content: prompt },
-          ],
-          model: "llama-3.3-70b-versatile",
-          temperature: 0.6,
-          response_format: { type: "json_object" },
-        });
-
-        content = chatCompletion.choices[0]?.message?.content || "";
-        if (content) break;
-      } catch (groqErr) {
-        logger.warn(`Resume roast: Groq key ${i + 1} failed`, groqErr);
-        errorLog += `provider_error_stream_${i + 1}; `;
-      }
-    }
-
-    if (!content) {
-      logger.warn("Resume roast: All Groq keys failed, attempting Gemini fallback...");
-      try {
-        const geminiApiKey = process.env.GOOGLE_API_KEY;
-        if (!geminiApiKey) throw new Error("Gemini API Key missing");
-
-        const genAI = new GoogleGenerativeAI(geminiApiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-        const result = await model.generateContent([{ text: prompt }]);
-        content = result.response.text()
-          .replace(/```(?:json)?\n?/gi, "")
-          .trim();
-      } catch (geminiErr) {
-        logger.error("Resume roast: Gemini fallback failed.", geminiErr);
-        errorLog += "fallback_provider_error; ";
-      }
+    try {
+      const systemPrompt = `You are a Resume Analyst with a ${tone} style. Respond ONLY in valid JSON.`;
+      const completion = await generateText(
+        prompt,
+        systemPrompt,
+        "auto",
+        { temperature: 0.6 }
+      );
+      content = completion.content;
+    } catch (gatewayError) {
+      logger.error("Resume roast: AI Gateway completion failed.", gatewayError);
+      errorLog += "gateway_error; ";
     }
 
     if (!content) {

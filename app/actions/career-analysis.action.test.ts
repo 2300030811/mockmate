@@ -4,14 +4,11 @@ import { analyzeCareerPath } from "./career-analysis";
 const extractTextMock = vi.hoisted(() => vi.fn());
 const sanitizePromptInputMock = vi.hoisted(() => vi.fn());
 const normalizeTextForATSMock = vi.hoisted(() => vi.fn());
-const getNextKeyMock = vi.hoisted(() => vi.fn());
-const getNumKeysMock = vi.hoisted(() => vi.fn());
 const fetchSalaryEstimateMock = vi.hoisted(() => vi.fn());
 const formatSalaryRangeMock = vi.hoisted(() => vi.fn());
 const estimateExperienceYearsMock = vi.hoisted(() => vi.fn());
 const promptBuilderMock = vi.hoisted(() => vi.fn());
-const groqCreateMock = vi.hoisted(() => vi.fn());
-const geminiGenerateContentMock = vi.hoisted(() => vi.fn());
+const generateTextMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/services/ocr", () => ({
   OCRService: {
@@ -22,11 +19,6 @@ vi.mock("@/lib/services/ocr", () => ({
 vi.mock("@/utils/sanitize", () => ({
   sanitizePromptInput: sanitizePromptInputMock,
   normalizeTextForATS: normalizeTextForATSMock,
-}));
-
-vi.mock("@/utils/keyManager", () => ({
-  getNextKey: getNextKeyMock,
-  getNumKeys: getNumKeysMock,
 }));
 
 vi.mock("@/lib/services/salary-service", () => ({
@@ -46,26 +38,8 @@ vi.mock("@/lib/env", () => ({
   env: {},
 }));
 
-vi.mock("groq-sdk", () => ({
-  default: vi.fn(function MockGroq() {
-    return {
-      chat: {
-        completions: {
-          create: groqCreateMock,
-        },
-      },
-    };
-  }),
-}));
-
-vi.mock("@google/generative-ai", () => ({
-  GoogleGenerativeAI: vi.fn(function MockGemini() {
-    return {
-      getGenerativeModel: vi.fn(() => ({
-        generateContent: geminiGenerateContentMock,
-      })),
-    };
-  }),
+vi.mock("@/lib/ai/gateway", () => ({
+  generateText: generateTextMock,
 }));
 
 const originalEnv = process.env;
@@ -95,19 +69,13 @@ describe("analyzeCareerPath", () => {
     });
     normalizeTextForATSMock.mockImplementation((value: string) => value);
     sanitizePromptInputMock.mockImplementation((value: string) => value);
-    getNumKeysMock.mockReturnValue(1);
-    getNextKeyMock.mockReturnValue("groq-key");
     fetchSalaryEstimateMock.mockReturnValue(null);
     formatSalaryRangeMock.mockReturnValue("");
     estimateExperienceYearsMock.mockReturnValue(7);
     promptBuilderMock.mockReturnValue("SYSTEM PROMPT");
-    groqCreateMock.mockResolvedValue({
-      choices: [{ message: { content: JSON.stringify({ matchScore: 84 }) } }],
-    });
-    geminiGenerateContentMock.mockResolvedValue({
-      response: {
-        text: () => JSON.stringify({ matchScore: 77 }),
-      },
+    generateTextMock.mockResolvedValue({
+      content: JSON.stringify({ matchScore: 84 }),
+      provider: "groq"
     });
   });
 
@@ -122,8 +90,9 @@ describe("analyzeCareerPath", () => {
   });
 
   it("returns lenient fallback payload when strict schema validation fails", async () => {
-    groqCreateMock.mockResolvedValue({
-      choices: [{ message: { content: JSON.stringify({ matchScore: "bad", extractedSkills: "oops" }) } }],
+    generateTextMock.mockResolvedValue({
+      content: JSON.stringify({ matchScore: "bad", extractedSkills: "oops" }),
+      provider: "groq"
     });
 
     const result = await analyzeCareerPath(buildFormData(), "Backend Engineer", "Acme");
@@ -136,17 +105,12 @@ describe("analyzeCareerPath", () => {
   });
 
   it("rejects invalid role sentinel response from provider", async () => {
-    groqCreateMock.mockResolvedValue({
-      choices: [
-        {
-          message: {
-            content: JSON.stringify({
-              matchScore: 0,
-              competitiveEdge: "INVALID ROLE DETECTED: unknown profession",
-            }),
-          },
-        },
-      ],
+    generateTextMock.mockResolvedValue({
+      content: JSON.stringify({
+        matchScore: 0,
+        competitiveEdge: "INVALID ROLE DETECTED: unknown profession",
+      }),
+      provider: "groq"
     });
 
     await expect(analyzeCareerPath(buildFormData(), "NotARole", "Acme")).rejects.toThrow(
@@ -155,11 +119,11 @@ describe("analyzeCareerPath", () => {
   });
 
   it("falls back to Gemini when all Groq attempts fail", async () => {
-    groqCreateMock.mockRejectedValue(new Error("rate limited"));
-    geminiGenerateContentMock.mockResolvedValue({
-      response: {
-        text: () => "```json\n{\"matchScore\": 77}\n```",
-      },
+    // In our implementation, the gateway handles fallback.
+    // We mock the resolved value from the gateway with provider "gemini".
+    generateTextMock.mockResolvedValue({
+      content: "```json\n{\"matchScore\": 77}\n```",
+      provider: "gemini"
     });
 
     const result = await analyzeCareerPath(buildFormData(), "Platform Engineer", "Beta");
@@ -182,22 +146,17 @@ describe("analyzeCareerPath", () => {
       matchType: "exact",
     });
     formatSalaryRangeMock.mockReturnValue("₹12,00,000 - ₹24,00,000 PA");
-    groqCreateMock.mockResolvedValue({
-      choices: [
-        {
-          message: {
-            content: JSON.stringify({
-              matchScore: 88,
-              marketInsights: {
-                demand: "medium",
-                salaryRange: "AI-generated salary",
-                outlook: "Stable growth",
-                confidence: "low",
-              },
-            }),
-          },
+    generateTextMock.mockResolvedValue({
+      content: JSON.stringify({
+        matchScore: 88,
+        marketInsights: {
+          demand: "medium",
+          salaryRange: "AI-generated salary",
+          outlook: "Stable growth",
+          confidence: "low",
         },
-      ],
+      }),
+      provider: "groq"
     });
 
     const result = await analyzeCareerPath(buildFormData(), "Backend Engineer", "Acme");
@@ -215,22 +174,17 @@ describe("analyzeCareerPath", () => {
   it("keeps AI-estimated salary when role is not in local salary dataset", async () => {
     fetchSalaryEstimateMock.mockReturnValue(null);
     formatSalaryRangeMock.mockReturnValue("");
-    groqCreateMock.mockResolvedValue({
-      choices: [
-        {
-          message: {
-            content: JSON.stringify({
-              matchScore: 63,
-              marketInsights: {
-                demand: "high",
-                salaryRange: "₹9L - ₹14L PA",
-                outlook: "Growing demand",
-                confidence: "low",
-              },
-            }),
-          },
+    generateTextMock.mockResolvedValue({
+      content: JSON.stringify({
+        matchScore: 63,
+        marketInsights: {
+          demand: "high",
+          salaryRange: "₹9L - ₹14L PA",
+          outlook: "Growing demand",
+          confidence: "low",
         },
-      ],
+      }),
+      provider: "groq"
     });
 
     const result = await analyzeCareerPath(buildFormData(), "Niche Systems Strategist", "Acme");
@@ -252,8 +206,9 @@ describe("analyzeCareerPath", () => {
       matchType: "exact",
     });
     formatSalaryRangeMock.mockReturnValue("₹10,00,000 - ₹18,00,000 PA");
-    groqCreateMock.mockResolvedValue({
-      choices: [{ message: { content: JSON.stringify({ matchScore: 91 }) } }],
+    generateTextMock.mockResolvedValue({
+      content: JSON.stringify({ matchScore: 91 }),
+      provider: "groq"
     });
 
     const result = await analyzeCareerPath(buildFormData(), "Software Engineer", "Acme");

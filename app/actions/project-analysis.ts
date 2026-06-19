@@ -1,7 +1,6 @@
 "use server";
 
-import { Groq } from "groq-sdk";
-import { getNextKey } from "@/utils/keyManager";
+import { generateText, AI_MODELS } from "@/lib/ai/gateway";
 import { sanitizePromptInput } from "@/utils/sanitize";
 import { logger } from "@/lib/logger";
 
@@ -35,11 +34,6 @@ export async function analyzeProjectCode(
   const emptyBreakdown: ScoreBreakdown = { correctness: 0, codeQuality: 0, bestPractices: 0, completeness: 0 };
 
   try {
-    const apiKey = getNextKey("GROQ_API_KEY") || process.env.GROQ_API_KEY;
-    if (!apiKey) return { score: 0, breakdown: emptyBreakdown, markdown: "", error: "AI Service Unavailable" };
-
-    const groq = new Groq({ apiKey });
-
     // Prepare code context — filter out read-only boilerplate files to focus on student work
     const readOnly = new Set(challengeContext?.readOnlyFiles || []);
     const editableEntries = Object.entries(files).filter(([name]) => !readOnly.has(name));
@@ -158,14 +152,25 @@ export async function analyzeProjectCode(
       CRITICAL: Do NOT output the corrected solution code. Guide with hints and concepts only. Small 1-2 line snippets to illustrate a point are acceptable.
     `;
 
-    const chatCompletion = await groq.chat.completions.create({
-      messages: [{ role: "user", content: prompt }],
-      model: "llama-3.3-70b-versatile",
-      temperature: 0.4,
-      max_tokens: 2000,
-    });
+    let content = "";
+    try {
+      const result = await generateText(
+        [{ role: "user", content: prompt }],
+        "You are a strict Senior Software Engineer reviewing a Junior Developer's code submission.",
+        "auto",
+        {
+          model: AI_MODELS.DEFAULT,
+          temperature: 0.4,
+          maxTokens: 2000,
+        }
+      );
+      content = result.content;
+    } catch (err) {
+      logger.error("[ProjectAnalysis] AI Gateway failed:", err);
+      return { score: 0, breakdown: emptyBreakdown, markdown: "", error: "AI Service Unavailable" };
+    }
 
-    const content = chatCompletion.choices[0]?.message?.content || "Failed to analyze.";
+    if (!content) return { score: 0, breakdown: emptyBreakdown, markdown: "Failed to analyze.", error: "AI Service Unavailable" };
 
     // Extract individual dimension scores
     const scoreMatch = content.match(/SCORE:\s*(\d+)/i);

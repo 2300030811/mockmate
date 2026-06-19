@@ -1,12 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const mockCreate = vi.fn();
+const generateTextMock = vi.fn();
 
 // Mock dependencies before importing the module
-vi.mock("@/utils/keyManager", () => ({
-  getNextKey: vi.fn(() => "test-groq-key"),
-}));
-
 vi.mock("@/utils/sanitize", () => ({
   sanitizePromptInput: vi.fn((input: string) => input),
 }));
@@ -15,16 +11,13 @@ vi.mock("@/lib/logger", () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }));
 
-vi.mock("groq-sdk", () => ({
-  Groq: vi.fn(function () {
-    return {
-      chat: {
-        completions: {
-          create: mockCreate,
-        },
-      },
-    };
-  }),
+vi.mock("@/lib/ai/gateway", () => ({
+  generateText: generateTextMock,
+  AI_MODELS: {
+    DEFAULT: "llama-3.3-70b-versatile",
+    FAST: "llama-3.1-8b-instant",
+    STRUCTURED: "llama-3.3-70b-versatile",
+  },
 }));
 
 describe("summarizeInterviewAction", () => {
@@ -32,9 +25,10 @@ describe("summarizeInterviewAction", () => {
     vi.clearAllMocks();
   });
 
-  it("should return markdown summary from Groq", async () => {
-    mockCreate.mockResolvedValue({
-      choices: [{ message: { content: "## Interview Summary\nScore: 85/100" } }],
+  it("should return markdown summary from gateway", async () => {
+    generateTextMock.mockResolvedValue({
+      content: "## Interview Summary\nScore: 85/100",
+      provider: "groq",
     });
 
     const { summarizeInterviewAction } = await import(
@@ -50,16 +44,20 @@ describe("summarizeInterviewAction", () => {
     );
 
     expect(result.markdown).toContain("Interview Summary");
-    expect(mockCreate).toHaveBeenCalledOnce();
-    // Should use the 70b versatile model
-    expect(mockCreate).toHaveBeenCalledWith(
+    expect(generateTextMock).toHaveBeenCalledOnce();
+    // Should use the DEFAULT model
+    expect(generateTextMock).toHaveBeenCalledWith(
+      expect.any(Array),
+      expect.any(String),
+      "auto",
       expect.objectContaining({ model: "llama-3.3-70b-versatile" })
     );
   });
 
   it("should sanitize type parameter", async () => {
-    mockCreate.mockResolvedValue({
-      choices: [{ message: { content: "Summary result" } }],
+    generateTextMock.mockResolvedValue({
+      content: "Summary result",
+      provider: "groq",
     });
 
     const { summarizeInterviewAction } = await import(
@@ -72,12 +70,12 @@ describe("summarizeInterviewAction", () => {
     );
 
     // The prompt should not contain the malicious type
-    const calledPrompt = mockCreate.mock.calls[0][0].messages[0].content;
+    const calledPrompt = generateTextMock.mock.calls[0][0][0].content;
     expect(calledPrompt).not.toContain("malicious-type");
   });
 
-  it("should return fallback message on Groq failure", async () => {
-    mockCreate.mockRejectedValue(new Error("API Error"));
+  it("should return fallback message on gateway failure", async () => {
+    generateTextMock.mockRejectedValue(new Error("API Error"));
 
     const { summarizeInterviewAction } = await import(
       "@/app/actions/interview-summary"

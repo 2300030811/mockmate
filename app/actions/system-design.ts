@@ -1,7 +1,6 @@
 "use server";
 
-import { Groq } from "groq-sdk";
-import { getNextKey } from "@/utils/keyManager";
+import { generateText, AI_MODELS } from "@/lib/ai/gateway";
 import { Node, Connection } from "../(main)/system-design/types";
 import { sanitizePromptInput } from "@/utils/sanitize";
 import { logger } from "@/lib/logger";
@@ -59,11 +58,6 @@ export async function reviewSystemDesignAction(
       return { markdown: "", error: limitMsg || "Rate limit exceeded. Please wait." };
     }
 
-    const apiKey = getNextKey("GROQ_API_KEY") || process.env.GROQ_API_KEY;
-    if (!apiKey) return { markdown: "", error: "Groq API Service configuration missing." };
-
-    const groq = new Groq({ apiKey });
-
     const challengeInfo = challengeContext ? `
       CONTEXT: Active Challenge: ${challengeContext.title}
       OBJECTIVES: ${challengeContext.objectives.join(", ")}
@@ -94,14 +88,27 @@ export async function reviewSystemDesignAction(
       FORMAT: Return the response in clean Markdown with clear headings and emojis.
     `;
 
-    const chatCompletion = await groq.chat.completions.create({
-      messages: [{ role: "user", content: prompt }],
-      model: "llama-3.3-70b-versatile",
-      temperature: 0.7,
-      max_tokens: 2048,
-    });
+    let content = "";
+    try {
+      const result = await generateText(
+        prompt,
+        "You are a Senior System Design Interviewer.",
+        "auto",
+        {
+          model: AI_MODELS.DEFAULT,
+          temperature: 0.7,
+          maxTokens: 2048
+        }
+      );
+      content = result.content;
+    } catch (err) {
+      logger.error("System Design Review Error (AI Gateway):", err);
+      return { markdown: "", error: "Failed to review system design." };
+    }
 
-    const content = chatCompletion.choices[0]?.message?.content || "Failed to generate review.";
+    if (!content) {
+      return { markdown: "", error: "Failed to generate review." };
+    }
 
     // Parse score from markdown comment
     let score;

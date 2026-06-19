@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/utils/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { feedbackRepository } from "@/lib/db/feedback-repository";
 import { z } from "zod";
 import { Resend } from "resend";
 import { env } from "@/lib/env";
@@ -88,15 +89,13 @@ export async function submitFeedback(formData: {
     const supabase = createAdminClient();
 
     // 2. Define operations
-    const dbOperation = supabase
-      .from("feedback")
-      .insert({
-        type: validated.type,
-        message: validated.message,
-        email: validated.email || null,
-        session_id: validated.sessionId,
-        user_id: validated.userId || null,
-      });
+    const dbOperation = feedbackRepository.insertFeedback(supabase, {
+      type: validated.type,
+      message: validated.message,
+      email: validated.email || null,
+      sessionId: validated.sessionId,
+      userId: validated.userId || null,
+    });
 
     const emailOperation = async () => {
       if (!env.RESEND_API_KEY || !env.FEEDBACK_EMAIL) return null;
@@ -118,7 +117,6 @@ export async function submitFeedback(formData: {
 
     // Handle DB failure as critical
     if (dbResult.status === "rejected") throw dbResult.reason;
-    if (dbResult.value.error) throw dbResult.value.error;
 
     // Log email failure as non-critical
     if (emailResult.status === "rejected" || (emailResult.status === "fulfilled" && (emailResult.value as any)?.error)) {

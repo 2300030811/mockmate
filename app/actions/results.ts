@@ -3,24 +3,26 @@
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { revalidatePath } from "next/cache";
-import { validateNickname } from "@/utils/moderation";
-import { withRetry } from "@/lib/retry";
 import { rateLimit } from "@/lib/rate-limit";
+import type { QuizQuestion } from "@/types";
+import { ActivityItem, LeaderboardItem } from "@/types/dashboard";
+import { quizService } from "@/lib/services/quiz-service";
+import { leaderboardService } from "@/lib/services/leaderboard-service";
+import { withRetry } from "@/lib/retry";
+import { quizRepository } from "@/lib/db/quiz-repository";
+
+import { validateNickname } from "@/utils/moderation";
+import { parseArenaBaseCategory } from "@/lib/arena-category";
+import { checkAnswer } from "@/utils/quiz-helpers";
+import { syncProfileStats } from "@/lib/profile-sync";
+import { Redis } from "@upstash/redis";
 
 import { getRawQuestions } from "@/app/actions/quiz";
 export { getRawQuestions };
-import { checkAnswer } from "@/utils/quiz-helpers";
 
-import { ActivityItem, LeaderboardItem } from "@/types/dashboard";
-import type { QuizQuestion } from "@/types";
-import { Redis } from "@upstash/redis";
-import { syncProfileStats } from "@/lib/profile-sync";
-import { parseArenaBaseCategory } from "@/lib/arena-category";
-
-// Initialize Redis if configured
 const redis = (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
-    ? Redis.fromEnv()
-    : null;
+  ? Redis.fromEnv()
+  : null;
 
 export async function saveQuizResult(data: {
     sessionId: string;
@@ -33,7 +35,7 @@ export async function saveQuizResult(data: {
     arenaTotalQuestions?: number;
 }) {
     const supabase = createClient();
-    const adminDb = createAdminClient(); // Initialize Admin Client
+    const adminDb = createAdminClient();
 
     try {
         const { data: { user } } = await withRetry(
@@ -134,7 +136,7 @@ export async function saveQuizResult(data: {
             if (error) throw error;
 
             if (redis) {
-                redis.del(`leaderboard:${data.category}:all-time`, `leaderboard:${data.category}:weekly`).catch(e => console.warn("Redis del failed:", e));
+                redis.del(`leaderboard:${data.category}:all-time`, `leaderboard:${data.category}:weekly`).catch((e: unknown) => console.warn("Redis del failed:", e));
             }
 
             revalidatePath("/");
@@ -187,7 +189,7 @@ export async function saveQuizResult(data: {
         }
 
         if (redis) {
-            redis.del(`leaderboard:${data.category}:all-time`, `leaderboard:${data.category}:weekly`).catch(e => console.warn("Redis del failed:", e));
+            redis.del(`leaderboard:${data.category}:all-time`, `leaderboard:${data.category}:weekly`).catch((e: unknown) => console.warn("Redis del failed:", e));
         }
 
         revalidatePath("/");
@@ -205,24 +207,18 @@ export async function getRecentResults(sessionId?: string): Promise<ActivityItem
     try {
         const { data: { user } } = await supabase.auth.getUser();
 
-        let query = supabase
-            .from('quiz_results')
-            .select('id, category, score, total_questions, completed_at, session_id, user_id')
-            .order('completed_at', { ascending: false })
-            .limit(10);
+        const queryFn = () => quizRepository.getRecentResults(
+            supabase,
+            user ? user.id : null,
+            user ? null : (sessionId || null),
+            10
+        );
 
-        if (user) {
-            query = query.eq('user_id', user.id);
-        } else {
-            query = query.eq('session_id', sessionId);
-        }
-
-        const { data, error } = await withRetry(
-            () => Promise.resolve(query),
+        const data = await withRetry(
+            queryFn,
             { retries: 2, baseDelay: 1000, label: "Fetch results" }
         );
 
-        if (error) throw error;
         return (data as ActivityItem[]) || [];
     } catch (error: unknown) {
         console.error("❌ Failed to fetch results:", error instanceof Error ? error.message : "Unknown error");
@@ -253,7 +249,7 @@ export async function updateQuizResultNickname(id: string, nickname: string) {
         if (error) throw error;
 
         if (redis && resultData?.category) {
-            redis.del(`leaderboard:${resultData.category}:all-time`, `leaderboard:${resultData.category}:weekly`).catch(e => console.warn("Redis del failed:", e));
+            redis.del(`leaderboard:${resultData.category}:all-time`, `leaderboard:${resultData.category}:weekly`).catch((e: unknown) => console.warn("Redis del failed:", e));
         }
 
         revalidatePath("/");
@@ -265,86 +261,10 @@ export async function updateQuizResultNickname(id: string, nickname: string) {
     }
 }
 
-
 export async function getLeaderboard(category: string, timeframe: 'all-time' | 'weekly' = 'all-time'): Promise<LeaderboardItem[]> {
-    const cacheKey = `leaderboard:${category}:${timeframe}`;
-
-    // 1. Try to fetch from Redis Cache
-    try {
-        if (redis) {
-            const cached = await redis.get<LeaderboardItem[]>(cacheKey);
-            if (cached) {
-                return cached;
-            }
-        }
-    } catch (e) {
-        console.warn("⚠️ Redis cache read failed:", e);
-    }
-
     const supabase = createClient();
     try {
-        let query = supabase
-            .from('quiz_results')
-            .select('id, nickname, score, total_questions, completed_at')
-            .eq('category', category)
-            .not('nickname', 'is', null)
-            .neq('nickname', '')
-            .neq('nickname', 'Guest')
-            .gt('score', 0);
-
-        if (timeframe === 'weekly') {
-            const now = new Date();
-            const lastSunday = new Date(now);
-            lastSunday.setDate(now.getDate() - now.getDay());
-            lastSunday.setHours(0, 0, 0, 0);
-
-            query = query.gte('completed_at', lastSunday.toISOString());
-        }
-
-        query = query
-            .order('score', { ascending: false })
-            .order('completed_at', { ascending: false })
-            .limit(100); // Fetch top 100, then sort fairly by percentage to display top 50
-
-        const { data, error } = await query;
-        if (error) throw error;
-
-        const rawResults = (data as LeaderboardItem[]) || [];
-
-        // Pre-compute percentage and time to optimize sorting
-        const withStats = rawResults.map(r => ({
-            ...r,
-            percent: r.total_questions > 0 ? r.score / r.total_questions : 0,
-            timeMs: new Date(r.completed_at).getTime()
-        }));
-
-        // Sort fairly by percentage correct
-        withStats.sort((a, b) => {
-            if (b.percent !== a.percent) {
-                return b.percent - a.percent;
-            }
-            // Tie-breaker 1: Total questions
-            if (b.total_questions !== a.total_questions) {
-                return b.total_questions - a.total_questions;
-            }
-            // Tie-breaker 2: Most recent
-            return b.timeMs - a.timeMs;
-        });
-
-        // Strip back the added properties to match the interface
-        const finalResults = withStats.slice(0, 50).map(({ percent, timeMs, ...rest }) => rest);
-
-        // 3. Save to Redis Cache (expire in 5 minutes)
-        try {
-            if (redis && finalResults.length > 0) {
-                // Background async cache set to not block response
-                redis.set(cacheKey, finalResults, { ex: 300 }).catch(e => console.warn("Redis set failed:", e));
-            }
-        } catch (e) {
-            console.warn("⚠️ Redis cache write failed:", e);
-        }
-
-        return finalResults;
+        return await leaderboardService.getLeaderboard(supabase, category, timeframe);
     } catch (error: any) {
         console.error("❌ Failed to fetch leaderboard:", error?.message || JSON.stringify(error) || "Unknown error");
         return [];
@@ -360,24 +280,9 @@ export async function deleteQuizResult(id: string) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error("Unauthorized");
 
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', user.id)
-            .single();
-
-        if (profile?.role !== 'admin') {
-            throw new Error("Forbidden: Admin access required");
-        }
-
-        const { error } = await supabase
-            .from('quiz_results')
-            .delete()
-            .eq('id', id);
-
-        if (error) throw error;
+        const result = await quizService.deleteQuizResult(supabase, user.id, id);
         revalidatePath("/");
-        return { success: true };
+        return result;
     } catch (error: unknown) {
         const message = error instanceof Error ? error.message : "An unknown error occurred";
         console.error("❌ Failed to delete result:", message);

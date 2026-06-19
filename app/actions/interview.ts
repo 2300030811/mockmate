@@ -1,8 +1,6 @@
 "use server";
 
-import { Groq } from "groq-sdk";
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import { getNextKey } from "@/utils/keyManager";
+import { generateText, AI_MODELS } from "@/lib/ai/gateway";
 import { z } from "zod";
 import { sanitizePromptInput } from "@/utils/sanitize";
 import { rateLimit } from "@/lib/rate-limit";
@@ -14,12 +12,7 @@ const ChatMessageSchema = z.object({
 });
 const ChatInputSchema = z.array(ChatMessageSchema).max(50);
 
-const getGroqClient = () => {
-    // Access safely on server
-    const apiKey = getNextKey("GROQ_API_KEY") || process.env.GROQ_API_KEY;
-    if (!apiKey) return null;
-    return new Groq({ apiKey });
-};
+// getGroqClient removed in favor of AI Gateway
 
 const ALLOWED_INTERVIEW_TYPES = ["behavioral", "technical"];
 const ALLOWED_DIFFICULTIES = ["junior", "mid", "senior"];
@@ -66,62 +59,25 @@ export async function chatWithAI(
 
         let responseText = "";
 
-        // 1. Try Groq (Llama 3.1) - Fast & Free-ish
         try {
-            const groq = getGroqClient();
-            if (!groq) throw new Error("No Groq Key");
-
-            const completion = await groq.chat.completions.create({
-                messages: [
-                    { role: "system" as const, content: systemPrompt },
-                    ...trimmedMessages.map(m => ({
-                        role: m.role as "user" | "assistant" | "system",
-                        content: m.role === "user" ? sanitizePromptInput(m.content) : m.content,
-                    }))
-                ],
-                model: "llama-3.1-8b-instant",
-                temperature: 0.7,
-                max_tokens: 150,
-            });
-
-            responseText = completion.choices[0]?.message?.content || "";
-        } catch (groqError: unknown) {
-            const msg = groqError instanceof Error ? groqError.message : String(groqError);
-            console.warn("⚠️ Groq Failed (Server Action), falling back to Gemini:", msg);
-
-            // 2. Fallback to Gemini (Free)
-            try {
-                const googleKey = getNextKey("GOOGLE_API_KEY") || process.env.GOOGLE_API_KEY;
-                if (!googleKey) throw new Error("No Google Key either");
-
-                const genAI = new GoogleGenerativeAI(googleKey);
-                const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-
-                // Gemini expects 'user' | 'model' roles
-                const history = trimmedMessages.slice(0, -1).map((m) => ({
-                    role: m.role === 'assistant' ? 'model' : 'user',
-                    parts: [{ text: m.role === 'user' ? sanitizePromptInput(m.content) : m.content }]
-                }));
-
-                const chatObj = model.startChat({
-                    history: history,
-                    systemInstruction: systemPrompt,
-                });
-
-                const lastMsg = trimmedMessages[trimmedMessages.length - 1];
-                // Handle empty history case for initial greeting
-                const contentToSend = lastMsg
-                    ? (lastMsg.role === 'user' ? sanitizePromptInput(lastMsg.content) : lastMsg.content)
-                    : "Hello, I am ready.";
-
-                const result = await chatObj.sendMessage(contentToSend);
-                responseText = result.response.text();
-
-            } catch (geminiError: unknown) {
-                const gMsg = geminiError instanceof Error ? geminiError.message : String(geminiError);
-                console.error("❌ Both AI Services Failed (Server Action):", gMsg);
-                return { response: "", error: "AI Service Unavailable" };
-            }
+            const result = await generateText(
+                trimmedMessages.map(m => ({
+                    role: m.role as "user" | "assistant" | "system",
+                    content: m.role === "user" ? sanitizePromptInput(m.content) : m.content,
+                })),
+                systemPrompt,
+                "auto",
+                {
+                    temperature: 0.7,
+                    maxTokens: 150,
+                    model: AI_MODELS.FAST
+                }
+            );
+            responseText = result.content;
+        } catch (gatewayError: unknown) {
+            const msg = gatewayError instanceof Error ? gatewayError.message : String(gatewayError);
+            console.error("❌ AI Gateway Failed (Server Action):", msg);
+            return { response: "", error: "AI Service Unavailable" };
         }
 
         if (!responseText) responseText = "Let's move to the next topic.";

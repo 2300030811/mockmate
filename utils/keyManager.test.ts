@@ -1,11 +1,18 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { KeyManager, getNextKey } from "./keyManager";
+import { 
+  KeyManager, 
+  getNextKey, 
+  reportKeyFailure, 
+  reportKeySuccess, 
+  resetKeyHealthCacheForTesting 
+} from "./keyManager";
 
 describe("KeyManager", () => {
   const originalEnv = process.env;
 
   beforeEach(() => {
     process.env = { ...originalEnv };
+    resetKeyHealthCacheForTesting();
   });
 
   afterEach(() => {
@@ -66,6 +73,80 @@ describe("KeyManager", () => {
     expect(km.getKey()).toBe("");
     expect(km.hasKeys()).toBe(false);
   });
+
+  // --- HEALTH & COOLDOWN TESTS ---
+
+  it("skips cooled down keys after 3 failures", () => {
+    process.env.HEALTH_KEY = "key1,key2";
+    const km = new KeyManager("HEALTH_KEY");
+
+    // Initially both are selectable
+    expect(km.getKey()).toBe("key1");
+    expect(km.getKey()).toBe("key2");
+
+    // Report failures for key1
+    reportKeyFailure("key1");
+    reportKeyFailure("key1");
+    reportKeyFailure("key1"); // 3 failures, cooldown active
+
+    // Now only key2 should be selected
+    expect(km.getKey()).toBe("key2");
+    expect(km.getKey()).toBe("key2");
+  });
+
+  it("falls back to the least-failed key when all keys are cooled down", () => {
+    process.env.ALL_COOLDOWN = "key1,key2";
+    const km = new KeyManager("ALL_COOLDOWN");
+
+    // Failure reports
+    reportKeyFailure("key1");
+    reportKeyFailure("key1");
+    reportKeyFailure("key1"); // 3 failures
+
+    reportKeyFailure("key2");
+    reportKeyFailure("key2");
+    reportKeyFailure("key2");
+    reportKeyFailure("key2"); // 4 failures
+
+    // Both are cooled down, but key1 has 3 failures (less than key2's 4 failures).
+    // It should pick key1.
+    expect(km.getKey()).toBe("key1");
+  });
+
+  it("allows cooled down key to become selectable again when cooldown expires (Key Recovery)", () => {
+    process.env.RECOVERY_KEY = "key1,key2";
+    const km = new KeyManager("RECOVERY_KEY");
+
+    reportKeyFailure("key1");
+    reportKeyFailure("key1");
+    reportKeyFailure("key1"); // 3 failures
+
+    // Mock system time to advance 6 minutes
+    const futureTime = Date.now() + 6 * 60 * 1000;
+    const dateSpy = vi.spyOn(Date, "now").mockReturnValue(futureTime);
+
+    // key1 should be selectable again, so round-robin cycles both
+    const results = [km.getKey(), km.getKey(), km.getKey()];
+    expect(results).toContain("key1");
+    expect(results).toContain("key2");
+
+    dateSpy.mockRestore();
+  });
+
+  it("resets failures on reporting success", () => {
+    process.env.SUCCESS_RESET = "key1,key2";
+    const km = new KeyManager("SUCCESS_RESET");
+
+    reportKeyFailure("key1");
+    reportKeyFailure("key1");
+    reportKeySuccess("key1"); // reset failures
+
+    reportKeyFailure("key1"); // failure 1 again
+    reportKeyFailure("key1"); // failure 2 again
+
+    // key1 should still be healthy since it has only 2 failures after success reset
+    expect(km.getKey()).toBe("key1");
+  });
 });
 
 describe("getNextKey", () => {
@@ -73,6 +154,7 @@ describe("getNextKey", () => {
 
   beforeEach(() => {
     process.env = { ...originalEnv };
+    resetKeyHealthCacheForTesting();
   });
 
   afterEach(() => {

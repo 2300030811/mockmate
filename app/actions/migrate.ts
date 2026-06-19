@@ -5,6 +5,7 @@ import { QuizFactory } from "@/lib/strategies/QuizFactory";
 import { clearQuizCache } from "@/lib/quiz-cache";
 import { requireAdmin } from "@/lib/auth-utils";
 import { logger } from "@/lib/logger";
+import { quizRepository } from "@/lib/db/quiz-repository";
 
 const CATEGORIES = ["aws", "azure", "salesforce", "mongodb", "pcap", "oracle"];
 
@@ -28,24 +29,12 @@ export async function seedDatabase() {
       }
 
       logger.info(`💾 Saving ${questions.length} questions to database...`);
-      const { error } = await supabase
-        .from('quizzes')
-        .upsert({ 
-          category, 
-          questions, 
-          updated_at: new Date().toISOString() 
-        }, { onConflict: 'category' });
-
-      if (error) {
-        if (error.code === '42501') {
-          throw new Error("RLS Violation: Please update your Supabase SQL policies to allow INSERT/UPDATE on 'quizzes'.");
-        }
-        throw error;
-      }
+      
+      await quizRepository.upsertQuiz(supabase, category, questions);
 
       results.push({ category, status: "success", count: questions.length });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown error";
+    } catch (error: any) {
+      const message = error.message || "Unknown error";
       logger.error(`❌ Failed to seed ${category}:`, message);
       results.push({ category, status: "error", error: message });
     }

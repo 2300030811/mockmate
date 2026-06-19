@@ -1,54 +1,32 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const mockGroqCreate = vi.fn();
-const mockSendMessage = vi.fn();
-
-// Mock dependencies
-vi.mock("@/utils/keyManager", () => ({
-  getNextKey: vi.fn(() => "test-key"),
-}));
+const rateLimitMock = vi.hoisted(() => vi.fn());
+const generateTextMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/utils/sanitize", () => ({
   sanitizePromptInput: vi.fn((input: string) => input),
 }));
 
 vi.mock("@/lib/rate-limit", () => ({
-  rateLimit: vi.fn(() => ({ success: true, message: "" })),
+  rateLimit: rateLimitMock,
 }));
 
-vi.mock("groq-sdk", () => ({
-  Groq: vi.fn(function () {
-    return {
-      chat: {
-        completions: {
-          create: mockGroqCreate,
-        },
-      },
-    };
-  }),
-}));
-
-vi.mock("@google/generative-ai", () => ({
-  GoogleGenerativeAI: vi.fn(function () {
-    return {
-      getGenerativeModel: vi.fn(() => ({
-        startChat: vi.fn(() => ({
-          sendMessage: mockSendMessage,
-        })),
-      })),
-    };
-  }),
+vi.mock("@/lib/ai/gateway", () => ({
+  generateText: generateTextMock,
+  AI_MODELS: {
+    DEFAULT: "llama-3.3-70b-versatile",
+    FAST: "llama-3.1-8b-instant",
+    STRUCTURED: "llama-3.3-70b-versatile",
+  },
 }));
 
 describe("chatWithAI", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Default: Groq succeeds
-    mockGroqCreate.mockResolvedValue({
-      choices: [{ message: { content: "Hello, let's begin the interview." } }],
-    });
-    mockSendMessage.mockResolvedValue({
-      response: { text: () => "Gemini fallback response" },
+    rateLimitMock.mockResolvedValue({ success: true, message: "" });
+    generateTextMock.mockResolvedValue({
+      content: "Hello, let's begin the interview.",
+      provider: "groq",
     });
   });
 
@@ -77,30 +55,16 @@ describe("chatWithAI", () => {
       [{ role: "user", content: "Hi" }],
       '<script>alert("xss")</script>'
     );
-    // Should succeed (type falls back to "behavioral")
     expect(result.response).toBeTruthy();
 
-    // Verify system prompt uses "behavioral" not the injected type
-    const systemPrompt = mockGroqCreate.mock.calls[0][0].messages[0].content;
+    // Verify system prompt uses "behavioral" and doesn't contain injected type
+    const systemPrompt = generateTextMock.mock.calls[0][1];
     expect(systemPrompt).toContain("behavioral");
     expect(systemPrompt).not.toContain("<script>");
   });
 
-  it("should fall back to Gemini when Groq fails", async () => {
-    mockGroqCreate.mockRejectedValue(new Error("Groq API error"));
-
-    const { chatWithAI } = await import("@/app/actions/interview");
-    const result = await chatWithAI(
-      [{ role: "user", content: "Hi" }],
-      "technical"
-    );
-    expect(result.response).toBe("Gemini fallback response");
-    expect(mockSendMessage).toHaveBeenCalled();
-  });
-
-  it("should return error when both providers fail", async () => {
-    mockGroqCreate.mockRejectedValue(new Error("Groq down"));
-    mockSendMessage.mockRejectedValue(new Error("Gemini down"));
+  it("should return error when gateway fails", async () => {
+    generateTextMock.mockRejectedValue(new Error("Gateway error"));
 
     const { chatWithAI } = await import("@/app/actions/interview");
     const result = await chatWithAI(
@@ -121,7 +85,7 @@ describe("chatWithAI", () => {
     );
     expect(result.response).toBeTruthy();
 
-    const systemPrompt = mockGroqCreate.mock.calls[0][0].messages[0].content;
+    const systemPrompt = generateTextMock.mock.calls[0][1];
     expect(systemPrompt).toContain("senior");
     expect(systemPrompt).toContain("React");
   });
@@ -134,16 +98,56 @@ describe("chatWithAI", () => {
       "expert" // invalid
     );
 
-    const systemPrompt = mockGroqCreate.mock.calls[0][0].messages[0].content;
+    const systemPrompt = generateTextMock.mock.calls[0][1];
     expect(systemPrompt).toContain("mid");
+  });
+
+  it("should pass custom model, temperature, and maxTokens to gateway", async () => {
+    const { chatWithAI } = await import("@/app/actions/interview");
+    await chatWithAI(
+      [{ role: "user", content: "Hi" }],
+      "behavioral"
+    );
+    expect(generateTextMock).toHaveBeenCalledWith(
+      expect.any(Array),
+      expect.any(String),
+      "auto",
+      expect.objectContaining({
+        model: "llama-3.1-8b-instant",
+        temperature: 0.7,
+        maxTokens: 150
+      })
+    );
+  });
+
+  it("should pass the full conversation history (ChatMessage[]) to the gateway", async () => {
+    const { chatWithAI } = await import("@/app/actions/interview");
+    const messages = [
+      { role: "user" as const, content: "Hello" },
+      { role: "assistant" as const, content: "Hi there" },
+      { role: "user" as const, content: "How are you?" }
+    ];
+    await chatWithAI(messages, "behavioral");
+    expect(generateTextMock).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({ role: "user", content: "Hello" }),
+        expect.objectContaining({ role: "assistant", content: "Hi there" }),
+        expect.objectContaining({ role: "user", content: "How are you?" })
+      ]),
+      expect.any(String),
+      "auto",
+      expect.any(Object)
+    );
   });
 });
 
 describe("chatWithAI message trimming", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGroqCreate.mockResolvedValue({
-      choices: [{ message: { content: "Response" } }],
+    rateLimitMock.mockResolvedValue({ success: true, message: "" });
+    generateTextMock.mockResolvedValue({
+      content: "Response",
+      provider: "groq",
     });
   });
 
@@ -175,8 +179,8 @@ describe("chatWithAI message trimming", () => {
     }));
     await chatWithAI(messages, "behavioral");
 
-    // System prompt + 30 trimmed messages = 31 messages total sent to Groq
-    const sentMessages = mockGroqCreate.mock.calls[0][0].messages;
-    expect(sentMessages.length).toBe(31); // 1 system + 30 user/assistant
+    // 30 trimmed messages passed to generateText
+    const sentMessages = generateTextMock.mock.calls[0][0];
+    expect(sentMessages.length).toBe(30);
   });
 });

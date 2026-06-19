@@ -1,7 +1,6 @@
 "use server";
 
-import { Groq } from "groq-sdk";
-import { getNextKey } from "@/utils/keyManager";
+import { generateText, AI_MODELS } from "@/lib/ai/gateway";
 import { sanitizePromptInput } from "@/utils/sanitize";
 import { logger } from "@/lib/logger";
 
@@ -68,35 +67,20 @@ FORMAT: Return well-structured markdown. Use bold for emphasis. Keep it concise 
 `;
 
   try {
-    const apiKey = getNextKey("GROQ_API_KEY") || process.env.GROQ_API_KEY;
-    if (!apiKey) throw new Error("Groq API Service configuration missing.");
-
-    const groq = new Groq({ apiKey });
-
-    const chatCompletion = await groq.chat.completions.create({
-      messages: [{ role: "user", content: prompt }],
-      model: "llama-3.3-70b-versatile",
-      temperature: 0.7,
-      max_tokens: 3000,
-    });
-
-    return { markdown: chatCompletion.choices[0]?.message?.content || "Failed to generate summary." };
-  } catch (error) {
-    logger.error("Summary Error (Groq):", error);
-    // Fallback: try Gemini if available
-    try {
-      const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
-      if (geminiKey) {
-        const { GoogleGenerativeAI } = await import("@google/generative-ai");
-        const genAI = new GoogleGenerativeAI(geminiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-        const result = await model.generateContent(prompt);
-        const text = result.response.text();
-        if (text) return { markdown: text };
+    const result = await generateText(
+      [{ role: "user", content: prompt }],
+      "You are a Senior Technical Recruiter and Interview Coach.",
+      "auto",
+      {
+        model: AI_MODELS.DEFAULT,
+        temperature: 0.7,
+        maxTokens: 3000,
       }
-    } catch (geminiErr) {
-      logger.error("Summary Error (Gemini fallback):", geminiErr);
-    }
+    );
+
+    return { markdown: result.content || "Failed to generate summary." };
+  } catch (error) {
+    logger.error("Summary Error (Gateway):", error);
     return { markdown: "I couldn't generate a detailed summary right now. Review your session metrics above for performance insights, and try again later for the full AI analysis." };
   }
 }

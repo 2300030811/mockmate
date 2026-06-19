@@ -1,7 +1,6 @@
 "use server";
 
-import { Groq } from "groq-sdk";
-import { getNextKey } from "@/utils/keyManager";
+import { generateText, AI_MODELS } from "@/lib/ai/gateway";
 import { sanitizePromptInput } from "@/utils/sanitize";
 import { logger } from "@/lib/logger";
 import { rateLimit } from "@/lib/rate-limit";
@@ -13,13 +12,7 @@ export async function generateRoadmapAction(goal: string, experience: string): P
          return { markdown: "", error: limitMsg || "Rate limit exceeded. Please wait." };
       }
 
-      const apiKey = getNextKey("GROQ_API_KEY") || process.env.GROQ_API_KEY;
-      if (!apiKey) return { markdown: "", error: "Groq API Service configuration missing." };
-
-      const groq = new Groq({ apiKey });
-
       const prompt = `
-        You are an expert technical career coach.
         The user wants to achieve this goal: "${sanitizePromptInput(goal, 500)}"
         Current experience level: "${sanitizePromptInput(experience, 200)}"
 
@@ -35,16 +28,20 @@ export async function generateRoadmapAction(goal: string, experience: string): P
         FORMAT: Return a markdown string with clear headings, bullet points, and a professional tone. Use bold text for certification names.
      `;
 
-      const chatCompletion = await groq.chat.completions.create({
-         messages: [{ role: "user", content: prompt }],
-         model: "llama-3.3-70b-versatile",
-         temperature: 0.7,
-         max_tokens: 2048,
-      });
+      const result = await generateText(
+         prompt,
+         "You are an expert technical career coach.",
+         "auto",
+         {
+            model: AI_MODELS.DEFAULT,
+            temperature: 0.7,
+            maxTokens: 2048,
+         }
+      );
 
-      return { markdown: chatCompletion.choices[0]?.message?.content || "Failed to generate roadmap." };
+      return { markdown: result.content || "Failed to generate roadmap." };
    } catch (error) {
-      logger.error("Roadmap Error (Groq):", error);
+      logger.error("Roadmap Error (Gateway):", error);
       return { markdown: "", error: "I encountered an error while mapping your path. Please try again with a more specific goal!" };
    }
 }
