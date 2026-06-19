@@ -3,6 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { logger } from "@/lib/logger";
+import { interviewRepository } from "@/lib/db/interview-repository";
 
 interface SaveSessionInput {
   type: string;
@@ -37,25 +38,16 @@ export async function saveInterviewSession(input: SaveSessionInput): Promise<str
 
     const admin = createAdminClient();
 
-    const { data, error } = await admin
-      .from("interview_sessions")
-      .insert({
-        user_id: user?.id ?? null,
-        type: safeType,
-        difficulty: safeDifficulty,
-        topic: safeTopic || null,
-        messages: safeMessages,
-        ai_summary: input.aiSummary,
-        stats: safeStats,
-        duration_seconds: safeDuration,
-      })
-      .select("id")
-      .single();
-
-    if (error) {
-      logger.error("Failed to save interview session:", error);
-      return null;
-    }
+    const data = await interviewRepository.saveSession(admin, {
+      userId: user?.id ?? null,
+      type: safeType,
+      difficulty: safeDifficulty,
+      topic: safeTopic,
+      messages: safeMessages,
+      aiSummary: input.aiSummary,
+      stats: safeStats,
+      durationSeconds: safeDuration,
+    });
 
     return data?.id ?? null;
   } catch (err) {
@@ -75,18 +67,7 @@ export async function getInterviewSessions(limit = 20) {
 
     if (!user) return [];
 
-    const { data, error } = await supabase
-      .from("interview_sessions")
-      .select("id, type, difficulty, topic, stats, duration_seconds, ai_summary, created_at")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(limit);
-
-    if (error) {
-      logger.error("Failed to fetch interview sessions:", error);
-      return [];
-    }
-
+    const data = await interviewRepository.getSessions(supabase, user.id, limit);
     return data ?? [];
   } catch (err) {
     logger.error("getInterviewSessions error:", err);
@@ -105,18 +86,7 @@ export async function getInterviewSessionById(id: string) {
 
     if (!user) return null;
 
-    const { data, error } = await supabase
-      .from("interview_sessions")
-      .select("*")
-      .eq("id", id)
-      .eq("user_id", user.id)
-      .single();
-
-    if (error) {
-      logger.error("Failed to fetch interview session:", error);
-      return null;
-    }
-
+    const data = await interviewRepository.getSessionById(supabase, id, user.id);
     return data;
   } catch (err) {
     logger.error("getInterviewSessionById error:", err);

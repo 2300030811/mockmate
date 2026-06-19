@@ -3,14 +3,13 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 const createClientMock = vi.hoisted(() => vi.fn());
 const createAdminClientMock = vi.hoisted(() => vi.fn());
 const revalidatePathMock = vi.hoisted(() => vi.fn());
-const validateNicknameMock = vi.hoisted(() => vi.fn(() => ({ success: true })));
 const withRetryMock = vi.hoisted(() => vi.fn(async (operation: () => Promise<unknown>) => operation()));
-const getRawQuestionsMock = vi.hoisted(() => vi.fn());
-const checkAnswerMock = vi.hoisted(() => vi.fn());
-const syncProfileStatsMock = vi.hoisted(() => vi.fn());
-const parseArenaBaseCategoryMock = vi.hoisted(() => vi.fn((category: string) => category));
-const parseArenaStatusMock = vi.hoisted(() => vi.fn(() => null));
-const rateLimitMock = vi.hoisted(() => vi.fn(async () => ({ success: true, message: "" })));
+
+// Service Mocks
+const saveQuizResultMock = vi.hoisted(() => vi.fn());
+const updateNicknameMock = vi.hoisted(() => vi.fn());
+const deleteQuizResultMock = vi.hoisted(() => vi.fn());
+const getLeaderboardMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/utils/supabase/server", () => ({
   createClient: createClientMock,
@@ -24,33 +23,22 @@ vi.mock("next/cache", () => ({
   revalidatePath: revalidatePathMock,
 }));
 
-vi.mock("@/utils/moderation", () => ({
-  validateNickname: validateNicknameMock,
-}));
-
 vi.mock("@/lib/retry", () => ({
   withRetry: withRetryMock,
 }));
 
-vi.mock("@/lib/rate-limit", () => ({
-  rateLimit: rateLimitMock,
+vi.mock("@/lib/services/quiz-service", () => ({
+  quizService: {
+    saveQuizResult: saveQuizResultMock,
+    updateNickname: updateNicknameMock,
+    deleteQuizResult: deleteQuizResultMock,
+  },
 }));
 
-vi.mock("@/app/actions/quiz", () => ({
-  getRawQuestions: getRawQuestionsMock,
-}));
-
-vi.mock("@/utils/quiz-helpers", () => ({
-  checkAnswer: checkAnswerMock,
-}));
-
-vi.mock("@/lib/profile-sync", () => ({
-  syncProfileStats: syncProfileStatsMock,
-}));
-
-vi.mock("@/lib/arena-category", () => ({
-  parseArenaBaseCategory: parseArenaBaseCategoryMock,
-  parseArenaStatus: parseArenaStatusMock,
+vi.mock("@/lib/services/leaderboard-service", () => ({
+  leaderboardService: {
+    getLeaderboard: getLeaderboardMock,
+  },
 }));
 
 vi.mock("@upstash/redis", () => ({
@@ -59,74 +47,14 @@ vi.mock("@upstash/redis", () => ({
   },
 }));
 
+// Mock repositories to prevent any unintentional database queries
+vi.mock("@/lib/db/quiz-repository", () => ({
+  quizRepository: {
+    getRecentResults: vi.fn(),
+  },
+}));
+
 const originalEnv = process.env;
-
-function buildAdminDb(params?: {
-  existingResultId?: string | null;
-  insertError?: Error | null;
-}) {
-  const profileSingle = vi.fn().mockResolvedValue({
-    data: { nickname: "ServerNickname" },
-    error: null,
-  });
-  const profileEq = vi.fn().mockReturnValue({ single: profileSingle });
-  const profileSelect = vi.fn().mockReturnValue({ eq: profileEq });
-
-  const quizMaybeSingle = vi.fn().mockResolvedValue({
-    data: params?.existingResultId ? { id: params.existingResultId } : null,
-    error: null,
-  });
-  const quizEq = vi.fn().mockReturnThis();
-  const quizGt = vi.fn().mockReturnThis();
-  const quizOrder = vi.fn().mockReturnThis();
-  const quizLimit = vi.fn().mockResolvedValue({
-    data: params?.existingResultId ? [{ id: params.existingResultId }] : [],
-    error: null,
-  });
-  const quizSelect = vi.fn().mockReturnValue({
-    eq: quizEq,
-    gt: quizGt,
-    order: quizOrder,
-    limit: quizLimit,
-    maybeSingle: quizMaybeSingle,
-  });
-
-  const quizUpdateEq = vi.fn().mockResolvedValue({ error: null });
-  const quizUpdate = vi.fn().mockReturnValue({ eq: quizUpdateEq });
-
-  const quizInsert = vi.fn().mockResolvedValue({
-    error: params?.insertError ?? null,
-  });
-
-  const db = {
-    from: vi.fn((table: string) => {
-      if (table === "profiles") {
-        return {
-          select: profileSelect,
-        };
-      }
-
-      if (table === "quiz_results") {
-        return {
-          select: quizSelect,
-          update: quizUpdate,
-          insert: quizInsert,
-        };
-      }
-
-      throw new Error(`Unexpected table ${table}`);
-    }),
-  };
-
-  return {
-    db,
-    spies: {
-      quizInsert,
-      quizUpdate,
-      quizUpdateEq,
-    },
-  };
-}
 
 async function loadSaveQuizResult() {
   const resultsModule = await import("./results");
@@ -155,17 +83,7 @@ describe("saveQuizResult", () => {
       },
     });
 
-    getRawQuestionsMock.mockResolvedValue([
-      { id: 1, question: "Q1" },
-      { id: 2, question: "Q2" },
-    ]);
-
-    checkAnswerMock.mockImplementation((question: { id: number }, answer: string) => {
-      if (question.id === 1) return answer === "correct";
-      return false;
-    });
-
-    syncProfileStatsMock.mockResolvedValue(undefined);
+    createAdminClientMock.mockReturnValue({});
   });
 
   afterAll(() => {
@@ -173,8 +91,7 @@ describe("saveQuizResult", () => {
   });
 
   it("updates nickname on existing recent duplicate result", async () => {
-    const { db, spies } = buildAdminDb({ existingResultId: "existing-1" });
-    createAdminClientMock.mockReturnValue(db as never);
+    saveQuizResultMock.mockResolvedValue({ success: true, updated: true });
 
     const saveQuizResult = await loadSaveQuizResult();
     const result = await saveQuizResult({
@@ -187,16 +104,19 @@ describe("saveQuizResult", () => {
     });
 
     expect(result).toEqual({ success: true, updated: true });
-    expect(spies.quizUpdate).toHaveBeenCalledWith({ nickname: "ServerNickname" });
-    expect(spies.quizUpdateEq).toHaveBeenCalledWith("id", "existing-1");
-    expect(spies.quizInsert).not.toHaveBeenCalled();
-    expect(syncProfileStatsMock).not.toHaveBeenCalled();
+    expect(saveQuizResultMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.objectContaining({
+        sessionId: "session-1",
+        category: "aws",
+        totalQuestions: 1,
+      })
+    );
   });
 
   it("saves a new result even when profile sync fails", async () => {
-    const { db, spies } = buildAdminDb();
-    createAdminClientMock.mockReturnValue(db as never);
-    syncProfileStatsMock.mockRejectedValue(new Error("sync failed"));
+    saveQuizResultMock.mockResolvedValue({ success: true });
 
     const saveQuizResult = await loadSaveQuizResult();
     const result = await saveQuizResult({
@@ -210,23 +130,21 @@ describe("saveQuizResult", () => {
     });
 
     expect(result).toEqual({ success: true });
-    expect(spies.quizInsert).toHaveBeenCalledWith(
+    expect(saveQuizResultMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
       expect.objectContaining({
-        score: 1,
-        total_questions: 2,
+        sessionId: "session-2",
         category: "aws",
+        totalQuestions: 2,
       })
     );
-    expect(syncProfileStatsMock).toHaveBeenCalledTimes(1);
     expect(revalidatePathMock).toHaveBeenCalledWith("/");
     expect(revalidatePathMock).toHaveBeenCalledWith("/dashboard");
   });
 
-  it("returns an error result when insert fails", async () => {
-    const { db } = buildAdminDb({
-      insertError: new Error("insert failed"),
-    });
-    createAdminClientMock.mockReturnValue(db as never);
+  it("returns an error result when save fails", async () => {
+    saveQuizResultMock.mockRejectedValue(new Error("insert failed"));
 
     const saveQuizResult = await loadSaveQuizResult();
     const result = await saveQuizResult({

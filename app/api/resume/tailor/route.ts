@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { Groq } from 'groq-sdk';
-import { getNextKey } from '@/utils/keyManager';
+import { generateText, AI_MODELS } from "@/lib/ai/gateway";
 import { resumeGeneratePayloadSchema } from '../generate/schema';
 
 export const runtime = 'nodejs';
@@ -43,31 +42,21 @@ Output strictly valid JSON.`;
     }, null, 2)}\n\nJob Description:\n${jobDescription}`;
 
     let content = "";
-    const { getNumKeys } = await import('@/utils/keyManager');
-    const numGroqKeys = getNumKeys("GROQ_API_KEY") || 1;
-
-    for (let i = 0; i < numGroqKeys; i++) {
-      try {
-        const apiKey = getNextKey("GROQ_API_KEY") || process.env.GROQ_API_KEY;
-        if (!apiKey) throw new Error("Groq API Key missing");
-
-        const groq = new Groq({ apiKey });
-        const chatCompletion = await groq.chat.completions.create({
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt }
-          ],
-          model: 'llama-3.3-70b-versatile',
-          response_format: { type: 'json_object' },
+    try {
+      const result = await generateText(
+        [{ role: 'user', content: userPrompt }],
+        systemPrompt,
+        "auto",
+        {
+          model: AI_MODELS.DEFAULT,
           temperature: 0.2,
-          max_tokens: 4000,
-        });
-
-        content = chatCompletion.choices[0]?.message?.content || "";
-        if (content) break;
-      } catch (groqErr) {
-        console.warn(`Tailor resume: Groq key ${i + 1} failed`, groqErr);
-      }
+          maxTokens: 4000,
+          responseFormat: { type: 'json_object' },
+        }
+      );
+      content = result.content;
+    } catch (err) {
+      console.error(`Tailor resume: AI Gateway failed`, err);
     }
 
     if (!content) {

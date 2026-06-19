@@ -1,5 +1,4 @@
-import { Groq } from "groq-sdk";
-import { getNextKey } from "@/utils/keyManager";
+import { generateText, AI_MODELS } from "@/lib/ai/gateway";
 import { logger } from "@/lib/logger";
 import { GitHubRepo } from "@/lib/github-fetch";
 
@@ -36,12 +35,6 @@ export async function filterTopGitHubProjects(repos: GitHubRepo[]): Promise<GitH
   }
 
   try {
-    const apiKey = getNextKey("GROQ_API_KEY") || process.env.GROQ_API_KEY;
-    if (!apiKey) {
-      logger.warn("[GitHubFilter] No Groq API Key found. Returning top 7 by stars.");
-      return repos.slice(0, 7);
-    }
-
     const simplifiedRepos = repos.map(r => ({
       name: r.name,
       description: r.description,
@@ -53,18 +46,18 @@ export async function filterTopGitHubProjects(repos: GitHubRepo[]): Promise<GitH
 
     const prompt = `Repository Data:\n${JSON.stringify(simplifiedRepos, null, 2)}\n\nSelect the top 7 most impressive projects based on the criteria. Output ONLY a valid JSON object like: { "selected_repos": ["repo1", "repo2", ...] }`;
 
-    const groq = new Groq({ apiKey });
-    const chatCompletion = await groq.chat.completions.create({
-      messages: [
-        { role: "system", content: FILTER_SYSTEM_PROMPT },
-        { role: "user", content: prompt },
-      ],
-      model: "llama-3.3-70b-versatile",
-      temperature: 0.1,
-      response_format: { type: "json_object" },
-    });
+    const result = await generateText(
+      [{ role: "user", content: prompt }],
+      FILTER_SYSTEM_PROMPT,
+      "auto",
+      {
+        model: AI_MODELS.STRUCTURED,
+        temperature: 0.1,
+        responseFormat: { type: "json_object" },
+      }
+    );
 
-    const content = chatCompletion.choices[0]?.message?.content;
+    const content = result.content;
     if (!content) throw new Error("Empty AI response");
 
     const parsed = JSON.parse(content);

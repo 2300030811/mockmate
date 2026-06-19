@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { profileRepository } from "@/lib/db/profile-repository";
 import { redirect } from "next/navigation";
 import { validateNickname } from "@/utils/moderation";
 import { logger } from "@/lib/logger";
@@ -139,11 +140,7 @@ export async function getCurrentUser() {
     if (error || !user) return null;
 
     // Fetch profile to get nickname
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('nickname, role, avatar_icon')
-      .eq('id', user.id)
-      .single();
+    const profile = await profileRepository.getProfileFields(supabase, user.id, 'nickname, role, avatar_icon');
 
     return {
       ...user,
@@ -215,14 +212,11 @@ export async function deleteAccount() {
     return { error: "Not authenticated." };
   }
 
-  // Soft-delete: mark profile with deleted_at timestamp
-  const { error } = await supabase
-    .from("profiles")
-    .update({ deleted_at: new Date().toISOString() })
-    .eq("id", user.id);
-
-  if (error) {
-    logger.error("Account deletion error", error.message);
+  try {
+    // Soft-delete: mark profile with deleted_at timestamp
+    await profileRepository.updateProfile(supabase, user.id, { deleted_at: new Date().toISOString() });
+  } catch (error: any) {
+    logger.error("Account deletion error", error.message || error);
     return { error: "Failed to delete account. Please try again." };
   }
 

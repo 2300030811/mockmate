@@ -1,7 +1,6 @@
 "use server";
 
-import { Groq } from "groq-sdk";
-import { getNextKey, getNumKeys } from "@/utils/keyManager";
+import { generateText, AI_MODELS } from "@/lib/ai/gateway";
 import { logger } from "@/lib/logger";
 
 const COVER_LETTER_SYSTEM_PROMPT = `You are an expert career coach and professional resume writer.
@@ -18,30 +17,19 @@ Keep it under 150 words. Output ONLY the raw text of the message. No markdown fo
 export async function generateCoverLetterAction(resumeDataJson: string, jobDescription: string): Promise<{ data: string | null; error?: string }> {
   try {
     let content = "";
-    const numGroqKeys = getNumKeys("GROQ_API_KEY") || 1;
     
     const prompt = `Job Description:\n${jobDescription}\n\nResume Data:\n${resumeDataJson}\n\nWrite a highly tailored cover letter.`;
 
-    for (let i = 0; i < numGroqKeys; i++) {
-      try {
-        const apiKey = getNextKey("GROQ_API_KEY") || process.env.GROQ_API_KEY;
-        if (!apiKey) throw new Error("Groq API Key missing");
-
-        const groq = new Groq({ apiKey });
-        const chatCompletion = await groq.chat.completions.create({
-          messages: [
-            { role: "system", content: COVER_LETTER_SYSTEM_PROMPT },
-            { role: "user", content: prompt },
-          ],
-          model: "llama-3.3-70b-versatile",
-          temperature: 0.3,
-        });
-
-        content = chatCompletion.choices[0]?.message?.content || "";
-        if (content) break;
-      } catch (err) {
-        logger.warn(`[CoverLetter] Key ${i + 1} failed:`, err);
-      }
+    try {
+      const result = await generateText(
+        prompt,
+        COVER_LETTER_SYSTEM_PROMPT,
+        "auto",
+        { model: AI_MODELS.DEFAULT, temperature: 0.3 }
+      );
+      content = result.content;
+    } catch (err) {
+      logger.error("[CoverLetter] AI Gateway completion failed:", err);
     }
 
     if (!content) return { data: null, error: "Failed to generate cover letter. Please try again later." };
@@ -55,30 +43,19 @@ export async function generateCoverLetterAction(resumeDataJson: string, jobDescr
 export async function generateOutreachMessageAction(resumeDataJson: string, jobDescription: string): Promise<{ data: string | null; error?: string }> {
   try {
     let content = "";
-    const numGroqKeys = getNumKeys("GROQ_API_KEY") || 1;
     
     const prompt = `Job Description:\n${jobDescription}\n\nResume Data:\n${resumeDataJson}\n\nWrite a concise LinkedIn/Email cold outreach message to the recruiter/hiring manager.`;
 
-    for (let i = 0; i < numGroqKeys; i++) {
-      try {
-        const apiKey = getNextKey("GROQ_API_KEY") || process.env.GROQ_API_KEY;
-        if (!apiKey) throw new Error("Groq API Key missing");
-
-        const groq = new Groq({ apiKey });
-        const chatCompletion = await groq.chat.completions.create({
-          messages: [
-            { role: "system", content: OUTREACH_SYSTEM_PROMPT },
-            { role: "user", content: prompt },
-          ],
-          model: "llama-3.3-70b-versatile",
-          temperature: 0.3,
-        });
-
-        content = chatCompletion.choices[0]?.message?.content || "";
-        if (content) break;
-      } catch (err) {
-        logger.warn(`[OutreachMessage] Key ${i + 1} failed:`, err);
-      }
+    try {
+      const result = await generateText(
+        prompt,
+        OUTREACH_SYSTEM_PROMPT,
+        "auto",
+        { model: AI_MODELS.DEFAULT, temperature: 0.3 }
+      );
+      content = result.content;
+    } catch (err) {
+      logger.error("[OutreachMessage] AI Gateway completion failed:", err);
     }
 
     if (!content) return { data: null, error: "Failed to generate outreach message. Please try again later." };

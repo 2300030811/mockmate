@@ -1,7 +1,6 @@
 "use server";
 
-import Groq from "groq-sdk";
-import { getNextKey } from "@/utils/keyManager";
+import { generateText, AI_MODELS } from "@/lib/ai/gateway";
 import { sanitizePromptInput } from "@/utils/sanitize";
 import { logger } from "@/lib/logger";
 
@@ -12,42 +11,29 @@ interface BobResponse {
 
 export async function askBob(context: string, question: string): Promise<BobResponse> {
   try {
-    const apiKey = getNextKey("GROQ_API_KEY");
-    if (!apiKey) {
-      throw new Error("No Groq API Key available for Bob assistant");
-    }
+    const userPrompt = `Context (Question/Code/Options): 
+${sanitizePromptInput(context, 5000)}
 
-    const groq = new Groq({ apiKey });
+User Question: ${sanitizePromptInput(question, 2000)}`;
 
-    const completion = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
-      messages: [
-        {
-          role: "system",
-          content: `You are Bob, a helpful AI bilingual assistant.
+    const systemPrompt = `You are Bob, a helpful AI bilingual assistant.
 Your goal is to help students understand quiz questions for their exams.
 When answering:
 - EXPLAIN LIKE I'M 5. Use simple, clear language that anyone can understand.
 - Do NOT use metaphors or a specific persona like a "lion". Just be a helpful tutor.
 - Always explain the correct answer clearly.
 - If the user asks for an explanation, break it down simply.
-- The user is practicing for a certification exam so ensure technical accuracy but keep it simple.`,
-        },
-        {
-          role: "user",
-          content: `Context (Question/Code/Options): 
-${sanitizePromptInput(context, 5000)}
+- The user is practicing for a certification exam so ensure technical accuracy but keep it simple.`;
 
-User Question: ${sanitizePromptInput(question, 2000)}`,
-        },
-      ],
-      temperature: 0.5,
-      max_tokens: 500,
-    });
-
-    const content = completion.choices[0]?.message?.content;
+    const result = await generateText(
+      userPrompt,
+      systemPrompt,
+      "auto",
+      { model: AI_MODELS.DEFAULT, temperature: 0.5, maxTokens: 500 }
+    );
+    const content = result.content;
     if (!content) {
-      throw new Error("Empty response from Groq");
+      throw new Error("Empty response from AI Gateway");
     }
 
     return { success: true, message: content };

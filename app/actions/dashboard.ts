@@ -2,6 +2,9 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
+import { profileRepository } from "@/lib/db/profile-repository";
+import { quizRepository } from "@/lib/db/quiz-repository";
+import { careerPathRepository } from "@/lib/db/career-path-repository";
 import { unstable_cache } from "next/cache";
 import { rateLimit } from "@/lib/rate-limit";
 import { getStreakMultiplier, calculateLevel } from "@/lib/scoring";
@@ -32,24 +35,10 @@ async function fetchDashboardData(userId: string, userEmail: string | undefined)
   const adminDb = createAdminClient();
 
   // Parallel fetch: Profile (with stats), Quiz Results, Career Paths, Tracker Applications
-  const [profileResult, quizResultsResult, careerPathsResult, trackerResult] = await Promise.all([
-    adminDb
-      .from('profiles')
-      .select('nickname, avatar_icon, role, created_at, xp, level, streak, elo')
-      .eq('id', userId)
-      .single(),
-    adminDb
-      .from('quiz_results')
-      .select('id, category, score, total_questions, completed_at')
-      .eq('user_id', userId)
-      .order('completed_at', { ascending: false })
-      .limit(500),
-    adminDb
-      .from('career_paths')
-      .select('id, job_role, company, match_score, created_at')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(10),
+  const [profile, quizResults, careerPaths, trackerResult] = await Promise.all([
+    profileRepository.getProfileFields(adminDb, userId, 'nickname, avatar_icon, role, created_at, xp, level, streak, elo'),
+    quizRepository.getRecentResults(adminDb, userId, null, 500),
+    careerPathRepository.getRecentCareerPaths(adminDb, userId, 10),
     adminDb
       .from('career_ops_applications')
       .select('id, job_role, company, status, match_score, next_follow_up_date, updated_at, applied_on, role_archetype, target_level, primary_blocker, blocker_tags')
@@ -57,10 +46,6 @@ async function fetchDashboardData(userId: string, userEmail: string | undefined)
       .order('updated_at', { ascending: false })
       .limit(200),
   ]);
-
-  const profile = profileResult.data;
-  const quizResults = quizResultsResult.data;
-  const careerPaths = careerPathsResult.data;
 
   let tracker = emptyCareerOpsTrackerSummary();
   let trackerInsights = emptyCareerOpsPatternInsights();
@@ -242,12 +227,7 @@ export async function getActivityPage(page: number = 1, limit: number = 5) {
 
   const offset = (page - 1) * limit;
 
-  const { data: quizResults, count } = await adminDb
-    .from("quiz_results")
-    .select("id, category, score, total_questions, completed_at", { count: "exact" })
-    .eq("user_id", user.id)
-    .order("completed_at", { ascending: false })
-    .range(offset, offset + limit - 1);
+  const { items: quizResults, count } = await quizRepository.getQuizResultsPage(adminDb, user.id, offset, limit);
 
   const items = (quizResults || []).map((r) => ({
     ...r,

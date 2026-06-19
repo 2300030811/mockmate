@@ -3,10 +3,7 @@ import { roastResumeAction } from "./resume";
 
 const rateLimitMock = vi.hoisted(() => vi.fn());
 const extractTextMock = vi.hoisted(() => vi.fn());
-const getNextKeyMock = vi.hoisted(() => vi.fn());
-const getNumKeysMock = vi.hoisted(() => vi.fn());
-const groqCreateMock = vi.hoisted(() => vi.fn());
-const geminiGenerateContentMock = vi.hoisted(() => vi.fn());
+const generateTextMock = vi.hoisted(() => vi.fn());
 const extractAndMatchKeywordsMock = vi.hoisted(() => vi.fn());
 const detectSectionsMock = vi.hoisted(() => vi.fn());
 const detectQuantifiedAchievementsMock = vi.hoisted(() => vi.fn());
@@ -21,9 +18,8 @@ vi.mock("@/lib/services/ocr", () => ({
   },
 }));
 
-vi.mock("@/utils/keyManager", () => ({
-  getNextKey: getNextKeyMock,
-  getNumKeys: getNumKeysMock,
+vi.mock("@/lib/ai/gateway", () => ({
+  generateText: generateTextMock,
 }));
 
 vi.mock("@/utils/sanitize", () => ({
@@ -43,28 +39,6 @@ vi.mock("@/utils/ats-keywords", () => ({
   extractAndMatchKeywords: extractAndMatchKeywordsMock,
   detectSections: detectSectionsMock,
   detectQuantifiedAchievements: detectQuantifiedAchievementsMock,
-}));
-
-vi.mock("groq-sdk", () => ({
-  Groq: vi.fn(function MockGroq() {
-    return {
-      chat: {
-        completions: {
-          create: groqCreateMock,
-        },
-      },
-    };
-  }),
-}));
-
-vi.mock("@google/generative-ai", () => ({
-  GoogleGenerativeAI: vi.fn(function MockGemini() {
-    return {
-      getGenerativeModel: vi.fn(() => ({
-        generateContent: geminiGenerateContentMock,
-      })),
-    };
-  }),
 }));
 
 const originalEnv = process.env;
@@ -119,8 +93,6 @@ describe("roastResumeAction", () => {
     mutableEnv.GOOGLE_API_KEY = "gemini-key";
 
     rateLimitMock.mockResolvedValue({ success: true, message: "" });
-    getNumKeysMock.mockReturnValue(1);
-    getNextKeyMock.mockReturnValue("groq-key");
     extractTextMock.mockResolvedValue({
       text: "summary experience education skills projects contact increased revenue by 20 percent and reduced latency by 30 percent through optimization",
       source: "local",
@@ -154,13 +126,9 @@ describe("roastResumeAction", () => {
       summary: "Quantified achievement signals: 3/9. Impact: Moderate.",
     });
 
-    groqCreateMock.mockResolvedValue({
-      choices: [{ message: { content: buildRoastResponseJson({ atsScore: 12 }) } }],
-    });
-    geminiGenerateContentMock.mockResolvedValue({
-      response: {
-        text: () => buildRoastResponseJson({ professionalScore: 74, atsScore: 44 }),
-      },
+    generateTextMock.mockResolvedValue({
+      content: buildRoastResponseJson({ atsScore: 12 }),
+      provider: "groq"
     });
   });
 
@@ -194,13 +162,12 @@ describe("roastResumeAction", () => {
     expect(result.data?.atsAnalysis.jobDescriptionProvided).toBe(true);
   });
 
-  it("falls back to Gemini when all Groq keys fail", async () => {
-    getNumKeysMock.mockReturnValue(2);
-    groqCreateMock.mockRejectedValue(new Error("groq unavailable"));
-    geminiGenerateContentMock.mockResolvedValue({
-      response: {
-        text: () => `\`\`\`json\n${buildRoastResponseJson({ professionalScore: 74, atsScore: 44 })}\n\`\`\``,
-      },
+  it("successfully parses content using fallback provider (Gemini)", async () => {
+    // In our implementation, the gateway handles fallback.
+    // We mock the resolved value from the gateway with provider "gemini".
+    generateTextMock.mockResolvedValue({
+      content: buildRoastResponseJson({ professionalScore: 74, atsScore: 44 }),
+      provider: "gemini"
     });
 
     const result = await roastResumeAction(
@@ -211,13 +178,13 @@ describe("roastResumeAction", () => {
 
     expect(result.error).toBeUndefined();
     expect(result.data).not.toBeNull();
-    expect(groqCreateMock).toHaveBeenCalledTimes(2);
     expect(result.data?.professionalScore).toBe(74);
   });
 
   it("returns parse error when model output is not valid JSON", async () => {
-    groqCreateMock.mockResolvedValue({
-      choices: [{ message: { content: "not-json" } }],
+    generateTextMock.mockResolvedValue({
+      content: "not-json",
+      provider: "groq"
     });
 
     const result = await roastResumeAction(
@@ -230,10 +197,8 @@ describe("roastResumeAction", () => {
     expect(result.error).toBe("Analysis failed to parse. Please try again.");
   });
 
-  it("returns provider-exhausted error when no provider returns content", async () => {
-    getNumKeysMock.mockReturnValue(1);
-    groqCreateMock.mockRejectedValue(new Error("groq down"));
-    geminiGenerateContentMock.mockRejectedValue(new Error("gemini down"));
+  it("returns provider-exhausted error when all gateway providers fail", async () => {
+    generateTextMock.mockRejectedValue(new Error("AI services unavailable"));
 
     const result = await roastResumeAction(
       buildFormData(),
@@ -243,5 +208,29 @@ describe("roastResumeAction", () => {
 
     expect(result.data).toBeNull();
     expect(result.error).toContain("Analysis failed. Providers are experiencing issues.");
+  });
+
+  // --- MALFORMED RESPONSE / EXPLANATION TEXT TESTS ---
+  it("successfully parses JSON even with markdown JSON blocks and extra explanation prefix/suffix text", async () => {
+    const rawContentWithFences = `Here is your JSON response:
+\`\`\`json
+${buildRoastResponseJson({ professionalScore: 88 })}
+\`\`\`
+I hope this feedback helps you build a better resume!`;
+
+    generateTextMock.mockResolvedValue({
+      content: rawContentWithFences,
+      provider: "groq"
+    });
+
+    const result = await roastResumeAction(
+      buildFormData(),
+      "Need React experience.",
+      "Brutal"
+    );
+
+    expect(result.error).toBeUndefined();
+    expect(result.data).not.toBeNull();
+    expect(result.data?.professionalScore).toBe(88);
   });
 });

@@ -3,6 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { logger } from "@/lib/logger";
+import { projectRepository } from "@/lib/db/project-repository";
 
 export interface ProjectProgressData {
   projectId: string;
@@ -42,22 +43,15 @@ export async function saveProjectProgress(
     // Use service role client to insert (bypasses RLS policies)
     const supabaseAdmin = createAdminClient();
 
-    const { error } = await supabaseAdmin
-      .from("project_results")
-      .insert({
-        user_id: user.id,
-        session_id: sessionId,
-        project_id: data.projectId,
-        time_taken: data.timeTaken,
-        hints_used: data.hintsUsed,
-        score: data.score ?? null,
-        analysis_breakdown: data.breakdown ?? null,
-      });
-
-    if (error) {
-      logger.error("Failed to save project progress:", error);
-      return { success: false, error: error.message };
-    }
+    await projectRepository.saveProgress(supabaseAdmin, {
+      userId: user.id,
+      sessionId,
+      projectId: data.projectId,
+      timeTaken: data.timeTaken,
+      hintsUsed: data.hintsUsed,
+      score: data.score,
+      analysis_breakdown: data.breakdown,
+    });
 
     logger.info(`Project progress saved: ${user.id} / ${data.projectId}`);
     return { success: true };
@@ -85,16 +79,7 @@ export async function getCompletedProjects(): Promise<string[]> {
       return [];
     }
 
-    const { data, error } = await supabase
-      .from("project_results")
-      .select("project_id")
-      .eq("user_id", user.id)
-      .order("completed_at", { ascending: false });
-
-    if (error) {
-      logger.error("Failed to fetch completed projects:", error);
-      return [];
-    }
+    const data = await projectRepository.getCompletedProjects(supabase, user.id);
 
     return [...new Set((data || []).map((r) => r.project_id))]; // Deduplicate
   } catch (err) {
@@ -115,19 +100,7 @@ export async function getProjectStats(projectId: string): Promise<{
   try {
     const supabaseAdmin = createAdminClient();
 
-    const { data, error } = await supabaseAdmin
-      .from("project_results")
-      .select("score, time_taken")
-      .eq("project_id", projectId);
-
-    if (error) {
-      logger.error("Failed to fetch project stats:", error);
-      return {
-        totalCompletions: 0,
-        averageScore: null,
-        averageTimeTaken: 0,
-      };
-    }
+    const data = await projectRepository.getProjectStats(supabaseAdmin, projectId);
 
     const results = data || [];
     if (results.length === 0) {

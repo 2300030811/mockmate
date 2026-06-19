@@ -1,12 +1,12 @@
 'use server';
 
 import { CareerAnalysisResult, Skill, SkillGap, LearningStep } from '@/types/career';
-import Groq from 'groq-sdk';
 import { env } from '@/lib/env'; 
 import { OCRService } from '@/lib/services/ocr';
 import { z } from 'zod';
 import { sanitizePromptInput, normalizeTextForATS } from '@/utils/sanitize';
-import { getNextKey, getNumKeys } from '@/utils/keyManager';
+import { generateText } from '@/lib/ai/gateway';
+import { resolveCategory } from '@/lib/quiz-registry';
 import {
   fetchSalaryEstimate,
   EnrichedSalaryData,
@@ -195,70 +195,28 @@ export async function analyzeCareerPath(
     let content: string | null = null;
     let providerUsed = "";
 
-    // --- AI Provider Cascade ---
-    const numGroqKeys = getNumKeys("GROQ_API_KEY") || 1;
-    let groqSuccess = false;
-
-    for (let i = 0; i < numGroqKeys; i++) {
-        try {
-            const groqApiKey = getNextKey("GROQ_API_KEY");
-            if (!groqApiKey) throw new Error("No Groq API Keys available");
-
-            const groq = new Groq({ apiKey: groqApiKey });
-            const completion = await groq.chat.completions.create({
-                model: "llama-3.3-70b-versatile",
-                messages: [
-                    { role: "system", content: systemPrompt },
-                    {
-                      role: "user",
-                      content: `Here is the candidate's resume text:\n\n${sanitizePromptInput(truncatedResume, 15000)}${sanitizedJobDescription ? `\n\nTarget Job Description:\n${sanitizedJobDescription}` : ''}`,
-                    }
-                ],
-                response_format: { type: "json_object" },
-                temperature: 0.4,
-            });
-            content = completion.choices[0]?.message?.content || null;
-            if (content) {
-                providerUsed = "Groq";
-                groqSuccess = true;
-                break;
-            }
-        } catch (groqError: unknown) {
-            console.warn(`⚠️ [Analyze] Groq key ${i + 1} failed: ${groqError instanceof Error ? groqError.message : String(groqError)}`);
+    // --- AI Provider Completion via Unified Gateway ---
+    try {
+        const userPrompt = `Here is the candidate's resume text:\n\n${sanitizePromptInput(truncatedResume, 15000)}${sanitizedJobDescription ? `\n\nTarget Job Description:\n${sanitizedJobDescription}` : ''}`;
+        const completion = await generateText(
+            userPrompt,
+            systemPrompt,
+            "auto",
+            { temperature: 0.4 }
+        );
+        content = completion.content;
+        providerUsed = completion.provider;
+        
+        if (content.includes("```")) {
+            content = content
+              .replace(/```json\n?/gi, "")
+              .replace(/```\n?/gi, "")
+              .trim();
         }
-    }
-
-    if (!groqSuccess) {
-        console.warn(`⚠️ [Analyze] All Groq keys failed, attempting Gemini fallback...`);
-    }
-
-    // --- Fallback to Gemini ---
-    if (!content) {
-        try {
-            const geminiApiKey = process.env.GOOGLE_API_KEY;
-            if (geminiApiKey) {
-                const { GoogleGenerativeAI } = await import("@google/generative-ai");
-                const genAI = new GoogleGenerativeAI(geminiApiKey);
-                const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-                
-                const result = await model.generateContent([
-                    {
-                      text:
-                        systemPrompt +
-                        "\n\nUser Input:\n" +
-                        sanitizePromptInput(truncatedResume, 15000) +
-                        (sanitizedJobDescription ? `\n\nTarget Job Description:\n${sanitizedJobDescription}` : ""),
-                    }
-                ]);
-                const responseText = result.response.text();
-                // Clean markdown from Gemini
-                content = responseText.replace(/```json\n?/, "").replace(/```\n?/, "").trim();
-                providerUsed = "Gemini";
-                logger.info("✅ [Analyze] Gemini Fallback successful");
-            }
-        } catch (geminiError) {
-            logger.error(`🔥 [Analyze] Gemini Fallback failed: ${geminiError instanceof Error ? geminiError.message : String(geminiError)}`);
-        }
+        
+        logger.info(`✅ [Analyze] Unified AI Gateway successful using ${providerUsed}`);
+    } catch (gatewayError) {
+        logger.error(`🔥 [Analyze] Unified AI Gateway failed:`, gatewayError);
     }
 
     if (!content) {
@@ -301,7 +259,7 @@ export async function analyzeCareerPath(
                 skill: String(s?.skill || ''),
                 category: (['technical', 'soft', 'domain'].includes(s?.category ?? '') ? s!.category : 'technical') as SkillGap['category'],
                 importance: (['high', 'medium', 'low'].includes(s?.importance ?? '') ? s!.importance : 'medium') as SkillGap['importance'],
-                recommendedQuiz: (s?.recommendedQuiz || undefined) as SkillGap['recommendedQuiz']
+                recommendedQuiz: (s?.recommendedQuiz ? (resolveCategory(s.recommendedQuiz)?.id === 'oracle' ? 'java' : (resolveCategory(s.recommendedQuiz)?.id as any)) : undefined) as SkillGap['recommendedQuiz']
             })) : [],
             roadmap: Array.isArray(rawResult.roadmap) ? rawResult.roadmap.map((r: RawStep) => ({
                 title: String(r?.title || ''),
@@ -351,7 +309,7 @@ export async function analyzeCareerPath(
         skill: s.skill,
         category: s.category,
         importance: s.importance,
-        recommendedQuiz: s.recommendedQuiz ?? undefined
+        recommendedQuiz: s.recommendedQuiz ? (resolveCategory(s.recommendedQuiz)?.id === 'oracle' ? 'java' : (resolveCategory(s.recommendedQuiz)?.id as any)) : undefined
       })),
       roadmap: result.roadmap.map(r => ({
         title: r.title,

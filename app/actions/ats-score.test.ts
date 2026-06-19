@@ -3,10 +3,7 @@ import { analyzeAtsScoreAction } from "./ats-score";
 
 const rateLimitMock = vi.hoisted(() => vi.fn());
 const extractTextMock = vi.hoisted(() => vi.fn());
-const getNextKeyMock = vi.hoisted(() => vi.fn());
-const getNumKeysMock = vi.hoisted(() => vi.fn());
-const groqCreateMock = vi.hoisted(() => vi.fn());
-const geminiGenerateContentMock = vi.hoisted(() => vi.fn());
+const generateTextMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/rate-limit", () => ({
   rateLimit: rateLimitMock,
@@ -18,9 +15,8 @@ vi.mock("@/lib/services/ocr", () => ({
   },
 }));
 
-vi.mock("@/utils/keyManager", () => ({
-  getNextKey: getNextKeyMock,
-  getNumKeys: getNumKeysMock,
+vi.mock("@/lib/ai/gateway", () => ({
+  generateText: generateTextMock,
 }));
 
 vi.mock("@/utils/sanitize", () => ({
@@ -34,28 +30,6 @@ vi.mock("@/lib/logger", () => ({
     error: vi.fn(),
     debug: vi.fn(),
   },
-}));
-
-vi.mock("groq-sdk", () => ({
-  Groq: vi.fn(function MockGroq() {
-    return {
-      chat: {
-        completions: {
-          create: groqCreateMock,
-        },
-      },
-    };
-  }),
-}));
-
-vi.mock("@google/generative-ai", () => ({
-  GoogleGenerativeAI: vi.fn(function MockGemini() {
-    return {
-      getGenerativeModel: vi.fn(() => ({
-        generateContent: geminiGenerateContentMock,
-      })),
-    };
-  }),
 }));
 
 const originalEnv = process.env;
@@ -117,30 +91,18 @@ describe("analyzeAtsScoreAction", () => {
     mutableEnv.GOOGLE_API_KEY = "gemini-key";
 
     rateLimitMock.mockResolvedValue({ success: true, message: "" });
-    getNumKeysMock.mockReturnValue(1);
-    getNextKeyMock.mockReturnValue("groq-key");
     extractTextMock.mockResolvedValue({
       text: Array.from({ length: 40 }, (_, i) => `word${i}`).join(" "),
       source: "local",
     });
-    groqCreateMock.mockResolvedValue({
-      choices: [
-        {
-          message: {
-            content: buildAtsResponseJson({
-              atsScore: 82,
-              formatScore: 80,
-              contentScore: 81,
-              keywordScore: 85,
-            }),
-          },
-        },
-      ],
-    });
-    geminiGenerateContentMock.mockResolvedValue({
-      response: {
-        text: () => buildAtsResponseJson({ atsScore: 72, formatScore: 72, contentScore: 72, keywordScore: 72 }),
-      },
+    generateTextMock.mockResolvedValue({
+      content: buildAtsResponseJson({
+        atsScore: 82,
+        formatScore: 80,
+        contentScore: 81,
+        keywordScore: 85,
+      }),
+      provider: "groq",
     });
   });
 
@@ -157,7 +119,7 @@ describe("analyzeAtsScoreAction", () => {
     expect(result.error).toBe("Too many requests");
   });
 
-  it("returns parsed ATS result from Groq with derived rating", async () => {
+  it("returns parsed ATS result when Gateway succeeds", async () => {
     const result = await analyzeAtsScoreAction(buildFormData(), "Frontend Engineer", "Acme");
 
     expect(result.error).toBeUndefined();
@@ -167,36 +129,24 @@ describe("analyzeAtsScoreAction", () => {
     expect(result.data?.presentKeywords).toContain("react");
   });
 
-  it("falls back to Gemini when Groq fails", async () => {
-    groqCreateMock.mockRejectedValue(new Error("groq unavailable"));
-    geminiGenerateContentMock.mockResolvedValue({
-      response: {
-        text: () =>
-          `\`\`\`json\n${buildAtsResponseJson({ atsScore: 60, formatScore: 60, contentScore: 60, keywordScore: 60 })}\n\`\`\``,
-      },
-    });
+  it("returns error when Gateway fails", async () => {
+    generateTextMock.mockRejectedValue(new Error("AI Gateway failed"));
 
     const result = await analyzeAtsScoreAction(buildFormData(), "Backend Engineer", "Beta");
 
-    expect(result.error).toBeUndefined();
-    expect(result.data?.atsScore).toBe(60);
-    expect(result.data?.matchRating).toBe("Medium");
+    expect(result.data).toBeNull();
+    expect(result.error).toBe("Analysis failed. Providers are experiencing issues. Please try again later.");
   });
 
   it("recomputes ATS score when provider score does not match weighted formula", async () => {
-    groqCreateMock.mockResolvedValue({
-      choices: [
-        {
-          message: {
-            content: buildAtsResponseJson({
-              atsScore: 60,
-              formatScore: 80,
-              contentScore: 81,
-              keywordScore: 85,
-            }),
-          },
-        },
-      ],
+    generateTextMock.mockResolvedValue({
+      content: buildAtsResponseJson({
+        atsScore: 60,
+        formatScore: 80,
+        contentScore: 81,
+        keywordScore: 85,
+      }),
+      provider: "groq",
     });
 
     const result = await analyzeAtsScoreAction(buildFormData(), "Frontend Engineer", "Acme");
@@ -207,13 +157,44 @@ describe("analyzeAtsScoreAction", () => {
   });
 
   it("returns parse error when model output is not valid JSON", async () => {
-    groqCreateMock.mockResolvedValue({
-      choices: [{ message: { content: "this-is-not-json" } }],
+    generateTextMock.mockResolvedValue({
+      content: "this-is-not-json",
+      provider: "groq",
     });
 
     const result = await analyzeAtsScoreAction(buildFormData(), "Data Engineer", "Gamma");
 
     expect(result.data).toBeNull();
     expect(result.error).toBe("Failed to parse analysis results.");
+  });
+
+  it("handles and cleans fenced JSON blocks successfully", async () => {
+    const fencedContent = `
+Here is your ATS analysis:
+
+\`\`\`json
+${buildAtsResponseJson({
+  atsScore: 82,
+  formatScore: 80,
+  contentScore: 81,
+  keywordScore: 85,
+})}
+\`\`\`
+
+Hope this helps!
+    `;
+
+    generateTextMock.mockResolvedValue({
+      content: fencedContent,
+      provider: "gemini",
+    });
+
+    const result = await analyzeAtsScoreAction(buildFormData(), "Frontend Engineer", "Acme");
+
+    expect(result.error).toBeUndefined();
+    expect(result.data).not.toBeNull();
+    expect(result.data?.atsScore).toBe(82);
+    expect(result.data?.matchRating).toBe("High");
+    expect(result.data?.presentKeywords).toContain("react");
   });
 });

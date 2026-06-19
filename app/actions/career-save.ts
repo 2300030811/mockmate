@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { CareerAnalysisResult } from "@/types/career";
+import { careerPathRepository } from "@/lib/db/career-path-repository";
 
 export async function saveCareerPath(result: CareerAnalysisResult) {
   const supabase = createClient();
@@ -12,21 +13,15 @@ export async function saveCareerPath(result: CareerAnalysisResult) {
   const identifier = user.id;
 
   try {
-    const { error } = await supabase
-      .from('career_paths')
-      .upsert({
-        session_id: identifier,
-        user_id: user.id,
-        job_role: result.jobRole,
-        company: result.company?.trim() || "",
-        match_score: result.matchScore,
-        data: result,
-        created_at: new Date().toISOString()
-      }, {
-        onConflict: 'session_id,job_role,company'  // prevents duplicate rows
-      });
+    await careerPathRepository.saveCareerPath(supabase, {
+      sessionId: identifier,
+      userId: user.id,
+      jobRole: result.jobRole,
+      company: result.company?.trim() || "",
+      matchScore: result.matchScore,
+      data: result,
+    });
 
-    if (error) throw error;
     return { success: true };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
@@ -36,24 +31,17 @@ export async function saveCareerPath(result: CareerAnalysisResult) {
 }
 
 export async function getRecentCareerPaths() {
-    const supabase = createClient();
-    
-    // Get user from server-side session
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return [];
+  const supabase = createClient();
+  
+  // Get user from server-side session
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
 
-    try {
-        const { data, error } = await supabase
-            .from('career_paths')
-            .select('id, job_role, company, match_score, created_at, data')
-            .eq('session_id', user.id)
-            .order('created_at', { ascending: false })
-            .limit(5);
-        
-        if (error) throw error;
-        return data;
-    } catch (error) {
-        console.error("❌ Failed to fetch career paths:", error instanceof Error ? error.message : error);
-        return [];
-    }
+  try {
+    const data = await careerPathRepository.getRecentCareerPaths(supabase, user.id, 5);
+    return data || [];
+  } catch (error) {
+    console.error("❌ Failed to fetch career paths:", error instanceof Error ? error.message : error);
+    return [];
+  }
 }
