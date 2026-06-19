@@ -12,6 +12,9 @@ import { computeAtsEngineScores } from "@/lib/ats-engine";
 import { clampScore } from "@/utils/math";
 import { resumeGeneratePayloadSchema } from "../api/resume/generate/schema";
 
+import { Groq } from "groq-sdk";
+import { getNextKey, getNumKeys } from "@/utils/keyManager";
+
 
 export async function roastResumeAction(
   formData: FormData,

@@ -11,8 +11,18 @@ import { leaderboardService } from "@/lib/services/leaderboard-service";
 import { withRetry } from "@/lib/retry";
 import { quizRepository } from "@/lib/db/quiz-repository";
 
+import { validateNickname } from "@/utils/moderation";
+import { parseArenaBaseCategory } from "@/lib/arena-category";
+import { checkAnswer } from "@/utils/quiz-helpers";
+import { syncProfileStats } from "@/lib/profile-sync";
+import { Redis } from "@upstash/redis";
+
 import { getRawQuestions } from "@/app/actions/quiz";
 export { getRawQuestions };
+
+const redis = (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
+  ? Redis.fromEnv()
+  : null;
 
 export async function saveQuizResult(data: {
     sessionId: string;
@@ -126,7 +136,7 @@ export async function saveQuizResult(data: {
             if (error) throw error;
 
             if (redis) {
-                redis.del(`leaderboard:${data.category}:all-time`, `leaderboard:${data.category}:weekly`).catch(e => console.warn("Redis del failed:", e));
+                redis.del(`leaderboard:${data.category}:all-time`, `leaderboard:${data.category}:weekly`).catch((e: unknown) => console.warn("Redis del failed:", e));
             }
 
             revalidatePath("/");
@@ -179,12 +189,12 @@ export async function saveQuizResult(data: {
         }
 
         if (redis) {
-            redis.del(`leaderboard:${data.category}:all-time`, `leaderboard:${data.category}:weekly`).catch(e => console.warn("Redis del failed:", e));
+            redis.del(`leaderboard:${data.category}:all-time`, `leaderboard:${data.category}:weekly`).catch((e: unknown) => console.warn("Redis del failed:", e));
         }
 
         revalidatePath("/");
         revalidatePath("/dashboard");
-        return result;
+        return { success: true };
     } catch (error: unknown) {
         const message = error instanceof Error ? error.message : "An unknown error occurred";
         console.error("❌ Failed to save quiz result:", message);
@@ -204,8 +214,8 @@ export async function getRecentResults(sessionId?: string): Promise<ActivityItem
             10
         );
 
-        const { data, error } = await withRetry(
-            () => Promise.resolve(query),
+        const data = await withRetry(
+            queryFn,
             { retries: 2, baseDelay: 1000, label: "Fetch results" }
         );
 
@@ -239,11 +249,11 @@ export async function updateQuizResultNickname(id: string, nickname: string) {
         if (error) throw error;
 
         if (redis && resultData?.category) {
-            redis.del(`leaderboard:${resultData.category}:all-time`, `leaderboard:${resultData.category}:weekly`).catch(e => console.warn("Redis del failed:", e));
+            redis.del(`leaderboard:${resultData.category}:all-time`, `leaderboard:${resultData.category}:weekly`).catch((e: unknown) => console.warn("Redis del failed:", e));
         }
 
         revalidatePath("/");
-        return result;
+        return { success: true };
     } catch (error: unknown) {
         const message = error instanceof Error ? error.message : "An unknown error occurred";
         console.error("❌ Failed to update nickname:", message);
