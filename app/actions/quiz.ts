@@ -39,7 +39,7 @@ export async function getRawQuestions(
 import { z } from "zod";
 
 const quizParamsSchema = z.object({
-  quizType: z.enum(["aws", "azure", "salesforce", "mongodb", "pcap", "oracle"]),
+  quizType: z.enum(["aws", "azure", "salesforce", "mongodb", "pcap", "oracle", "wtn-m1"]),
   mode: z.enum(["practice", "exam"]),
   countParam: z.union([z.string().regex(/^\d+$/), z.literal("all"), z.null()]),
 });
@@ -103,4 +103,11 @@ export async function fetchOracleQuestions(
   countParam: string | null = null,
 ): Promise<QuizQuestion[]> {
   return fetchQuizQuestions("oracle", mode, countParam);
+}
+
+export async function fetchWTNM1Questions(
+  mode: QuizMode = "practice",
+  countParam: string | null = null,
+): Promise<QuizQuestion[]> {
+  return fetchQuizQuestions("wtn-m1", mode, countParam);
 }

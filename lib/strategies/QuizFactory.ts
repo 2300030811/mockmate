@@ -3,6 +3,7 @@ import { BaseQuizSource } from "./BaseQuizSource";
 import { SimpleUrlQuizSource } from "./SimpleUrlQuizSource";
 import { AzureQuizSource } from "./AzureQuizSource";
 import { PCAPQuizSource } from "./PCAPQuizSource";
+import { LocalFileQuizSource } from "./LocalFileQuizSource";
 import { env } from "@/lib/env";
 
 // Factory
@@ -38,6 +39,9 @@ export class QuizFactory {
         break;
       case "oracle":
         source = new SimpleUrlQuizSource("Oracle", env.ORACLE_QUESTIONS_URL, 50);
+        break;
+      case "wtn-m1":
+        source = new LocalFileQuizSource("Wipro - TalentNext - Milestone 1", 50);
         break;
       default:
         throw new Error(`Unknown quiz category: ${category}`);

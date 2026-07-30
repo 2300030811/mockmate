@@ -21,6 +21,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/mongodb-quiz", priority: 0.85 },
     { path: "/oracle-quiz", priority: 0.85 },
     { path: "/pcap-quiz", priority: 0.85 },
+    { path: "/wtn-m1-quiz", priority: 0.85 },
   ];
 
   return pages.map(({ path, priority }) => ({

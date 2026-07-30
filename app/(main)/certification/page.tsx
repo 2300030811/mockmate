@@ -87,6 +87,20 @@ export default function CertificationSelect() {
         >
           {[
             {
+              id: "wtn-m1",
+              href: "/wtn-m1-quiz/mode",
+              title: "Wipro TalentNext - Milestone 1",
+              description: "Prepare for Wipro TalentNext Milestone 1 Java certification exams.",
+              icon: "🏆",
+              buttonText: "Start WTN Quiz",
+              accentColor: "purple",
+              gradientOverlay: "from-purple-500 to-indigo-500",
+              iconBg: "bg-purple-100 dark:bg-purple-500/20",
+              iconColor: "text-purple-600 dark:text-purple-400",
+              textColor: "text-purple-500",
+              ariaLabel: "Select Wipro TalentNext Milestone 1",
+            },
+            {
               id: "aws",
               href: "/aws-quiz/mode",
               title: "AWS Certified Cloud Practitioner",

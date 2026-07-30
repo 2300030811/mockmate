@@ -268,6 +268,51 @@ export const quizThemes = {
         buttonColorClass: "text-orange-700 dark:text-orange-900"
       }
     }
+  },
+  "wtn-m1": {
+    id: "wtn-m1",
+    title: "Master Wipro TalentNext",
+    subtitle: "Prepare for Wipro TalentNext Milestone 1 Java certification.",
+    badge: {
+      text: "WIPRO TALENTNEXT MILESTONE 1",
+      icon: "award",
+      className: "bg-purple-500/10 border-purple-500/30 text-purple-600 dark:bg-purple-500/10 dark:border-purple-500/20 dark:text-purple-400"
+    },
+    bgGradient: "bg-gradient-to-br from-purple-50 via-white to-indigo-50 dark:from-gray-950 dark:via-gray-900 dark:to-purple-950",
+    titleGradient: "bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-800 dark:from-purple-400 dark:via-indigo-300 dark:to-purple-200",
+    orb1: "bg-purple-500/20 dark:bg-purple-500/10",
+    orb2: "bg-indigo-500/20 dark:bg-indigo-500/10",
+    exam: {
+      count: 50,
+      duration: 90,
+      passingScore: "70% (35/50 correct)",
+      default: 50,
+      options: [30, 50, 100]
+    },
+    questionTypes: ["Java MCQ", "Multiple Select"],
+    practice: {
+      default: "all" as number | "all",
+      options: [30, 50, 100],
+      max: 500,
+      activeClass: "bg-purple-600 text-white shadow-lg shadow-purple-500/30",
+      ringClass: "focus:ring-purple-500"
+    },
+    cards: {
+      practice: {
+        gradient: "from-purple-400 to-indigo-500",
+        iconBgLight: "bg-purple-100",
+        iconBgDark: "bg-purple-500",
+        iconColorClass: "text-purple-600",
+        icon: "award"
+      },
+      exam: {
+        gradient: "from-indigo-500 to-purple-600",
+        iconBgLight: "bg-indigo-100",
+        iconBgDark: "bg-indigo-500",
+        iconColorClass: "text-indigo-500",
+        buttonColorClass: "text-indigo-700 dark:text-indigo-900"
+      }
+    }
   }
 };
 
