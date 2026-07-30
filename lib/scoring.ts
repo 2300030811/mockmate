@@ -176,13 +176,20 @@ export function calculateEloChange(
   userScore: number,
   opponentScore: number,
   winStatus: "win" | "loss" | "tie",
+  totalQuestions: number = 5,
 ): number {
-  const scoreDiff = userScore - opponentScore;
+  // Determine if the scores are raw points or correct answer counts.
+  const isPoints = userScore > totalQuestions || opponentScore > totalQuestions;
+  const maxScore = isPoints ? totalQuestions * 100 : totalQuestions;
 
   if (winStatus === "win") {
+    const diffProportion = Math.abs(userScore - opponentScore) / maxScore;
+    const questionDiff = Math.floor(diffProportion * totalQuestions);
+    
+    // Dominance bonus: 1 question diff adds 2 Elo bonus (max ELO_CONFIG.WIN_DOMINANCE_MAX)
     const dominanceBonus = Math.min(
       ELO_CONFIG.WIN_DOMINANCE_MAX,
-      Math.floor(Math.abs(scoreDiff) / 100),
+      questionDiff * 2,
     );
     return ELO_CONFIG.WIN_BASE + dominanceBonus;
   }
@@ -191,10 +198,14 @@ export function calculateEloChange(
     return ELO_CONFIG.DRAW_CHANGE;
   }
 
-  // Loss — mitigate based on how close the match was
+  // Loss — mitigate based on how close the match was:
+  const userProportion = userScore / maxScore;
+  const correctQuestions = Math.floor(userProportion * totalQuestions);
+  
+  // Each correct answer mitigates 3 Elo loss (max ELO_CONFIG.LOSS_MITIGATION_MAX)
   const mitigation = Math.min(
     ELO_CONFIG.LOSS_MITIGATION_MAX,
-    Math.floor(userScore / 100),
+    correctQuestions * 3,
   );
   const raw = ELO_CONFIG.LOSS_BASE + mitigation;
   return Math.max(raw, ELO_CONFIG.MIN_LOSS_PENALTY);

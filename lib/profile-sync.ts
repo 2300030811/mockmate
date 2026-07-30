@@ -26,6 +26,8 @@ export interface SyncProfileInput {
   totalQuestions: number;
   arenaStatus?: "win" | "loss" | "tie" | null;
   dailyPoints?: number;
+  arenaUserScore?: number;
+  arenaOpponentScore?: number;
 }
 
 /**
@@ -61,15 +63,17 @@ export async function syncProfileStats(input: SyncProfileInput): Promise<void> {
         input.arenaStatus,
         newStreak,
       );
-      // For elo, approximate opponent score
-      const approximateOpponentScore = Math.max(
-        0,
-        input.totalQuestions - input.score,
-      );
+      
+      const userScoreForElo = input.arenaUserScore !== undefined ? input.arenaUserScore : input.score;
+      const opponentScoreForElo = input.arenaOpponentScore !== undefined
+        ? input.arenaOpponentScore
+        : Math.max(0, input.totalQuestions - input.score);
+
       eloChange = calculateEloChange(
-        input.score,
-        approximateOpponentScore,
+        userScoreForElo,
+        opponentScoreForElo,
         input.arenaStatus,
+        input.totalQuestions,
       );
     } else if (input.type === "daily-challenge") {
       const points = input.dailyPoints ?? input.score;

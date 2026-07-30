@@ -112,6 +112,7 @@ interface PasswordInputProps {
   showStrength?: boolean;
   label?: string;
   extra?: React.ReactNode; // e.g. "Forgot?" link
+  autoComplete?: string;
 }
 
 export function PasswordInput({
@@ -121,6 +122,7 @@ export function PasswordInput({
   showStrength,
   label = "Password",
   extra,
+  autoComplete = "current-password",
 }: PasswordInputProps) {
   const [showPassword, setShowPassword] = useState(false);
   const toggle = useCallback(() => setShowPassword((s) => !s), []);
@@ -142,6 +144,7 @@ export function PasswordInput({
           disabled={disabled}
           value={value}
           onChange={onChange ? (e) => onChange(e.target.value) : undefined}
+          autoComplete={autoComplete}
           placeholder="••••••••"
           className={`${INPUT_BASE} pl-12 pr-12`}
         />
@@ -191,15 +194,12 @@ export function AlertBanner({ variant, Icon, children }: AlertBannerProps) {
 export function SocialButtons({ disabled }: { disabled?: boolean }) {
   return (
     <>
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-200 dark:border-gray-800" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-white dark:bg-gray-900 px-4 text-gray-500">
-            Or continue with
-          </span>
-        </div>
+      <div className="flex items-center gap-4 my-2">
+        <div className="flex-1 h-px bg-gray-200 dark:bg-gray-800" />
+        <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+          Or continue with
+        </span>
+        <div className="flex-1 h-px bg-gray-200 dark:bg-gray-800" />
       </div>
 
       <div className="grid grid-cols-2 gap-4">

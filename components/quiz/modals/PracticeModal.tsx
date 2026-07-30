@@ -104,9 +104,9 @@ export function PracticeModal({ config, practiceCount, setPracticeCount, onClose
             ))}
             
              <button
-               onClick={() => setPracticeCount(0)} 
+               onClick={() => setPracticeCount(1)} 
                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                 typeof practiceCount === "number" && !config.practice.options.includes(practiceCount)
+                 typeof practiceCount === "number" && !config.practice.options.includes(practiceCount as number)
                    ? (config.practice.activeClass || "bg-blue-600 text-white shadow-lg shadow-blue-500/30")
                    : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-100 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500 dark:border-transparent"
                }`}
@@ -115,15 +115,19 @@ export function PracticeModal({ config, practiceCount, setPracticeCount, onClose
              </button>
           </div>
           
-          {typeof practiceCount === "number" && !config.practice.options.includes(practiceCount) && (
+          {typeof practiceCount === "number" && !config.practice.options.includes(practiceCount as number) && (
             <input
               type="number"
               min="1"
               max={config.practice.max || 1500}
-              value={practiceCount || ""}
-              onChange={(e) => setPracticeCount(parseInt(e.target.value) || 1)}
-              placeholder="Enter number of questions"
+              value={practiceCount > 0 ? practiceCount : ""}
+              onChange={(e) => {
+                const val = parseInt(e.target.value);
+                if (!isNaN(val) && val > 0) setPracticeCount(val);
+              }}
+              placeholder="Enter number of questions (e.g. 25)"
               className={`w-full px-4 py-2 rounded-lg text-sm transition-all focus:outline-none focus:ring-2 ${config.practice.ringClass || "focus:ring-blue-500"} bg-white text-gray-900 border border-gray-300 dark:bg-gray-600 dark:text-white dark:border-gray-500 dark:placeholder-gray-400`}
+              autoFocus
             />
           )}
         </div>
@@ -137,7 +141,8 @@ export function PracticeModal({ config, practiceCount, setPracticeCount, onClose
           </button>
           <button
             onClick={onStart}
-            className={`px-5 py-2 rounded-lg font-bold transition ${config.practice.activeClass}`}
+            disabled={typeof practiceCount === "number" && practiceCount <= 0}
+            className={`px-5 py-2 rounded-lg font-bold transition ${config.practice.activeClass} disabled:opacity-40 disabled:cursor-not-allowed`}
           >
             Start Practice
           </button>

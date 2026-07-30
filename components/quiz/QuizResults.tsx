@@ -84,14 +84,29 @@ export const QuizResults: React.FC<QuizResultsProps> = ({
           </div>
         )}
 
-        <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
-          <div className="flex gap-3">
-            <Button onClick={onReview} variant="primary">Review Answers</Button>
-            <Button onClick={onRetake} variant="outline">Retake Quiz</Button>
+        <div className="flex flex-col gap-6 items-center">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center w-full max-w-md">
+            <Button onClick={onReview} variant="primary" size="lg" className="flex-1">
+              Review Answers
+            </Button>
+            <Button onClick={onRetake} variant="default" size="lg" className="flex-1">
+              Retake Quiz
+            </Button>
           </div>
-          <div className="flex gap-3">
-            <Button onClick={() => router.push(`/${category}-quiz/mode`)} variant="secondary">Back to Menu</Button>
-            <Button onClick={() => router.push('/certification')} variant="outline">Switch Cert</Button>
+          <div className="flex items-center gap-6 text-xs font-bold uppercase tracking-wider">
+            <button
+              onClick={() => router.push(`/${category}-quiz/mode`)}
+              className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            >
+              ← Back to Menu
+            </button>
+            <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700" />
+            <button
+              onClick={() => router.push('/certification')}
+              className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            >
+              Switch Certification →
+            </button>
           </div>
         </div>
       </m.div>

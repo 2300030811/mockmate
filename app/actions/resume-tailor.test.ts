@@ -12,7 +12,7 @@ vi.mock("@/lib/ai/gateway", () => ({
   generateText: generateTextMock,
   AI_MODELS: {
     DEFAULT: "llama-3.3-70b-versatile",
-    FAST: "llama-3.1-8b-instant",
+    FAST: "openai/gpt-oss-20b",
     STRUCTURED: "llama-3.3-70b-versatile",
   },
 }));

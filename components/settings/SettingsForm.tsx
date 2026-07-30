@@ -16,7 +16,7 @@ import {
   AlertCircle,
   Shield
 } from "lucide-react";
-import { useTheme } from "@/components/providers/ThemeProvider";
+import { useTheme } from "next-themes";
 import { useRouter, useSearchParams } from "next/navigation";
 import { m, AnimatePresence } from "framer-motion";
 import { GeneralTab } from "./GeneralTab";

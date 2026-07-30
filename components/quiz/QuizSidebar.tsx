@@ -90,7 +90,7 @@ export const QuizSidebar = memo(({
             </div>
           </div>
 
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-4 gap-2" role="group" aria-label="Question Navigator">
             {questions.map((q, index) => {
               const { isAnswered, isMarked, isCurrent } = getQuestionStatus(q);
 
@@ -107,6 +107,8 @@ export const QuizSidebar = memo(({
                 textClass = 'text-green-500 font-medium';
               }
 
+              const statusText = `${isCurrent ? 'current, ' : ''}${isAnswered ? 'answered' : 'unanswered'}${isMarked ? ', marked for review' : ''}`;
+
               return (
                 <button
                   key={q.id}
@@ -114,7 +116,9 @@ export const QuizSidebar = memo(({
                     setCurrentQuestionIndex(index);
                     if (window.innerWidth < 1024) setIsOpen(false);
                   }}
-                  className={`relative h-10 rounded-lg flex items-center justify-center text-sm transition-all border ${bgClass} ${borderClass} ${textClass} hover:opacity-80`}
+                  aria-label={`Question ${index + 1}, ${statusText}`}
+                  aria-current={isCurrent ? "true" : undefined}
+                  className={`relative h-10 rounded-lg flex items-center justify-center text-sm transition-all border ${bgClass} ${borderClass} ${textClass} hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500`}
                 >
                   {index + 1}
                   {isMarked && (

@@ -1,6 +1,6 @@
 "use client";
 
-import { X, Trash2 } from "lucide-react";
+import { X, Trash2, Bot } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
 interface BobHeaderProps {
@@ -15,7 +15,7 @@ export function BobHeader({ onClose, onClear }: BobHeaderProps) {
     >
       <div className="flex items-center gap-3">
         <div className="bg-orange-500 p-2 rounded-full shadow-lg text-white flex items-center justify-center w-10 h-10">
-          <span className="text-lg">🦁</span>
+          <Bot className="w-5 h-5 text-white" />
         </div>
         <div>
           <h3 className="font-bold text-lg text-gray-900 dark:text-white">Bob the Assistant</h3>

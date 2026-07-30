@@ -10,15 +10,24 @@ import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { LeaderboardItem } from "@/types/dashboard";
+import { getAllCategories } from "@/lib/quiz-registry";
 
-const categories = [
-  { id: "aws", name: "AWS", icon: "☁️" },
-  { id: "azure", name: "Azure", icon: "🔷" },
-  { id: "salesforce", name: "Salesforce", icon: "⚡" },
-  { id: "mongodb", name: "MongoDB", icon: "🍃" },
-  { id: "oracle", name: "Oracle", icon: "🗄️" },
-  { id: "pcap", name: "Python", icon: "🐍" },
-];
+// Category-to-icon mapping (emoji) for known IDs; falls back to a generic icon
+const CATEGORY_EMOJI_MAP: Record<string, string> = {
+  aws: "☁️",
+  azure: "🔷",
+  salesforce: "⚡",
+  mongodb: "🍃",
+  oracle: "🗄️",
+  pcap: "🐍",
+};
+
+const categories = getAllCategories().map((c) => ({
+  id: c.id,
+  name: c.name.split(" ")[0], // First word: "AWS", "Azure", etc.
+  icon: CATEGORY_EMOJI_MAP[c.id] ?? "🎯",
+}));
+
 
 type Timeframe = 'weekly' | 'all-time';
 

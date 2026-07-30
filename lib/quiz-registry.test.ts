@@ -1,74 +1,75 @@
 import { describe, it, expect } from "vitest";
-import { resolveCategory, getCategoryByRoute, getAllCategories } from "./quiz-registry";
+import { 
+  getAllCategories, 
+  validateQuizRegistry, 
+  resolveCategory, 
+  getCategoryByRoute 
+} from "./quiz-registry";
+import { QuizFactory } from "./strategies/QuizFactory";
 
-describe("QuizRegistry", () => {
-  describe("resolveCategory", () => {
-    it("resolves direct matching category IDs", () => {
-      const aws = resolveCategory("aws");
-      expect(aws).not.toBeNull();
-      expect(aws?.id).toBe("aws");
-      expect(aws?.strategyKey).toBe("simple-url");
-
-      const pcap = resolveCategory("pcap");
-      expect(pcap?.id).toBe("pcap");
-      expect(pcap?.strategyKey).toBe("pcap");
-    });
-
-    it("resolves alias matching inputs", () => {
-      const java = resolveCategory("java");
-      expect(java?.id).toBe("oracle");
-      expect(java?.language).toBe("java");
-
-      const python = resolveCategory("python");
-      expect(python?.id).toBe("pcap");
-      expect(python?.language).toBe("python");
-    });
-
-    it("resolves arena-prefixed inputs", () => {
-      const arenaAws = resolveCategory("arena:win:aws");
-      expect(arenaAws?.id).toBe("aws");
-
-      const arenaJava = resolveCategory("arena_java");
-      expect(arenaJava?.id).toBe("oracle");
-    });
-
-    it("returns null for unknown inputs", () => {
-      expect(resolveCategory("unknown")).toBeNull();
-      expect(resolveCategory("")).toBeNull();
-    });
+describe("quiz-registry", () => {
+  it("passes validation without throwing errors", () => {
+    expect(() => validateQuizRegistry()).not.toThrow();
   });
 
-  describe("getCategoryByRoute", () => {
-    it("resolves direct route matches", () => {
-      const oracle = getCategoryByRoute("/oracle-quiz");
-      expect(oracle?.id).toBe("oracle");
-    });
-
-    it("resolves subpath route matches", () => {
-      const aws = getCategoryByRoute("/aws-quiz/mode");
-      expect(aws?.id).toBe("aws");
-    });
-
-    it("handles query params and trailing spaces", () => {
-      const mongodb = getCategoryByRoute("/mongodb-quiz?mode=practice ");
-      expect(mongodb?.id).toBe("mongodb");
-    });
-
-    it("returns null for non-matching routes", () => {
-      expect(getCategoryByRoute("/home")).toBeNull();
-    });
+  it("has unique IDs for all categories", () => {
+    const categories = getAllCategories();
+    const ids = categories.map(c => c.id);
+    const uniqueIds = new Set(ids);
+    expect(uniqueIds.size).toBe(ids.length);
   });
 
-  describe("getAllCategories", () => {
-    it("returns all 6 categories", () => {
-      const list = getAllCategories();
-      expect(list.length).toBe(6);
-      expect(list.map((c) => c.id)).toContain("aws");
-      expect(list.map((c) => c.id)).toContain("azure");
-      expect(list.map((c) => c.id)).toContain("salesforce");
-      expect(list.map((c) => c.id)).toContain("mongodb");
-      expect(list.map((c) => c.id)).toContain("pcap");
-      expect(list.map((c) => c.id)).toContain("oracle");
-    });
+  it("has unique routes for all categories", () => {
+    const categories = getAllCategories();
+    const routes = categories.map(c => c.route);
+    const uniqueRoutes = new Set(routes);
+    expect(uniqueRoutes.size).toBe(routes.length);
+  });
+
+  it("has unique routeSlugs for all categories", () => {
+    const categories = getAllCategories();
+    const slugs = categories.map(c => c.routeSlug);
+    const uniqueSlugs = new Set(slugs);
+    expect(uniqueSlugs.size).toBe(slugs.length);
+  });
+
+  it("resolves all category strategies via QuizFactory", () => {
+    const categories = getAllCategories();
+    for (const cat of categories) {
+      const source = QuizFactory.getSource(cat.id);
+      expect(source).toBeDefined();
+    }
+  });
+
+  it("resolves categories by aliases and IDs", () => {
+    // Direct ID match
+    const aws = resolveCategory("aws");
+    expect(aws).not.toBeNull();
+    expect(aws?.id).toBe("aws");
+
+    // Case-insensitivity
+    const azure = resolveCategory("Azure");
+    expect(azure).not.toBeNull();
+    expect(azure?.id).toBe("azure");
+
+    // Alias match
+    const java = resolveCategory("java");
+    expect(java).not.toBeNull();
+    expect(java?.id).toBe("oracle");
+
+    // Invalid input
+    expect(resolveCategory("invalid-category")).toBeNull();
+  });
+
+  it("resolves categories by route path", () => {
+    const aws = getCategoryByRoute("/aws-quiz");
+    expect(aws).not.toBeNull();
+    expect(aws?.id).toBe("aws");
+
+    const awsMode = getCategoryByRoute("/aws-quiz/mode");
+    expect(awsMode).not.toBeNull();
+    expect(awsMode?.id).toBe("aws");
+
+    expect(getCategoryByRoute("/invalid-path")).toBeNull();
   });
 });

@@ -27,7 +27,7 @@ export function HeroHeader() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.1 }}
-        className="text-4xl sm:text-6xl md:text-8xl font-extrabold mb-4 md:mb-6 leading-[1.1] pb-4 bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 dark:from-white dark:via-blue-200 dark:to-purple-200 bg-[length:200%_auto] animate-gradient bg-clip-text text-transparent"
+        className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-extrabold mb-4 md:mb-6 leading-[1.15] pb-2 bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 dark:from-white dark:via-blue-200 dark:to-purple-200 bg-[length:200%_auto] animate-gradient bg-clip-text text-transparent"
       >
         {nickname ? (
           <>Ready to crush<br />your next goal?</>
@@ -40,7 +40,7 @@ export function HeroHeader() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.2 }}
-        className="text-xl md:text-2xl mb-12 max-w-3xl mx-auto leading-relaxed text-gray-600 dark:text-gray-400 font-medium"
+        className="text-base sm:text-xl md:text-2xl mb-12 max-w-3xl mx-auto leading-relaxed text-gray-600 dark:text-gray-400 font-medium"
       >
         {nickname 
           ? "Your career trajectory is mapped. Continue your journey with AI-driven certification prep and realistic interview simulations." 

@@ -158,7 +158,7 @@ function normalizeQuestion(q: RawQuestion): QuizQuestion | null {
     }
 
     // Consolidate answer fields
-    const rawAnswer = q.answer || q.correctAnswer || q.correct_answers;
+    const rawAnswer = q.answer || q.correctAnswer || q.correct_answers || q.answer_mapping;
     
     // Handle Salesforce/MongoDB format: options as object { "A": "...", "B": "..." }
     if (newQ.options && typeof newQ.options === 'object' && !Array.isArray(newQ.options)) {
@@ -190,6 +190,8 @@ function normalizeQuestion(q: RawQuestion): QuizQuestion | null {
             newQ.answer = mapLetterToValue(rawAnswer);
         } else if (Array.isArray(rawAnswer)) {
             newQ.answer = (rawAnswer as string[]).map(mapLetterToValue);
+        } else {
+            newQ.answer = rawAnswer;
         }
     } else {
         newQ.answer = rawAnswer;

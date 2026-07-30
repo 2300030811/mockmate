@@ -7,6 +7,7 @@ import { GeneratedQuizResponseSchema, GeneratedQuizQuestion, GeneratedQuizRespon
 import { sanitizeQuizQuestions } from "@/lib/ai/quiz-cleanup";
 import { StorageService } from "@/lib/services/storage";
 import { OCRService } from "@/lib/services/ocr";
+import { resumeExtractor } from "@/lib/services/resume-extractor";
 import { createClient } from "@/utils/supabase/server";
 import { rateLimit } from "@/lib/rate-limit";
 import { parseQuizResponse } from "@/lib/ai/response-parser";
@@ -21,35 +22,13 @@ const VISION_TIMEOUT_MS = 45_000; // Vision is heavier — give it more time
  */
 export async function convertFileAction(formData: FormData) {
   try {
-    const file = formData.get("file") as File;
+    const file = formData.get("file");
 
-    if (!file || !(file instanceof File)) {
-      throw new AppError("No file uploaded", "BAD_REQUEST", 400);
-    }
-
-    // Validate file type — only accept PDFs
-    const allowedTypes = ["application/pdf"];
-    if (!allowedTypes.includes(file.type)) {
-      throw new AppError(`Invalid file type: ${file.type}. Only PDF files are accepted.`, "BAD_REQUEST", 400);
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-      throw new AppError("File too large. Please upload < 10MB.", "PAYLOAD_TOO_LARGE", 413);
-    }
-
-    const stream = file.stream();
-    const reader = stream.getReader();
-    const chunks: Uint8Array[] = [];
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      if (value) chunks.push(value);
-    }
-    const buffer = Buffer.concat(chunks);
-
-    // --- OCR EXTRACTION ---
-    const { text, source } = await OCRService.extractText(buffer);
+    const { text, source, buffer } = await resumeExtractor.extractResume(file, {
+      minLength: 0,
+      allowOnlyPdf: true,
+      maxSizeBytes: 10 * 1024 * 1024,
+    });
 
     // --- SCANNED FALLBACK CHECK ---
     if (OCRService.isScanned(text)) {
@@ -57,7 +36,7 @@ export async function convertFileAction(formData: FormData) {
       return {
         text: "",
         isScanned: true,
-        base64: buffer.toString("base64")
+        base64: buffer ? buffer.toString("base64") : ""
       };
     }
 
@@ -65,7 +44,10 @@ export async function convertFileAction(formData: FormData) {
 
   } catch (error: unknown) {
     logger.error("Convert Action Error:", error);
-    const msg = error instanceof Error ? error.message : "File conversion failed";
+    let msg = error instanceof Error ? error.message : "File conversion failed";
+    if (msg === "No valid file uploaded") {
+      msg = "No file uploaded";
+    }
     return { error: msg };
   }
 }

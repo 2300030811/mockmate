@@ -86,7 +86,22 @@ module.exports = {
         },
       },
       colors: {
+        /* --- Semantic Token Mapping (CSS Variables → Tailwind Utilities) --- */
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
+        card: {
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))',
+        },
+        popover: {
+          DEFAULT: 'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))',
+        },
         primary: {
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
+          hover: 'hsl(var(--primary-hover))',
+          /* Backward-compatible numeric scale */
           50: "#eff6ff",
           100: "#dbeafe",
           200: "#bfdbfe",
@@ -98,6 +113,41 @@ module.exports = {
           800: "#1e40af",
           900: "#1e3a8a",
         },
+        secondary: {
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))',
+        },
+        muted: {
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))',
+        },
+        accent: {
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))',
+        },
+        destructive: {
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))',
+        },
+        success: {
+          DEFAULT: 'hsl(var(--success))',
+          foreground: 'hsl(var(--success-foreground))',
+        },
+        warning: {
+          DEFAULT: 'hsl(var(--warning))',
+          foreground: 'hsl(var(--warning-foreground))',
+        },
+        error: {
+          DEFAULT: 'hsl(var(--error))',
+          foreground: 'hsl(var(--error-foreground))',
+        },
+        info: {
+          DEFAULT: 'hsl(var(--info))',
+          foreground: 'hsl(var(--info-foreground))',
+        },
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
       },
       boxShadow: {
         "glow-sm": "0 0 10px rgba(59, 130, 246, 0.3)",
@@ -112,6 +162,16 @@ module.exports = {
       scale: {
         "102": "1.02",
         "103": "1.03",
+      },
+      borderRadius: {
+        lg: 'var(--radius-lg)',
+        md: 'var(--radius)',
+        sm: 'var(--radius-sm)',
+        xl: 'var(--radius-xl)',
+        card: 'var(--radius-xl)',
+        pill: 'var(--radius-full)',
+        input: 'var(--radius-lg)',
+        badge: 'var(--radius)',
       },
       transitionDuration: {
         "400": "400ms",

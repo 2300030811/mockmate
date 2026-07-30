@@ -11,7 +11,7 @@
  */
 
 import { Ratelimit } from "@upstash/ratelimit";
-import { Redis } from "@upstash/redis";
+import { redis as redisClient } from "@/lib/cache/redis";
 import { headers, cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 
@@ -54,7 +54,7 @@ const TIER_CONFIG: Record<RateLimitTier, { maxRequests: number; windowSeconds: n
 const upstashLimiters = new Map<string, Ratelimit>();
 
 function getUpstashLimiter(tier: RateLimitTier): Ratelimit | null {
-  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+  if (!redisClient) {
     return null;
   }
 
@@ -64,7 +64,7 @@ function getUpstashLimiter(tier: RateLimitTier): Ratelimit | null {
 
   const config = TIER_CONFIG[tier];
   const limiter = new Ratelimit({
-    redis: Redis.fromEnv(),
+    redis: redisClient,
     limiter: Ratelimit.slidingWindow(config.maxRequests, `${config.windowSeconds}s`),
     analytics: true,
     prefix: `mockmate:ratelimit:${tier}`,
@@ -169,11 +169,11 @@ export async function rateLimit(
   const errorMessage = "Authentication is required for more usage. You have hit your daily quota for guest accounts (10/day). Please create an account to use AI features freely!";
 
   // Production: Use Upstash Redis (cached like authenticated tiers)
-  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+  if (redisClient) {
     let limiter = upstashLimiters.get(guestTier);
     if (!limiter) {
       limiter = new Ratelimit({
-        redis: Redis.fromEnv(),
+        redis: redisClient,
         limiter: Ratelimit.slidingWindow(10, "86400s"),
         analytics: true,
         prefix: `mockmate:ratelimit:${guestTier}`,

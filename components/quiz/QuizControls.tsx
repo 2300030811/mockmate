@@ -27,8 +27,13 @@ export const QuizControls = memo(function QuizControls({
                     onClick={onPrev}
                     disabled={!canGoPrev}
                     className="gap-2 focus-visible:ring-2 focus-visible:ring-blue-500"
+                    aria-label="Previous Question (Left Arrow)"
                 >
-                    <ChevronLeft className="w-4 h-4" /> <span className="hidden sm:inline">Previous</span>
+                    <ChevronLeft className="w-4 h-4" />
+                    <span className="hidden sm:inline">Previous</span>
+                    <kbd className="hidden sm:inline-block ml-1 px-1.5 py-0.5 text-[10px] font-mono rounded bg-gray-700 text-gray-300 border border-gray-600">
+                        ←
+                    </kbd>
                 </Button>
 
                 {canGoNext ? (
@@ -36,8 +41,13 @@ export const QuizControls = memo(function QuizControls({
                         variant="primary"
                         onClick={onNext}
                         className="gap-2 px-8 focus-visible:ring-2 focus-visible:ring-blue-500"
+                        aria-label="Next Question (Right Arrow)"
                     >
-                        Next <ChevronRight className="w-4 h-4" />
+                        Next
+                        <ChevronRight className="w-4 h-4" />
+                        <kbd className="hidden sm:inline-block ml-1 px-1.5 py-0.5 text-[10px] font-mono rounded bg-white/20 text-white border border-white/30">
+                            →
+                        </kbd>
                     </Button>
                 ) : (
                     <Button

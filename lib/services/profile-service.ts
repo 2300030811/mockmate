@@ -46,7 +46,9 @@ export const profileService = {
     score: number,
     totalQuestions: number,
     arenaStatus?: "win" | "loss" | "tie" | null,
-    dailyPoints?: number
+    dailyPoints?: number,
+    arenaUserScore?: number,
+    arenaOpponentScore?: number
   ) {
     await syncProfileStats({
       userId,
@@ -55,6 +57,8 @@ export const profileService = {
       totalQuestions,
       arenaStatus,
       dailyPoints,
+      arenaUserScore,
+      arenaOpponentScore
     });
   },
 

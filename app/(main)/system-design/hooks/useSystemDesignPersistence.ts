@@ -24,43 +24,64 @@ export function useSystemDesignPersistence({
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const tutorialTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Initial Load
+  // Initial Load & Migration
   useEffect(() => {
-    const saved = localStorage.getItem('mockmate-design-pro-v3');
-    const savedTheme = localStorage.getItem('mockmate-design-theme') as any;
-    if (savedTheme) dispatch({ type: "SET_THEME", theme: savedTheme });
+    let saved = localStorage.getItem('mockmate-design-pro');
+    let parsed: any = null;
+    let needsSaveMigration = false;
 
     if (saved) {
       try {
-        const p = JSON.parse(saved);
-        dispatch({
-          type: "LOAD_STATE", state: {
+        parsed = JSON.parse(saved);
+      } catch (e) {
+        localStorage.removeItem('mockmate-design-pro');
+      }
+    }
+
+    // Migration from v3 payload
+    if (!parsed) {
+      const legacyV3 = localStorage.getItem('mockmate-design-pro-v3');
+      if (legacyV3) {
+        try {
+          const p = JSON.parse(legacyV3);
+          parsed = {
+            version: 3,
             nodes: p.nodes || [],
             connections: p.connections || [],
             groups: p.groups || []
-          }
-        });
-        setInitialHistory({ nodes: p.nodes || [], connections: p.connections || [], groups: p.groups || [] });
-      } catch (e) {
-        localStorage.removeItem('mockmate-design-pro-v3');
-        const old = localStorage.getItem('mockmate-design-pro');
-        if (old) {
-          try {
-            const p = JSON.parse(old);
-            const initial = { nodes: p.nodes || [], connections: p.connections || [], groups: p.groups || [] };
-            dispatch({ type: "LOAD_STATE", state: initial });
-            setInitialHistory(initial);
-          } catch {
-            localStorage.removeItem('mockmate-design-pro');
-            setInitialHistory(emptyState);
-          }
-        } else {
-          setInitialHistory(emptyState);
+          };
+          needsSaveMigration = true;
+        } catch {
+          localStorage.removeItem('mockmate-design-pro-v3');
         }
+      }
+    }
+
+    if (parsed) {
+      // Future version checks can go here, e.g.: if (parsed.version === 1) ...
+      const stateToLoad = {
+        nodes: parsed.nodes || [],
+        connections: parsed.connections || [],
+        groups: parsed.groups || []
+      };
+      dispatch({ type: "LOAD_STATE", state: stateToLoad });
+      setInitialHistory(stateToLoad);
+
+      if (needsSaveMigration) {
+        localStorage.setItem('mockmate-design-pro', JSON.stringify({
+          version: 3,
+          ...stateToLoad,
+          timestamp: Date.now()
+        }));
+        localStorage.removeItem('mockmate-design-pro-v3');
       }
     } else {
       setInitialHistory(emptyState);
     }
+
+    const savedTheme = localStorage.getItem('mockmate-design-theme') as any;
+    if (savedTheme) dispatch({ type: "SET_THEME", theme: savedTheme });
+
     setHasLoaded(true);
 
     // Auto-trigger tutorial if not onboarded
@@ -82,8 +103,8 @@ export function useSystemDesignPersistence({
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
 
     saveTimeoutRef.current = setTimeout(() => {
-      const data = { nodes, connections, groups, timestamp: Date.now() };
-      localStorage.setItem('mockmate-design-pro-v3', JSON.stringify(data));
+      const data = { version: 3, nodes, connections, groups, timestamp: Date.now() };
+      localStorage.setItem('mockmate-design-pro', JSON.stringify(data));
       localStorage.setItem('mockmate-design-theme', theme);
     }, 300);
 

@@ -1,4 +1,4 @@
-import { deriveAtsMatchRating } from "@/types/ats-score";
+import { deriveAtsMatchRating } from "@/lib/ats-scoring";
 import { RoastData, roastDataSchema } from "../types";
 
 function clampScore(value: number): number {

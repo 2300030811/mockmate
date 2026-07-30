@@ -90,6 +90,15 @@ function InterviewSessionContent() {
   const messagesRef = useRef<{role: string, content: string}[]>([]);
   const transcriptRef = useRef("");
   const finalTranscriptRef = useRef("");
+  const editorValueRef = useRef("");
+  const editorLanguageRef = useRef("c");
+  const compilationInfoRef = useRef<{
+    compiled: boolean;
+    success: boolean;
+    stdout?: string;
+    stderr?: string;
+    time?: string;
+  } | null>(null);
 
   // State
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
@@ -103,6 +112,49 @@ function InterviewSessionContent() {
   const [cameraActive, setCameraActive] = useState(false);
   const [permissionError, setPermissionError] = useState<string | null>(null);
   const [azureConfig, setAzureConfig] = useState<{ token: string; region: string } | null>(null);
+
+  // Personalized Profile & Target JD State & Refs
+  const [candidateProfile, setCandidateProfile] = useState<any>(null);
+  const [targetRole, setTargetRole] = useState<any>(null);
+  const candidateProfileRef = useRef<any>(null);
+  const targetRoleRef = useRef<any>(null);
+
+  useEffect(() => {
+    candidateProfileRef.current = candidateProfile;
+  }, [candidateProfile]);
+
+  useEffect(() => {
+    targetRoleRef.current = targetRole;
+  }, [targetRole]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedProfile = sessionStorage.getItem("interview-candidate-profile");
+      const storedRole = sessionStorage.getItem("interview-target-role");
+
+      if (storedProfile) {
+        try {
+          const parsed = JSON.parse(storedProfile);
+          setCandidateProfile(parsed);
+          candidateProfileRef.current = parsed;
+        } catch (e) {
+          console.error("Error parsing candidate profile from sessionStorage", e);
+        }
+        sessionStorage.removeItem("interview-candidate-profile");
+      }
+
+      if (storedRole) {
+        try {
+          const parsed = JSON.parse(storedRole);
+          setTargetRole(parsed);
+          targetRoleRef.current = parsed;
+        } catch (e) {
+          console.error("Error parsing target role from sessionStorage", e);
+        }
+        sessionStorage.removeItem("interview-target-role");
+      }
+    }
+  }, []);
 
   // Enhanced Features State
   const [rightPanelTab, setRightPanelTab] = useState<'visuals' | 'code' | 'insights'>(type === "technical" ? "code" : "visuals");
@@ -159,6 +211,8 @@ function InterviewSessionContent() {
   useEffect(() => { messagesRef.current = messages; }, [messages]);
   useEffect(() => { transcriptRef.current = transcript; }, [transcript]);
   useEffect(() => { finalTranscriptRef.current = finalTranscript; }, [finalTranscript]);
+  useEffect(() => { editorValueRef.current = editorValue; }, [editorValue]);
+  useEffect(() => { editorLanguageRef.current = editorLanguage; }, [editorLanguage]);
 
   const handleEndSession = useCallback(async () => {
     // Cancel all speech and audio resources eagerly
@@ -615,8 +669,20 @@ function InterviewSessionContent() {
     setDebugStatus("AI Thinking...");
 
     try {
-      // Server Action Call
-      const data = await chatWithAI(history, type, difficulty, topic);
+      // Server Action Call with structured context
+      const data = await chatWithAI({
+        messages: history,
+        type,
+        difficulty,
+        topic,
+        context: type === "technical" ? {
+          editor: {
+            code: editorValueRef.current,
+            language: editorLanguageRef.current,
+          },
+          execution: compilationInfoRef.current || undefined,
+        } : undefined,
+      });
       
       if (!isMountedRef.current) return;
 
@@ -718,6 +784,44 @@ function InterviewSessionContent() {
   const handleSubmit = useCallback((textOverride?: string) => {
     const text = textOverride || transcript || finalTranscript;
     if (!text || !text.trim()) return;
+
+    // Intercept and parse compiler execution logs
+    if (text.startsWith("[System Notification: User executed")) {
+      const isSuccess = !text.includes("✗ Execution Error") && !text.includes("[Standard Error]") && !text.includes("[Compilation Error]");
+      
+      let outputText = "";
+      const outputIndex = text.indexOf("Real Execution Output:\n");
+      if (outputIndex !== -1) {
+        outputText = text.substring(outputIndex + "Real Execution Output:\n".length);
+      } else {
+        const sqlOutputIndex = text.indexOf("Output:\n");
+        if (sqlOutputIndex !== -1) {
+          outputText = text.substring(sqlOutputIndex + "Output:\n".length);
+        }
+      }
+      
+      // Remove trailing feedback instructions wrapper
+      outputText = outputText.replace(/\n\n\(The user is waiting for your feedback on this output\.\)$/, "").trim();
+
+      compilationInfoRef.current = {
+        compiled: true,
+        success: isSuccess,
+        stdout: isSuccess ? outputText : undefined,
+        stderr: !isSuccess ? outputText : undefined
+      };
+    } else if (text.startsWith("[System Notification: User validated CSS]")) {
+      let outputText = "";
+      const outputIndex = text.indexOf("Output:\n");
+      if (outputIndex !== -1) {
+        outputText = text.substring(outputIndex + "Output:\n".length);
+      }
+      outputText = outputText.replace(/\n\n\(The user is waiting for your feedback on this output\.\)$/, "").trim();
+      compilationInfoRef.current = {
+        compiled: true,
+        success: !text.includes("syntax error"),
+        stdout: outputText
+      };
+    }
 
     // 1. Update UI (Use ref for latest state)
     const currentMsgs = messagesRef.current;

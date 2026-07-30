@@ -1,5 +1,6 @@
 
 import { QuizQuestion, QuizAnswer } from "@/types";
+import { resolveCategory } from "@/lib/quiz-registry";
 
 /**
  * @deprecated Use `calculateActivityXP` from `@/lib/scoring` instead.
@@ -154,8 +155,15 @@ export const getCorrectAnswers = (question: { answer: string | string[] | Record
       rawArray = rawAnswer.filter((a): a is string => typeof a === 'string');
   } else if (typeof rawAnswer === 'string') {
       if (rawAnswer.includes(',')) {
-          rawArray = rawAnswer.split(',').map(s => s.trim());
-      } else if (/^[A-Z]{2,}$/i.test(rawAnswer)) {
+          const parts = rawAnswer.split(',').map(s => s.trim());
+          const allSingleLetters = parts.every(p => p.length === 1 && /[A-Z]/i.test(p));
+          const allMatchOptions = parts.every(p => question.options.some(opt => opt.trim().toLowerCase() === p.toLowerCase()));
+          if (allSingleLetters || allMatchOptions) {
+              rawArray = parts;
+          } else {
+              rawArray = [rawAnswer];
+          }
+      } else if (/^[A-H]{2,}$/i.test(rawAnswer) && !question.options.some(opt => opt.trim().toLowerCase() === rawAnswer.trim().toLowerCase())) {
           rawArray = rawAnswer.toUpperCase().split('');
       } else {
           rawArray = [rawAnswer];
@@ -168,7 +176,7 @@ export const getCorrectAnswers = (question: { answer: string | string[] | Record
           return val.toUpperCase();
       }
       // 2. Index in options
-      const answerIndex = question.options.findIndex(opt => opt === val);
+      const answerIndex = question.options.findIndex(opt => opt.trim().toLowerCase() === val.trim().toLowerCase());
       if (answerIndex !== -1) {
           return String.fromCharCode(65 + answerIndex);
       }
@@ -181,10 +189,6 @@ export const getCorrectAnswers = (question: { answer: string | string[] | Record
  * Maps category to Prism-compatible language string.
  */
 export const getLanguageForCategory = (category: string | undefined): string => {
-  switch(category?.toLowerCase()) {
-      case 'pcap': return 'python';
-      case 'oracle': return 'java';
-      case 'mongodb': return 'javascript';
-      default: return 'javascript';
-  }
+  if (!category) return "javascript";
+  return resolveCategory(category)?.language ?? "javascript";
 };

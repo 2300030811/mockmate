@@ -12,11 +12,11 @@ export function HomeCTA() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, delay: 0.7, ease: "easeOut" }}
-      className="flex flex-wrap gap-4 justify-center"
+      className="flex flex-wrap gap-4 justify-center items-center"
     >
       <Link
         href="/demo"
-        className={buttonVariants({ variant: "primary", size: "lg", className: "group relative overflow-hidden shadow-2xl" })}
+        className={buttonVariants({ variant: "primary", size: "lg", className: "group relative overflow-hidden shadow-2xl text-base px-10 py-3 h-14" })}
       >
         {/* Button Shimmer */}
         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -30,7 +30,7 @@ export function HomeCTA() {
       
       <Link
         href="/upload"
-        className={buttonVariants({ variant: "default", size: "lg", className: "bg-white dark:bg-gray-800 dark:border-gray-700 hover:border-gray-400 shadow-lg hover:shadow-2xl px-8" })}
+        className={buttonVariants({ variant: "default", size: "lg", className: "border-2 border-gray-300 dark:border-gray-600 bg-white/80 dark:bg-gray-800/80 hover:border-blue-400 dark:hover:border-blue-500 shadow-md hover:shadow-xl px-8" })}
       >
         Generate Quiz
       </Link>
@@ -38,9 +38,9 @@ export function HomeCTA() {
       {!user && (
         <Link
           href="/login"
-          className={buttonVariants({ variant: "ghost", size: "lg", className: "text-gray-600 dark:text-gray-400 font-bold hover:bg-black/5 dark:hover:bg-white/5" })}
+          className={buttonVariants({ variant: "ghost", size: "lg", className: "text-gray-600 dark:text-gray-400 font-bold hover:bg-black/5 dark:hover:bg-white/5 underline underline-offset-4 decoration-gray-300 dark:decoration-gray-600" })}
         >
-          Sign In
+          Sign In →
         </Link>
       )}
     </m.div>

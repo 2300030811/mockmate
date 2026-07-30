@@ -2,6 +2,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { GET } from "./route";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { dedupeScannedJobs, filterJobsByKeywords, scanCompany } from "@/lib/services/scanner";
+import { careerOpsRepository } from "@/lib/db/career-ops-repository";
 
 vi.mock("@/utils/supabase/admin", () => ({
   createAdminClient: vi.fn(),
@@ -21,83 +22,22 @@ vi.mock("@/lib/services/scanner", () => ({
   dedupeScannedJobs: vi.fn((jobs: unknown[]) => jobs),
 }));
 
+vi.mock("@/lib/db/career-ops-repository", () => ({
+  careerOpsRepository: {
+    loadScanTargets: vi.fn(),
+    startScanRun: vi.fn(),
+    finishScanRun: vi.fn(),
+    fetchExistingPostings: vi.fn(),
+    upsertJobPostings: vi.fn(),
+  },
+}));
+
 const createAdminClientMock = vi.mocked(createAdminClient);
 const scanCompanyMock = vi.mocked(scanCompany);
 const filterJobsByKeywordsMock = vi.mocked(filterJobsByKeywords);
 const dedupeScannedJobsMock = vi.mocked(dedupeScannedJobs);
+const careerOpsRepositoryMock = vi.mocked(careerOpsRepository);
 const originalEnv = process.env;
-
-function buildAdminDb(params?: {
-  upsertError?: { message: string } | null;
-}) {
-  const scanTargetsSelectEq = vi.fn().mockResolvedValue({
-    data: [
-      {
-        name: "Acme",
-        api_type: "lever",
-        api_url: "https://api.lever.co/v0/postings/acme",
-      },
-    ],
-    error: null,
-  });
-  const scanTargetsSelect = vi.fn().mockReturnValue({ eq: scanTargetsSelectEq });
-
-  const scanRunsInsertSingle = vi.fn().mockResolvedValue({
-    data: { id: "run-1" },
-    error: null,
-  });
-  const scanRunsInsertSelect = vi.fn().mockReturnValue({ single: scanRunsInsertSingle });
-  const scanRunsInsert = vi.fn().mockReturnValue({ select: scanRunsInsertSelect });
-
-  const scanRunsUpdateEq = vi.fn().mockResolvedValue({ error: null });
-  const scanRunsUpdate = vi.fn().mockReturnValue({ eq: scanRunsUpdateEq });
-
-  const jobPostingsSelect = vi.fn((column: string) => ({
-    in: vi.fn().mockResolvedValue(
-      column === "external_url"
-        ? { data: [], error: null }
-        : { data: [], error: null }
-    ),
-  }));
-
-  const jobPostingsUpsert = vi.fn().mockResolvedValue({
-    error: params?.upsertError ?? null,
-  });
-
-  const db = {
-    from: vi.fn((table: string) => {
-      if (table === "career_ops_scan_targets") {
-        return {
-          select: scanTargetsSelect,
-        };
-      }
-
-      if (table === "career_ops_scan_runs") {
-        return {
-          insert: scanRunsInsert,
-          update: scanRunsUpdate,
-        };
-      }
-
-      if (table === "career_ops_job_postings") {
-        return {
-          select: jobPostingsSelect,
-          upsert: jobPostingsUpsert,
-        };
-      }
-
-      throw new Error(`Unexpected table ${table}`);
-    }),
-  };
-
-  return {
-    db,
-    spies: {
-      scanRunsUpdate,
-      jobPostingsUpsert,
-    },
-  };
-}
 
 describe("GET /api/cron/scan", () => {
   beforeEach(() => {
@@ -143,8 +83,17 @@ describe("GET /api/cron/scan", () => {
   it("scans and inserts new postings successfully", async () => {
     process.env.CRON_SCAN_SECRET = "scan-secret";
 
-    const { db, spies } = buildAdminDb();
-    createAdminClientMock.mockReturnValue(db as never);
+    careerOpsRepositoryMock.loadScanTargets.mockResolvedValue([
+      { name: "Acme", api_type: "lever", api_url: "https://api.lever.co/v0/postings/acme" },
+    ]);
+    careerOpsRepositoryMock.startScanRun.mockResolvedValue({ id: "run-1" });
+    careerOpsRepositoryMock.fetchExistingPostings.mockResolvedValue({
+      urls: [],
+      fingerprints: [],
+    });
+    careerOpsRepositoryMock.upsertJobPostings.mockResolvedValue(null as any);
+
+    createAdminClientMock.mockReturnValue({} as any);
 
     scanCompanyMock.mockResolvedValue([
       {
@@ -172,20 +121,22 @@ describe("GET /api/cron/scan", () => {
     expect(response.status).toBe(200);
     expect(body.success).toBe(true);
     expect(body.inserted).toBe(1);
-    expect(spies.jobPostingsUpsert).toHaveBeenCalledTimes(1);
-    expect(spies.jobPostingsUpsert).toHaveBeenCalledWith(
+    expect(careerOpsRepositoryMock.upsertJobPostings).toHaveBeenCalledTimes(1);
+    expect(careerOpsRepositoryMock.upsertJobPostings).toHaveBeenCalledWith(
+      {},
       expect.arrayContaining([
         expect.objectContaining({
           external_url: "https://jobs.example.com/1",
           posting_status: "uncertain",
         }),
-      ]),
-      { onConflict: "external_url" }
+      ])
     );
-    expect(spies.scanRunsUpdate).toHaveBeenCalledWith(
+    expect(careerOpsRepositoryMock.finishScanRun).toHaveBeenCalledWith(
+      {},
+      "run-1",
       expect.objectContaining({
         status: "completed",
-        inserted_count: 1,
+        insertedCount: 1,
       })
     );
   });
@@ -193,10 +144,17 @@ describe("GET /api/cron/scan", () => {
   it("returns 500 and finalizes run as failed when upsert fails", async () => {
     process.env.CRON_SCAN_SECRET = "scan-secret";
 
-    const { db, spies } = buildAdminDb({
-      upsertError: { message: "insert failed" },
+    careerOpsRepositoryMock.loadScanTargets.mockResolvedValue([
+      { name: "Acme", api_type: "lever", api_url: "https://api.lever.co/v0/postings/acme" },
+    ]);
+    careerOpsRepositoryMock.startScanRun.mockResolvedValue({ id: "run-1" });
+    careerOpsRepositoryMock.fetchExistingPostings.mockResolvedValue({
+      urls: [],
+      fingerprints: [],
     });
-    createAdminClientMock.mockReturnValue(db as never);
+    careerOpsRepositoryMock.upsertJobPostings.mockRejectedValue(new Error("insert failed"));
+
+    createAdminClientMock.mockReturnValue({} as any);
 
     scanCompanyMock.mockResolvedValue([
       {
@@ -223,7 +181,9 @@ describe("GET /api/cron/scan", () => {
 
     expect(response.status).toBe(500);
     expect(body.error).toContain("Could not upsert scanned postings: insert failed");
-    expect(spies.scanRunsUpdate).toHaveBeenCalledWith(
+    expect(careerOpsRepositoryMock.finishScanRun).toHaveBeenCalledWith(
+      {},
+      "run-1",
       expect.objectContaining({
         status: "failed",
       })

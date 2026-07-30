@@ -8,13 +8,17 @@ interface GroupComponentProps {
    group: Group;
    isSelected: boolean;
    onSelect: (id: string, type: "group") => void;
-   updatePos: (id: string, x: number, y: number) => void;
+   updatePos: (id: string, x: number, y: number, lockChildren?: boolean) => void;
    updateSize: (id: string, w: number, h: number) => void;
+   onDragStateEnd?: (nodes?: any, groups?: any) => void;
    theme: "light" | "dark" | "neo";
+   nodes: any[];
+   groups: any[];
 }
 
-export const GroupComponent = memo(({ group, isSelected, onSelect, updatePos, updateSize, theme }: GroupComponentProps) => {
+export const GroupComponent = memo(({ group, isSelected, onSelect, updatePos, updateSize, onDragStateEnd, theme }: GroupComponentProps) => {
    const isDragging = useRef(false);
+   const lockChildren = useRef(false);
    const isLight = theme === 'light';
    const isNeo = theme === 'neo';
 
@@ -23,14 +27,19 @@ export const GroupComponent = memo(({ group, isSelected, onSelect, updatePos, up
          drag
          dragMomentum={false}
          dragElastic={0}
-         onDragStart={() => { isDragging.current = true; onSelect(group.id, "group"); }}
+         onDragStart={(e) => { 
+            isDragging.current = true; 
+            lockChildren.current = e.shiftKey;
+            onSelect(group.id, "group"); 
+         }}
          onDragEnd={(_, info) => {
             isDragging.current = false;
             const nx = Math.round((group.x + info.offset.x) / GRID_SIZE) * GRID_SIZE;
             const ny = Math.round((group.y + info.offset.y) / GRID_SIZE) * GRID_SIZE;
-            updatePos(group.id, nx, ny);
+            updatePos(group.id, nx, ny, lockChildren.current);
+            if (onDragStateEnd) onDragStateEnd();
          }}
-         className={`absolute rounded-3xl border-2 backdrop-blur-xl transition-all duration-300 ${isSelected ? `shadow-[0_0_40px_-10px_var(--group-color-glow)] scale-[1.01] ${isLight ? 'bg-white/60' : isNeo ? 'bg-[#050212]/60' : ''}` : `shadow-lg hover:shadow-[0_0_20px_-5px_var(--group-color-glow)] ${isLight ? 'bg-white/40' : isNeo ? 'bg-[#050212]/40' : ''}`}`}
+         className={`pointer-events-auto absolute rounded-3xl border-2 backdrop-blur-xl transition-all duration-300 ${isSelected ? `shadow-[0_0_40px_-10px_var(--group-color-glow)] scale-[1.01] ${isLight ? 'bg-white/60' : isNeo ? 'bg-[#050212]/60' : ''}` : `shadow-lg hover:shadow-[0_0_20px_-5px_var(--group-color-glow)] ${isLight ? 'bg-white/40' : isNeo ? 'bg-[#050212]/40' : ''}`}`}
          style={{
             x: group.x,
             y: group.y,
@@ -62,6 +71,9 @@ export const GroupComponent = memo(({ group, isSelected, onSelect, updatePos, up
                if (nw > 100 && nh > 100) {
                   updateSize(group.id, nw, nh);
                }
+            }}
+            onDragEnd={() => {
+               if (onDragStateEnd) onDragStateEnd();
             }}
             className="absolute bottom-2 right-2 w-4 h-4 cursor-nwse-resize flex items-center justify-center opacity-0 group-hover:opacity-100"
             onMouseDown={(e) => e.stopPropagation()}

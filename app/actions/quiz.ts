@@ -37,9 +37,10 @@ export async function getRawQuestions(
 }
 
 import { z } from "zod";
+import { CATEGORY_IDS } from "@/lib/quiz-registry";
 
 const quizParamsSchema = z.object({
-  quizType: z.enum(["aws", "azure", "salesforce", "mongodb", "pcap", "oracle"]),
+  quizType: z.enum(CATEGORY_IDS as unknown as [string, ...string[]]),
   mode: z.enum(["practice", "exam"]),
   countParam: z.union([z.string().regex(/^\d+$/), z.literal("all"), z.null()]),
 });

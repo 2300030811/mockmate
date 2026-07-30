@@ -31,6 +31,10 @@ describe("quizRepository", () => {
       total_questions: 10,
       nickname: "Bob",
       completed_at: "2026-06-19",
+      quiz_mode: "standard" as const,
+      arena_status: null,
+      arena_user_score: null,
+      arena_opponent_score: null,
     };
 
     await quizRepository.saveResult(mockDb, payload);

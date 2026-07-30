@@ -11,6 +11,7 @@ import { Modal } from "@/components/ui/Modal";
 import { EmptyState, LoadingState } from "@/components/ui/States";
 import { Star, ChevronLeft, ChevronRight } from "lucide-react";
 import { QuizAnswer } from "@/types";
+import type { QuizCategoryId } from "@/lib/quiz-registry";
 
 import dynamic from 'next/dynamic';
 import { QuizNavbar } from "./QuizNavbar";
@@ -28,7 +29,7 @@ const QuizResults = dynamic(() => import("./QuizResults").then(mod => mod.QuizRe
 import { useQuizKeyboardShortcuts } from "@/hooks/useQuizKeyboardShortcuts";
 
 interface UniversalQuizShellProps {
-  category: "aws" | "azure" | "salesforce" | "mongodb" | "pcap" | "oracle";
+  category: QuizCategoryId;
   mode: QuizMode;
   count?: string | null;
 }

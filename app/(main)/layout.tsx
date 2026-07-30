@@ -1,5 +1,6 @@
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import { MobileNav } from "@/components/MobileNav";
 
 export default function MainLayout({
   children,
@@ -9,10 +10,11 @@ export default function MainLayout({
   return (
     <>
       <Header />
-      <main className="min-h-screen">
+      <main id="main-content" className="min-h-screen pb-16 md:pb-0">
         {children}
       </main>
       <Footer />
+      <MobileNav />
     </>
   );
 }

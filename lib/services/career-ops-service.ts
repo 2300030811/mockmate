@@ -19,7 +19,13 @@ import {
   normalizeRoleArchetype,
 } from "@/lib/career-ops/dimensions";
 import { careerOpsRepository } from "@/lib/db/career-ops-repository";
-import type { CreateCareerOpsApplicationInput, TransitionCareerOpsStatusInput, LogCareerOpsFollowUpInput } from "@/app/actions/career-ops";
+import type {
+  CreateCareerOpsApplicationInput,
+  TransitionCareerOpsStatusInput,
+  LogCareerOpsFollowUpInput,
+  CareerOpsDbApplicationRow,
+  ServiceResult,
+} from "@/types/career-ops";
 
 function compactText(value: string | null | undefined): string {
   return (value ?? "").replace(/\s+/g, " ").trim();
@@ -73,7 +79,7 @@ export const careerOpsService = {
     fromStatus: CareerOpsApplicationStatus | null;
     toStatus: CareerOpsApplicationStatus;
     note?: string;
-  }) {
+  }): Promise<void> {
     try {
       await careerOpsRepository.insertStatusEvent(supabase, {
         applicationId: params.applicationId,
@@ -91,7 +97,7 @@ export const careerOpsService = {
     supabase: SupabaseClient,
     userId: string,
     input: CreateCareerOpsApplicationInput
-  ) {
+  ): Promise<ServiceResult<CareerOpsDbApplicationRow>> {
     const jobRole = compactText(input.jobRole);
     const company = compactText(input.company);
     const sourceUrl = compactText(input.sourceUrl) || null;
@@ -144,7 +150,7 @@ export const careerOpsService = {
         blocker_tags: blockerTags,
         next_follow_up_date: nextFollowUpDate,
         applied_on: status === "applied" ? todayIsoDate() : null,
-      });
+      }) as unknown as CareerOpsDbApplicationRow;
 
       await this.insertStatusEvent(supabase, {
         userId,
@@ -182,13 +188,13 @@ export const careerOpsService = {
     supabase: SupabaseClient,
     userId: string,
     input: CreateCareerOpsApplicationInput & { company?: string }
-  ) {
+  ): Promise<ServiceResult<CareerOpsDbApplicationRow>> {
     const jobRole = compactText(input.jobRole);
     const company = compactText(input.company) || "General";
 
-    let duplicateCheckData = null;
+    let duplicateCheckData: CareerOpsDbApplicationRow | null = null;
     try {
-      duplicateCheckData = await careerOpsRepository.findDuplicate(supabase, userId, jobRole, company);
+      duplicateCheckData = await careerOpsRepository.findDuplicate(supabase, userId, jobRole, company) as CareerOpsDbApplicationRow | null;
     } catch (error: any) {
       if (!isMissingCareerOpsTableError(error)) {
         logger.warn("[CareerOps] Failed duplicate-check query.", error.message);
@@ -196,10 +202,14 @@ export const careerOpsService = {
     }
 
     if (duplicateCheckData) {
-      const latest = duplicateCheckData as any & { created_at: string };
-      const createdMs = new Date(latest.created_at).getTime();
+      const latest = duplicateCheckData;
+      const createdMs = latest.updated_at ? new Date(latest.updated_at).getTime() : NaN; // latest row returns updated_at
+      // Let's also check created_at. In findDuplicate query it selects created_at, let's type it as:
+      const latestWithCreated = latest as CareerOpsDbApplicationRow & { created_at?: string };
+      const createdTimeStr = latestWithCreated.created_at || latestWithCreated.updated_at;
+      const createdMsParsed = createdTimeStr ? new Date(createdTimeStr).getTime() : NaN;
       const oneDayMs = 24 * 60 * 60 * 1000;
-      if (!Number.isNaN(createdMs) && Date.now() - createdMs < oneDayMs) {
+      if (!Number.isNaN(createdMsParsed) && Date.now() - createdMsParsed < oneDayMs) {
         return {
           success: true,
           data: latest,
@@ -219,15 +229,15 @@ export const careerOpsService = {
     supabase: SupabaseClient,
     userId: string,
     input: TransitionCareerOpsStatusInput
-  ) {
+  ): Promise<ServiceResult<CareerOpsDbApplicationRow>> {
     const applicationId = compactText(input.applicationId);
     if (!applicationId) {
       return { success: false, error: "Application id is required." };
     }
 
-    let current: any = null;
+    let current: { status: string; applied_on: string | null } | null = null;
     try {
-      current = await careerOpsRepository.getApplicationFields(supabase, applicationId, userId, "id, user_id, status, applied_on");
+      current = await careerOpsRepository.getApplicationFields(supabase, applicationId, userId, "id, user_id, status, applied_on") as unknown as { status: string; applied_on: string | null } | null;
     } catch (currentError: any) {
       if (isMissingCareerOpsTableError(currentError)) {
         return {
@@ -242,9 +252,9 @@ export const careerOpsService = {
       return { success: false, error: "Tracked application was not found." };
     }
 
-    const fromStatus = normalizeCareerOpsStatus((current as { status: string }).status);
+    const fromStatus = normalizeCareerOpsStatus(current.status);
     const toStatus = normalizeCareerOpsStatus(input.toStatus, fromStatus);
-    const currentAppliedOn = (current as { applied_on: string | null }).applied_on;
+    const currentAppliedOn = current.applied_on;
     const followUpCount = await this.getFollowUpCountForApplication(supabase, userId, applicationId);
     const requestedDate = coerceIsoDate(input.nextFollowUpDate);
     const nextFollowUpDate =
@@ -269,7 +279,7 @@ export const careerOpsService = {
     }
 
     try {
-      const updated = await careerOpsRepository.updateApplication(supabase, applicationId, userId, updatePayload);
+      const updated = await careerOpsRepository.updateApplication(supabase, applicationId, userId, updatePayload) as CareerOpsDbApplicationRow;
 
       await this.insertStatusEvent(supabase, {
         userId,
@@ -293,15 +303,15 @@ export const careerOpsService = {
     supabase: SupabaseClient,
     userId: string,
     input: LogCareerOpsFollowUpInput
-  ) {
+  ): Promise<ServiceResult<{ applicationId: string }>> {
     const applicationId = compactText(input.applicationId);
     if (!applicationId) {
       return { success: false, error: "Application id is required." };
     }
 
-    let application: any = null;
+    let application: { status: string } | null = null;
     try {
-      application = await careerOpsRepository.getApplicationFields(supabase, applicationId, userId, "id, status");
+      application = await careerOpsRepository.getApplicationFields(supabase, applicationId, userId, "id, status") as unknown as { status: string } | null;
     } catch (applicationError: any) {
       if (isMissingCareerOpsTableError(applicationError)) {
         return {
@@ -339,7 +349,7 @@ export const careerOpsService = {
       return { success: false, error: followUpError.message };
     }
 
-    const currentStatus = normalizeCareerOpsStatus((application as { status: string }).status);
+    const currentStatus = normalizeCareerOpsStatus(application.status);
     const nextFollowUpDate =
       coerceIsoDate(input.nextFollowUpDate) ??
       calculateCadenceNextFollowUpDate({
@@ -372,7 +382,22 @@ export const careerOpsService = {
     supabase: SupabaseClient,
     userId: string,
     limit: number = 200
-  ) {
-    return recomputeCadenceForUser({ db: supabase, userId, limit });
+  ): Promise<ServiceResult<{ updatedCount: number; skippedCount: number; failedCount: number }>> {
+    const res = await recomputeCadenceForUser({ db: supabase, userId, limit });
+    if (res.success && res.data) {
+      return {
+        success: true,
+        data: {
+          updatedCount: res.data.updatedCount,
+          skippedCount: res.data.skippedCount,
+          failedCount: res.data.failedCount,
+        },
+      };
+    }
+    return {
+      success: false,
+      error: res.error ?? "Failed to recompute cadence.",
+      missingTable: res.missingTable,
+    };
   }
 };

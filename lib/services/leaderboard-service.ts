@@ -1,11 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import { Redis } from "@upstash/redis";
+import { redis } from "@/lib/cache/redis";
 import { quizRepository } from "@/lib/db/quiz-repository";
 import type { LeaderboardItem } from "@/types/dashboard";
-
-const redis = (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
-  ? Redis.fromEnv()
-  : null;
 
 export const leaderboardService = {
   async getLeaderboard(

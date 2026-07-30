@@ -4,11 +4,12 @@ import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { profileRepository } from "@/lib/db/profile-repository";
 import { quizRepository } from "@/lib/db/quiz-repository";
+import { careerOpsRepository } from "@/lib/db/career-ops-repository";
 import { careerPathRepository } from "@/lib/db/career-path-repository";
 import { unstable_cache } from "next/cache";
 import { rateLimit } from "@/lib/rate-limit";
 import { getStreakMultiplier, calculateLevel } from "@/lib/scoring";
-import { isArenaCategory, parseArenaStatus, formatArenaCategoryLabel } from "@/lib/arena-category";
+import { isArenaCategory, parseArenaStatus, parseArenaBaseCategory } from "@/lib/arena-category";
 import { logger } from "@/lib/logger";
 import {
   buildCareerOpsTrackerSummary,
@@ -35,29 +36,21 @@ async function fetchDashboardData(userId: string, userEmail: string | undefined)
   const adminDb = createAdminClient();
 
   // Parallel fetch: Profile (with stats), Quiz Results, Career Paths, Tracker Applications
-  const [profile, quizResults, careerPaths, trackerResult] = await Promise.all([
+  const [profile, quizResults, careerPaths, trackerRows] = await Promise.all([
     profileRepository.getProfileFields(adminDb, userId, 'nickname, avatar_icon, role, created_at, xp, level, streak, elo'),
     quizRepository.getRecentResults(adminDb, userId, null, 500),
     careerPathRepository.getRecentCareerPaths(adminDb, userId, 10),
-    adminDb
-      .from('career_ops_applications')
-      .select('id, job_role, company, status, match_score, next_follow_up_date, updated_at, applied_on, role_archetype, target_level, primary_blocker, blocker_tags')
-      .eq('user_id', userId)
-      .order('updated_at', { ascending: false })
-      .limit(200),
+    careerOpsRepository.getTrackerData(adminDb, userId, 200).catch((err) => {
+      if (!isMissingCareerOpsTableError(err)) {
+        logger.warn("[Dashboard] Failed to load career_ops_applications.", err.message || err);
+      }
+      return [] as CareerOpsApplicationSnapshot[];
+    }),
   ]);
 
-  let tracker = emptyCareerOpsTrackerSummary();
-  let trackerInsights = emptyCareerOpsPatternInsights();
-  if (trackerResult.error) {
-    if (!isMissingCareerOpsTableError(trackerResult.error)) {
-      logger.warn("[Dashboard] Failed to load career_ops_applications.", trackerResult.error.message);
-    }
-  } else {
-    const trackerRows = (trackerResult.data as CareerOpsApplicationSnapshot[] | null) ?? [];
-    tracker = buildCareerOpsTrackerSummary(trackerRows);
-    trackerInsights = buildCareerOpsPatternInsights(trackerRows);
-  }
+  const tracker = buildCareerOpsTrackerSummary(trackerRows as CareerOpsApplicationSnapshot[]);
+  const trackerInsights = buildCareerOpsPatternInsights(trackerRows as CareerOpsApplicationSnapshot[]);
+
 
   // Read materialised stats from profile
   const totalXP = profile?.xp ?? 0;
@@ -67,9 +60,9 @@ async function fetchDashboardData(userId: string, userEmail: string | undefined)
   const streakMultiplier = getStreakMultiplier(streak);
 
   // Segment results for analytics (avgScore, bestCategory, arena stats)
-  const dailyChallenges = quizResults?.filter(r => r.category === 'daily-challenge') || [];
-  const arenaMatches = quizResults?.filter(r => isArenaCategory(r.category)) || [];
-  const standardQuizzes = quizResults?.filter(r => r.category !== 'daily-challenge' && !isArenaCategory(r.category)) || [];
+  const dailyChallenges = quizResults?.filter(r => r.quiz_mode === 'daily-challenge' || r.category === 'daily-challenge') || [];
+  const arenaMatches = quizResults?.filter(r => r.quiz_mode === 'arena' || isArenaCategory(r.category)) || [];
+  const standardQuizzes = quizResults?.filter(r => r.quiz_mode === 'standard' || (r.category !== 'daily-challenge' && !isArenaCategory(r.category))) || [];
 
   const totalTests = quizResults?.length || 0;
 
@@ -85,16 +78,16 @@ async function fetchDashboardData(userId: string, userEmail: string | undefined)
     avgScore = Math.round((passed / dailyChallenges.length) * 100);
   }
 
-  const arenaWins = arenaMatches.filter(r => r.category.includes(':win:') || (r.category.startsWith('arena_') && r.score > r.total_questions / 2)).length;
-  const arenaLosses = arenaMatches.filter(r => r.category.includes(':loss:')).length;
+  const arenaWins = arenaMatches.filter(r => (r.arena_status || parseArenaStatus(r.category)) === "win").length;
+  const arenaLosses = arenaMatches.filter(r => (r.arena_status || parseArenaStatus(r.category)) === "loss").length;
 
   const totalQuestionsAnswered = stdTotalQuestions + dailyChallenges.length;
 
   const categoryScores: Record<string, { total: number, count: number }> = {};
   quizResults?.forEach(r => {
     let cat = r.category;
-    if (isArenaCategory(cat)) {
-      cat = formatArenaCategoryLabel(cat);
+    if (r.quiz_mode === 'arena' || isArenaCategory(cat)) {
+      cat = `Arena: ${parseArenaBaseCategory(cat)}`;
     }
     if (!categoryScores[cat]) categoryScores[cat] = { total: 0, count: 0 };
     categoryScores[cat].total += (r.score / Math.max(1, r.total_questions)) * 100;
@@ -137,8 +130,8 @@ async function fetchDashboardData(userId: string, userEmail: string | undefined)
     },
     recentActivity: quizResults?.map(r => ({
       ...r,
-      isArena: isArenaCategory(r.category),
-      winStatus: parseArenaStatus(r.category)
+      isArena: r.quiz_mode === 'arena' || isArenaCategory(r.category),
+      winStatus: r.arena_status || parseArenaStatus(r.category)
     })).slice(0, 5) || [],
     careerPaths: careerPaths?.slice(0, 3) || [],
     tracker,
@@ -231,14 +224,8 @@ export async function getActivityPage(page: number = 1, limit: number = 5) {
 
   const items = (quizResults || []).map((r) => ({
     ...r,
-    isArena: r.category.includes("arena"),
-    winStatus: r.category.includes(":win:")
-      ? ("win" as const)
-      : r.category.includes(":loss:")
-        ? ("loss" as const)
-        : r.category.includes(":tie:")
-          ? ("tie" as const)
-          : null,
+    isArena: r.quiz_mode === 'arena' || isArenaCategory(r.category),
+    winStatus: r.arena_status || parseArenaStatus(r.category),
   }));
 
   return {

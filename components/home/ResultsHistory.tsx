@@ -9,6 +9,7 @@ import { Trophy, Clock, ChevronRight, BarChart3, RotateCcw, Briefcase, Map, Bell
 import Link from "next/link";
 import type { CareerOpsApplicationItem, CareerOpsRecentActivityItem } from "@/types/career-ops";
 import { ClientDate } from "@/components/ui/ClientDate";
+import { isArenaCategory, parseArenaBaseCategory } from "@/lib/arena-category";
 
 interface QuizResult {
   id: string;
@@ -16,6 +17,8 @@ interface QuizResult {
   score: number;
   total_questions: number;
   completed_at: string;
+  quiz_mode?: "standard" | "arena" | "daily-challenge";
+  arena_status?: "win" | "loss" | "tie" | null;
 }
 
 interface CareerPathEntry {
@@ -107,13 +110,13 @@ export function ResultsHistory() {
                   >
                     {/* Display and Link Logic */}
                     {(() => {
-                      const isArena = result.category.includes('arena');
+                      const isArena = result.quiz_mode === "arena" || isArenaCategory(result.category);
                       const isPDF = result.category.startsWith('PDF:');
                       
                       // Sanitize category for display
                       let displayCat = result.category;
                       if (isArena) {
-                        displayCat = result.category.replace(/^arena:[^:]+:/, '').toUpperCase() + " ARENA";
+                        displayCat = parseArenaBaseCategory(result.category).toUpperCase() + " ARENA";
                       } else if (isPDF) {
                         displayCat = "PDF QUIZ";
                       } else {
@@ -121,12 +124,12 @@ export function ResultsHistory() {
                       }
 
                       // Sanitize category for link
-                      const quizSlug = result.category.replace(/^arena:[^:]+:/, '').replace(/^arena_/, '');
+                      const quizSlug = parseArenaBaseCategory(result.category);
                       const href = isArena 
                         ? '/arena' 
                         : isPDF 
                           ? '/upload'
-                          : result.category === 'daily-challenge'
+                          : result.quiz_mode === 'daily-challenge' || result.category === 'daily-challenge'
                             ? '/daily-challenge'
                             : `/${quizSlug === 'pcap' ? 'pcap-quiz' : quizSlug + '-quiz'}`;
 

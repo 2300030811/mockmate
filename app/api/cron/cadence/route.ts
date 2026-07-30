@@ -5,6 +5,7 @@ import {
   isMissingCareerOpsTableError,
   recomputeCadenceForUser,
 } from "@/lib/career-ops/recompute";
+import { careerOpsRepository } from "@/lib/db/career-ops-repository";
 
 export const dynamic = "force-dynamic";
 
@@ -45,14 +46,14 @@ async function loadActiveUserIds(
 ): Promise<{ userIds: string[]; error?: string; missingTable?: boolean }> {
   const oversampleLimit = Math.min(usersLimit * 8, MAX_USERS_LIMIT * 8);
 
-  const { data, error } = await adminDb
-    .from("career_ops_applications")
-    .select("user_id, updated_at")
-    .in("status", ACTIVE_CAREER_OPS_STATUSES)
-    .order("updated_at", { ascending: false })
-    .limit(oversampleLimit);
-
-  if (error) {
+  let data;
+  try {
+    data = await careerOpsRepository.getActiveUserIdsForCadence(
+      adminDb,
+      ACTIVE_CAREER_OPS_STATUSES,
+      oversampleLimit
+    );
+  } catch (error: any) {
     return {
       userIds: [],
       error: error.message,
@@ -76,6 +77,7 @@ async function loadActiveUserIds(
 
   return { userIds };
 }
+
 
 export async function GET(request: Request) {
   const cronSecret = process.env.CRON_CAREER_OPS_SECRET;

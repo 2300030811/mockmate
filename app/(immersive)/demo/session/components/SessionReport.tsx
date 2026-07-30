@@ -133,20 +133,20 @@ export const SessionReport = memo(function SessionReport({ stats, transcript, ai
         <m.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex items-center justify-center p-4 md:p-8 overflow-y-auto"
+            className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex justify-center p-4 md:p-8 overflow-y-auto"
         >
             <m.div 
                 initial={{ scale: 0.9, y: 20 }}
                 animate={{ scale: 1, y: 0 }}
-                className="max-w-4xl w-full bg-gray-900 border border-white/10 rounded-3xl overflow-hidden shadow-[0_0_100px_rgba(139,92,246,0.1)] relative"
+                className="max-w-4xl w-full bg-gray-900 border border-white/10 rounded-3xl overflow-hidden shadow-[0_0_100px_rgba(139,92,246,0.1)] relative my-auto"
             >
                 {/* Background Decoration */}
                 <div className="absolute -top-24 -right-24 w-64 h-64 bg-purple-500/10 blur-[100px] rounded-full"></div>
                 <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-blue-500/10 blur-[100px] rounded-full"></div>
 
-                <div className="relative z-10 p-8 md:p-12">
+                <div className="relative z-10 p-6 md:p-8">
                     {/* Header */}
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-6">
                         <div>
                             <div className="flex items-center gap-2 text-purple-400 text-xs font-bold uppercase tracking-widest mb-2">
                                 <Award size={14} />
@@ -171,33 +171,33 @@ export const SessionReport = memo(function SessionReport({ stats, transcript, ai
                     </div>
 
                     {/* Main Score Card */}
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-8 flex flex-col md:flex-row items-center gap-8 mb-8">
-                        <div className="relative w-32 h-32 flex-shrink-0">
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col md:flex-row items-center gap-6 mb-5">
+                        <div className="relative w-24 h-24 flex-shrink-0">
                             <svg className="w-full h-full transform -rotate-90">
-                                <circle cx="64" cy="64" r="58" className="stroke-gray-800 fill-none" strokeWidth="8" />
+                                <circle cx="48" cy="48" r="40" className="stroke-gray-800 fill-none" strokeWidth="6" />
                                 <m.circle 
-                                    cx="64" cy="64" r="58"
+                                    cx="48" cy="48" r="40"
                                     className={`fill-none ${verdict.ring}`}
-                                    strokeWidth="8"
-                                    strokeDasharray={364.4}
-                                    initial={{ strokeDashoffset: 364.4 }}
-                                    animate={{ strokeDashoffset: 364.4 - (364.4 * stats.confidenceScore) / 100 }}
+                                    strokeWidth="6"
+                                    strokeDasharray={251.3}
+                                    initial={{ strokeDashoffset: 251.3 }}
+                                    animate={{ strokeDashoffset: 251.3 - (251.3 * stats.confidenceScore) / 100 }}
                                     transition={{ duration: 1.5, ease: "easeOut" }}
                                 />
                             </svg>
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                <span className="text-3xl font-black text-white">{stats.confidenceScore}%</span>
+                                <span className="text-2xl font-black text-white">{stats.confidenceScore}%</span>
                                 <span className="text-[10px] uppercase text-gray-500 font-bold">Overall</span>
                             </div>
                         </div>
                         <div className="flex-1 text-center md:text-left">
-                            <h4 className={`text-2xl font-black mb-2 ${verdict.color}`}>{verdict.label}</h4>
+                            <h4 className={`text-2xl font-black mb-1.5 ${verdict.color}`}>{verdict.label}</h4>
                             <p className="text-gray-400 text-sm leading-relaxed max-w-lg">{verdictDescription}</p>
                         </div>
                     </div>
 
                     {/* Metrics Grid */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
                         <MetricCard icon={<Activity size={16} />} iconColor="text-pink-400" label="Pace" value={`${stats.wpm}`} unit="WPM"
                             sub={stats.wpm > 150 ? "Fast pace" : stats.wpm < 80 ? "Slow pace" : "Ideal range"} />
                         <MetricCard icon={<Sparkles size={16} />} iconColor="text-purple-400" label="Technical" value={`${stats.technicalAccuracy}%`}
@@ -207,31 +207,30 @@ export const SessionReport = memo(function SessionReport({ stats, transcript, ai
                         <MetricCard icon={<AlertTriangle size={16} />} iconColor="text-orange-400" label="Fillers" value={`${stats.fillerWordsPerMinute}`} unit="/min"
                             sub={`${stats.fillerWordCount} total`}
                             alert={stats.fillerWordsPerMinute > 4} />
-                    </div>
-
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                         <MetricCard icon={<Target size={16} />} iconColor="text-blue-400" label="Sentiment" value={stats.sentiment}
                             sub="Emotional tone" />
                         <MetricCard icon={<BrainCircuit size={16} />} iconColor="text-emerald-400" label="Concepts" value={`${stats.keyConcepts.length}`}
                             sub="Topics identified" />
                         <MetricCard icon={<MessageSquare size={16} />} iconColor="text-indigo-400" label="STAR Used" value={`${stats.starMethodCount}`}
                             sub={stats.starMethodCount > 0 ? "Structured answers" : "Try using STAR"} />
-                        {durationSeconds != null && (
+                        {durationSeconds != null ? (
                             <MetricCard icon={<Timer size={16} />} iconColor="text-gray-400" label="Duration" value={formatDuration(durationSeconds)}
                                 sub={`${stats.questionsCovered} questions`} />
+                        ) : (
+                            <div className="hidden md:block bg-transparent border-0"></div>
                         )}
                     </div>
 
                     {/* Vocabulary & Concepts */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                        <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                            <div className="flex items-center gap-3 text-purple-400 mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+                        <div className="bg-white/5 border border-white/10 rounded-xl p-5">
+                            <div className="flex items-center gap-3 text-purple-400 mb-3">
                                 <TrendingUp size={16} />
                                 <span className="text-xs font-bold uppercase tracking-wider">Key Concepts ({stats.keyConcepts.length})</span>
                             </div>
                             <div className="flex flex-wrap gap-2">
                                 {stats.keyConcepts.length > 0 ? stats.keyConcepts.map(concept => (
-                                    <span key={concept} className="px-3 py-1 bg-purple-500/10 text-purple-400 text-[10px] font-bold uppercase rounded-lg border border-purple-500/20 capitalize">
+                                    <span key={concept} className="px-3 py-1 bg-purple-500/10 text-purple-400 text-[11px] font-semibold uppercase rounded-lg border border-purple-500/20 capitalize">
                                         {concept}
                                     </span>
                                 )) : (
@@ -240,14 +239,14 @@ export const SessionReport = memo(function SessionReport({ stats, transcript, ai
                             </div>
                         </div>
 
-                        <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                            <div className="flex items-center gap-3 text-amber-400 mb-4">
+                        <div className="bg-white/5 border border-white/10 rounded-xl p-5">
+                            <div className="flex items-center gap-3 text-amber-400 mb-3">
                                 <Lightbulb size={16} />
                                 <span className="text-xs font-bold uppercase tracking-wider">Areas to Improve</span>
                             </div>
                             <ul className="space-y-2">
                                 {improvementTips.map((tip, i) => (
-                                    <li key={i} className="text-xs text-gray-400 leading-relaxed flex gap-2">
+                                    <li key={i} className="text-sm text-gray-300 leading-relaxed flex gap-2">
                                         <span className="text-amber-500 font-bold mt-0.5">{i + 1}.</span>
                                         <span>{tip}</span>
                                     </li>
@@ -258,12 +257,12 @@ export const SessionReport = memo(function SessionReport({ stats, transcript, ai
 
                     {/* AI-Generated Detailed Analysis */}
                     {aiSummary && (
-                        <div className="mb-8 bg-white/5 border border-white/10 rounded-2xl p-8">
-                            <div className="flex items-center gap-3 text-emerald-400 mb-6">
+                        <div className="mb-5 bg-white/5 border border-white/10 rounded-xl p-6">
+                            <div className="flex items-center gap-3 text-emerald-400 mb-4">
                                 <FileText size={18} />
                                 <span className="text-xs font-bold uppercase tracking-wider">AI Detailed Analysis</span>
                             </div>
-                            <div className="prose prose-sm prose-invert max-w-none prose-headings:text-gray-100 prose-p:text-gray-300 prose-strong:text-gray-200 prose-li:text-gray-300">
+                            <div className="prose prose-invert max-w-none prose-headings:text-gray-100 prose-p:text-gray-300 prose-strong:text-gray-200 prose-li:text-gray-300">
                                 <ReactMarkdown>{aiSummary}</ReactMarkdown>
                             </div>
                         </div>
@@ -286,15 +285,15 @@ function MetricCard({ icon, iconColor, label, value, unit, sub, alert, capitaliz
     capitalize?: boolean;
 }) {
     return (
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
-            <div className={`flex items-center gap-2 ${iconColor} mb-3`}>
+        <div className="bg-white/5 border border-white/10 rounded-xl p-3.5">
+            <div className={`flex items-center gap-2 ${iconColor} mb-1.5`}>
                 {icon}
                 <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{label}</span>
             </div>
             <div className={`text-2xl font-black text-white mb-0.5 ${capitalize ? "capitalize" : ""} ${alert ? "text-orange-400" : ""}`}>
                 {value}{unit && <span className="text-xs text-gray-500 font-normal ml-1">{unit}</span>}
             </div>
-            {sub && <p className="text-[10px] text-gray-500">{sub}</p>}
+            {sub && <p className="text-[11px] text-gray-400 leading-tight">{sub}</p>}
         </div>
     );
 }

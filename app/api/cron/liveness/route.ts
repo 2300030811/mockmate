@@ -8,6 +8,7 @@ import {
   type LivenessClassification,
 } from "@/lib/career-ops/liveness";
 import { isMissingCareerOpsTableError } from "@/lib/career-ops/recompute";
+import { careerOpsRepository } from "@/lib/db/career-ops-repository";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -179,24 +180,18 @@ async function loadPostingCandidates(params: {
   statuses: JobPostingLiveness[];
   limit: number;
 }): Promise<{ rows: PostingRow[]; error?: string; missingTable?: boolean }> {
-  const { data, error } = await params.db
-    .from("career_ops_job_postings")
-    .select("id, external_url, posting_status")
-    .in("posting_status", params.statuses)
-    .order("last_liveness_checked_at", { ascending: true })
-    .limit(params.limit);
-
-  if (error) {
+  try {
+    const rows = await careerOpsRepository.loadPostingCandidates(params.db, params.statuses, params.limit);
+    return {
+      rows: (rows as PostingRow[]).filter((row) => Boolean(row.external_url)),
+    };
+  } catch (error: any) {
     return {
       rows: [],
       error: error.message,
       missingTable: isMissingCareerOpsTableError(error),
     };
   }
-
-  return {
-    rows: ((data as PostingRow[] | null) ?? []).filter((row) => Boolean(row.external_url)),
-  };
 }
 
 export async function GET(request: Request) {
@@ -285,16 +280,12 @@ export async function GET(request: Request) {
       const check = await checkPostingLiveness(page, posting.external_url);
       checked += 1;
 
-      const { error: updateError } = await adminDb
-        .from("career_ops_job_postings")
-        .update({
-          posting_status: check.result,
-          last_liveness_result: check.result,
-          last_liveness_checked_at: nowIso,
-        })
-        .eq("id", posting.id);
-
-      if (updateError) {
+      try {
+        await careerOpsRepository.updatePostingLiveness(adminDb, posting.id, {
+          status: check.result,
+          checkedAt: nowIso,
+        });
+      } catch (updateError: any) {
         failedUpdates += 1;
         failures.push(`${posting.id}: ${updateError.message}`);
         continue;

@@ -1,3 +1,5 @@
+import { QuizCategoryId } from "@/lib/quiz-registry";
+
 export interface Skill {
   name: string;
   category: 'technical' | 'soft' | 'domain';
@@ -7,7 +9,7 @@ export interface SkillGap {
   skill: string;
   category: 'technical' | 'soft' | 'domain';
   importance: 'high' | 'medium' | 'low';
-  recommendedQuiz?: 'aws' | 'azure' | 'mongodb' | 'salesforce' | 'pcap' | 'java';
+  recommendedQuiz?: QuizCategoryId;
 }
 
 export interface LearningStep {

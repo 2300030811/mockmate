@@ -15,6 +15,7 @@ interface NodeProps {
   updatePos: (id: string, x: number, y: number) => void;
   scale: number;
   theme: "light" | "dark" | "neo";
+  onDragStateEnd?: () => void;
 }
 
 export const NodeComponent = memo(({
@@ -25,7 +26,8 @@ export const NodeComponent = memo(({
   onDelete,
   updatePos,
   scale,
-  theme
+  theme,
+  onDragStateEnd
 }: NodeProps) => {
   const Config = NODE_CONFIG[node.type];
   const isLight = theme === 'light';
@@ -42,6 +44,7 @@ export const NodeComponent = memo(({
         const snappedX = Math.round(rawX / GRID_SIZE) * GRID_SIZE;
         const snappedY = Math.round(rawY / GRID_SIZE) * GRID_SIZE;
         updatePos(node.id, snappedX, snappedY);
+        if (onDragStateEnd) onDragStateEnd();
       }}
       whileDrag={{ scale: 1.05, zIndex: 50, cursor: 'grabbing' }}
       initial={{ opacity: 0, scale: 0.8 }}
@@ -62,6 +65,7 @@ export const NodeComponent = memo(({
         top: 0
       }}
       className={`
+        pointer-events-auto
         w-24 h-24 rounded-2xl flex flex-col items-center justify-center gap-2 cursor-grab z-20 group
         backdrop-blur-xl border border-b-4 transition-all duration-300
         ${Config.bg} ${isLight ? Config.border.replace('border-white/5', 'border-gray-200') : isNeo ? Config.border.replace('border-white/5', 'border-fuchsia-500/20') : Config.border} ${isLight ? 'bg-white/80' : isNeo ? 'bg-[#050212]/80' : ''}

@@ -7,6 +7,7 @@ import { BattleResult } from "../types";
 import { useEffect, useRef, useMemo } from "react";
 import { saveQuizResult } from "@/app/actions/results";
 import { calculateArenaXP, calculateEloChange } from "@/lib/scoring";
+import { parseArenaBaseCategory } from "@/lib/arena-category";
 
 interface ArenaResultsProps {
   userScore: number;
@@ -27,7 +28,7 @@ export const ArenaResults = React.memo(function ArenaResults({
   onLobby,
   onRematch
 }: ArenaResultsProps) {
-  const displayCategory = category.replace('arena_', '').toUpperCase();
+  const displayCategory = parseArenaBaseCategory(category).toUpperCase();
   const hasSaved = useRef<string | null>(null);
 
   useEffect(() => {
@@ -46,11 +47,13 @@ export const ArenaResults = React.memo(function ArenaResults({
 
       await saveQuizResult({
         sessionId: battleId,
-        category: `arena_${category}:${winStatus}:`,
+        category,
         userAnswers,
         totalQuestions: battleResults.length,
         arenaStatus: winStatus,
-        arenaTotalQuestions: battleResults.length
+        arenaTotalQuestions: battleResults.length,
+        arenaUserScore: userScore,
+        arenaOpponentScore: opponentScore
       });
     };
 

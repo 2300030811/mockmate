@@ -130,6 +130,7 @@ export function SignupForm() {
                         <input
                             name="nickname"
                             type="text"
+                            autoComplete="username"
                             required
                             disabled={loading}
                             placeholder="Enter your leaderboard name"
@@ -146,6 +147,7 @@ export function SignupForm() {
                         <input
                             name="email"
                             type="email"
+                            autoComplete="email"
                             required
                             disabled={loading}
                             placeholder="your@email.com"
@@ -159,10 +161,11 @@ export function SignupForm() {
                     onChange={setPassword}
                     disabled={loading}
                     showStrength
+                    autoComplete="new-password"
                 />
 
                 <div className="pt-1">
-                    <Button type="submit" disabled={loading} className="w-full h-12 rounded-2xl">
+                    <Button type="submit" variant="primary" disabled={loading} className="w-full h-12 rounded-2xl">
                         {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Create Account"}
                     </Button>
                 </div>

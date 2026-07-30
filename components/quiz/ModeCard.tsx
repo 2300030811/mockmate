@@ -44,7 +44,7 @@ export function ModeCard({
         <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}></div>
 
         <div className="relative z-10 flex-1 flex flex-col">
-          <div className={`mb-6 w-20 h-20 flex items-center justify-center rounded-2xl transform group-hover:scale-110 transition-transform duration-300 ${iconBgLight} dark:${iconBgDark.replace('bg-', 'bg-opacity-20 ')}`}>
+          <div className={`mb-6 w-20 h-20 flex items-center justify-center rounded-2xl transform group-hover:scale-110 transition-transform duration-300 ${iconBgLight} ${iconColorClass} dark:${iconBgDark} dark:text-white`}>
             {icon}
           </div>
           <h2 className="text-2xl font-bold mb-3 text-gray-900 dark:text-white">
