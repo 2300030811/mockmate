@@ -28,7 +28,7 @@ const QuizResults = dynamic(() => import("./QuizResults").then(mod => mod.QuizRe
 import { useQuizKeyboardShortcuts } from "@/hooks/useQuizKeyboardShortcuts";
 
 interface UniversalQuizShellProps {
-  category: "aws" | "azure" | "salesforce" | "mongodb" | "pcap" | "oracle";
+  category: "aws" | "azure" | "salesforce" | "mongodb" | "pcap" | "oracle" | "wtn-m1";
   mode: QuizMode;
   count?: string | null;
 }
