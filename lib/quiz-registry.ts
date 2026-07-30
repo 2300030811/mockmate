@@ -182,21 +182,17 @@ export function validateQuizRegistry(): void {
       throw new Error(`Invalid strategy key '${config.strategyKey}' for category '${config.id}'.`);
     }
 
-    // Only assert URLs in production or non-test environment if needed, but fail-fast if environment expects it.
-    // To accommodate local development, we assert that the property is configured,
-    // and if NODE_ENV is production or test, we throw an error if the URL itself is empty.
-    if (process.env.NODE_ENV === "production" && !config.questionsUrl) {
+    // ponytail: question URLs are server-only; missing URLs degrade gracefully at fetch time.
+    if (typeof window === "undefined" && process.env.NODE_ENV === "production" && !config.questionsUrl) {
       const envKey = `${config.id.toUpperCase()}_QUESTIONS_URL`;
-      throw new Error(`Missing required environment variable ${envKey} for category ${config.id} in production.`);
+      console.warn(`[quiz-registry] ${envKey} not set for '${config.id}'. Quiz will fall back to DB/empty.`);
     }
   }
 }
 
-// Auto-run validation on module load
+// Auto-run validation on module load — log-only, never crash the bundle
 try {
   validateQuizRegistry();
 } catch (error) {
   console.error("❌ Quiz Registry Validation Failure:", error);
-  // Throw at startup so that next server or tests fail fast
-  throw error;
 }
