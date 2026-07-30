@@ -19,6 +19,10 @@ import {
   CareerOpsRecentActivityItem,
   CareerOpsTrackerSummary,
   CareerOpsApplicationItem,
+  CreateCareerOpsApplicationInput,
+  TransitionCareerOpsStatusInput,
+  LogCareerOpsFollowUpInput,
+  CareerOpsDbApplicationRow,
 } from "@/types/career-ops";
 import { careerOpsRepository } from "@/lib/db/career-ops-repository";
 import { careerOpsService } from "@/lib/services/career-ops-service";
@@ -29,23 +33,6 @@ interface CareerOpsMutationResult<T = undefined> {
   success: boolean;
   error?: string;
   data?: T;
-}
-
-interface CareerOpsDbApplicationRow {
-  id: string;
-  user_id: string;
-  job_role: string;
-  company: string;
-  status: string;
-  match_score: number | null;
-  ats_score: number | null;
-  next_follow_up_date: string | null;
-  updated_at: string;
-  applied_on: string | null;
-  role_archetype?: CareerOpsRoleArchetype | null;
-  target_level?: string | null;
-  primary_blocker?: CareerOpsPrimaryBlocker | null;
-  blocker_tags?: string[] | null;
 }
 
 interface CareerOpsDbFollowUpRow {
@@ -65,40 +52,6 @@ interface CareerOpsDbFollowUpRow {
         status: string;
       }>
     | null;
-}
-
-export interface CreateCareerOpsApplicationInput {
-  jobRole: string;
-  company?: string;
-  sourceUrl?: string;
-  status?: string;
-  matchScore?: number | null;
-  atsScore?: number | null;
-  notes?: string;
-  nextFollowUpDate?: string | null;
-  jobPostingId?: string | null;
-  roleArchetype?: CareerOpsRoleArchetype | null;
-  targetLevel?: string | null;
-  primaryBlocker?: CareerOpsPrimaryBlocker | null;
-  blockerTags?: string[];
-  missingSkills?: SkillGap[];
-}
-
-export interface TransitionCareerOpsStatusInput {
-  applicationId: string;
-  toStatus: string;
-  note?: string;
-  nextFollowUpDate?: string | null;
-}
-
-export interface LogCareerOpsFollowUpInput {
-  applicationId: string;
-  channel?: string;
-  contactName?: string;
-  contactEmail?: string;
-  notes?: string;
-  followedUpOn?: string;
-  nextFollowUpDate?: string | null;
 }
 
 function toApplicationItem(row: CareerOpsDbApplicationRow): CareerOpsApplicationItem {
@@ -164,17 +117,17 @@ export async function createCareerOpsApplication(
   }
 
   const supabase = createClient();
-  const res = await careerOpsService.createApplication(supabase, userId, input as any);
+  const res = await careerOpsService.createApplication(supabase, userId, input);
 
   if (res.success && res.data) {
     revalidateCareerOpsSurfaces(userId);
     return {
       success: true,
-      data: toApplicationItem(res.data as any),
+      data: toApplicationItem(res.data),
     };
   }
 
-  return { success: false, error: (res as any).error };
+  return { success: false, error: res.success === false ? res.error : undefined };
 }
 
 export async function addCareerPathToTracker(input: {
@@ -196,17 +149,17 @@ export async function addCareerPathToTracker(input: {
   }
 
   const supabase = createClient();
-  const res = await careerOpsService.addCareerPathToTracker(supabase, userId, input as any);
+  const res = await careerOpsService.addCareerPathToTracker(supabase, userId, input);
 
   if (res.success && res.data) {
     revalidateCareerOpsSurfaces(userId);
     return {
       success: true,
-      data: toApplicationItem(res.data as any),
+      data: toApplicationItem(res.data),
     };
   }
 
-  return { success: false, error: (res as any).error };
+  return { success: false, error: res.success === false ? res.error : undefined };
 }
 
 export async function transitionCareerOpsStatus(
@@ -224,11 +177,11 @@ export async function transitionCareerOpsStatus(
     revalidateCareerOpsSurfaces(userId);
     return {
       success: true,
-      data: toApplicationItem(res.data as any),
+      data: toApplicationItem(res.data),
     };
   }
 
-  return { success: false, error: (res as any).error };
+  return { success: false, error: res.success === false ? res.error : undefined };
 }
 
 export async function logCareerOpsFollowUp(
@@ -246,11 +199,11 @@ export async function logCareerOpsFollowUp(
     revalidateCareerOpsSurfaces(userId);
     return {
       success: true,
-      data: res.data as { applicationId: string },
+      data: res.data,
     };
   }
 
-  return { success: false, error: (res as any).error };
+  return { success: false, error: res.success === false ? res.error : undefined };
 }
 
 export async function recomputeCareerOpsCadence(
@@ -277,12 +230,7 @@ export async function recomputeCareerOpsCadence(
     return { success: false, error: recompute.error ?? "Could not recompute cadence." };
   }
 
-  const payload = recompute.data ?? {
-    updatedCount: 0,
-    skippedCount: 0,
-    failedCount: 0,
-    processedCount: 0,
-  };
+  const payload = recompute.data;
 
   if (payload.updatedCount > 0) {
     revalidateCareerOpsSurfaces(userId);
@@ -297,6 +245,7 @@ export async function recomputeCareerOpsCadence(
     },
   };
 }
+
 
 export async function getCareerOpsTrackerData(limit: number = 30): Promise<{
   summary: CareerOpsTrackerSummary;

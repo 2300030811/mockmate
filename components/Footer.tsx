@@ -40,8 +40,7 @@ export function Footer() {
             <ul className="space-y-4">
               <li>
                 <Link
-                  href="/aws-quiz"
-                  target="_blank"
+                  href="/certification"
                   className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors"
                 >
                   Cloud Quizzes
@@ -50,7 +49,6 @@ export function Footer() {
               <li>
                 <Link
                   href="/demo"
-                  target="_blank"
                   className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors"
                 >
                   Mock Interview
@@ -59,7 +57,6 @@ export function Footer() {
               <li>
                 <Link
                   href="/career-path"
-                  target="_blank"
                   className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors"
                 >
                   Career Pathfinder
@@ -68,7 +65,6 @@ export function Footer() {
               <li>
                 <Link
                   href="/upload"
-                  target="_blank"
                   className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors"
                 >
                   PDF Quiz Generator
@@ -80,14 +76,14 @@ export function Footer() {
           {/* About */}
           <div>
             <h4 className="text-sm font-bold uppercase tracking-wider text-gray-900 dark:text-white mb-6">
-              
+              Connect
             </h4>
             <Link
               href="/about"
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-semibold hover:opacity-90 hover:scale-105 transition-all duration-200 shadow-md"
             >
               <Users className="w-4 h-4" />
-              Connect with Us
+              About Us
             </Link>
           </div>
         </div>

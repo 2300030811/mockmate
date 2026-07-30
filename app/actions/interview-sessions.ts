@@ -5,13 +5,30 @@ import { createAdminClient } from "@/utils/supabase/admin";
 import { logger } from "@/lib/logger";
 import { interviewRepository } from "@/lib/db/interview-repository";
 
+interface SessionStats {
+  wpm?: number;
+  sentiment?: string;
+  keyConcepts?: string[];
+  confidenceScore?: number;
+  fillerWordCount?: number;
+  fillerWordsPerMinute?: number;
+  answerDepth?: string;
+  starMethodCount?: number;
+  questionsCovered?: number;
+  vocabularyRichness?: number;
+  technicalAccuracy?: number;
+  avgResponseTimeSec?: number;
+  longestAnswerWords?: number;
+  shortestAnswerWords?: number;
+}
+
 interface SaveSessionInput {
   type: string;
   difficulty: string;
   topic?: string;
   messages: { role: string; content: string }[];
   aiSummary: string | null;
-  stats: any;
+  stats: SessionStats;
   durationSeconds: number;
 }
 

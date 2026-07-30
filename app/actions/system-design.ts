@@ -46,10 +46,24 @@ export async function deleteSystemDesignAction(id: string) {
 export async function reviewSystemDesignAction(
   components: Node[],
   connections: Connection[],
-  challengeContext?: { title: string; objectives: string[]; constraints: string[] }
+  challengeContext?: { 
+    title: string; 
+    objectives: string[]; 
+    constraints: string[]; 
+    metrics?: { users: string; writesPerDay: string; readsPerDay: string; latency: string; storage: string } 
+  }
 ): Promise<{
   markdown: string;
-  score?: { overall: number; reliability: number; scalability: number; security: number; seniority: string };
+  score?: { 
+    overall: number; 
+    reliability: number; 
+    scalability: number; 
+    security: number; 
+    seniority: string;
+    grade?: string;
+    issues?: string[];
+    checklist?: { name: string; status: "pass" | "fail" }[];
+  } | null;
   error?: string
 }> {
   try {
@@ -60,9 +74,21 @@ export async function reviewSystemDesignAction(
 
     const challengeInfo = challengeContext ? `
       CONTEXT: Active Challenge: ${challengeContext.title}
-      OBJECTIVES: ${challengeContext.objectives.join(", ")}
-      CONSTRAINTS: ${challengeContext.constraints.join(", ")}
-      Please evaluate the design specifically against these objectives and constraints.
+      EXPECTED SCALE METRICS:
+      - Users: ${challengeContext.metrics?.users || "N/A"}
+      - Writes/day: ${challengeContext.metrics?.writesPerDay || "N/A"}
+      - Reads/day: ${challengeContext.metrics?.readsPerDay || "N/A"}
+      - Latency: ${challengeContext.metrics?.latency || "N/A"}
+      - Storage: ${challengeContext.metrics?.storage || "N/A"}
+      
+      OBJECTIVES:
+      ${challengeContext.objectives.map(o => `- ${o}`).join("\n")}
+      
+      CONSTRAINTS:
+      ${challengeContext.constraints.map(c => `- ${c}`).join("\n")}
+      
+      CRITICAL AUDIT TASK:
+      Evaluate the architecture against the expected scale metrics and constraints. Check for scalability bottlenecks (e.g., lack of load balancing, single point of failure DBs, lack of caching for read-heavy workloads, or missing CDNs for global scale).
     ` : "";
 
     const prompt = `
@@ -78,12 +104,16 @@ export async function reviewSystemDesignAction(
       
       TASK:
       1. Provide a "High-Level Evaluation" (is it scalable, resilient, etc?).
-      2. Identify "Single Points of Failure".
-      3. Suggest "Scalability Improvements" (Caching, Sharding, CDNs).
+      2. Identify "Single Points of Failure" and design gaps.
+      3. Suggest "Scalability Improvements" (Caching, Sharding, CDNs) based on the expected scale metrics.
       4. Security check.
       5. Provide a "Seniority Rating" (Junior, Mid, Senior, Staff).
-      6. Score: At the very end of your response, output a structured JSON score block wrapped in HTML comments exactly like this:
-         <!-- SCORE:{"overall":85,"reliability":70,"scalability":80,"security":90,"seniority":"Senior"} -->
+      6. Score & Structured Indicators: At the very end of your response, output a structured JSON score block wrapped in HTML comments exactly like this:
+         <!-- SCORE:{"overall":85,"reliability":70,"scalability":80,"security":90,"seniority":"Senior","grade":"B","issues":["Single DB SPOF","Missing Cache","No CDN"],"checklist":[{"name":"Load Balancer","status":"pass"},{"name":"Cache Layer","status":"fail"},{"name":"CDN","status":"fail"}]} -->
+         
+         The "grade" value should be A+, A, B+, B, C, D, or F based on the overall score.
+         The "issues" array should contain key warnings (e.g. "Single DB SPOF", "Missing Cache", "No CDN").
+         The "checklist" array should check if key components needed for the scale are present and correctly designed to handle the scale.
 
       FORMAT: Return the response in clean Markdown with clear headings and emojis.
     `;
@@ -110,20 +140,60 @@ export async function reviewSystemDesignAction(
       return { markdown: "", error: "Failed to generate review." };
     }
 
-    // Parse score from markdown comment
-    let score;
+    // Parse score from markdown comment — try multiple strategies since LLMs vary format
+    let score = undefined;
+    // Strategy 1: Exact single-line match
     const scoreRegex = /<!-- SCORE:({.*?}) -->/;
-    const match = content.match(scoreRegex);
+    // Strategy 2: Multi-line match (LLMs often add linebreaks inside)
+    const scoreRegexMultiline = /<!-- SCORE:([\s\S]*?) -->/;
+    // Strategy 3: JSON block after "SCORE:" label (no comment wrapper)
+    const scoreRegexBare = /SCORE:\s*({[\s\S]*?})\s*(?:-->|$)/;
+
+    let match = content.match(scoreRegex) || content.match(scoreRegexMultiline) || content.match(scoreRegexBare);
     if (match && match[1]) {
       try {
-        score = JSON.parse(match[1]);
+        // Clean common LLM issues: single quotes → double quotes, trailing commas
+        let jsonStr = match[1].trim()
+          .replace(/'/g, '"')
+          .replace(/,\s*([\]}])/g, '$1');
+        score = JSON.parse(jsonStr);
       } catch (e) {
-        logger.error("Failed to parse AI score:", e);
+        logger.warn("Failed to parse AI score (trying lenient):", e);
+        // Last resort: extract individual numeric fields with regex
+        try {
+          const extractNum = (key: string) => {
+            const m = (match![1] || '').match(new RegExp(`"${key}"\\s*:\\s*(\\d+)`));
+            return m ? parseInt(m[1]) : undefined;
+          };
+          const extractStr = (key: string) => {
+            const m = (match![1] || '').match(new RegExp(`"${key}"\\s*:\\s*"([^"]+)"`));
+            return m ? m[1] : undefined;
+          };
+          const overall = extractNum('overall');
+          if (overall !== undefined) {
+            score = {
+              overall,
+              reliability: extractNum('reliability') ?? 0,
+              scalability: extractNum('scalability') ?? 0,
+              security: extractNum('security') ?? 0,
+              seniority: extractStr('seniority') ?? 'Mid',
+              grade: extractStr('grade'),
+            };
+          }
+        } catch (fallbackErr) {
+          logger.error("Score parsing fully failed:", fallbackErr);
+        }
       }
     }
 
+    // Remove all score block variants from displayed markdown
+    const cleanMarkdown = content
+      .replace(/<!-- SCORE:[\s\S]*?-->/g, '')
+      .replace(/SCORE:\s*{[\s\S]*?}\s*$/gm, '')
+      .trim();
+
     return {
-      markdown: content.replace(scoreRegex, ""), // Remove the hidden score block from markdown
+      markdown: cleanMarkdown,
       score
     };
 

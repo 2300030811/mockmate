@@ -4,7 +4,7 @@ import { getRawQuestions } from "@/app/actions/quiz";
 import { ArenaQuestion } from "../(main)/arena/types";
 import { shuffleArray } from "@/lib/shuffle";
 
-const CATEGORIES = ["aws", "azure", "salesforce", "mongodb", "pcap", "oracle"];
+import { getAllCategories } from "@/lib/quiz-registry";
 
 interface Question {
   id: string | number;
@@ -18,9 +18,10 @@ interface Question {
 
 export async function startArenaMatch(category?: string) {
   try {
+    const categories = getAllCategories();
     const actualCategory = (category && category !== "random") 
       ? category 
-      : CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
+      : categories[Math.floor(Math.random() * categories.length)].id;
     
     const rawQuestions = await getRawQuestions(actualCategory) as Question[];
     

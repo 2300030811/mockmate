@@ -1,9 +1,9 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { roastResumeAction } from "./resume";
+import { roastResumeAction, parseResumeAction } from "./resume";
 
 const rateLimitMock = vi.hoisted(() => vi.fn());
 const extractTextMock = vi.hoisted(() => vi.fn());
-const generateTextMock = vi.hoisted(() => vi.fn());
+const generateStructuredMock = vi.hoisted(() => vi.fn());
 const extractAndMatchKeywordsMock = vi.hoisted(() => vi.fn());
 const detectSectionsMock = vi.hoisted(() => vi.fn());
 const detectQuantifiedAchievementsMock = vi.hoisted(() => vi.fn());
@@ -18,12 +18,15 @@ vi.mock("@/lib/services/ocr", () => ({
   },
 }));
 
-vi.mock("@/lib/ai/gateway", () => ({
-  generateText: generateTextMock,
+vi.mock("@/lib/services/ai-orchestrator", () => ({
+  aiOrchestrator: {
+    generateStructured: generateStructuredMock,
+  },
 }));
 
 vi.mock("@/utils/sanitize", () => ({
   sanitizePromptInput: vi.fn((value: string) => value),
+  normalizeTextForATS: vi.fn((value: string) => value),
 }));
 
 vi.mock("@/lib/logger", () => ({
@@ -91,6 +94,7 @@ describe("roastResumeAction", () => {
     process.env = { ...originalEnv };
     const mutableEnv = process.env as Record<string, string | undefined>;
     mutableEnv.GOOGLE_API_KEY = "gemini-key";
+    mutableEnv.GROQ_API_KEY = "groq-key";
 
     rateLimitMock.mockResolvedValue({ success: true, message: "" });
     extractTextMock.mockResolvedValue({
@@ -126,8 +130,10 @@ describe("roastResumeAction", () => {
       summary: "Quantified achievement signals: 3/9. Impact: Moderate.",
     });
 
-    generateTextMock.mockResolvedValue({
-      content: buildRoastResponseJson({ atsScore: 12 }),
+    generateStructuredMock.mockResolvedValue({
+      success: true,
+      data: JSON.parse(buildRoastResponseJson({ atsScore: 12 })),
+      raw: buildRoastResponseJson({ atsScore: 12 }),
       provider: "groq"
     });
   });
@@ -163,10 +169,10 @@ describe("roastResumeAction", () => {
   });
 
   it("successfully parses content using fallback provider (Gemini)", async () => {
-    // In our implementation, the gateway handles fallback.
-    // We mock the resolved value from the gateway with provider "gemini".
-    generateTextMock.mockResolvedValue({
-      content: buildRoastResponseJson({ professionalScore: 74, atsScore: 44 }),
+    generateStructuredMock.mockResolvedValue({
+      success: true,
+      data: JSON.parse(buildRoastResponseJson({ professionalScore: 74, atsScore: 44 })),
+      raw: buildRoastResponseJson({ professionalScore: 74, atsScore: 44 }),
       provider: "gemini"
     });
 
@@ -182,9 +188,10 @@ describe("roastResumeAction", () => {
   });
 
   it("returns parse error when model output is not valid JSON", async () => {
-    generateTextMock.mockResolvedValue({
-      content: "not-json",
-      provider: "groq"
+    generateStructuredMock.mockResolvedValue({
+      success: false,
+      error: "JSON parsing failed",
+      raw: "not-json"
     });
 
     const result = await roastResumeAction(
@@ -198,7 +205,10 @@ describe("roastResumeAction", () => {
   });
 
   it("returns provider-exhausted error when all gateway providers fail", async () => {
-    generateTextMock.mockRejectedValue(new Error("AI services unavailable"));
+    generateStructuredMock.mockResolvedValue({
+      success: false,
+      error: "AI services unavailable",
+    });
 
     const result = await roastResumeAction(
       buildFormData(),
@@ -207,19 +217,15 @@ describe("roastResumeAction", () => {
     );
 
     expect(result.data).toBeNull();
-    expect(result.error).toContain("Analysis failed. Providers are experiencing issues.");
+    expect(result.error).toContain("Analysis failed to parse. Please try again.");
   });
 
   // --- MALFORMED RESPONSE / EXPLANATION TEXT TESTS ---
   it("successfully parses JSON even with markdown JSON blocks and extra explanation prefix/suffix text", async () => {
-    const rawContentWithFences = `Here is your JSON response:
-\`\`\`json
-${buildRoastResponseJson({ professionalScore: 88 })}
-\`\`\`
-I hope this feedback helps you build a better resume!`;
-
-    generateTextMock.mockResolvedValue({
-      content: rawContentWithFences,
+    generateStructuredMock.mockResolvedValue({
+      success: true,
+      data: JSON.parse(buildRoastResponseJson({ professionalScore: 88 })),
+      raw: buildRoastResponseJson({ professionalScore: 88 }),
       provider: "groq"
     });
 
@@ -232,5 +238,66 @@ I hope this feedback helps you build a better resume!`;
     expect(result.error).toBeUndefined();
     expect(result.data).not.toBeNull();
     expect(result.data?.professionalScore).toBe(88);
+  });
+
+  // --- CHARACTERIZATION TESTS ---
+  it("roastResumeAction fails when resume content is too short (< 100 characters)", async () => {
+    extractTextMock.mockResolvedValueOnce({
+      text: "too short",
+      source: "local",
+    });
+
+    const result = await roastResumeAction(buildFormData(), "JD", "Brutal");
+    expect(result.data).toBeNull();
+    expect(result.error).toBe("Resume content too short or unreadable.");
+  });
+
+  it("parseResumeAction parses PDF files and calls OCRService", async () => {
+    generateStructuredMock.mockResolvedValueOnce({
+      success: true,
+      data: { name: "Alice" },
+      provider: "groq"
+    });
+
+    const result = await parseResumeAction(buildFormData());
+    expect(result.error).toBeUndefined();
+    expect(result.data?.name).toBe("Alice");
+    expect(extractTextMock).toHaveBeenCalled();
+  });
+
+  it("parseResumeAction parses text files directly", async () => {
+    generateStructuredMock.mockResolvedValueOnce({
+      success: true,
+      data: { name: "Bob" },
+      provider: "groq"
+    });
+
+    const textFile = new File(["long text summary experience education skills projects contact"], "resume.txt", { type: "text/plain" });
+    Object.defineProperty(textFile, "text", {
+      value: async () => "long text summary experience education skills projects contact",
+    });
+
+    const formData = {
+      get: (key: string) => (key === "file" ? textFile : null),
+    } as unknown as FormData;
+
+    const result = await parseResumeAction(formData);
+    expect(result.error).toBeUndefined();
+    expect(result.data?.name).toBe("Bob");
+  });
+
+  it("parseResumeAction fails when resume content is too short (< 50 characters)", async () => {
+    const textFile = new File(["too short"], "resume.txt", { type: "text/plain" });
+    Object.defineProperty(textFile, "text", {
+      value: async () => "too short",
+    });
+
+    const formData = {
+      get: (key: string) => (key === "file" ? textFile : null),
+    } as unknown as FormData;
+
+    const result = await parseResumeAction(formData);
+    expect(result.data).toBeNull();
+    expect(result.error).toBe("Resume content too short or unreadable.");
   });
 });

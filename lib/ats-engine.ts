@@ -5,7 +5,8 @@ import {
   SectionPresence,
   MetricDetectionResult
 } from "@/utils/ats-keywords";
-import { computeWeightedAtsScore, deriveAtsMatchRating, AtsScoreResult } from "@/types/ats-score";
+import { AtsScoreResult } from "@/types/ats-score";
+import { computeWeightedAtsScore, deriveAtsMatchRating } from "@/lib/ats-scoring";
 import { clampScore } from "@/utils/math";
 
 const CORE_ATS_SECTIONS = ["summary", "experience", "education", "skills", "projects", "contact"];

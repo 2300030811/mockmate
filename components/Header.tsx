@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useTheme } from "@/components/providers/providers";
+import { useTheme } from "next-themes";
 import { Button, buttonVariants } from "@/components/ui/Button";
 import { Home, Sun, Moon } from "lucide-react";
 import { UserAuthSection } from "./UserAuthSection";
@@ -28,8 +28,8 @@ const HIDDEN_ROUTE_PATTERNS = [
 
 export function Header() {
   const pathname = usePathname();
-  const { theme, setTheme } = useTheme();
-  const isDark = theme === "dark";
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const isDark = (resolvedTheme || theme) === "dark";
   const [scrolled, setScrolled] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -54,14 +54,12 @@ export function Header() {
 
   const isHomePage = pathname === "/" || pathname === "";
 
-  const isForceDarkRoute = pathname?.startsWith("/dashboard");
-
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 pointer-events-none ${scrolled ? "py-2" : "py-4 sm:py-6"
-        } ${isForceDarkRoute ? "dark" : ""}`}
+        }`}
     >
-      <div className={`max-w-5xl mx-auto px-4 sm:px-6 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] pointer-events-auto ${scrolled ? "scale-[0.98] -translate-y-1" : "scale-100"}`}>
+      <div className={`max-w-6xl mx-auto px-4 sm:px-6 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] pointer-events-auto ${scrolled ? "scale-[0.98] -translate-y-1" : "scale-100"}`}>
         <nav
           className={`
             flex items-center justify-between gap-2 p-1 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] rounded-full border shadow-sm

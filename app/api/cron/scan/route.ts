@@ -8,6 +8,7 @@ import {
   filterJobsByKeywords,
   scanCompany,
 } from "@/lib/services/scanner";
+import { careerOpsRepository } from "@/lib/db/career-ops-repository";
 
 export const dynamic = "force-dynamic";
 
@@ -49,46 +50,32 @@ function extractAuthSecret(request: Request): string {
 }
 
 async function loadScanTargets(adminDb: ReturnType<typeof createAdminClient>): Promise<CompanyTarget[]> {
-  const { data, error } = await adminDb
-    .from("career_ops_scan_targets")
-    .select("name, api_type, api_url")
-    .eq("enabled", true);
+  try {
+    const rows = await careerOpsRepository.loadScanTargets(adminDb) as ScanTargetRow[];
+    if (rows.length === 0) return DEFAULT_TARGETS;
 
-  if (error) {
+    return rows.map((row) => ({
+      name: row.name,
+      apiType: row.api_type,
+      apiUrl: row.api_url,
+    }));
+  } catch (error: any) {
     logger.warn("[Cron Scan] Failed to load DB targets. Falling back to defaults.", error.message);
     return DEFAULT_TARGETS;
   }
-
-  const rows = (data as ScanTargetRow[] | null) ?? [];
-  if (rows.length === 0) return DEFAULT_TARGETS;
-
-  return rows.map((row) => ({
-    name: row.name,
-    apiType: row.api_type,
-    apiUrl: row.api_url,
-  }));
 }
 
 async function startScanRun(
   adminDb: ReturnType<typeof createAdminClient>,
   scannedTargets: number
 ): Promise<string | null> {
-  const { data, error } = await adminDb
-    .from("career_ops_scan_runs")
-    .insert({
-      status: "running",
-      scanned_targets: scannedTargets,
-      created_by: "cron",
-    })
-    .select("id")
-    .single();
-
-  if (error) {
+  try {
+    const data = await careerOpsRepository.startScanRun(adminDb, { scannedTargets });
+    return data.id;
+  } catch (error: any) {
     logger.warn("[Cron Scan] Failed to persist scan run metadata.", error.message);
     return null;
   }
-
-  return (data as { id: string } | null)?.id ?? null;
 }
 
 async function finishScanRun(
@@ -107,22 +94,9 @@ async function finishScanRun(
 ) {
   if (!runId) return;
 
-  const { error } = await adminDb
-    .from("career_ops_scan_runs")
-    .update({
-      status: payload.status,
-      found_count: payload.foundCount,
-      filtered_count: payload.filteredCount,
-      deduped_count: payload.dedupedCount,
-      inserted_count: payload.insertedCount,
-      failed_count: payload.failedCount,
-      skipped_existing_count: payload.skippedExistingCount,
-      error_message: payload.errorMessage,
-      completed_at: new Date().toISOString(),
-    })
-    .eq("id", runId);
-
-  if (error) {
+  try {
+    await careerOpsRepository.finishScanRun(adminDb, runId, payload);
+  } catch (error: any) {
     logger.warn("[Cron Scan] Failed to finalize scan run metadata.", error.message);
   }
 }
@@ -152,38 +126,31 @@ async function fetchExistingSets(
   const existingUrlSet = new Set<string>();
   const existingFingerprintSet = new Set<string>();
 
-  if (urls.length > 0) {
-    const { data, error } = await adminDb
-      .from("career_ops_job_postings")
-      .select("external_url")
-      .in("external_url", urls);
+  try {
+    const { urls: urlRows, fingerprints: fingerprintRows } = await careerOpsRepository.fetchExistingPostings(
+      adminDb,
+      urls,
+      fingerprints
+    );
 
-    if (error) throw new Error(`Could not fetch existing posting URLs: ${error.message}`);
-
-    for (const row of (data as Array<{ external_url: string }> | null) ?? []) {
+    for (const row of urlRows) {
       if (row.external_url) {
         existingUrlSet.add(row.external_url);
       }
     }
-  }
 
-  if (fingerprints.length > 0) {
-    const { data, error } = await adminDb
-      .from("career_ops_job_postings")
-      .select("job_fingerprint")
-      .in("job_fingerprint", fingerprints);
-
-    if (error) throw new Error(`Could not fetch existing posting fingerprints: ${error.message}`);
-
-    for (const row of (data as Array<{ job_fingerprint: string }> | null) ?? []) {
+    for (const row of fingerprintRows) {
       if (row.job_fingerprint) {
         existingFingerprintSet.add(row.job_fingerprint);
       }
     }
+  } catch (error: any) {
+    throw new Error(`Could not fetch existing posting URLs/fingerprints: ${error.message}`);
   }
 
   return { existingUrlSet, existingFingerprintSet };
 }
+
 
 export async function GET(request: Request) {
   const cronSecret = process.env.CRON_SCAN_SECRET;
@@ -245,11 +212,9 @@ export async function GET(request: Request) {
     );
 
     if (newJobs.length > 0) {
-      const { error } = await adminDb
-        .from("career_ops_job_postings")
-        .upsert(newJobs.map(toPostingRow), { onConflict: "external_url" });
-
-      if (error) {
+      try {
+        await careerOpsRepository.upsertJobPostings(adminDb, newJobs.map(toPostingRow));
+      } catch (error: any) {
         throw new Error(`Could not upsert scanned postings: ${error.message}`);
       }
     }

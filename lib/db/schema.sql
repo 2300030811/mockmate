@@ -37,7 +37,19 @@ CREATE TABLE IF NOT EXISTS quiz_results (
   category TEXT NOT NULL,
   score INTEGER NOT NULL,
   total_questions INTEGER NOT NULL,
-  completed_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+  completed_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  quiz_mode TEXT NOT NULL DEFAULT 'standard' CHECK (quiz_mode IN ('standard', 'arena', 'daily-challenge')),
+  arena_status TEXT CHECK (arena_status IN ('win', 'loss', 'tie')),
+  arena_user_score INTEGER CHECK (arena_user_score IS NULL OR arena_user_score >= 0),
+  arena_opponent_score INTEGER CHECK (arena_opponent_score IS NULL OR arena_opponent_score >= 0),
+  CONSTRAINT chk_arena_fields_consistency CHECK (
+    quiz_mode = 'arena'
+    OR (
+      arena_status IS NULL
+      AND arena_user_score IS NULL
+      AND arena_opponent_score IS NULL
+    )
+  )
 );
 
 -- Create Career Paths table
@@ -155,6 +167,8 @@ CREATE INDEX IF NOT EXISTS idx_quiz_results_session_id ON quiz_results(session_i
 CREATE INDEX IF NOT EXISTS idx_quiz_results_category ON quiz_results(category);
 CREATE INDEX IF NOT EXISTS idx_quiz_results_completed_at ON quiz_results(completed_at DESC);
 CREATE INDEX IF NOT EXISTS idx_quiz_results_leaderboard ON quiz_results(category, score DESC, completed_at DESC);
+CREATE INDEX IF NOT EXISTS idx_quiz_results_user_mode ON quiz_results(user_id, quiz_mode);
+CREATE INDEX IF NOT EXISTS idx_quiz_results_session_mode ON quiz_results(session_id, quiz_mode);
 CREATE INDEX IF NOT EXISTS idx_career_paths_user_id ON career_paths(user_id);
 
 -- ==========================================

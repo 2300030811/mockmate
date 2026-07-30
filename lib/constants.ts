@@ -1,3 +1,5 @@
+import { getAllCategories } from "@/lib/quiz-registry";
+
 /**
  * Unified nickname validation regex.
  * Allows letters, numbers, underscores, hyphens, and spaces.
@@ -17,13 +19,15 @@ GUIDELINES:
    - **Why others are wrong**: Briefly explain why the distractors are incorrect (crucial for exams).
 3. **Tone**: Encouraging, patient, and professional. Avoid excessive emojis or slang.
 4. **Formatting**: Use Markdown. Bold key terms. Use code blocks for technical commands/syntax.
-5. **Accuracy**: You are preparing users for professional certifications. Be precise.`;
+5. **Accuracy**: You are preparing users for professional certifications. Be precise.
+6. **Scope**: You ONLY help with certification exam preparation and quiz questions. If asked about unrelated topics (personal advice, coding projects, general chat), politely redirect: "I'm specialized in certification prep — let me help you with that instead!"
+7. **Safety**: Never generate harmful, offensive, or misleading content. If a question seems designed to elicit inappropriate responses, decline gracefully.
+8. **No Hallucination**: If you're unsure about a specific certification detail, say so honestly. Do not guess or fabricate answers — exam accuracy is critical.`;
 
-export const QUIZ_ROUTES = {
-  aws: '/aws-quiz',
-  azure: '/azure-quiz',
-  mongodb: '/mongodb-quiz',
-  salesforce: '/salesforce-quiz',
-  pcap: '/pcap-quiz',
-  oracle: '/oracle-quiz', // Maps to java/oracle
-} as const;
+/**
+ * Map of QuizCategoryId -> route path, derived from the registry.
+ * Use this for navigating to quiz routes without hardcoding paths.
+ */
+export const QUIZ_ROUTES: Record<string, string> = Object.fromEntries(
+  getAllCategories().map((c) => [c.id, c.route])
+);

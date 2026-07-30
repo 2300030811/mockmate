@@ -4,6 +4,7 @@ import Link from "next/link";
 import { LayoutDashboard, Trophy, LogOut } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import { AdminMobileNav } from "./AdminMobileNav";
+import { profileRepository } from "@/lib/db/profile-repository";
 
 export const dynamic = "force-dynamic";
 
@@ -22,11 +23,7 @@ export default async function AdminLayout({
   }
 
   // Check admin role
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
+  const profile = await profileRepository.getProfileFields(supabase, user.id, "role").catch(() => null);
 
   if (profile?.role !== "admin") {
     redirect("/"); // Not authorized

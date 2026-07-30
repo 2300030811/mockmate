@@ -21,7 +21,14 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   const percentage = Math.min(100, Math.max(0, (value / max) * 100));
 
   return (
-    <div className={cn("w-full bg-gray-100 dark:bg-white/10 overflow-hidden rounded-full", heightClass, className)}>
+    <div
+      role="progressbar"
+      aria-valuenow={Math.round(percentage)}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-label="Progress"
+      className={cn("w-full bg-gray-100 dark:bg-white/10 overflow-hidden rounded-full", heightClass, className)}
+    >
       <m.div
         initial={{ width: 0 }}
         animate={{ width: `${percentage}%` }}

@@ -9,6 +9,10 @@ const BobAssistant = dynamic(() => import("@/components/quiz/BobAssistant").then
   ssr: false,
 });
 
+const OnboardingModal = dynamic(() => import("@/components/auth/OnboardingModal").then(mod => mod.OnboardingModal), {
+  ssr: false,
+});
+
 // Lazy load below-fold and heavy dashboard components
 const DailyProblem = dynamic(() => import("@/components/home/DailyProblem").then(mod => mod.DailyProblem), {
   ssr: false,
@@ -38,10 +42,10 @@ const Leaderboard = dynamic(() => import("@/components/home/Leaderboard").then(m
 export default function Home() {
 
   return (
-    <div className="min-h-screen transition-colors duration-500 bg-gradient-to-br from-gray-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950 pt-20">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950 pt-20">
       
       {/* Hero Section */}
-      <div className="relative min-h-screen flex items-center justify-center px-4 overflow-hidden">
+      <div className="relative flex items-center justify-center px-4 overflow-hidden py-12 md:py-20">
         
         <HomeBackground />
 
@@ -72,6 +76,7 @@ export default function Home() {
         initialMessage="Hi! I'm Bob, your MockMate guide! ✨ Enhancing your learning journey. Ask me anything about our quizzes or features!"
       />
 
+      <OnboardingModal />
     </div>
   );
 }

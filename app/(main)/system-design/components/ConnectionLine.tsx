@@ -9,6 +9,7 @@ interface ConnectionLineProps {
   toNode: Node | undefined;
   isSelected: boolean;
   onClick: (id: string) => void;
+  onDoubleClick: (id: string) => void;
   theme: "light" | "dark" | "neo";
 }
 
@@ -18,6 +19,7 @@ export const ConnectionLine = memo(({
   toNode,
   isSelected,
   onClick,
+  onDoubleClick,
   theme
 }: ConnectionLineProps) => {
   if (!fromNode || !toNode) return null;
@@ -31,7 +33,11 @@ export const ConnectionLine = memo(({
   const path = `M ${x1} ${y1} C ${x1 + (dx > 0 ? cf : -cf)} ${y1}, ${x2 - (dx > 0 ? cf : -cf)} ${y2}, ${x2} ${y2}`;
 
   return (
-    <g className="pointer-events-auto" onClick={(e) => { e.stopPropagation(); onClick(connection.id); }}>
+    <g 
+      className="pointer-events-auto" 
+      onClick={(e) => { e.stopPropagation(); onClick(connection.id); }}
+      onDoubleClick={(e) => { e.stopPropagation(); onDoubleClick(connection.id); }}
+    >
       <path
         d={path}
         stroke="transparent"
@@ -58,8 +64,8 @@ export const ConnectionLine = memo(({
           </div>
         </foreignObject>
       )}
-      <circle r="3" fill="#a5b4fc">
-        <animateMotion dur="2s" repeatCount="indefinite" path={path} rotate="auto" />
+      <circle r="2" fill="#a5b4fc">
+        <animateMotion dur="3.5s" repeatCount="indefinite" path={path} rotate="auto" />
       </circle>
     </g>
   );

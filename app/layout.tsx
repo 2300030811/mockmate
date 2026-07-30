@@ -72,6 +72,12 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head />
       <body className={`${inter.variable} ${outfit.variable} font-sans scroll-smooth antialiased [font-feature-settings:'ss01'] bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300`}>
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded-xl focus:shadow-xl focus:outline-none font-bold text-sm"
+        >
+          Skip to main content
+        </a>
         <Providers>
           {children}
           <Toaster position="top-center" richColors />

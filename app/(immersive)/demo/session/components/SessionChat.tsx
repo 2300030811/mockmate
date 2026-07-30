@@ -52,9 +52,20 @@ export const SessionChat = memo(function SessionChat({ messages, isProcessing, m
               </div>
             )}
 
-            {messages.map((msg, i) => (
-              <ChatMessage key={i} role={msg.role} content={msg.content} />
-            ))}
+            {messages.map((msg, i) => {
+              if (msg.content.startsWith("[System Notification")) {
+                const isExecution = msg.content.includes("executed") || msg.content.includes("validated");
+                return (
+                  <div key={i} className="flex justify-center my-2 w-full animate-fadeIn">
+                    <span className="text-[10px] text-gray-500 font-mono bg-gray-900/80 px-3.5 py-1.5 rounded-full border border-gray-800 flex items-center gap-1.5 shadow-sm">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      {isExecution ? "⚡ Code output sent to interviewer" : "⚡ Code changes synced"}
+                    </span>
+                  </div>
+                );
+              }
+              return <ChatMessage key={i} role={msg.role} content={msg.content} />;
+            })}
 
             {isProcessing && (
               <div className="flex w-full justify-start">

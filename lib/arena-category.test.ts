@@ -4,6 +4,8 @@ import {
   parseArenaStatus,
   isArenaCategory,
   formatArenaCategoryLabel,
+  buildArenaCategory,
+  parseArenaCategory,
 } from "./arena-category";
 
 // ─── parseArenaBaseCategory ─────────────────────────────────────────────────
@@ -77,5 +79,45 @@ describe("formatArenaCategoryLabel", () => {
 
   it("returns non-arena categories unchanged", () => {
     expect(formatArenaCategoryLabel("aws")).toBe("aws");
+  });
+});
+
+// ─── parseArenaCategory & buildArenaCategory ──────────────────────────────────
+
+describe("parseArenaCategory & buildArenaCategory", () => {
+  it("correctly parses Format B 'arena_aws:win:'", () => {
+    expect(parseArenaBaseCategory("arena_aws:win:")).toBe("aws");
+    expect(parseArenaStatus("arena_aws:win:")).toBe("win");
+  });
+
+  it("builds correct category string using buildArenaCategory", () => {
+    expect(buildArenaCategory("aws", "win")).toBe("arena_aws:win:");
+    expect(buildArenaCategory("azure", "loss")).toBe("arena_azure:loss:");
+    expect(buildArenaCategory("mongodb", "tie")).toBe("arena_mongodb:tie:");
+    expect(buildArenaCategory("pcap")).toBe("arena_pcap");
+  });
+
+  it("parses built category strings correctly (round-trip)", () => {
+    const categories = ["aws", "azure", "mongodb", "pcap"];
+    const statuses = ["win" as const, "loss" as const, "tie" as const, null];
+
+    categories.forEach(cat => {
+      statuses.forEach(status => {
+        const encoded = buildArenaCategory(cat, status);
+        const parsed = parseArenaCategory(encoded);
+        expect(parsed).toEqual({
+          category: cat,
+          status: status
+        });
+      });
+    });
+  });
+
+  it("handles malformed or edge-case inputs gracefully", () => {
+    expect(parseArenaCategory("")).toEqual({ category: "", status: null });
+    expect(parseArenaCategory("aws")).toEqual({ category: "aws", status: null });
+    expect(parseArenaCategory("arena:")).toEqual({ category: "arena:", status: null });
+    expect(parseArenaCategory("arena_unknown")).toEqual({ category: "unknown", status: null });
+    expect(parseArenaCategory("arena_aws:abc:")).toEqual({ category: "aws", status: null });
   });
 });

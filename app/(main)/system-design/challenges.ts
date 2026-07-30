@@ -1,3 +1,11 @@
+export interface ChallengeMetrics {
+    users: string;
+    writesPerDay: string;
+    readsPerDay: string;
+    latency: string;
+    storage: string;
+}
+
 export interface Challenge {
     id: string;
     title: string;
@@ -6,6 +14,7 @@ export interface Challenge {
     objectives: string[];
     constraints: string[];
     templateId?: string;
+    metrics?: ChallengeMetrics;
 }
 
 export const CHALLENGES: Challenge[] = [
@@ -24,7 +33,14 @@ export const CHALLENGES: Challenge[] = [
             "High availability (99.99%)",
             "Read-heavy workload (100:1 read/write ratio)",
             "Strict latency for redirection (< 10ms)"
-        ]
+        ],
+        metrics: {
+            users: "50M active",
+            writesPerDay: "5M links",
+            readsPerDay: "500M redirects",
+            latency: "< 10ms",
+            storage: "100TB+"
+        }
     },
     {
         id: "realtime-chat",
@@ -41,7 +57,14 @@ export const CHALLENGES: Challenge[] = [
             "No message loss allowed",
             "Support for 500M+ monthly active users",
             "Horizontal scalability for WebSocket servers"
-        ]
+        ],
+        metrics: {
+            users: "500M MAU",
+            writesPerDay: "500M messages",
+            readsPerDay: "5B messages",
+            latency: "< 50ms",
+            storage: "5PB+"
+        }
     },
     {
         id: "video-stream",
@@ -58,7 +81,14 @@ export const CHALLENGES: Challenge[] = [
             "Store petabytes of video data",
             "Efficient CDN utilization",
             "Handle sudden spikes (e.g., viral videos)"
-        ]
+        ],
+        metrics: {
+            users: "2B active",
+            writesPerDay: "50M uploads",
+            readsPerDay: "2B plays",
+            latency: "< 100ms",
+            storage: "100PB+"
+        }
     },
     {
         id: "trading-system",
@@ -75,6 +105,13 @@ export const CHALLENGES: Challenge[] = [
             "Microsecond latency for matching",
             "Strict ACID compliance for balance updates",
             "Zero downtime during maintenance"
-        ]
+        ],
+        metrics: {
+            users: "10M active",
+            writesPerDay: "100M trades",
+            readsPerDay: "1B quotes",
+            latency: "< 1ms",
+            storage: "10TB+"
+        }
     }
 ];

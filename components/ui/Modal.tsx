@@ -65,8 +65,7 @@ export const Modal: React.FC<ModalProps> = ({
                   )}
                   tabIndex={-1}
                 >
-                  {/* Provide Visually Hidden Title for Screen Readers if missing */}
-                  <span id="modal-title" className="sr-only">{title || 'Modal Dialog'}</span>
+                  {/* Description for aria-describedby */}
                   {description && <span id="modal-description" className="sr-only">{description}</span>}
 
                   {/* Header section - Fixed */}
@@ -74,7 +73,7 @@ export const Modal: React.FC<ModalProps> = ({
                     {(title || description) && (
                       <div>
                         {title && (
-                          <h3 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-emerald-400 to-cyan-400">
+                          <h3 id="modal-title" className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-emerald-400 to-cyan-400">
                             {title}
                           </h3>
                         )}
@@ -87,7 +86,8 @@ export const Modal: React.FC<ModalProps> = ({
                     )}
                     <button
                       onClick={onClose}
-                      className="p-2 rounded-full hover:bg-white/10 transition-colors opacity-50 hover:opacity-100"
+                      aria-label="Close dialog"
+                      className="p-2 rounded-full hover:bg-white/10 transition-colors opacity-50 hover:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                     >
                       <X className="w-5 h-5" />
                     </button>

@@ -8,7 +8,7 @@
  *    an object, so all output is wrapped as { "concepts": [...], "questions": [...] }.
  *  - Concept-first prompting: Step 1 extracts concepts INTO the JSON "concepts"
  *    array, Step 2 generates one question per concept. Embedding Step 1 inside
- *    the JSON makes it work on all model sizes including llama-3.1-8b-instant —
+ *    the JSON makes it work on all model sizes including openai/gpt-oss-20b —
  *    the model has a concrete JSON target to hit rather than free-form reasoning.
  *    Strip "concepts" before sending to the frontend; it only guides generation.
  *  - Concrete filled example over abstract schema — OSS models follow examples

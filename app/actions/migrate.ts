@@ -6,16 +6,16 @@ import { clearQuizCache } from "@/lib/quiz-cache";
 import { requireAdmin } from "@/lib/auth-utils";
 import { logger } from "@/lib/logger";
 import { quizRepository } from "@/lib/db/quiz-repository";
-
-const CATEGORIES = ["aws", "azure", "salesforce", "mongodb", "pcap", "oracle"];
+import { getAllCategories } from "@/lib/quiz-registry";
 
 export async function seedDatabase() {
   if (!await requireAdmin()) throw new Error("Admin access required.");
 
   const supabase = createClient();
   const results = [];
+  const categories = getAllCategories();
 
-  for (const category of CATEGORIES) {
+  for (const { id: category } of categories) {
     try {
       logger.info(`📡 Fetching and normalizing ${category} questions...`);
       

@@ -81,6 +81,7 @@ export function LoginForm() {
                         <input
                             name="email"
                             type="email"
+                            autoComplete="email"
                             required
                             disabled={loading}
                             placeholder="your@email.com"
@@ -89,9 +90,9 @@ export function LoginForm() {
                     </div>
                 </div>
 
-                <PasswordInput disabled={loading} extra={forgotLink} />
+                <PasswordInput disabled={loading} extra={forgotLink} autoComplete="current-password" />
 
-                <Button type="submit" disabled={loading} className="w-full h-12 rounded-2xl">
+                <Button type="submit" variant="primary" disabled={loading} className="w-full h-12 rounded-2xl">
                     {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Log In"}
                 </Button>
             </form>

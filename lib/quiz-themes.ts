@@ -1,3 +1,5 @@
+import { QuizCategoryId } from "./quiz-registry";
+
 export const quizThemes = {
   aws: {
     id: "aws",
@@ -5,7 +7,7 @@ export const quizThemes = {
     subtitle: "Prepare for the AWS Certified Cloud Practitioner exam with our comprehensive practice suite.",
     badge: {
       text: "AWS CERTIFIED CLOUD PRACTITIONER",
-      icon: "☁️",
+      icon: "cloud",
       className: "bg-orange-500/10 border-orange-500/30 text-orange-600 dark:bg-orange-500/10 dark:border-orange-500/20 dark:text-orange-400"
     },
     bgGradient: "bg-gradient-to-br from-orange-50 via-white to-yellow-50 dark:from-gray-950 dark:via-gray-900 dark:to-orange-950",
@@ -33,7 +35,7 @@ export const quizThemes = {
         iconBgLight: "bg-orange-100",
         iconBgDark: "bg-orange-500",
         iconColorClass: "text-orange-600",
-        icon: "☁️"
+        icon: "cloud"
       },
       exam: {
         gradient: "from-red-500 to-orange-600",
@@ -50,7 +52,7 @@ export const quizThemes = {
     subtitle: "Choose how you want to prepare for Microsoft Azure Fundamentals certification.",
     badge: {
       text: "AZ-900 AZURE FUNDAMENTALS",
-      icon: "🔷",
+      icon: "cloudcog",
       className: "bg-cyan-500/10 border-cyan-500/30 text-cyan-600 dark:bg-cyan-500/10 dark:border-cyan-500/20 dark:text-cyan-400"
     },
     bgGradient: "bg-gradient-to-br from-cyan-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-cyan-950",
@@ -78,7 +80,7 @@ export const quizThemes = {
         iconBgLight: "bg-cyan-100",
         iconBgDark: "bg-cyan-500",
         iconColorClass: "text-cyan-600",
-        icon: "🔷"
+        icon: "cloudcog"
       },
       exam: {
         gradient: "from-blue-500 to-indigo-600",
@@ -185,7 +187,7 @@ export const quizThemes = {
     subtitle: "Prepare for the Certified Associate in Python Programming exam with real scenarios and code challenges.",
     badge: {
       text: "PCAP PYTHON CERTIFICATION",
-      icon: "code",
+      icon: "code2",
       className: "bg-blue-500/10 border-blue-500/30 text-blue-600 dark:bg-blue-500/10 dark:border-blue-500/20 dark:text-blue-400"
     },
     bgGradient: "bg-gradient-to-br from-blue-50 via-white to-yellow-50 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950",
@@ -213,7 +215,7 @@ export const quizThemes = {
         iconBgLight: "bg-blue-100",
         iconBgDark: "bg-blue-500",
         iconColorClass: "text-blue-500",
-        icon: "code"
+        icon: "code2"
       },
       exam: {
         gradient: "from-yellow-400 to-orange-500",
@@ -230,7 +232,7 @@ export const quizThemes = {
     subtitle: "Prepare for the Oracle certification exam with our comprehensive practice suite.",
     badge: {
       text: "ORACLE CERTIFIED ASSOCIATE",
-      icon: "terminal",
+      icon: "coffee",
       className: "bg-red-500/10 border-red-500/30 text-red-600 dark:bg-red-500/10 dark:border-red-500/20 dark:text-red-400"
     },
     bgGradient: "bg-gradient-to-br from-red-50 via-white to-orange-50 dark:from-gray-950 dark:via-gray-900 dark:to-red-950",
@@ -258,7 +260,7 @@ export const quizThemes = {
         iconBgLight: "bg-red-100",
         iconBgDark: "bg-red-500",
         iconColorClass: "text-red-600",
-        icon: "terminal"
+        icon: "coffee"
       },
       exam: {
         gradient: "from-orange-500 to-red-600",
@@ -272,3 +274,6 @@ export const quizThemes = {
 };
 
 export type QuizTheme = typeof quizThemes.aws;
+
+// Compile-time check: Ensure every QuizCategoryId has a corresponding theme
+const _checkThemes: Record<QuizCategoryId, QuizTheme> = quizThemes;

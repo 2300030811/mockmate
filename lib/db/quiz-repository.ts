@@ -9,6 +9,10 @@ export interface QuizResultData {
   total_questions: number;
   nickname: string;
   completed_at: string;
+  quiz_mode?: "standard" | "arena" | "daily-challenge";
+  arena_status?: "win" | "loss" | "tie" | null;
+  arena_user_score?: number | null;
+  arena_opponent_score?: number | null;
 }
 
 export const quizRepository = {
@@ -46,7 +50,7 @@ export const quizRepository = {
   async getRecentResults(db: SupabaseClient, userId: string | null, sessionId: string | null, limit = 10) {
     let query = db
       .from("quiz_results")
-      .select("id, category, score, total_questions, completed_at, session_id, user_id")
+      .select("id, category, score, total_questions, completed_at, session_id, user_id, quiz_mode, arena_status, arena_user_score, arena_opponent_score")
       .order("completed_at", { ascending: false });
 
     if (userId) {
@@ -65,7 +69,7 @@ export const quizRepository = {
     sinceDate: string;
     userId: string | null;
     sessionId: string;
-    arenaStatus?: string;
+    quizMode?: string;
   }) {
     let query = db
       .from("quiz_results")
@@ -80,8 +84,8 @@ export const quizRepository = {
       query = query.eq("session_id", data.sessionId);
     }
 
-    if (data.arenaStatus) {
-      query = query.eq("session_id", data.sessionId);
+    if (data.quizMode) {
+      query = query.eq("quiz_mode", data.quizMode);
     }
 
     const res = await query.order("completed_at", { ascending: false }).limit(1);
@@ -139,6 +143,7 @@ export const quizRepository = {
       .from("quiz_results")
       .select("id, nickname, score, total_questions, completed_at")
       .eq("category", category)
+      .eq("quiz_mode", "standard")
       .not("nickname", "is", null)
       .neq("nickname", "")
       .neq("nickname", "Guest")
@@ -169,7 +174,7 @@ export const quizRepository = {
   async getAllQuizResults(db: SupabaseClient, limit = 50) {
     const res = await db
       .from("quiz_results")
-      .select("id, user_id, nickname, category, score, total_questions, completed_at, session_id")
+      .select("id, user_id, nickname, category, score, total_questions, completed_at, session_id, quiz_mode, arena_status, arena_user_score, arena_opponent_score")
       .order("completed_at", { ascending: false })
       .limit(limit);
     return throwIfError(res);
@@ -178,7 +183,7 @@ export const quizRepository = {
   async getQuizResultsPage(db: SupabaseClient, userId: string, offset: number, limit: number) {
     const res = await db
       .from("quiz_results")
-      .select("id, category, score, total_questions, completed_at", { count: "exact" })
+      .select("id, category, score, total_questions, completed_at, quiz_mode, arena_status, arena_user_score, arena_opponent_score", { count: "exact" })
       .eq("user_id", userId)
       .order("completed_at", { ascending: false })
       .range(offset, offset + limit - 1);

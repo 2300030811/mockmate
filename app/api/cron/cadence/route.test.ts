@@ -2,6 +2,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { GET } from "./route";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { recomputeCadenceForUser } from "@/lib/career-ops/recompute";
+import { careerOpsRepository } from "@/lib/db/career-ops-repository";
 
 vi.mock("@/utils/supabase/admin", () => ({
   createAdminClient: vi.fn(),
@@ -16,18 +17,16 @@ vi.mock("@/lib/career-ops/recompute", () => ({
   recomputeCadenceForUser: vi.fn(),
 }));
 
+vi.mock("@/lib/db/career-ops-repository", () => ({
+  careerOpsRepository: {
+    getActiveUserIdsForCadence: vi.fn(),
+  },
+}));
+
 const createAdminClientMock = vi.mocked(createAdminClient);
 const recomputeCadenceForUserMock = vi.mocked(recomputeCadenceForUser);
+const careerOpsRepositoryMock = vi.mocked(careerOpsRepository);
 const originalEnv = process.env;
-
-function makeActiveUsersQuery(result: { data: unknown; error: { code?: string; message?: string } | null }) {
-  return {
-    select: vi.fn().mockReturnThis(),
-    in: vi.fn().mockReturnThis(),
-    order: vi.fn().mockReturnThis(),
-    limit: vi.fn().mockResolvedValue(result),
-  };
-}
 
 describe("GET /api/cron/cadence", () => {
   beforeEach(() => {
@@ -55,7 +54,7 @@ describe("GET /api/cron/cadence", () => {
   });
 
   it("recomputes cadence for a specific user", async () => {
-    const adminDb = { from: vi.fn() };
+    const adminDb = {};
     createAdminClientMock.mockReturnValue(adminDb as never);
 
     recomputeCadenceForUserMock.mockResolvedValue({
@@ -90,19 +89,14 @@ describe("GET /api/cron/cadence", () => {
   });
 
   it("aggregates results for discovered active users", async () => {
-    const activeUserQuery = makeActiveUsersQuery({
-      data: [
-        { user_id: "user-1", updated_at: "2026-04-18T10:00:00.000Z" },
-        { user_id: "user-2", updated_at: "2026-04-18T09:00:00.000Z" },
-        { user_id: "user-1", updated_at: "2026-04-18T08:00:00.000Z" },
-        { user_id: "user-3", updated_at: "2026-04-18T07:00:00.000Z" },
-      ],
-      error: null,
-    });
+    careerOpsRepositoryMock.getActiveUserIdsForCadence.mockResolvedValue([
+      { user_id: "user-1", updated_at: "2026-04-18T10:00:00.000Z" },
+      { user_id: "user-2", updated_at: "2026-04-18T09:00:00.000Z" },
+      { user_id: "user-1", updated_at: "2026-04-18T08:00:00.000Z" },
+      { user_id: "user-3", updated_at: "2026-04-18T07:00:00.000Z" },
+    ]);
 
-    const adminDb = {
-      from: vi.fn().mockReturnValue(activeUserQuery),
-    };
+    const adminDb = {};
     createAdminClientMock.mockReturnValue(adminDb as never);
 
     recomputeCadenceForUserMock
@@ -145,18 +139,12 @@ describe("GET /api/cron/cadence", () => {
   });
 
   it("returns setup-pending error when tracker tables are missing", async () => {
-    const activeUserQuery = makeActiveUsersQuery({
-      data: null,
-      error: {
-        code: "42P01",
-        message: "relation \"career_ops_applications\" does not exist",
-      },
+    careerOpsRepositoryMock.getActiveUserIdsForCadence.mockRejectedValue({
+      code: "42P01",
+      message: 'relation "career_ops_applications" does not exist',
     });
 
-    const adminDb = {
-      from: vi.fn().mockReturnValue(activeUserQuery),
-    };
-    createAdminClientMock.mockReturnValue(adminDb as never);
+    createAdminClientMock.mockReturnValue({} as any);
 
     const response = await GET(new Request("http://localhost/api/cron/cadence"));
     const body = await response.json();

@@ -1,4 +1,15 @@
 import { sanitizePromptInput } from "@/utils/sanitize";
+import { getAllCategories } from "@/lib/quiz-registry";
+
+/**
+ * Dynamically builds the "If a skill maps to a certification..." block
+ * from the quiz registry so new certifications appear automatically.
+ */
+function buildQuizRecommendationBlock(): string {
+  return getAllCategories()
+    .map((c) => `- ${c.name} -> '${c.id}'`)
+    .join("\n    ");
+}
 
 export const CAREER_ANALYSIS_SYSTEM_PROMPT = (
   jobRole: string,
@@ -17,7 +28,7 @@ export const CAREER_ANALYSIS_SYSTEM_PROMPT = (
     </job_description>
     
     CRITICAL INSTRUCTIONS:
-    1. Market Year: Use current 2025-2026 market trends.
+    1. Market Year: Use current ${new Date().getFullYear()}-${new Date().getFullYear() + 1} market trends.
     2. Currency: All salary ranges MUST be in Indian Rupees (INR/₹). Use values like "₹12L - ₹18L PA" or similar.
     3. Context: Prioritize the Indian job market context unless the target company is specifically global-only.
     4. REAL SALARY DATA: ${realSalaryData ? `Real market data is provided below. USE THIS AS THE BASIS for your salaryRange in marketInsights. Do NOT ignore this data. Use the confidence level specified. ${realSalaryData}` : 'No real salary data available. Estimate based on your knowledge. Set confidence to "low".'}
@@ -36,12 +47,7 @@ export const CAREER_ANALYSIS_SYSTEM_PROMPT = (
     
     Crucially, you must identify "Skill Gaps".
     If a missing skill directly maps to one of the following certifications/technologies, you MUST recommend the specific quiz ID:
-    - AWS Cloud (Solution Architect, Developer, etc.) -> 'aws'
-    - Microsoft Azure -> 'azure'
-    - MongoDB -> 'mongodb'
-    - Salesforce -> 'salesforce'
-    - Python (PCAP/General) -> 'pcap'
-    - Java -> 'java'
+    ${buildQuizRecommendationBlock()}
     
     Output JSON format (MUST include these NEW fields):
     {
@@ -51,7 +57,7 @@ export const CAREER_ANALYSIS_SYSTEM_PROMPT = (
         "skill": string, 
         "category": "technical" | "soft" | "domain", 
         "importance": "high" | "medium" | "low",
-        "recommendedQuiz": "aws" | "azure" | "mongodb" | "salesforce" | "pcap" | "java" | null 
+        "recommendedQuiz": ${getAllCategories().map(c => `"${c.id}"`).join(" | ")} | null 
       }],
       "strengths": [{
         "skill": string,

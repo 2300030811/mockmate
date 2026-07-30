@@ -2,6 +2,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { GET } from "./route";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { chromium } from "playwright";
+import { careerOpsRepository } from "@/lib/db/career-ops-repository";
 
 vi.mock("@/utils/supabase/admin", () => ({
   createAdminClient: vi.fn(),
@@ -13,21 +14,17 @@ vi.mock("playwright", () => ({
   },
 }));
 
+vi.mock("@/lib/db/career-ops-repository", () => ({
+  careerOpsRepository: {
+    loadPostingCandidates: vi.fn(),
+    updatePostingLiveness: vi.fn(),
+  },
+}));
+
 const createAdminClientMock = vi.mocked(createAdminClient);
 const launchMock = vi.mocked(chromium.launch);
+const careerOpsRepositoryMock = vi.mocked(careerOpsRepository);
 const originalEnv = process.env;
-
-function makeSelectQuery(result: {
-  data: unknown;
-  error: { code?: string; message?: string } | null;
-}) {
-  return {
-    select: vi.fn().mockReturnThis(),
-    in: vi.fn().mockReturnThis(),
-    order: vi.fn().mockReturnThis(),
-    limit: vi.fn().mockResolvedValue(result),
-  };
-}
 
 describe("GET /api/cron/liveness", () => {
   beforeEach(() => {
@@ -56,18 +53,12 @@ describe("GET /api/cron/liveness", () => {
   });
 
   it("returns setup-pending error when tracker tables are missing", async () => {
-    const selectQuery = makeSelectQuery({
-      data: null,
-      error: {
-        code: "42P01",
-        message: 'relation "career_ops_job_postings" does not exist',
-      },
+    careerOpsRepositoryMock.loadPostingCandidates.mockRejectedValue({
+      code: "42P01",
+      message: 'relation "career_ops_job_postings" does not exist',
     });
 
-    const adminDb = {
-      from: vi.fn().mockReturnValue(selectQuery),
-    };
-    createAdminClientMock.mockReturnValue(adminDb as never);
+    createAdminClientMock.mockReturnValue({} as any);
 
     const response = await GET(new Request("http://localhost/api/cron/liveness"));
     const body = await response.json();
@@ -78,15 +69,8 @@ describe("GET /api/cron/liveness", () => {
   });
 
   it("returns success without launching browser when no candidates are found", async () => {
-    const selectQuery = makeSelectQuery({
-      data: [],
-      error: null,
-    });
-
-    const adminDb = {
-      from: vi.fn().mockReturnValue(selectQuery),
-    };
-    createAdminClientMock.mockReturnValue(adminDb as never);
+    careerOpsRepositoryMock.loadPostingCandidates.mockResolvedValue([]);
+    createAdminClientMock.mockReturnValue({} as any);
 
     const response = await GET(new Request("http://localhost/api/cron/liveness?limit=5"));
     const body = await response.json();
@@ -98,29 +82,15 @@ describe("GET /api/cron/liveness", () => {
   });
 
   it("checks candidates and persists active classification", async () => {
-    const selectQuery = makeSelectQuery({
-      data: [
-        {
-          id: "posting-1",
-          external_url: "https://jobs.example.com/1",
-          posting_status: "uncertain",
-        },
-      ],
-      error: null,
-    });
-
-    const updateQuery = {
-      update: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockResolvedValue({ error: null }),
-    };
-
-    const adminDb = {
-      from: vi
-        .fn()
-        .mockReturnValueOnce(selectQuery)
-        .mockReturnValue(updateQuery),
-    };
-    createAdminClientMock.mockReturnValue(adminDb as never);
+    careerOpsRepositoryMock.loadPostingCandidates.mockResolvedValue([
+      {
+        id: "posting-1",
+        external_url: "https://jobs.example.com/1",
+        posting_status: "uncertain",
+      },
+    ]);
+    careerOpsRepositoryMock.updatePostingLiveness.mockResolvedValue(null as any);
+    createAdminClientMock.mockReturnValue({} as any);
 
     const page = {
       goto: vi.fn().mockResolvedValue({ status: () => 200 }),
@@ -147,13 +117,13 @@ describe("GET /api/cron/liveness", () => {
     expect(body.updated).toBe(1);
     expect(body.resultCounts.active).toBe(1);
 
-    expect(updateQuery.update).toHaveBeenCalledWith(
+    expect(careerOpsRepositoryMock.updatePostingLiveness).toHaveBeenCalledWith(
+      {},
+      "posting-1",
       expect.objectContaining({
-        posting_status: "active",
-        last_liveness_result: "active",
+        status: "active",
       })
     );
-    expect(updateQuery.eq).toHaveBeenCalledWith("id", "posting-1");
     expect(browser.close).toHaveBeenCalledTimes(1);
   });
 });

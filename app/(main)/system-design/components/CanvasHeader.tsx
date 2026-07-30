@@ -1,6 +1,6 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useState } from "react";
 import { m } from "framer-motion";
 import {
   Undo2,
@@ -16,7 +16,8 @@ import {
   Layers,
   Trash2,
   Cloud,
-  Trophy
+  Trophy,
+  Wand2
 } from "lucide-react";
 import { NavigationPill } from "@/components/ui/NavigationPill";
 
@@ -40,6 +41,7 @@ interface CanvasHeaderProps {
   clearCanvas: () => void;
   saveDesign: () => void;
   toggleChallengePanel: () => void;
+  autoAlignNodes: (type: 'grid' | 'layered' | 'flow') => void;
 }
 
 export const CanvasHeader = memo(({
@@ -61,10 +63,12 @@ export const CanvasHeader = memo(({
   setTheme,
   clearCanvas,
   saveDesign,
-  toggleChallengePanel
+  toggleChallengePanel,
+  autoAlignNodes
 }: CanvasHeaderProps) => {
   const isLight = theme === 'light';
   const isNeo = theme === 'neo';
+  const [showLayoutMenu, setShowLayoutMenu] = useState(false);
 
   return (
     <header id="sd-header" className={`h-14 px-4 flex items-center justify-between z-40 shrink-0 transition-all duration-500 border-b ${isLight ? 'bg-white/90 border-gray-200 backdrop-blur-2xl shadow-[0_4px_24px_rgba(0,0,0,0.05)]' : isNeo ? 'bg-[#050212]/80 border-fuchsia-500/20 backdrop-blur-2xl shadow-[0_4px_30px_rgba(217,70,239,0.1)]' : 'bg-black/40 border-white/10 backdrop-blur-2xl shadow-[0_4px_24px_rgba(0,0,0,0.5)]'}`}>
@@ -140,6 +144,57 @@ export const CanvasHeader = memo(({
         </div>
 
         <div className={`w-px h-6 mx-1 hidden md:block ${isLight ? 'bg-gray-200' : isNeo ? 'bg-fuchsia-500/20' : 'bg-white/10'}`}></div>
+
+        <div className="relative">
+          <button
+            onClick={() => setShowLayoutMenu(!showLayoutMenu)}
+            className={`p-2 transition-all rounded-lg group ${
+              showLayoutMenu 
+                ? 'text-indigo-500 bg-indigo-500/10' 
+                : (isLight ? 'text-gray-400 hover:text-indigo-500 hover:bg-indigo-50' : 'text-gray-500 hover:text-indigo-400 hover:bg-indigo-950/30')
+            }`}
+            title="Auto Layout Topologies"
+          >
+            <Wand2 size={16} className="group-hover:scale-110 transition-transform" />
+          </button>
+          
+          {showLayoutMenu && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowLayoutMenu(false)} />
+              <div className={`absolute right-0 mt-2 w-48 rounded-xl border p-1 shadow-xl z-50 transition-all duration-300 ${
+                isLight 
+                  ? 'bg-white border-gray-200 text-gray-800 shadow-[0_4px_24px_rgba(0,0,0,0.05)]' 
+                  : isNeo 
+                    ? 'bg-[#050212] border-fuchsia-500/20 text-cyan-50 shadow-[0_4px_30px_rgba(217,70,239,0.15)]' 
+                    : 'bg-[#0F0F0F] border-white/10 text-white shadow-2xl'
+              }`}>
+                {[
+                  { id: 'grid', label: 'Grid Topology', desc: 'Uniform rows and columns' },
+                  { id: 'layered', label: 'Layered Tiers', desc: 'Flow by logical components' },
+                  { id: 'flow', label: 'Event Flow', desc: 'Trace messaging pipeline' },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      autoAlignNodes(item.id as any);
+                      setShowLayoutMenu(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold transition-colors flex flex-col gap-0.5 ${
+                      isLight 
+                        ? 'hover:bg-gray-100 text-gray-800' 
+                        : isNeo 
+                          ? 'hover:bg-fuchsia-500/15 text-cyan-50' 
+                          : 'hover:bg-white/5 text-white'
+                    }`}
+                  >
+                    <span>{item.label}</span>
+                    <span className="text-[9px] text-gray-500 font-normal">{item.desc}</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
 
         <button
           onClick={clearCanvas}

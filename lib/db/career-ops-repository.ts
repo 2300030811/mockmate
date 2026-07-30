@@ -143,4 +143,115 @@ export const careerOpsRepository = {
       .order("followed_up_on", { ascending: false });
     return throwIfError(res);
   },
+
+  async getActiveUserIdsForCadence(db: SupabaseClient, statuses: string[], limit: number) {
+    const res = await db
+      .from("career_ops_applications")
+      .select("user_id, updated_at")
+      .in("status", statuses)
+      .order("updated_at", { ascending: false })
+      .limit(limit);
+    return throwIfError(res);
+  },
+
+  async loadScanTargets(db: SupabaseClient) {
+    const res = await db
+      .from("career_ops_scan_targets")
+      .select("name, api_type, api_url")
+      .eq("enabled", true);
+    return throwIfError(res);
+  },
+
+  async startScanRun(db: SupabaseClient, payload: { scannedTargets: number }) {
+    const res = await db
+      .from("career_ops_scan_runs")
+      .insert({
+        status: "running",
+        scanned_targets: payload.scannedTargets,
+        created_by: "cron",
+      })
+      .select("id")
+      .single();
+    return requireSingle(res);
+  },
+
+  async finishScanRun(
+    db: SupabaseClient,
+    runId: string,
+    payload: {
+      status: "completed" | "failed";
+      foundCount: number;
+      filteredCount: number;
+      dedupedCount: number;
+      insertedCount: number;
+      failedCount: number;
+      skippedExistingCount: number;
+      errorMessage: string | null;
+    }
+  ) {
+    const res = await db
+      .from("career_ops_scan_runs")
+      .update({
+        status: payload.status,
+        found_count: payload.foundCount,
+        filtered_count: payload.filteredCount,
+        deduped_count: payload.dedupedCount,
+        inserted_count: payload.insertedCount,
+        failed_count: payload.failedCount,
+        skipped_existing_count: payload.skippedExistingCount,
+        error_message: payload.errorMessage,
+        completed_at: new Date().toISOString(),
+      })
+      .eq("id", runId);
+    return throwIfError(res);
+  },
+
+  async fetchExistingPostings(db: SupabaseClient, urls: string[], fingerprints: string[]) {
+    const [urlsRes, fingerprintsRes] = await Promise.all([
+      urls.length > 0
+        ? db.from("career_ops_job_postings").select("external_url").in("external_url", urls)
+        : Promise.resolve({ data: [], error: null }),
+      fingerprints.length > 0
+        ? db.from("career_ops_job_postings").select("job_fingerprint").in("job_fingerprint", fingerprints)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+
+    if (urlsRes.error) throw urlsRes.error;
+    if (fingerprintsRes.error) throw fingerprintsRes.error;
+
+    return {
+      urls: (urlsRes.data as Array<{ external_url: string }> | null) ?? [],
+      fingerprints: (fingerprintsRes.data as Array<{ job_fingerprint: string }> | null) ?? [],
+    };
+  },
+
+  async upsertJobPostings(db: SupabaseClient, postings: any[]) {
+    const res = await db
+      .from("career_ops_job_postings")
+      .upsert(postings, { onConflict: "external_url" });
+    return throwIfError(res);
+  },
+
+  async loadPostingCandidates(db: SupabaseClient, statuses: string[], limit: number) {
+    const res = await db
+      .from("career_ops_job_postings")
+      .select("id, external_url, posting_status")
+      .in("posting_status", statuses)
+      .order("last_liveness_checked_at", { ascending: true })
+      .limit(limit);
+    return throwIfError(res);
+  },
+
+  async updatePostingLiveness(db: SupabaseClient, id: string, payload: { status: string; checkedAt: string }) {
+    const res = await db
+      .from("career_ops_job_postings")
+      .update({
+        posting_status: payload.status,
+        last_liveness_result: payload.status,
+        last_liveness_checked_at: payload.checkedAt,
+      })
+      .eq("id", id);
+    return throwIfError(res);
+  },
 };
+

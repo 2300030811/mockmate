@@ -1,5 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import { generateText, AI_MODELS } from "@/lib/ai/gateway";
+import { aiOrchestrator } from "@/lib/services/ai-orchestrator";
+import { z } from "zod";
 import { sanitizePromptInput } from "@/utils/sanitize";
 import { logger } from "@/lib/logger";
 import { DAILY_PROBLEMS } from "@/utils/daily-problems";
@@ -55,66 +56,65 @@ export const challengeService = {
         ONLY RETURN JSON.
     `;
 
-    const result = await generateText(
+    const challengeEvalSchema = z.object({
+      success: z.boolean(),
+      score: z.number().min(0).max(100),
+      efficiency: z.string(),
+      feedback: z.string(),
+    });
+
+    const result = await aiOrchestrator.generateStructured(
       [{ role: "user", content: prompt }],
       "You are an automated code judge.",
+      challengeEvalSchema,
       "auto",
       {
-        model: AI_MODELS.STRUCTURED,
         temperature: 0.1,
         maxTokens: 500,
-        responseFormat: { type: "json_object" },
       }
     );
 
-    const text = result.content || "";
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!result.success) {
+      throw new Error("Invalid JSON from Groq");
+    }
 
-    if (jsonMatch) {
-      let evalResult;
-      try {
-        evalResult = JSON.parse(jsonMatch[0]);
-      } catch (parseError) {
-        logger.error("Failed to parse LLM JSON output:", parseError);
-        throw new Error("Invalid JSON from AI judge");
-      }
+    const evalResult = result.data!;
 
-      // Server-Side Persistence for Daily Streak
-      if (evalResult.success && userId) {
-        const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0);
+    // Server-Side Persistence for Daily Streak
+    if (evalResult.success && userId) {
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
 
-        const existing = await quizRepository.checkDailyChallengeSolved(
-          adminDb,
-          userId,
-          todayStart.toISOString()
-        );
+      const existing = await quizRepository.checkDailyChallengeSolved(
+        adminDb,
+        userId,
+        todayStart.toISOString()
+      );
 
-        if (!existing) {
-          const problemPoints = problem ? problem.points : 10;
+      if (!existing) {
+        const problemPoints = problem ? problem.points : 10;
 
-          // Fetch nickname required by DB constraint
-          const profile = await profileRepository.getProfileFields(adminDb, userId, "nickname");
-          const userNickname = profile?.nickname || "User";
+        // Fetch nickname required by DB constraint
+        const profile = await profileRepository.getProfileFields(adminDb, userId, "nickname");
+        const userNickname = profile?.nickname || "User";
 
-          try {
-            await quizRepository.saveResult(adminDb, {
-              nickname: userNickname,
-              user_id: userId,
-              session_id: `user_session_${userId}`,
-              category: "daily-challenge",
-              score: problemPoints,
-              total_questions: problemPoints,
-              completed_at: new Date().toISOString()
-            });
-          } catch (insertError) {
-            logger.error("❌ Failed to insert challenge result:", insertError);
-          }
+        try {
+          await quizRepository.saveResult(adminDb, {
+            nickname: userNickname,
+            user_id: userId,
+            session_id: `user_session_${userId}`,
+            category: "daily-challenge",
+            score: problemPoints,
+            total_questions: problemPoints,
+            completed_at: new Date().toISOString(),
+            quiz_mode: "daily-challenge",
+          });
+        } catch (insertError) {
+          logger.error("❌ Failed to insert challenge result:", insertError);
         }
       }
-      return evalResult;
     }
-    throw new Error("Invalid JSON from Groq");
+    return evalResult;
   },
 
   async getServerDailyStats(adminDb: SupabaseClient, userId: string) {
@@ -184,7 +184,8 @@ export const challengeService = {
         category: "daily-challenge",
         score: 1,
         total_questions: 1,
-        completed_at: new Date().toISOString()
+        completed_at: new Date().toISOString(),
+        quiz_mode: "daily-challenge",
       });
 
       // Sync XP and streak on profiles

@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useRef, useCallback } from "react";
+import { memo, useRef, useCallback, useEffect } from "react";
 import { m } from "framer-motion";
 import { X, Trash2, Plus, ArrowRight, Settings, Link as LinkIcon, Layout } from "lucide-react";
 import { Node, Connection, Group } from "../types";
@@ -9,9 +9,9 @@ import { NODE_CONFIG } from "../constants";
 interface PropertyPanelProps {
   selectedItem: Node | Connection | Group | null;
   selectedType: "node" | "connection" | "group" | null;
-  onUpdateNodes: (nodes: Node[]) => void;
-  onUpdateConnections: (connections: Connection[]) => void;
-  onUpdateGroups: (groups: Group[]) => void;
+  onUpdateNodes: (updates: Partial<Node>) => void;
+  onUpdateConnections: (updates: Partial<Connection>) => void;
+  onUpdateGroups: (updates: Partial<Group>) => void;
   nodes: Node[];
   connections: Connection[];
   groups: Group[];
@@ -19,6 +19,8 @@ interface PropertyPanelProps {
   addToHistory: (n: Node[], c: Connection[], g: Group[]) => void;
   deleteSelected: () => void;
   theme: "dark" | "light" | "neo";
+  focusConnectionId?: string | null;
+  clearConnectionFocus?: () => void;
 }
 
 export const PropertyPanel = memo(({
@@ -33,12 +35,15 @@ export const PropertyPanel = memo(({
   setSelectedId,
   addToHistory,
   deleteSelected,
-  theme
+  theme,
+  focusConnectionId,
+  clearConnectionFocus
 }: PropertyPanelProps) => {
   const isLight = theme === 'light';
   const isNeo = theme === 'neo';
 
   const lastHistoryState = useRef<string>("");
+  const connectionInputRef = useRef<HTMLInputElement>(null);
 
   const handleBlur = useCallback(() => {
     const currentState = JSON.stringify({ nodes, connections, groups });
@@ -55,6 +60,13 @@ export const PropertyPanel = memo(({
     }
   }, [nodes, connections, groups]);
 
+  useEffect(() => {
+    if (focusConnectionId && connectionInputRef.current) {
+      connectionInputRef.current.focus();
+      if (clearConnectionFocus) clearConnectionFocus();
+    }
+  }, [focusConnectionId, clearConnectionFocus]);
+
   if (!selectedItem) return null;
 
   return (
@@ -62,7 +74,7 @@ export const PropertyPanel = memo(({
       initial={{ x: 300, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: 300, opacity: 0 }}
-      className={`w-72 border-l z-50 flex flex-col overflow-hidden transition-all duration-500 ${isLight ? "bg-white/90 backdrop-blur-2xl border-gray-200 shadow-[-4px_0_24px_rgba(0,0,0,0.05)] text-gray-900" : isNeo ? "bg-[#050212]/80 backdrop-blur-2xl border-fuchsia-500/20 shadow-[-4px_0_30px_rgba(217,70,239,0.1)] text-cyan-50" : "bg-black/40 backdrop-blur-2xl border-white/10 shadow-[-4px_0_24px_rgba(0,0,0,0.5)] text-white"
+      className={`w-72 border-l z-50 flex flex-col overflow-hidden transition-all duration-500 ${isLight ? "bg-white border-gray-200 shadow-[-4px_0_24px_rgba(0,0,0,0.05)] text-gray-900" : isNeo ? "bg-[#050212]/80 border-fuchsia-500/20 shadow-[-4px_0_30px_rgba(217,70,239,0.15)] text-cyan-50" : "bg-black/40 border-white/10 shadow-[-4px_0_24px_rgba(0,0,0,0.5)] text-white"
         }`}
     >
       <div className={`h-14 px-6 border-b flex items-center justify-between shrink-0 ${isLight ? 'bg-gray-50/50 border-gray-200' : isNeo ? 'bg-fuchsia-500/10 border-fuchsia-500/20' : 'bg-gray-900/10 border-white/5'}`}>
@@ -98,55 +110,98 @@ export const PropertyPanel = memo(({
                   value={node.name}
                   placeholder="Enter name..."
                   onChange={(e) => {
-                    const next = nodes.map(n => n.id === node.id ? { ...n, name: e.target.value } : n);
-                    onUpdateNodes(next);
+                    onUpdateNodes({ name: e.target.value });
                   }}
                   onFocus={handleFocus}
                   onBlur={handleBlur}
                 />
               </div>
 
-              <div className="space-y-4">
+              {/* Component Specifications */}
+              <div className="space-y-3">
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Specifications</p>
+                <div className="space-y-3">
+                  {[
+                    { key: "tech", label: "Tech Stack", placeholder: "e.g., Redis, Kafka, PostgreSQL" },
+                    { key: "capacity", label: "Capacity / Scale", placeholder: "e.g., 16GB RAM, 10k QPS" },
+                    { key: "region", label: "Region", placeholder: "e.g., us-east-1, global" },
+                    { key: "az", label: "Availability Zone", placeholder: "e.g., us-east-1a, multi-AZ" },
+                    { key: "latency", label: "Latency Target", placeholder: "e.g., <2ms, 50ms" },
+                  ].map((field) => (
+                    <div key={field.key} className="space-y-1">
+                      <label className="text-[9px] text-gray-500 pl-1 uppercase font-bold">{field.label}</label>
+                      <input
+                        className={`w-full rounded-xl px-3 py-2 text-xs font-bold outline-none transition-all duration-300 placeholder:text-gray-600/50 ${
+                          isLight 
+                            ? 'bg-gray-100 border border-gray-200 text-gray-900 focus:bg-white focus:border-indigo-500' 
+                            : isNeo 
+                              ? 'bg-[#050212] border border-fuchsia-500/20 text-cyan-50 focus:bg-fuchsia-500/10 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20' 
+                              : 'bg-white/5 border border-white/5 text-white focus:bg-white/10 focus:border-indigo-500'
+                        }`}
+                        placeholder={field.placeholder}
+                        value={node.metadata?.[field.key] || ""}
+                        onChange={(e) => {
+                          const mx = { ...node.metadata, [field.key]: e.target.value };
+                          onUpdateNodes({ metadata: mx });
+                        }}
+                        onFocus={handleFocus}
+                        onBlur={handleBlur}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Custom Metadata */}
+              <div className="space-y-3">
                 <div className="flex items-center justify-between pl-1">
-                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Metadata</p>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Custom Metadata</p>
                   <button
                     className={`p-1 transition-colors ${isNeo ? 'text-fuchsia-400 hover:text-cyan-400' : 'text-indigo-400 hover:text-indigo-300'}`}
                     onClick={() => {
-                      const k = prompt("Metadata key (e.g. tech, region, version)?");
+                      const k = prompt("Metadata key (e.g. version, replica_count)?");
                       if (k) {
+                        const cleanKey = k.trim().toLowerCase();
+                        if (["tech", "capacity", "region", "az", "latency"].includes(cleanKey)) {
+                          alert(`Please use the dedicated specifications input for ${k}.`);
+                          return;
+                        }
                         const mx = { ...node.metadata, [k]: "Value" };
-                        const next = nodes.map(n => n.id === node.id ? { ...n, metadata: mx } : n);
-                        onUpdateNodes(next); addToHistory(next, connections, groups);
+                        onUpdateNodes({ metadata: mx });
+                        const updatedNodes = nodes.map(n => n.id === node.id ? { ...n, metadata: mx } : n);
+                        addToHistory(updatedNodes, connections, groups);
                       }
                     }}
                   >
                     <Plus size={14} />
                   </button>
                 </div>
-                <div className={`space-y-2 rounded-xl p-2 ${isLight ? 'bg-gray-100' : isNeo ? 'bg-fuchsia-500/10' : 'bg-black/20'}`}>
-                  {Object.entries(node.metadata || {}).map(([k, v]) => (
-                    <div key={k} className={`flex gap-2 group p-1 transition-colors rounded-lg ${isLight ? 'hover:bg-white' : isNeo ? 'hover:bg-fuchsia-500/20' : 'hover:bg-white/5'}`}>
-                      <span className="text-[9px] text-gray-500 w-16 truncate self-center font-mono">{k}</span>
-                      <input
-                        value={v}
-                        className={`bg-transparent border-b text-[10px] font-bold flex-1 outline-none transition-all py-1 ${isLight ? 'border-gray-300 text-gray-800' : isNeo ? 'border-fuchsia-500/30 text-cyan-100' : 'border-white/5 text-white'}`}
-                        onChange={(e) => {
-                          const mx = { ...node.metadata, [k]: e.target.value };
-                          const next = nodes.map(n => n.id === node.id ? { ...n, metadata: mx } : n);
-                          onUpdateNodes(next);
-                        }}
-                        onFocus={handleFocus}
-                        onBlur={handleBlur}
-                      />
-                      <button onClick={() => {
-                        const mx = { ...node.metadata }; delete mx[k];
-                        const nx = nodes.map(n => n.id === node.id ? { ...n, metadata: mx } : n);
-                        onUpdateNodes(nx); addToHistory(nx, connections, groups);
-                      }} className="opacity-0 group-hover:opacity-100 text-red-500/60 hover:text-red-500 transition-all p-1"><X size={12} /></button>
-                    </div>
-                  ))}
-                  {Object.keys(node.metadata || {}).length === 0 && (
-                    <p className="text-[9px] text-gray-700 italic text-center py-2">No metadata added</p>
+                <div className={`space-y-2 rounded-xl p-2 ${isLight ? 'bg-gray-100' : isNeo ? 'bg-fuchsia-500/5 border border-fuchsia-500/10' : 'bg-black/20'}`}>
+                  {Object.entries(node.metadata || {})
+                    .filter(([k]) => !["tech", "capacity", "region", "az", "latency"].includes(k))
+                    .map(([k, v]) => (
+                      <div key={k} className={`flex gap-2 group p-1 transition-colors rounded-lg ${isLight ? 'hover:bg-white' : isNeo ? 'hover:bg-fuchsia-500/20' : 'hover:bg-white/5'}`}>
+                        <span className="text-[9px] text-gray-500 w-16 truncate self-center font-mono">{k}</span>
+                        <input
+                          value={v}
+                          className={`bg-transparent border-b text-[10px] font-bold flex-1 outline-none transition-all py-1 ${isLight ? 'border-gray-300 text-gray-800' : isNeo ? 'border-fuchsia-500/30 text-cyan-100' : 'border-white/5 text-white'}`}
+                          onChange={(e) => {
+                            const mx = { ...node.metadata, [k]: e.target.value };
+                            onUpdateNodes({ metadata: mx });
+                          }}
+                          onFocus={handleFocus}
+                          onBlur={handleBlur}
+                        />
+                        <button onClick={() => {
+                          const mx = { ...node.metadata }; delete mx[k];
+                          onUpdateNodes({ metadata: mx });
+                          const updatedNodes = nodes.map(n => n.id === node.id ? { ...n, metadata: mx } : n);
+                          addToHistory(updatedNodes, connections, groups);
+                        }} className="opacity-0 group-hover:opacity-100 text-red-500/60 hover:text-red-500 transition-all p-1"><X size={12} /></button>
+                      </div>
+                    ))}
+                  {Object.keys(node.metadata || {}).filter(k => !["tech", "capacity", "region", "az", "latency"].includes(k)).length === 0 && (
+                    <p className={`text-[9px] italic text-center py-2 ${isLight ? 'text-gray-700' : 'text-gray-500'}`}>No custom metadata</p>
                   )}
                 </div>
               </div>
@@ -174,15 +229,15 @@ export const PropertyPanel = memo(({
                 <div className="relative group">
                   <ArrowRight size={14} className={`absolute left-3 top-1/2 -translate-y-1/2 transition-colors ${isNeo ? 'group-focus-within:text-cyan-400' : 'group-focus-within:text-indigo-500'} ${isLight ? 'text-gray-400' : 'text-gray-500'}`} />
                   <input
+                    ref={connectionInputRef}
                     className={`w-full rounded-xl py-2.5 pl-9 pr-4 text-xs font-bold outline-none border-b-2 transition-all duration-300 placeholder:text-gray-500 ${isLight ? 'bg-gray-100 border border-gray-200 border-b-indigo-400 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-gray-900' : isNeo ? 'bg-[#050212]/80 border border-fuchsia-500/20 border-b-cyan-500/50 focus:bg-fuchsia-500/10 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 text-cyan-50' : 'bg-black/40 border border-white/10 border-b-indigo-500/50 focus:bg-white/5 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-white'}`}
                     value={conn.label || ""}
                     placeholder="HTTPS, gRPC, TCP..."
                     onChange={(e) => {
-                      const next = connections.map(c => c.id === conn.id ? { ...c, label: e.target.value } : c);
-                      onUpdateConnections(next);
+                      onUpdateConnections({ label: e.target.value });
                     }}
                     onFocus={handleFocus}
-                  onBlur={handleBlur}
+                    onBlur={handleBlur}
                   />
                 </div>
               </div>
@@ -211,8 +266,7 @@ export const PropertyPanel = memo(({
                   className={`w-full rounded-xl p-3 text-xs font-bold outline-none transition-all duration-300 placeholder:text-gray-500 ${isLight ? 'bg-gray-100 border border-gray-200 text-gray-900 focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/20' : isNeo ? 'bg-[#050212]/80 border border-fuchsia-500/20 text-cyan-50 focus:border-cyan-500 focus:bg-fuchsia-500/10 focus:ring-2 focus:ring-cyan-500/20' : 'bg-black/40 border border-white/10 text-white focus:border-indigo-500 focus:bg-white/5 focus:ring-2 focus:ring-indigo-500/20'}`}
                   value={g.name}
                   onChange={(e) => {
-                    const next = groups.map(x => x.id === g.id ? { ...x, name: e.target.value } : x);
-                    onUpdateGroups(next);
+                    onUpdateGroups({ name: e.target.value });
                   }}
                   onFocus={handleFocus}
                   onBlur={handleBlur}
@@ -227,11 +281,10 @@ export const PropertyPanel = memo(({
                     className={`w-full rounded-xl p-2.5 text-xs outline-none focus:border-indigo-500/50 ${isLight ? 'bg-gray-100 border border-gray-200 text-gray-900' : isNeo ? 'bg-fuchsia-500/5 border border-fuchsia-500/20 text-cyan-50' : 'bg-white/5 border border-white/10 text-white'}`}
                     value={g.w}
                     onChange={(e) => {
-                      const next = groups.map(x => x.id === g.id ? { ...x, w: Number(e.target.value) } : x);
-                      onUpdateGroups(next);
+                      onUpdateGroups({ w: Number(e.target.value) });
                     }}
                     onFocus={handleFocus}
-                  onBlur={handleBlur}
+                    onBlur={handleBlur}
                   />
                 </div>
                 <div className="space-y-1">
@@ -239,14 +292,13 @@ export const PropertyPanel = memo(({
                   <input
                     type="number"
                     step="20"
-                    className={`w-full rounded-xl p-2.5 text-xs outline-none focus:border-indigo-500/50 ${isLight ? 'bg-gray-100 border border-gray-200 text-gray-900' : isNeo ? 'bg-fuchsia-500/5 border border-fuchsia-500/20 text-cyan-50' : 'bg-white/5 border border-white/10 text-white'}`}
+                    className={`w-full rounded-xl p-2.5 text-xs outline-none focus:border-indigo-500/50 ${isLight ? 'bg-gray-100 border border-gray-200 text-gray-900' : isNeo ? 'bg-fuchsia-500/5 border border-fuchsia-500/20 text-cyan-50' : 'bg-white/5 border-white/10 text-white'}`}
                     value={g.h}
                     onChange={(e) => {
-                      const next = groups.map(x => x.id === g.id ? { ...x, h: Number(e.target.value) } : x);
-                      onUpdateGroups(next);
+                      onUpdateGroups({ h: Number(e.target.value) });
                     }}
                     onFocus={handleFocus}
-                  onBlur={handleBlur}
+                    onBlur={handleBlur}
                   />
                 </div>
               </div>
@@ -259,8 +311,7 @@ export const PropertyPanel = memo(({
                     className="w-10 h-10 bg-transparent border-0 p-0 cursor-pointer overflow-hidden rounded-lg"
                     value={g.color.startsWith('rgb') ? '#6366f1' : g.color}
                     onChange={(e) => {
-                      const next = groups.map(x => x.id === g.id ? { ...x, color: e.target.value } : x);
-                      onUpdateGroups(next);
+                      onUpdateGroups({ color: e.target.value });
                     }}
                     onFocus={handleFocus}
                     onBlur={handleBlur}

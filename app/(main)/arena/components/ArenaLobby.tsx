@@ -7,6 +7,27 @@ import { StatItem, RecentMatch } from "../types";
 import { getAvatarIcon } from "@/lib/icons";
 import { Button } from "@/components/ui/Button";
 import { ClientDate } from "@/components/ui/ClientDate";
+import { getAllCategories } from "@/lib/quiz-registry";
+
+// Icon mapping for known category IDs; falls back to Database for new ones
+const CATEGORY_ICON_MAP: Record<string, React.ElementType> = {
+  aws: Cloud,
+  azure: Shield,
+  salesforce: Database,
+  mongodb: Database,
+  pcap: Terminal,
+  oracle: Database,
+};
+
+// Build category list dynamically — "Random" is always first
+const CATEGORIES = [
+  { id: "random", name: "Random", icon: Globe },
+  ...getAllCategories().map((c) => ({
+    id: c.id,
+    name: c.name.split(" ")[0], // First word of the full name (e.g. "AWS", "MongoDB")
+    icon: CATEGORY_ICON_MAP[c.id] ?? Database,
+  })),
+];
 
 interface ArenaLobbyProps {
   stats: StatItem[];
@@ -19,16 +40,6 @@ interface ArenaLobbyProps {
   statsError?: string | null;
   isAuthenticated?: boolean;
 }
-
-const CATEGORIES = [
-  { id: "random", name: "Random", icon: Globe },
-  { id: "aws", name: "AWS", icon: Cloud },
-  { id: "azure", name: "Azure", icon: Shield },
-  { id: "salesforce", name: "Salesforce", icon: Database },
-  { id: "mongodb", name: "MongoDB", icon: Database },
-  { id: "pcap", name: "PCAP", icon: Terminal },
-  { id: "oracle", name: "Oracle", icon: Database },
-];
 
 export const ArenaLobby = React.memo(function ArenaLobby({ 
   stats, 

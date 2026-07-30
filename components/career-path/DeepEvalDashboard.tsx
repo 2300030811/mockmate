@@ -1,7 +1,8 @@
 "use client";
 
 import { m } from "framer-motion";
-import { DeepEvalResult, deriveDeepEvalGrade } from "@/types/deep-eval";
+import { DeepEvalResult } from "@/types/deep-eval";
+import { deriveDeepEvalGrade } from "@/lib/deep-eval-scoring";
 import {
   GitBranch,
   Rocket,

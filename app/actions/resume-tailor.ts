@@ -1,9 +1,29 @@
 "use server";
 
-import { generateText, AI_MODELS } from "@/lib/ai/gateway";
+import { aiOrchestrator } from "@/lib/services/ai-orchestrator";
 import { logger } from "@/lib/logger";
 import { rateLimit } from "@/lib/rate-limit";
 import { resumeGeneratePayloadSchema } from "../api/resume/generate/schema";
+import { z } from "zod";
+
+const resumeTailoredSubsetSchema = z.object({
+  summary: z.string().trim().max(2500).optional().default(""),
+  skills: z.array(z.string().trim().max(80)).max(60).optional().default([]),
+  technologies: z.array(z.string().trim().max(80)).max(40).optional().default([]),
+  experience: z.array(z.object({
+    company: z.string().trim().max(120).optional().default(""),
+    period: z.string().trim().max(80).optional().default(""),
+    role: z.string().trim().max(120).optional().default(""),
+    highlights: z.array(z.string().trim().max(300)).max(12).optional().default([]),
+  })).max(20).optional().default([]),
+  projects: z.array(z.object({
+    title: z.string().trim().max(120).optional().default(""),
+    period: z.string().trim().max(80).optional().default(""),
+    description: z.string().trim().max(500).optional().default(""),
+    link: z.string().trim().max(300).optional().default(""),
+    techStack: z.array(z.string().trim().max(80)).max(20).optional().default([]),
+  })).max(20).optional().default([]),
+});
 
 
 export async function tailorResumeAction(
@@ -53,35 +73,23 @@ Output strictly valid JSON.`;
       projects: validBase.projects,
     }, null, 2)}\n\nJob Description:\n${jobDescription}`;
 
-    let content = "";
+    const result = await aiOrchestrator.generateStructured(
+      userPrompt,
+      systemPrompt,
+      resumeTailoredSubsetSchema,
+      "auto",
+      {
+        temperature: 0.2,
+        maxTokens: 4000,
+      }
+    );
 
-    try {
-      const result = await generateText(
-        userPrompt,
-        systemPrompt,
-        "auto",
-        {
-          model: AI_MODELS.STRUCTURED,
-          temperature: 0.2,
-          maxTokens: 4000,
-          responseFormat: { type: "json_object" }
-        }
-      );
-      content = result.content;
-    } catch (gatewayError) {
-      logger.error("Tailor resume: AI Gateway completion failed.", gatewayError);
-    }
-
-    if (!content) {
+    if (!result.success) {
+      logger.error("Tailor resume: AI Orchestrator completion failed.", result.error);
       return { data: null, error: "AI service is temporarily unavailable. Please try again in a moment." };
     }
 
-    let tailoredData: any;
-    try {
-      tailoredData = JSON.parse(content);
-    } catch {
-      return { data: null, error: "AI returned an invalid response. Please try again." };
-    }
+    const tailoredData = result.data!;
 
     // Master Alignment Validation: Remove fabricated content
     const baseText = JSON.stringify(validBase).toLowerCase();

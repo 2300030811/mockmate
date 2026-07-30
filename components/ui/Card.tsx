@@ -84,9 +84,9 @@ const InteractiveCard = React.forwardRef<
     ref={ref}
     className={cn(
       "relative overflow-hidden transition-all duration-300",
-      "hover:bg-gray-50 hover:border-gray-300 hover:shadow-2xl hover:scale-105 hover:-translate-y-1",
+      "hover:bg-gray-50/80 hover:border-gray-300 hover:shadow-xl hover:-translate-y-1",
       "dark:hover:bg-gray-900/70 dark:hover:border-gray-700",
-      "active:scale-100",
+      "active:translate-y-0 active:shadow-md",
       className
     )}
     {...props}

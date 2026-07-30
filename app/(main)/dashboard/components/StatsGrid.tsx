@@ -19,7 +19,7 @@ export const StatsGrid = memo(function StatsGrid({ stats }: { stats: DashboardSt
   const prefersReduced = useReducedMotion();
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
       {statItems.map((stat, i) => (
         <m.div
            key={i}

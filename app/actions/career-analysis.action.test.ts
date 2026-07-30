@@ -8,7 +8,7 @@ const fetchSalaryEstimateMock = vi.hoisted(() => vi.fn());
 const formatSalaryRangeMock = vi.hoisted(() => vi.fn());
 const estimateExperienceYearsMock = vi.hoisted(() => vi.fn());
 const promptBuilderMock = vi.hoisted(() => vi.fn());
-const generateTextMock = vi.hoisted(() => vi.fn());
+const generateStructuredMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/services/ocr", () => ({
   OCRService: {
@@ -38,11 +38,25 @@ vi.mock("@/lib/env", () => ({
   env: {},
 }));
 
-vi.mock("@/lib/ai/gateway", () => ({
-  generateText: generateTextMock,
+vi.mock("@/lib/services/ai-orchestrator", () => ({
+  aiOrchestrator: {
+    generateStructured: generateStructuredMock,
+  },
 }));
 
 const originalEnv = process.env;
+
+function buildCareerAnalysisMockData(custom: any) {
+  return {
+    matchScore: custom.matchScore ?? 0,
+    extractedSkills: custom.extractedSkills ?? [],
+    missingSkills: custom.missingSkills ?? [],
+    strengths: custom.strengths ?? [],
+    roadmap: custom.roadmap ?? [],
+    suggestedRoles: custom.suggestedRoles ?? [],
+    ...custom,
+  };
+}
 
 function buildFormData(): FormData {
   const file = new File(["resume"], "resume.pdf", { type: "application/pdf" });
@@ -73,8 +87,10 @@ describe("analyzeCareerPath", () => {
     formatSalaryRangeMock.mockReturnValue("");
     estimateExperienceYearsMock.mockReturnValue(7);
     promptBuilderMock.mockReturnValue("SYSTEM PROMPT");
-    generateTextMock.mockResolvedValue({
-      content: JSON.stringify({ matchScore: 84 }),
+    generateStructuredMock.mockResolvedValue({
+      success: true,
+      data: buildCareerAnalysisMockData({ matchScore: 84 }),
+      raw: JSON.stringify({ matchScore: 84 }),
       provider: "groq"
     });
   });
@@ -90,8 +106,10 @@ describe("analyzeCareerPath", () => {
   });
 
   it("returns lenient fallback payload when strict schema validation fails", async () => {
-    generateTextMock.mockResolvedValue({
-      content: JSON.stringify({ matchScore: "bad", extractedSkills: "oops" }),
+    generateStructuredMock.mockResolvedValue({
+      success: false,
+      error: "Zod validation failed",
+      raw: JSON.stringify({ matchScore: "bad", extractedSkills: "oops" }),
       provider: "groq"
     });
 
@@ -105,8 +123,13 @@ describe("analyzeCareerPath", () => {
   });
 
   it("rejects invalid role sentinel response from provider", async () => {
-    generateTextMock.mockResolvedValue({
-      content: JSON.stringify({
+    generateStructuredMock.mockResolvedValue({
+      success: true,
+      data: buildCareerAnalysisMockData({
+        matchScore: 0,
+        competitiveEdge: "INVALID ROLE DETECTED: unknown profession",
+      }),
+      raw: JSON.stringify({
         matchScore: 0,
         competitiveEdge: "INVALID ROLE DETECTED: unknown profession",
       }),
@@ -119,10 +142,10 @@ describe("analyzeCareerPath", () => {
   });
 
   it("falls back to Gemini when all Groq attempts fail", async () => {
-    // In our implementation, the gateway handles fallback.
-    // We mock the resolved value from the gateway with provider "gemini".
-    generateTextMock.mockResolvedValue({
-      content: "```json\n{\"matchScore\": 77}\n```",
+    generateStructuredMock.mockResolvedValue({
+      success: true,
+      data: buildCareerAnalysisMockData({ matchScore: 77 }),
+      raw: "```json\n{\"matchScore\": 77}\n```",
       provider: "gemini"
     });
 
@@ -146,8 +169,18 @@ describe("analyzeCareerPath", () => {
       matchType: "exact",
     });
     formatSalaryRangeMock.mockReturnValue("₹12,00,000 - ₹24,00,000 PA");
-    generateTextMock.mockResolvedValue({
-      content: JSON.stringify({
+    generateStructuredMock.mockResolvedValue({
+      success: true,
+      data: buildCareerAnalysisMockData({
+        matchScore: 88,
+        marketInsights: {
+          demand: "medium",
+          salaryRange: "AI-generated salary",
+          outlook: "Stable growth",
+          confidence: "low",
+        },
+      }),
+      raw: JSON.stringify({
         matchScore: 88,
         marketInsights: {
           demand: "medium",
@@ -174,8 +207,18 @@ describe("analyzeCareerPath", () => {
   it("keeps AI-estimated salary when role is not in local salary dataset", async () => {
     fetchSalaryEstimateMock.mockReturnValue(null);
     formatSalaryRangeMock.mockReturnValue("");
-    generateTextMock.mockResolvedValue({
-      content: JSON.stringify({
+    generateStructuredMock.mockResolvedValue({
+      success: true,
+      data: buildCareerAnalysisMockData({
+        matchScore: 63,
+        marketInsights: {
+          demand: "high",
+          salaryRange: "₹9L - ₹14L PA",
+          outlook: "Growing demand",
+          confidence: "low",
+        },
+      }),
+      raw: JSON.stringify({
         matchScore: 63,
         marketInsights: {
           demand: "high",
@@ -206,8 +249,10 @@ describe("analyzeCareerPath", () => {
       matchType: "exact",
     });
     formatSalaryRangeMock.mockReturnValue("₹10,00,000 - ₹18,00,000 PA");
-    generateTextMock.mockResolvedValue({
-      content: JSON.stringify({ matchScore: 91 }),
+    generateStructuredMock.mockResolvedValue({
+      success: true,
+      data: buildCareerAnalysisMockData({ matchScore: 91 }),
+      raw: JSON.stringify({ matchScore: 91 }),
       provider: "groq"
     });
 
@@ -216,5 +261,18 @@ describe("analyzeCareerPath", () => {
     expect(result.marketInsights?.salaryRange).toBe("₹10,00,000 - ₹18,00,000 PA");
     expect(result.marketInsights?.confidence).toBe("medium");
     expect(result.marketInsights?.demand).toBe("medium");
+  });
+
+  it("throws error when resume content is too short (< 50 characters)", async () => {
+    extractTextMock.mockResolvedValueOnce({
+      text: "too short",
+      source: "local",
+    });
+
+    await expect(
+      analyzeCareerPath(buildFormData(), "Backend Engineer", "Acme")
+    ).rejects.toThrow(
+      "Failed to analyze career path: Resume content too short or unreadable. Please upload a clear text-based PDF."
+    );
   });
 });

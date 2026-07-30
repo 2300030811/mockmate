@@ -3,16 +3,16 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center rounded-xl text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background transition-all duration-300 hover:scale-105 active:scale-95",
+  "inline-flex items-center justify-center rounded-xl text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background transition-all duration-200",
   {
     variants: {
       variant: {
         default: "bg-white text-gray-900 border border-gray-200 hover:bg-gray-100 dark:bg-gray-900 dark:text-gray-100 dark:border-gray-700 dark:hover:bg-gray-800",
-        primary: "bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-[length:200%_auto] text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_10px_15px_-3px_rgba(59,130,246,0.3)] hover:animate-gradient hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_10px_20px_-3px_rgba(59,130,246,0.5)] border-transparent",
+        primary: "bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-[length:200%_auto] text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_10px_15px_-3px_rgba(59,130,246,0.3)] hover:animate-gradient hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_10px_20px_-3px_rgba(59,130,246,0.5)] border-transparent hover:scale-[1.03] active:scale-[0.97]",
         secondary: "bg-gray-800 text-white border border-gray-700 hover:bg-gray-700",
         ghost: "bg-transparent text-white border border-white/20 hover:bg-white/10",
         glass: "bg-white/80 border border-gray-200 text-gray-800 shadow-sm backdrop-blur-md hover:bg-white hover:shadow-md dark:bg-gray-900/80 dark:border-gray-700 dark:text-gray-100 dark:hover:bg-gray-900",
-        destructive: "bg-red-500 text-white hover:bg-red-600 dark:hover:bg-red-600",
+        destructive: "bg-red-500 text-white hover:bg-red-600 dark:hover:bg-red-600 hover:scale-[1.02] active:scale-[0.98]",
         outline: "border border-input hover:bg-accent hover:text-accent-foreground",
         link: "underline-offset-4 hover:underline text-primary",
       },

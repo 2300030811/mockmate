@@ -98,3 +98,54 @@ export function formatProviderError(provider: string, error: unknown): string {
   if (error instanceof Error) return `${provider}: ${error.message}`;
   return `${provider}: ${String(error)}`;
 }
+
+export function cleanJsonMarkdown(raw: string): string {
+  return raw
+    .replace(/```json\n?/gi, "")
+    .replace(/```\n?/gi, "")
+    .trim();
+}
+
+export function extractJsonObject(text: string): string | null {
+  const cleaned = cleanJsonMarkdown(text);
+  const firstCurly = cleaned.indexOf("{");
+  const lastCurly = cleaned.lastIndexOf("}");
+  const firstBracket = cleaned.indexOf("[");
+  const lastBracket = cleaned.lastIndexOf("]");
+
+  if (firstCurly !== -1 && firstBracket !== -1) {
+    if (firstCurly < firstBracket) {
+      return cleaned.substring(firstCurly, lastCurly + 1);
+    } else {
+      return cleaned.substring(firstBracket, lastBracket + 1);
+    }
+  } else if (firstCurly !== -1) {
+    return cleaned.substring(firstCurly, lastCurly + 1);
+  } else if (firstBracket !== -1) {
+    return cleaned.substring(firstBracket, lastBracket + 1);
+  }
+  return null;
+}
+
+import { z } from "zod";
+
+export function safeParseStructured<Output, Def extends z.ZodTypeDef = z.ZodTypeDef, Input = any>(
+  text: string,
+  schema: z.ZodType<Output, Def, Input>
+): { success: true; data: Output } | { success: false; error: string } {
+  const jsonStr = extractJsonObject(text);
+  if (!jsonStr) {
+    return { success: false, error: "No JSON object or array found in the response." };
+  }
+
+  try {
+    const parsed = JSON.parse(jsonStr);
+    const validated = schema.safeParse(parsed);
+    if (!validated.success) {
+      return { success: false, error: `JSON validation failed: ${validated.error.message}` };
+    }
+    return { success: true, data: validated.data };
+  } catch (err: any) {
+    return { success: false, error: `JSON parsing failed: ${err.message}` };
+  }
+}

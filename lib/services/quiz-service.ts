@@ -4,16 +4,11 @@ import { withRetry } from "@/lib/retry";
 import { getRawQuestions } from "@/app/actions/quiz";
 import { checkAnswer } from "@/utils/quiz-helpers";
 import type { QuizQuestion } from "@/types";
-import { Redis } from "@upstash/redis";
+import { invalidateLeaderboardCache } from "@/lib/cache/invalidate";
 import { profileRepository } from "@/lib/db/profile-repository";
 import { quizRepository } from "@/lib/db/quiz-repository";
 import { profileService } from "./profile-service";
-import { parseArenaBaseCategory } from "@/lib/arena-category";
-
-// Initialize Redis if configured
-const redis = (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
-  ? Redis.fromEnv()
-  : null;
+import { parseArenaBaseCategory, isArenaCategory, parseArenaStatus } from "@/lib/arena-category";
 
 export const quizService = {
   async saveQuizResult(
@@ -28,6 +23,8 @@ export const quizService = {
       generatedQuiz?: QuizQuestion[];
       arenaStatus?: "win" | "loss" | "tie";
       arenaTotalQuestions?: number;
+      arenaUserScore?: number;
+      arenaOpponentScore?: number;
     }
   ) {
     const { data: { user } } = await withRetry(
@@ -53,18 +50,27 @@ export const quizService = {
       }
     }
 
+    const isArena = isArenaCategory(data.category) || !!data.arenaStatus;
+    const winStatus = data.arenaStatus || parseArenaStatus(data.category);
+    const cleanCategory = parseArenaBaseCategory(data.category);
+
+    const quizMode = isArena
+      ? "arena" as const
+      : cleanCategory === "daily-challenge"
+        ? "daily-challenge" as const
+        : "standard" as const;
+
     let questions: QuizQuestion[] = [];
 
     // Determine Source of Truth
-    if (data.generatedQuiz && (data.category === "AI Generated" || data.category.startsWith("PDF:"))) {
+    if (data.generatedQuiz && (cleanCategory === "AI Generated" || cleanCategory.startsWith("PDF:"))) {
       questions = data.generatedQuiz;
     } else {
-      const sourceCategory = parseArenaBaseCategory(data.category);
-      questions = await getRawQuestions(sourceCategory);
+      questions = await getRawQuestions(cleanCategory);
     }
 
     if (!questions || questions.length === 0) {
-      throw new Error(`Failed to validate quiz: Questions not found for ${data.category}.`);
+      throw new Error(`Failed to validate quiz: Questions not found for ${cleanCategory}.`);
     }
 
     // Calculate Score Server-Side
@@ -84,19 +90,17 @@ export const quizService = {
     const recentTimeAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
 
     const existing = await quizRepository.findDuplicateResult(adminDb, {
-      category: data.category,
+      category: cleanCategory,
       score: scoreToSave,
       sinceDate: recentTimeAgo,
       userId,
       sessionId: data.sessionId,
-      arenaStatus: data.arenaStatus,
+      quizMode,
     });
 
     if (existing) {
       await quizRepository.updateNickname(adminDb, existing.id, finalNickname);
-      if (redis) {
-        redis.del(`leaderboard:${data.category}:all-time`, `leaderboard:${data.category}:weekly`).catch(e => console.warn("Redis del failed:", e));
-      }
+      await invalidateLeaderboardCache(cleanCategory);
       return { success: true, updated: true };
     }
 
@@ -104,24 +108,24 @@ export const quizService = {
       () => quizRepository.saveResult(adminDb, {
         session_id: data.sessionId,
         user_id: userId,
-        category: data.category,
+        category: cleanCategory,
         score: scoreToSave,
         total_questions: data.totalQuestions,
         nickname: finalNickname,
-        completed_at: new Date().toISOString()
+        completed_at: new Date().toISOString(),
+        quiz_mode: quizMode,
+        arena_status: winStatus || null,
+        arena_user_score: data.arenaUserScore !== undefined ? data.arenaUserScore : null,
+        arena_opponent_score: data.arenaOpponentScore !== undefined ? data.arenaOpponentScore : null,
       }),
       { retries: 2, baseDelay: 1000, label: "Insert quiz result" }
     );
 
     if (userId) {
       try {
-        const isArena = data.category.includes("arena") || !!data.arenaStatus;
-        const { parseArenaStatus } = await import("@/lib/arena-category");
-        const winStatus = data.arenaStatus || parseArenaStatus(data.category);
-
-        const syncType = isArena && winStatus
+        const syncType = quizMode === "arena"
           ? "arena" as const
-          : data.category === "daily-challenge"
+          : quizMode === "daily-challenge"
             ? "daily-challenge" as const
             : "quiz" as const;
 
@@ -130,16 +134,17 @@ export const quizService = {
           syncType,
           scoreToSave,
           data.arenaTotalQuestions || data.totalQuestions,
-          winStatus
+          winStatus,
+          undefined,
+          data.arenaUserScore,
+          data.arenaOpponentScore
         );
       } catch (syncErr) {
         console.error("⚠️ Failed to sync profile stats:", syncErr);
       }
     }
 
-    if (redis) {
-      redis.del(`leaderboard:${data.category}:all-time`, `leaderboard:${data.category}:weekly`).catch(e => console.warn("Redis del failed:", e));
-    }
+    await invalidateLeaderboardCache(cleanCategory);
 
     return { success: true };
   },
@@ -153,8 +158,8 @@ export const quizService = {
     const resultData = await quizRepository.getResultById(adminDb, id);
     await quizRepository.updateNickname(adminDb, id, nickname);
 
-    if (redis && resultData?.category) {
-      redis.del(`leaderboard:${resultData.category}:all-time`, `leaderboard:${resultData.category}:weekly`).catch(e => console.warn("Redis del failed:", e));
+    if (resultData?.category) {
+      await invalidateLeaderboardCache(resultData.category);
     }
 
     return { success: true };
