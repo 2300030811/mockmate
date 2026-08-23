@@ -1,5 +1,9 @@
 import { OCRService } from "@/lib/services/ocr";
 import { normalizeTextForATS } from "@/utils/sanitize";
+import mammoth from "mammoth";
+
+const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
 
 export interface ResumeExtractionOptions {
   minLength?: number;
@@ -30,7 +34,7 @@ export const resumeExtractor = {
   },
 
   /**
-   * Extracts raw text from a PDF buffer or directly reads text from non-PDF files.
+   * Extracts raw text from a PDF/DOCX buffer or directly reads text from plain-text files.
    */
   async extractText(
     file: File,
@@ -46,6 +50,15 @@ export const resumeExtractor = {
       return {
         text: result.text,
         source: result.source,
+      };
+    } else if (file.type === DOCX_MIME) {
+      if (!buffer) {
+        throw new Error("Buffer required for DOCX text extraction");
+      }
+      const result = await mammoth.extractRawText({ buffer });
+      return {
+        text: result.value,
+        source: "local",
       };
     } else {
       const text = await file.text();
@@ -88,13 +101,13 @@ export const resumeExtractor = {
       throw new Error("No valid file uploaded");
     }
 
-    if (allowOnlyPdf && file.type !== "application/pdf") {
-      throw new Error(`Invalid file type: ${file.type}. Only PDF files are accepted.`);
+    if (allowOnlyPdf && file.type !== "application/pdf" && file.type !== DOCX_MIME) {
+      throw new Error(`Invalid file type: ${file.type}. Only PDF and DOCX files are accepted.`);
     }
 
     // 2. Read File
     let buffer: Buffer | undefined;
-    if (file.type === "application/pdf") {
+    if (file.type === "application/pdf" || file.type === DOCX_MIME) {
       buffer = await this.readFile(file, maxSizeBytes);
     } else {
       if (file.size > maxSizeBytes) {
@@ -120,7 +133,7 @@ export const resumeExtractor = {
       source: extraction.source,
       wordCount,
       characterCount,
-      ...(file.type === "application/pdf" ? { buffer } : {}),
+      ...(file.type === "application/pdf" || file.type === DOCX_MIME ? { buffer } : {}),
     };
   }
 };

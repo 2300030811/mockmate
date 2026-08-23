@@ -7,6 +7,8 @@ import { twMerge } from "tailwind-merge";
 import dynamic from 'next/dynamic';
 import { useState, useCallback } from "react";
 
+import { Bot, Sparkles } from "lucide-react";
+
 const BobAssistant = dynamic(() => import("@/components/quiz/BobAssistant").then(mod => mod.BobAssistant), {
   ssr: false,
 });
@@ -101,7 +103,7 @@ export function QuizUpload({
               : 'bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 bg-clip-text text-transparent'
           }`}
         >
-          Transform PDFs into
+          Transform Documents into
           <br />
           Interactive {mode === "flashcard" ? "Flashcards" : "Quizzes"}
         </m.h1>
@@ -140,7 +142,7 @@ export function QuizUpload({
           }`}>
             <input
               type="file"
-              accept=".pdf,.txt"
+              accept=".pdf,.txt,.docx"
               onChange={onFileChange}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
               aria-label="Upload file"
@@ -169,7 +171,7 @@ export function QuizUpload({
                   }`}>Click to browse</p>
                   <p className={`text-sm mt-2 ${
                     isDark ? 'text-gray-400' : 'text-gray-600'
-                  }`}>or drag and drop your PDF or TXT file here</p>
+                  }`}>or drag and drop your PDF, DOCX, or TXT file here</p>
                 </>
               )}
             </div>
@@ -522,7 +524,10 @@ export function QuizUpload({
         className="fixed bottom-6 right-6 z-40 bg-orange-500 hover:bg-orange-600 text-white p-4 rounded-full shadow-xl transition-transform hover:scale-110 active:scale-95 group"
         title="Ask Bob"
       >
-        <div className="text-2xl leading-none">🦁</div>
+        <div className="relative">
+          <Bot className="w-6 h-6 text-white" />
+          <Sparkles className="w-3 h-3 text-yellow-200 absolute -top-1 -right-1 animate-pulse" />
+        </div>
         <span className="absolute right-full mr-2 top-1/2 -translate-y-1/2 bg-black/75 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
             Chat with Bob
         </span>
