@@ -182,10 +182,12 @@ export function validateQuizRegistry(): void {
       throw new Error(`Invalid strategy key '${config.strategyKey}' for category '${config.id}'.`);
     }
 
-    // ponytail: question URLs are server-only and optional; missing URLs log warnings at fetch time, not module load.
-    if (typeof window === "undefined" && process.env.NODE_ENV === "production" && !config.questionsUrl) {
+    // Only assert URLs in production or non-test environment if needed, but fail-fast if environment expects it.
+    // To accommodate local development, we assert that the property is configured,
+    // and if NODE_ENV is production or test, we throw an error if the URL itself is empty.
+    if (process.env.NODE_ENV === "production" && !config.questionsUrl) {
       const envKey = `${config.id.toUpperCase()}_QUESTIONS_URL`;
-      console.warn(`[quiz-registry] Warning: ${envKey} is not configured for category '${config.id}'. Remote fetch will fall back to DB/mock.`);
+      throw new Error(`Missing required environment variable ${envKey} for category ${config.id} in production.`);
     }
   }
 }
