@@ -5,6 +5,8 @@ import { UserAuthSection } from "@/components/UserAuthSection";
 import dynamic from 'next/dynamic';
 import { useState, useEffect, useCallback, useMemo } from "react";
 
+import { Bot, Sparkles } from "lucide-react";
+
 const BobAssistant = dynamic(() => import("@/components/quiz/BobAssistant").then(mod => mod.BobAssistant), {
   ssr: false,
 });
@@ -367,7 +369,10 @@ export function QuizGame({
             className="fixed bottom-6 right-6 z-40 bg-orange-500 hover:bg-orange-600 text-white p-4 rounded-full shadow-xl transition-transform hover:scale-110 active:scale-95 group"
             title="Ask Bob"
           >
-            <div className="text-2xl leading-none">🦁</div>
+            <div className="relative">
+              <Bot className="w-6 h-6 text-white" />
+              <Sparkles className="w-3 h-3 text-yellow-200 absolute -top-1 -right-1 animate-pulse" />
+            </div>
             <span className="absolute right-full mr-2 top-1/2 -translate-y-1/2 bg-black/75 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
               Ask Bob
             </span>

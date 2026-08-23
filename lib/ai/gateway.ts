@@ -2,7 +2,10 @@ import { Groq } from 'groq-sdk';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getNextKey, getNumKeys, reportKeyFailure, reportKeySuccess } from "@/utils/keyManager";
 import { logger } from "@/lib/logger";
+import { extractJsonObject } from "@/lib/ai/response-parser";
 import { z } from "zod";
+
+const GENERATE_TEXT_TIMEOUT_MS = 60_000;
 
 export const ChatMessageSchema = z.object({
   role: z.enum(["system", "user", "assistant"]),
@@ -133,16 +136,21 @@ export async function generateText(
         try {
           logger.info(`🤖 [Gateway] Attempting Groq completion...`);
           const groq = new Groq({ apiKey });
-          const completion = await groq.chat.completions.create({
-            model: options?.model || AI_MODELS.DEFAULT,
-            messages: [
-              { role: "system", content: systemPrompt },
-              ...messageHistory
-            ],
-            temperature: temp,
-            max_tokens: maxTokens,
-            response_format: options?.responseFormat,
-          });
+          const completion = await Promise.race([
+            groq.chat.completions.create({
+              model: options?.model || AI_MODELS.DEFAULT,
+              messages: [
+                { role: "system", content: systemPrompt },
+                ...messageHistory
+              ],
+              temperature: temp,
+              max_tokens: maxTokens,
+              response_format: options?.responseFormat,
+            }),
+            new Promise<never>((_, reject) =>
+              setTimeout(() => reject(new DOMException("Groq request timed out", "AbortError")), GENERATE_TEXT_TIMEOUT_MS)
+            ),
+          ]);
 
           const content = completion.choices[0]?.message?.content || "";
           if (content) {
@@ -174,18 +182,23 @@ export async function generateText(
             systemInstruction: systemPrompt
           });
 
-          const result = await model.generateContent({
-            contents: messageHistory
-              .filter(m => m.role !== 'system')
-              .map(m => ({
-                role: m.role === 'assistant' ? 'model' : 'user',
-                parts: [{ text: m.content }]
-              })),
-            generationConfig: {
-              temperature: temp,
-              maxOutputTokens: maxTokens
-            }
-          });
+          const result = await Promise.race([
+            model.generateContent({
+              contents: messageHistory
+                .filter(m => m.role !== 'system')
+                .map(m => ({
+                  role: m.role === 'assistant' ? 'model' : 'user',
+                  parts: [{ text: m.content }]
+                })),
+              generationConfig: {
+                temperature: temp,
+                maxOutputTokens: maxTokens
+              }
+            }),
+            new Promise<never>((_, reject) =>
+              setTimeout(() => reject(new DOMException("Gemini request timed out", "AbortError")), GENERATE_TEXT_TIMEOUT_MS)
+            ),
+          ]);
 
           const content = result.response.text();
           if (content) {
@@ -218,31 +231,9 @@ export async function generateStructuredOutput<T>(
     model: options?.model
   });
 
-  let cleaned = content.trim();
-  if (cleaned.includes("```")) {
-    cleaned = cleaned
-      .replace(/```json\n?/gi, "")
-      .replace(/```\n?/gi, "")
-      .trim();
-  }
-
-  const firstCurly = cleaned.indexOf("{");
-  const lastCurly = cleaned.lastIndexOf("}");
-  const firstBracket = cleaned.indexOf("[");
-  const lastBracket = cleaned.lastIndexOf("]");
-
-  let jsonStr = cleaned;
-  if (firstCurly !== -1 && firstBracket !== -1) {
-    if (firstCurly < firstBracket) {
-      jsonStr = cleaned.substring(firstCurly, lastCurly + 1);
-    } else {
-      jsonStr = cleaned.substring(firstBracket, lastBracket + 1);
-    }
-  } else if (firstCurly !== -1) {
-    jsonStr = cleaned.substring(firstCurly, lastCurly + 1);
-  } else if (firstBracket !== -1) {
-    jsonStr = cleaned.substring(firstBracket, lastBracket + 1);
-  }
+  // ponytail: reuse extractJsonObject from response-parser instead of reimplementing fence-stripping + bracket-finding
+  const jsonStr = extractJsonObject(content);
+  if (!jsonStr) throw new Error("No JSON found in AI response");
 
   const parsed = JSON.parse(jsonStr);
   const validated = schema.parse(parsed);
@@ -258,7 +249,7 @@ export async function streamChat(messages: ChatMessage[], systemPrompt: string):
 
     if (groqKey) {
         try {
-            logger.info("🦁 Bob is using Groq...");
+            logger.info("🤖 Bob is using Groq...");
             primaryStream = await createGroqStream(messages, systemPrompt, groqKey);
             providerUsed = 'groq';
         } catch (groqErr: unknown) {
@@ -270,7 +261,7 @@ export async function streamChat(messages: ChatMessage[], systemPrompt: string):
 
     if (!primaryStream && geminiKey) {
         try {
-            logger.info("🦁 Bob is using Gemini...");
+            logger.info("🤖 Bob is using Gemini...");
             primaryStream = await createGeminiStream(messages, systemPrompt, geminiKey);
             providerUsed = 'gemini';
         } catch (geminiErr: unknown) {

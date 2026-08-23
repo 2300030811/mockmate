@@ -24,6 +24,7 @@ export class GroqProvider implements AIProvider {
         {
           model: AI_MODELS.DEFAULT,
           temperature: 0.5,
+          maxTokens: 4096,
           responseFormat: { type: "json_object" },
           customApiKey,
         }

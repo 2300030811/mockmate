@@ -70,9 +70,9 @@ describe("convertFileAction", () => {
     expect(result.error).toBe("No file uploaded");
   });
 
-  it("throws bad request for non-pdf file types", async () => {
+  it("throws bad request for non-pdf and non-docx file types", async () => {
     const result = await convertFileAction(buildFormData("resume data", "image/png"));
-    expect(result.error).toContain("Only PDF files are accepted");
+    expect(result.error).toContain("Only PDF and DOCX files are accepted");
   });
 
   it("returns scanned state and base64 for image-based PDFs", async () => {

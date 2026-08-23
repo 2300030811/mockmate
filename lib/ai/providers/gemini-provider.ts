@@ -24,6 +24,7 @@ export class GeminiProvider implements AIProvider {
         {
           model: "gemini-2.0-flash",
           temperature: 0.7,
+          maxTokens: 4096,
           customApiKey,
         }
       );
