@@ -86,20 +86,22 @@ export function normalizeGraphDateToUtc(
 ): string | null {
   if (!dateTimeStr) return null;
 
-  // If already contains offset (e.g. +05:30 or Z)
-  if (dateTimeStr.includes("Z") || dateTimeStr.includes("+") || dateTimeStr.includes("-")) {
-    const d = new Date(dateTimeStr);
-    return isNaN(d.getTime()) ? null : d.toISOString();
+  // Only treat a timestamp as offset-aware when the time portion
+  // contains an explicit UTC designator or +/-HH:mm offset.
+  const hasExplicitOffset = /(?:Z|[+-]\d{2}:\d{2})$/i.test(dateTimeStr);
+
+  if (hasExplicitOffset) {
+    const date = new Date(dateTimeStr);
+    return Number.isNaN(date.getTime()) ? null : date.toISOString();
   }
 
-  // When timeZone is provided as "India Standard Time" or UTC
   if (timeZoneStr === "India Standard Time") {
-    const d = new Date(`${dateTimeStr}+05:30`);
-    return isNaN(d.getTime()) ? null : d.toISOString();
+    const date = new Date(`${dateTimeStr}+05:30`);
+    return Number.isNaN(date.getTime()) ? null : date.toISOString();
   }
 
-  const d = new Date(dateTimeStr);
-  return isNaN(d.getTime()) ? null : d.toISOString();
+  const date = new Date(dateTimeStr);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
 /**

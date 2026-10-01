@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { createClient } from "@supabase/supabase-js";
+import { beforeAll, describe, it, expect } from "vitest";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 // Load environment variables if available
 try {
@@ -21,9 +21,16 @@ const hasLiveCredentials = Boolean(
   !supabaseUrl.includes("placeholder")
 );
 
-describe.skipIf(!hasLiveCredentials)("Placement Hub Live RLS & Security Integration", () => {
-  const anonClient = createClient(supabaseUrl!, anonKey!, { auth: { persistSession: false } });
-  const adminClient = createClient(supabaseUrl!, serviceKey!, { auth: { persistSession: false } });
+const integrationSuite = hasLiveCredentials ? describe : describe.skip;
+
+integrationSuite("Placement Hub Live RLS & Security Integration", () => {
+  let anonClient: SupabaseClient;
+  let adminClient: SupabaseClient;
+
+  beforeAll(() => {
+    anonClient = createClient(supabaseUrl!, anonKey!, { auth: { persistSession: false } });
+    adminClient = createClient(supabaseUrl!, serviceKey!, { auth: { persistSession: false } });
+  });
 
   describe("Anonymous User Access Boundaries", () => {
     it("allows reading public placement_drives", async () => {
