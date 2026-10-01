@@ -215,9 +215,9 @@ export async function generateText(
       }
     } else if (provider === "gemini") {
       const customKey = options?.customApiKey;
-      const numGeminiKeys = customKey ? 1 : (getNumKeys("GOOGLE_API_KEY") || 1);
+      const numGeminiKeys = customKey ? 1 : (getNumKeys("GOOGLE_API_KEY") || getNumKeys("GEMINI_API_KEY") || 1);
       for (let attempt = 0; attempt < numGeminiKeys; attempt++) {
-        const apiKey = customKey || getNextKey("GOOGLE_API_KEY") || process.env.GOOGLE_API_KEY;
+        const apiKey = customKey || getNextKey("GOOGLE_API_KEY") || getNextKey("GEMINI_API_KEY") || process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY;
         if (!apiKey) {
           lastError = new Error("Gemini API Key missing");
           continue;
@@ -291,7 +291,7 @@ export async function generateStructuredOutput<T>(
 
 export async function streamChat(messages: ChatMessage[], systemPrompt: string): Promise<ReadableStream> {
     const groqKey = getNextKey("GROQ_API_KEY");
-    const geminiKey = getNextKey("GOOGLE_API_KEY");
+    const geminiKey = getNextKey("GOOGLE_API_KEY") || getNextKey("GEMINI_API_KEY") || process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY;
 
     let providerUsed: 'groq' | 'gemini' | null = null;
     let primaryStream: AsyncIterable<string> | null = null;

@@ -2,6 +2,10 @@ import { test, expect } from '@playwright/test';
 
 test.describe('System Design Canvas', () => {
     test.beforeEach(async ({ page }) => {
+        await page.addInitScript(() => {
+            window.localStorage.setItem('mockmate_cookie_consent', 'accepted');
+            window.localStorage.setItem('mockmate-sd-onboarded', 'true');
+        });
         // Navigate to the system design page
         await page.goto('/system-design');
         // Wait for canvas and toolbar button readiness

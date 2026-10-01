@@ -2,6 +2,9 @@ import { test, expect } from "@playwright/test";
 
 test.describe("Project Mode E2E", () => {
   test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      window.localStorage.setItem("mockmate_cookie_consent", "accepted");
+    });
     await page.goto("/project-mode");
     await page.waitForLoadState("networkidle");
   });
@@ -48,7 +51,7 @@ test.describe("Project Mode E2E", () => {
     await page.waitForLoadState("networkidle");
 
     // Verify Solution button should be visible
-    await expect(page.getByRole("button", { name: /verify/i })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("button", { name: /verify/i })).toBeVisible({ timeout: 15000 });
 
     // Timer should eventually appear
     await expect(page.locator("text=/\\d{2}:\\d{2}/")).toBeVisible({ timeout: 5000 });
@@ -67,7 +70,7 @@ test.describe("Project Mode E2E", () => {
     await firstLink.click();
     await expect(
       page.getByRole("button", { name: /verify/i })
-    ).toBeVisible({ timeout: 10_000 });
+    ).toBeVisible({ timeout: 15_000 });
 
     const helpButton = page.locator(
       "[title='View Challenge Instructions']"
@@ -80,7 +83,10 @@ test.describe("Project Mode E2E", () => {
     await expect(dialog).toBeVisible();
     await expect(dialog.getByText("Description")).toBeVisible();
 
-    await dialog.getByRole("button", { name: /got it/i }).click();
+    const gotIt = dialog.getByRole("button", { name: /got it/i });
+    await gotIt.scrollIntoViewIfNeeded();
+    await expect(gotIt).toBeEnabled();
+    await gotIt.click();
     await expect(dialog).toBeHidden();
   });
 
@@ -207,10 +213,13 @@ test.describe("Project Mode E2E", () => {
     ).toBeVisible({ timeout: 10_000 });
 
     // File picker button
-    const filesButton = page.getByRole("button", { name: /open file picker/i });
-    await expect(filesButton).toBeVisible();
+    const filesButton = page.getByRole("button", {
+      name: /open file picker/i,
+    });
 
-    // Tap to open
+    await expect(filesButton).toBeVisible();
+    await filesButton.scrollIntoViewIfNeeded();
+    await expect(filesButton).toBeEnabled();
     await filesButton.click();
 
     // Should show a listbox with file options

@@ -50,3 +50,4 @@ jobs:
         run: npx playwright test
         env:
           AWS_QUESTIONS_URL: ${{ secrets.AWS_QUESTIONS_URL || secrets.AWS_PRACTICE_QUIZ_URL }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}

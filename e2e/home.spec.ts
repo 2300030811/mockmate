@@ -17,6 +17,6 @@ test('Home page debug', async ({ page }) => {
   ).toBeVisible();
 
   await expect(
-    page.getByRole('link', { name: /interview/i })
+    page.getByRole('link', { name: 'Mock Interviews', exact: true })
   ).toBeVisible();
 });

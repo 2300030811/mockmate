@@ -146,7 +146,7 @@ export const MobileInstructionsDrawer = React.memo(function MobileInstructionsDr
             </div>
 
             {/* Close Button at Bottom */}
-            <div className="sticky bottom-0 p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+            <div className="sticky bottom-0 p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 relative z-50 pointer-events-auto">
               <Button type="button" onClick={onClose} className="w-full">
                 Got it
               </Button>

@@ -68,7 +68,7 @@ export const ProjectWorkspace = React.memo(function ProjectWorkspace({
 
   return (
     <div className="flex-1 min-w-0 h-full relative flex flex-col bg-white dark:bg-[#0d0d12] overflow-hidden min-h-0">
-      <SandpackLayout className="flex-1 !rounded-none !border-0 flex overflow-hidden !h-full min-h-0 !bg-transparent">
+      <SandpackLayout className="flex-1 !rounded-none !border-0 flex overflow-hidden min-h-0 !bg-transparent">
         {/* Collapsible File Explorer */}
         <div
           className={`border-r border-zinc-200 dark:border-[#1e1e2a] flex flex-col transition-all duration-300 bg-zinc-50/50 dark:bg-[#0f0f16] ${
@@ -291,8 +291,8 @@ export const ProjectWorkspace = React.memo(function ProjectWorkspace({
       </SandpackLayout>
 
       {/* Mobile Bottom Toolbar */}
-      <div className="md:hidden h-11 border-t border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#0d0d12] flex items-center justify-between px-3 gap-2 shrink-0">
-        <div className="relative z-30">
+      <div className="md:hidden h-11 border-t border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#0d0d12] flex items-center justify-between px-3 gap-2 shrink-0 relative z-40 pointer-events-auto">
+        <div className="relative z-40 pointer-events-auto">
           <button
             type="button"
             onClick={() => setShowFilePicker((prev) => !prev)}
