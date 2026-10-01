@@ -1,15 +1,14 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
 import {
-    User,
+    LayoutDashboard,
     LogOut,
     Settings,
-    ShieldCheck,
     ChevronDown,
     LogIn,
-    MessageSquare
+    MessageSquare,
+    Sparkles,
 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import { Button, buttonVariants } from "./ui/Button";
@@ -19,20 +18,28 @@ import { UserNicknameToggle } from "./UserNicknameToggle";
 import { useAuth } from "@/components/providers/auth-provider";
 import { getAvatarIcon } from "@/lib/icons";
 import { FeedbackModal } from "./FeedbackModal";
-import { useTheme } from "./providers/providers";
 
 export function UserAuthSection() {
     const { user, profile, loading } = useAuth();
     const [menuOpen, setMenuOpen] = useState(false);
     const [feedbackOpen, setFeedbackOpen] = useState(false);
-    const { theme } = useTheme();
-    const isDark = theme === "dark";
+
+    // Keyboard support: Escape closes menu
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") setMenuOpen(false);
+        };
+        if (menuOpen) {
+            window.addEventListener("keydown", handleKeyDown);
+            return () => window.removeEventListener("keydown", handleKeyDown);
+        }
+    }, [menuOpen]);
 
     if (loading && !user) {
         return (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/5 animate-pulse">
-                <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-800" />
-                <div className="w-16 h-2 bg-gray-200 dark:bg-gray-800 rounded" />
+            <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50/50 dark:bg-[#14141e]/50 animate-pulse">
+                <div className="w-5 h-5 rounded-[5px] bg-zinc-200 dark:bg-[#1e1e2a]" />
+                <div className="w-16 h-2.5 bg-zinc-200 dark:bg-[#1e1e2a] rounded" />
             </div>
         );
     }
@@ -40,28 +47,27 @@ export function UserAuthSection() {
     if (!user) {
         return (
             <m.div
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="flex items-center gap-1"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex items-center gap-1.5"
             >
                 <UserNicknameToggle />
 
-                <Button
+                <button
                     onClick={() => setFeedbackOpen(true)}
-                    variant="glass"
-                    size="sm"
-                    className="border-0 shadow-none bg-transparent hover:bg-black/5 dark:hover:bg-white/5 rounded-full w-9 h-9 p-0 group"
+                    className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-900 dark:text-[#8b8b9e] dark:hover:text-[#ebebef] hover:bg-zinc-100 dark:hover:bg-[#1a1a26] transition-colors"
                     title="Send Feedback"
+                    aria-label="Send Feedback"
                 >
-                    <MessageSquare className="w-4 h-4 text-orange-500 transition-transform group-hover:scale-110" />
-                </Button>
+                    <MessageSquare className="w-4 h-4" />
+                </button>
 
                 <Link
                     href="/login"
-                    className={buttonVariants({ variant: "glass", size: "sm", className: "border-0 shadow-none bg-transparent hover:bg-black/5 dark:hover:bg-white/5 rounded-full gap-2 px-4 transition-all" })}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-medium text-zinc-700 dark:text-[#ebebef] hover:bg-zinc-100 dark:hover:bg-[#1e1e2a] border border-zinc-200/80 dark:border-[#1e1e2a] transition-all"
                 >
-                    <LogIn className="w-4 h-4" />
-                    <span className="text-[10px] font-bold uppercase tracking-wider">Login</span>
+                    <LogIn className="w-3.5 h-3.5 text-[#5e6ad2]" />
+                    <span>Login</span>
                 </Link>
 
                 <FeedbackModal
@@ -74,28 +80,28 @@ export function UserAuthSection() {
 
     const avatarIconName = profile?.avatar_icon || "User";
     const AvatarIcon = getAvatarIcon(avatarIconName);
-
     const nickname = profile?.nickname || user.user_metadata?.name || user.user_metadata?.full_name || user.user_metadata?.nickname || user.email?.split('@')[0];
 
     return (
         <div className="relative">
-            <Button
+            <button
                 onClick={() => setMenuOpen(!menuOpen)}
-                variant="glass"
-                size="sm"
-                className="border-0 shadow-none bg-transparent hover:bg-black/10 dark:hover:bg-white/10 rounded-full gap-2 px-3 transition-all duration-300"
+                aria-expanded={menuOpen}
+                aria-haspopup="menu"
+                className="flex items-center gap-2 px-2.5 py-1 rounded-[6px] border border-zinc-200/80 dark:border-[#1e1e2a] bg-zinc-50/70 dark:bg-[#14141e] hover:bg-zinc-100 dark:hover:bg-[#1a1a26] hover:border-zinc-300 dark:hover:border-[#2a2a3e] transition-all text-xs font-mono group cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#5e6ad2]"
             >
-                <div className="w-5 h-5 bg-gradient-to-br from-emerald-400 to-teal-600 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:scale-110 transition-transform">
-                    <AvatarIcon className="w-3 h-3 text-white" />
+                <div className="w-5 h-5 rounded-[4px] bg-[#5e6ad2]/15 dark:bg-[#5e6ad2]/20 border border-[#5e6ad2]/30 flex items-center justify-center text-[#5e6ad2] dark:text-[#828df8] transition-transform group-hover:scale-105 shrink-0">
+                    <AvatarIcon className="w-3 h-3 text-[#5e6ad2] dark:text-[#828df8]" />
                 </div>
-                <m.span
-                    layout
-                    className="max-w-[100px] truncate font-bold text-xs uppercase tracking-wider dark:text-white"
-                >
+                <span className="max-w-[110px] truncate font-mono font-medium text-xs text-zinc-800 dark:text-[#ebebef]">
                     {nickname}
-                </m.span>
-                <ChevronDown className={`w-3 h-3 transition-transform duration-500 ease-in-out ${menuOpen ? 'rotate-180' : ''}`} />
-            </Button>
+                </span>
+                <ChevronDown
+                    className={`w-3.5 h-3.5 text-zinc-400 dark:text-[#6e6e84] group-hover:text-zinc-700 dark:group-hover:text-[#ebebef] transition-transform duration-200 ${
+                        menuOpen ? "rotate-180 text-zinc-900 dark:text-[#ebebef]" : ""
+                    }`}
+                />
+            </button>
 
             <AnimatePresence>
                 {menuOpen && (
@@ -103,72 +109,83 @@ export function UserAuthSection() {
                         <div
                             className="fixed inset-0 z-40"
                             onClick={() => setMenuOpen(false)}
-                        ></div>
+                        />
                         <m.div
-                            initial={{ opacity: 0, scale: 0.95, y: 10, x: -10 }}
-                            animate={{ opacity: 1, scale: 1, y: 0, x: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 10, x: -10 }}
-                            className="absolute left-0 mt-2 w-56 bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/10 rounded-2xl shadow-2xl z-50 p-2 backdrop-blur-xl"
+                            role="menu"
+                            initial={{ opacity: 0, scale: 0.98, y: 4 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.98, y: 4 }}
+                            transition={{ duration: 0.12, ease: "easeOut" }}
+                            className="absolute right-0 mt-1.5 w-60 bg-white/95 dark:bg-[#14141e]/95 backdrop-blur-xl border border-zinc-200 dark:border-[#1e1e2a] rounded-xl shadow-2xl z-50 p-1.5 transition-colors"
                         >
-                            <div className="px-3 py-2 border-b border-gray-100 dark:border-white/5 mb-2">
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Account</p>
-                                <p className="text-xs font-bold text-gray-900 dark:text-white truncate">{user.email}</p>
+                            {/* User Header Info Card */}
+                            <div className="px-2.5 py-2 rounded-lg bg-zinc-50/80 dark:bg-[#101018] border border-zinc-200/60 dark:border-[#1c1c28] mb-1">
+                                <div className="flex items-center justify-between gap-2 mb-0.5">
+                                    <p className="text-[9px] font-mono font-semibold uppercase tracking-wider text-zinc-400 dark:text-[#6e6e84]">
+                                        Account
+                                    </p>
+                                    {profile?.role === "admin" ? (
+                                        <span className="text-[8.5px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                            Admin
+                                        </span>
+                                    ) : (
+                                        <span className="text-[8.5px] font-mono font-medium uppercase tracking-wider px-1.5 py-0.2 rounded bg-[#5e6ad2]/10 text-[#5e6ad2] dark:text-[#828df8] border border-[#5e6ad2]/20">
+                                            Member
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="text-xs font-mono font-semibold text-zinc-900 dark:text-[#ebebef] truncate" title={user.email}>
+                                    {user.email}
+                                </p>
                             </div>
 
-                            {profile?.role === 'admin' ? (
+                            {/* Menu Actions */}
+                            <div className="space-y-0.5">
                                 <Link
-                                    href="/admin"
+                                    href={profile?.role === "admin" ? "/admin" : "/dashboard"}
                                     onClick={() => setMenuOpen(false)}
-                                    className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl transition-colors text-left"
+                                    role="menuitem"
+                                    className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-mono font-medium text-zinc-700 dark:text-[#c4c4d4] hover:text-zinc-900 dark:hover:text-[#ebebef] hover:bg-zinc-100/80 dark:hover:bg-[#1c1c28] rounded-lg transition-colors group text-left"
                                 >
-                                    <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                                    Admin Dashboard
+                                    <LayoutDashboard className="w-3.5 h-3.5 text-zinc-400 dark:text-[#8b8b9e] group-hover:text-[#5e6ad2] transition-colors" />
+                                    <span>{profile?.role === "admin" ? "Admin Dashboard" : "My Dashboard"}</span>
                                 </Link>
-                            ) : (
+
                                 <Link
-                                    href="/dashboard"
+                                    href="/settings"
                                     onClick={() => setMenuOpen(false)}
-                                    className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl transition-colors text-left"
+                                    role="menuitem"
+                                    className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-mono font-medium text-zinc-700 dark:text-[#c4c4d4] hover:text-zinc-900 dark:hover:text-[#ebebef] hover:bg-zinc-100/80 dark:hover:bg-[#1c1c28] rounded-lg transition-colors group text-left"
                                 >
-                                    <ShieldCheck className="w-4 h-4 text-blue-500" />
-                                    My Dashboard
+                                    <Settings className="w-3.5 h-3.5 text-zinc-400 dark:text-[#8b8b9e] group-hover:text-[#5e6ad2] transition-colors" />
+                                    <span>Settings</span>
                                 </Link>
-                            )}
 
+                                <button
+                                    onClick={() => {
+                                        setMenuOpen(false);
+                                        setFeedbackOpen(true);
+                                    }}
+                                    role="menuitem"
+                                    className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-mono font-medium text-zinc-700 dark:text-[#c4c4d4] hover:text-zinc-900 dark:hover:text-[#ebebef] hover:bg-zinc-100/80 dark:hover:bg-[#1c1c28] rounded-lg transition-colors group text-left cursor-pointer"
+                                >
+                                    <MessageSquare className="w-3.5 h-3.5 text-zinc-400 dark:text-[#8b8b9e] group-hover:text-[#5e6ad2] transition-colors" />
+                                    <span>Send Feedback</span>
+                                </button>
+                            </div>
 
-                            <Link
-                                href="/settings"
-                                onClick={() => setMenuOpen(false)}
-                                className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl transition-colors text-left"
-                            >
-                                <Settings className="w-4 h-4 text-blue-500" />
-                                Settings
-                            </Link>
+                            <div className="h-px bg-zinc-200/80 dark:bg-[#1e1e2a] my-1 mx-1" />
 
                             <button
                                 onClick={() => {
                                     setMenuOpen(false);
-                                    setFeedbackOpen(true);
-                                }}
-                                className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl transition-colors text-left"
-                            >
-                                <MessageSquare className="w-4 h-4 text-orange-500" />
-                                Send Feedback
-                            </button>
-
-                            <div className="h-px bg-gray-100 dark:bg-white/5 my-2 mx-2"></div>
-
-                            <button
-                                onClick={() => {
-                                    setMenuOpen(false);
-                                    // Bypassing client-side signOut which hangs on blocked networks (like Indian ISPs).
-                                    // Directly calling Server Action which proxies to Supabase via Vercel.
                                     logout();
                                 }}
-                                className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-colors text-left"
+                                role="menuitem"
+                                className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-mono font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors group text-left cursor-pointer"
                             >
-                                <LogOut className="w-4 h-4" />
-                                Sign Out
+                                <LogOut className="w-3.5 h-3.5 text-rose-500 transition-transform group-hover:translate-x-0.5" />
+                                <span>Sign Out</span>
                             </button>
                         </m.div>
                     </>
@@ -182,3 +199,4 @@ export function UserAuthSection() {
         </div>
     );
 }
+

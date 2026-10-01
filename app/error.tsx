@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect } from 'react';
-import { Button } from '@/components/ui/Button';
-import { Bot, Sparkles, RotateCcw, Home } from 'lucide-react';
+import Link from 'next/link';
+import { RotateCcw, Home, AlertCircle } from 'lucide-react';
+import { HomeBackground } from '@/components/home/HomeBackground';
 
-export default function Error({
+export default function RootError({
   error,
   reset,
 }: {
@@ -16,39 +17,62 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
-      {/* Animated illustration */}
-      <div className="relative mx-auto w-28 h-28 mb-6">
-        <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 to-orange-500/20 rounded-full animate-pulse" />
-        <div className="absolute inset-2 bg-gradient-to-br from-red-500/10 to-orange-500/10 rounded-full" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Bot className="w-14 h-14 text-orange-500 dark:text-orange-400" />
-          <Sparkles className="w-4 h-4 text-yellow-400 absolute top-1 right-3 animate-bounce" />
-        </div>
-      </div>
+    <div className="min-h-screen bg-white dark:bg-[#0d0d12] text-zinc-900 dark:text-[#ebebef] relative selection:bg-[#5e6ad2]/20 flex flex-col items-center justify-center p-4 sm:p-6 transition-colors overflow-hidden">
+      {/* 28px Precision Grid & Horizon Illumination */}
+      <HomeBackground />
 
-      <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">Something went wrong!</h2>
-      <p className="text-gray-500 dark:text-gray-400 mb-1 max-w-md">
-        {process.env.NODE_ENV === "development"
-          ? error.message
-          : "An unexpected error occurred. Please try again."}
-      </p>
-      <p className="text-sm text-gray-400 dark:text-gray-500 mb-8">
-        Bob&apos;s already looking into it. Give it another shot.
-      </p>
-      <div className="flex gap-4">
-        <Button onClick={reset} variant="primary">
-          <RotateCcw className="w-4 h-4 mr-2" />
-          Try again
-        </Button>
-        <Button
-          onClick={() => window.location.href = '/'}
-          variant="ghost"
-          className="text-gray-700 dark:text-gray-300"
-        >
-          <Home className="w-4 h-4 mr-2" />
-          Go Home
-        </Button>
+      <div className="relative z-10 w-full max-w-md mx-auto space-y-4 text-center">
+        {/* Status Pill */}
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-xs font-mono text-rose-600 dark:text-rose-400">
+          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+          <span className="font-semibold">System Alert</span>
+          <span className="opacity-40">•</span>
+          <span>Runtime Interruption</span>
+        </div>
+
+        {/* Error Card */}
+        <div className="w-full bg-white dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] rounded-2xl p-6 sm:p-8 shadow-subtle space-y-5">
+          <div className="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
+            <AlertCircle size={24} />
+          </div>
+
+          <div className="space-y-1.5">
+            <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-zinc-900 dark:text-[#ebebef]">
+              Something went wrong
+            </h1>
+            <p className="text-xs sm:text-sm text-zinc-600 dark:text-[#8b8b9e] leading-relaxed">
+              {process.env.NODE_ENV === "development"
+                ? error.message || "An unexpected error occurred during execution."
+                : "An unexpected error interrupted this request. You can retry safely or navigate back to the hub."}
+            </p>
+          </div>
+
+          {error.digest && (
+            <div className="p-2.5 rounded-lg bg-zinc-50 dark:bg-[#0d0d12] border border-zinc-200/80 dark:border-[#1e1e2a] text-[11px] font-mono text-zinc-400 dark:text-zinc-500 text-left truncate">
+              Digest: {error.digest}
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-2">
+            <button
+              type="button"
+              onClick={reset}
+              className="w-full sm:flex-1 py-2.5 px-4 rounded-xl text-xs font-semibold bg-[#5e6ad2] hover:bg-[#4f5ac4] text-white shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 shadow-[#5e6ad2]/20"
+            >
+              <RotateCcw size={13} />
+              <span>Try Again</span>
+            </button>
+
+            <Link
+              href="/"
+              className="w-full sm:flex-1 py-2.5 px-4 rounded-xl text-xs font-semibold bg-zinc-100 dark:bg-[#1e1e2a] hover:bg-zinc-200 dark:hover:bg-[#252536] text-zinc-800 dark:text-[#ebebef] border border-zinc-200/80 dark:border-[#2a2a3c] flex items-center justify-center gap-2 transition-all"
+            >
+              <Home size={13} />
+              <span>Back to Hub</span>
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );

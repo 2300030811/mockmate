@@ -257,82 +257,95 @@ export const SessionInsights = memo(function SessionInsights({ transcript, final
     const depthColor = analytics.answerDepth === "detailed" ? "text-green-400" : analytics.answerDepth === "moderate" ? "text-blue-400" : "text-amber-400";
 
     return (
-        <div className="h-full bg-gray-900/50 p-5 overflow-y-auto custom-scrollbar animate-fadeIn space-y-5">
+        <div className="h-full bg-zinc-50 dark:bg-[#14141e] p-4 sm:p-5 overflow-y-auto custom-scrollbar animate-fadeIn space-y-4">
             {/* Header */}
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <BrainCircuit className="text-purple-500" />
-                Live Performance
-            </h3>
+            <div className="flex items-center justify-between pb-1 border-b border-zinc-200 dark:border-[#1e1e2a]">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-[#ebebef] flex items-center gap-2">
+                    <BrainCircuit className="text-[#5e6ad2]" size={15} />
+                    Live Performance
+                </h3>
+                <span className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500">TELEMETRY // ACTIVE</span>
+            </div>
 
             {/* Primary Metrics Grid */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2.5">
                 {/* WPM */}
-                <div className="bg-gray-800/50 border border-gray-700/50 p-4 rounded-xl">
-                    <div className="flex items-center gap-2 text-gray-400 text-[10px] mb-2 uppercase tracking-wider">
-                        <Zap size={12} className="text-amber-400" />
+                <div className="bg-white dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] p-3.5 rounded-xl shadow-subtle">
+                    <div className="flex items-center gap-1.5 text-zinc-500 dark:text-[#8b8b9e] text-[10px] font-mono mb-1.5 uppercase tracking-wider">
+                        <Zap size={12} className="text-amber-500" />
                         Pace
                     </div>
-                    <div className="text-2xl font-bold text-white">{analytics.wpm} <span className="text-xs text-gray-500 font-normal">WPM</span></div>
+                    <div className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-[#ebebef]">
+                        {analytics.wpm} <span className="text-xs text-zinc-400 font-normal">WPM</span>
+                    </div>
                     <div className="text-[10px] mt-1 flex items-center gap-1">
-                        <TrendingUp size={10} />
-                        <span className={analytics.wpm > 160 ? "text-amber-400" : analytics.wpm < 70 ? "text-amber-400" : "text-green-400"}>
+                        <TrendingUp size={10} className="text-zinc-400" />
+                        <span className={analytics.wpm > 160 ? "text-amber-500" : analytics.wpm < 70 ? "text-amber-500" : "text-emerald-500 font-medium"}>
                             {analytics.wpm > 160 ? "Slow down slightly" : analytics.wpm < 70 ? "Speak up more" : "Great pace"}
                         </span>
                     </div>
                 </div>
 
                 {/* Sentiment */}
-                <div className="bg-gray-800/50 border border-gray-700/50 p-4 rounded-xl">
-                    <div className="flex items-center gap-2 text-gray-400 text-[10px] mb-2 uppercase tracking-wider">
-                        <Activity size={12} className="text-pink-400" />
+                <div className="bg-white dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] p-3.5 rounded-xl shadow-subtle">
+                    <div className="flex items-center gap-1.5 text-zinc-500 dark:text-[#8b8b9e] text-[10px] font-mono mb-1.5 uppercase tracking-wider">
+                        <Activity size={12} className="text-pink-500" />
                         Tone
                     </div>
-                    <div className={`text-2xl font-bold ${
-                        analytics.sentiment === 'Confident' ? 'text-green-400' :
-                        analytics.sentiment === 'Positive' ? 'text-emerald-400' :
-                        analytics.sentiment === 'Hesitant' ? 'text-amber-400' :
-                        analytics.sentiment === 'Anxious' ? 'text-red-400' : 'text-blue-400'
+                    <div className={`text-xl sm:text-2xl font-bold ${
+                        analytics.sentiment === 'Confident' ? 'text-emerald-500' :
+                        analytics.sentiment === 'Positive' ? 'text-emerald-500' :
+                        analytics.sentiment === 'Hesitant' ? 'text-amber-500' :
+                        analytics.sentiment === 'Anxious' ? 'text-rose-500' : 'text-[#5e6ad2]'
                     }`}>
                         {analytics.sentiment}
                     </div>
-                    <div className="text-[10px] text-gray-500 mt-1">Emotional signal</div>
+                    <div className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1">Emotional signal</div>
                 </div>
 
                 {/* Answer Depth */}
-                <div className="bg-gray-800/50 border border-gray-700/50 p-4 rounded-xl">
-                    <div className="flex items-center gap-2 text-gray-400 text-[10px] mb-2 uppercase tracking-wider">
-                        <BarChart3 size={12} className="text-cyan-400" />
+                <div className="bg-white dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] p-3.5 rounded-xl shadow-subtle">
+                    <div className="flex items-center gap-1.5 text-zinc-500 dark:text-[#8b8b9e] text-[10px] font-mono mb-1.5 uppercase tracking-wider">
+                        <BarChart3 size={12} className="text-cyan-500" />
                         Depth
                     </div>
-                    <div className={`text-2xl font-bold capitalize ${depthColor}`}>{analytics.answerDepth}</div>
-                    <div className="text-[10px] text-gray-500 mt-1">Avg answer length</div>
+                    <div className={`text-xl sm:text-2xl font-bold capitalize ${
+                        analytics.answerDepth === "detailed" ? "text-emerald-500" : analytics.answerDepth === "moderate" ? "text-[#5e6ad2]" : "text-amber-500"
+                    }`}>
+                        {analytics.answerDepth}
+                    </div>
+                    <div className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1">Avg answer length</div>
                 </div>
 
                 {/* Filler Words */}
-                <div className="bg-gray-800/50 border border-gray-700/50 p-4 rounded-xl">
-                    <div className="flex items-center gap-2 text-gray-400 text-[10px] mb-2 uppercase tracking-wider">
-                        <AlertTriangle size={12} className="text-orange-400" />
+                <div className="bg-white dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] p-3.5 rounded-xl shadow-subtle">
+                    <div className="flex items-center gap-1.5 text-zinc-500 dark:text-[#8b8b9e] text-[10px] font-mono mb-1.5 uppercase tracking-wider">
+                        <AlertTriangle size={12} className="text-orange-500" />
                         Fillers
                     </div>
-                    <div className={`text-2xl font-bold ${fillerSeverity}`}>{analytics.fillerWordsPerMinute}<span className="text-xs text-gray-500 font-normal">/min</span></div>
-                    <div className="text-[10px] text-gray-500 mt-1">{analytics.fillerWordCount} total</div>
+                    <div className={`text-xl sm:text-2xl font-bold ${
+                        analytics.fillerWordsPerMinute > 5 ? "text-rose-500" : analytics.fillerWordsPerMinute > 2 ? "text-amber-500" : "text-emerald-500"
+                    }`}>
+                        {analytics.fillerWordsPerMinute}<span className="text-xs text-zinc-400 font-normal">/min</span>
+                    </div>
+                    <div className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1">{analytics.fillerWordCount} total detected</div>
                 </div>
             </div>
 
             {/* Confidence Score */}
-            <div className="bg-gray-800/50 border border-gray-700/50 p-4 rounded-xl">
-                <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2 text-gray-400 text-[10px] uppercase tracking-wider">
-                        <Award size={12} className="text-blue-400" />
+            <div className="bg-white dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] p-3.5 rounded-xl shadow-subtle">
+                <div className="flex items-center justify-between mb-2.5">
+                    <div className="flex items-center gap-1.5 text-zinc-500 dark:text-[#8b8b9e] text-[10px] font-mono uppercase tracking-wider">
+                        <Award size={12} className="text-blue-500" />
                         Confidence Score
                     </div>
-                    <span className="text-sm font-bold text-white">{analytics.confidenceScore}%</span>
+                    <span className="text-xs font-mono font-bold text-zinc-900 dark:text-[#ebebef]">{analytics.confidenceScore}%</span>
                 </div>
-                <div className="w-full bg-gray-700 h-2.5 rounded-full overflow-hidden">
+                <div className="w-full bg-zinc-100 dark:bg-[#181824] border border-zinc-200 dark:border-[#1e1e2a] h-2 rounded-full overflow-hidden">
                     <div
-                        className={`h-full transition-all duration-1000 rounded-full ${
-                            analytics.confidenceScore > 80 ? 'bg-gradient-to-r from-green-500 to-emerald-400' :
-                            analytics.confidenceScore > 60 ? 'bg-gradient-to-r from-blue-500 to-cyan-400' :
+                        className={`h-full transition-all duration-700 rounded-full ${
+                            analytics.confidenceScore > 80 ? 'bg-gradient-to-r from-emerald-500 to-teal-400' :
+                            analytics.confidenceScore > 60 ? 'bg-gradient-to-r from-[#5e6ad2] to-cyan-400' :
                             'bg-gradient-to-r from-amber-500 to-orange-400'
                         }`}
                         style={{ width: `${Math.min(100, Math.max(5, analytics.confidenceScore))}%` }}
@@ -341,20 +354,20 @@ export const SessionInsights = memo(function SessionInsights({ transcript, final
             </div>
 
             {/* Technical Accuracy */}
-            <div className="bg-gray-800/50 border border-gray-700/50 p-4 rounded-xl">
-                <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2 text-gray-400 text-[10px] uppercase tracking-wider">
-                        <Sparkles size={12} className="text-purple-400" />
+            <div className="bg-white dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] p-3.5 rounded-xl shadow-subtle">
+                <div className="flex items-center justify-between mb-2.5">
+                    <div className="flex items-center gap-1.5 text-zinc-500 dark:text-[#8b8b9e] text-[10px] font-mono uppercase tracking-wider">
+                        <Sparkles size={12} className="text-[#5e6ad2]" />
                         Technical Signal
                     </div>
-                    <span className="text-sm font-bold text-white">{analytics.technicalAccuracy}%</span>
+                    <span className="text-xs font-mono font-bold text-zinc-900 dark:text-[#ebebef]">{analytics.technicalAccuracy}%</span>
                 </div>
-                <div className="w-full bg-gray-700 h-2.5 rounded-full overflow-hidden">
+                <div className="w-full bg-zinc-100 dark:bg-[#181824] border border-zinc-200 dark:border-[#1e1e2a] h-2 rounded-full overflow-hidden">
                     <div
-                        className={`h-full transition-all duration-1000 rounded-full ${
-                            analytics.technicalAccuracy > 70 ? 'bg-gradient-to-r from-purple-500 to-pink-400' :
-                            analytics.technicalAccuracy > 40 ? 'bg-gradient-to-r from-indigo-500 to-blue-400' :
-                            'bg-gradient-to-r from-gray-500 to-gray-400'
+                        className={`h-full transition-all duration-700 rounded-full ${
+                            analytics.technicalAccuracy > 70 ? 'bg-gradient-to-r from-[#5e6ad2] to-purple-400' :
+                            analytics.technicalAccuracy > 40 ? 'bg-gradient-to-r from-blue-500 to-indigo-400' :
+                            'bg-zinc-400 dark:bg-zinc-600'
                         }`}
                         style={{ width: `${Math.min(100, Math.max(5, analytics.technicalAccuracy))}%` }}
                     />
@@ -363,49 +376,49 @@ export const SessionInsights = memo(function SessionInsights({ transcript, final
 
             {/* Session Stats Row */}
             <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="bg-gray-800/30 rounded-lg py-2.5 px-2">
-                    <div className="text-lg font-bold text-white">{analytics.questionsCovered}</div>
-                    <div className="text-[9px] text-gray-500 uppercase">Questions</div>
+                <div className="bg-white dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] rounded-lg py-2.5 px-2 shadow-subtle">
+                    <div className="text-lg font-bold text-zinc-900 dark:text-[#ebebef]">{analytics.questionsCovered}</div>
+                    <div className="text-[9px] font-mono text-zinc-400 dark:text-zinc-500 uppercase">Questions</div>
                 </div>
-                <div className="bg-gray-800/30 rounded-lg py-2.5 px-2">
-                    <div className="text-lg font-bold text-white">{analytics.starMethodCount}</div>
-                    <div className="text-[9px] text-gray-500 uppercase">STAR Used</div>
+                <div className="bg-white dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] rounded-lg py-2.5 px-2 shadow-subtle">
+                    <div className="text-lg font-bold text-zinc-900 dark:text-[#ebebef]">{analytics.starMethodCount}</div>
+                    <div className="text-[9px] font-mono text-zinc-400 dark:text-zinc-500 uppercase">STAR Used</div>
                 </div>
-                <div className="bg-gray-800/30 rounded-lg py-2.5 px-2">
-                    <div className="text-lg font-bold text-white">{analytics.vocabularyRichness}%</div>
-                    <div className="text-[9px] text-gray-500 uppercase">Vocab Rich</div>
+                <div className="bg-white dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] rounded-lg py-2.5 px-2 shadow-subtle">
+                    <div className="text-lg font-bold text-zinc-900 dark:text-[#ebebef]">{analytics.vocabularyRichness}%</div>
+                    <div className="text-[9px] font-mono text-zinc-400 dark:text-zinc-500 uppercase">Vocab Rich</div>
                 </div>
             </div>
 
             {/* Key Concepts */}
             <div>
-                <div className="flex items-center justify-between mb-2 text-[10px] text-gray-400 uppercase tracking-wider">
+                <div className="flex items-center justify-between mb-2 text-[10px] font-mono text-zinc-500 dark:text-[#8b8b9e] uppercase tracking-wider">
                     <span>Key Concepts</span>
-                    <span className="text-purple-400">{analytics.keyConcepts.length} identified</span>
+                    <span className="text-[#5e6ad2] font-semibold">{analytics.keyConcepts.length} identified</span>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                     {analytics.keyConcepts.length > 0 ? (
                         analytics.keyConcepts.map((concept) => (
-                            <span key={concept} className="px-2.5 py-1 bg-purple-500/10 text-purple-400 text-[10px] font-medium rounded-full border border-purple-500/20 capitalize">
+                            <span key={concept} className="px-2.5 py-1 bg-zinc-100 dark:bg-[#181824] text-[#5e6ad2] dark:text-[#808cf0] text-[10px] font-mono font-medium rounded-md border border-zinc-200 dark:border-[#1e1e2a] capitalize shadow-subtle">
                                 {concept}
                             </span>
                         ))
                     ) : (
-                        <div className="text-gray-600 text-xs italic">Keep talking to detect concepts...</div>
+                        <div className="text-zinc-400 dark:text-zinc-500 text-xs italic py-1">Answer questions to detect technical concepts...</div>
                     )}
                 </div>
             </div>
 
             {/* AI Coaching Tip */}
-            <div className="bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 p-4 rounded-2xl relative overflow-hidden group">
-                <div className="absolute -right-4 -top-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
+            <div className="bg-gradient-to-br from-[#5e6ad2]/10 via-[#5e6ad2]/5 to-transparent border border-[#5e6ad2]/20 p-4 rounded-xl relative overflow-hidden group">
+                <div className="absolute -right-4 -top-4 opacity-10 text-[#5e6ad2] group-hover:scale-110 transition-transform duration-500 pointer-events-none">
                     <BrainCircuit size={70} />
                 </div>
-                <h4 className="text-white text-xs font-semibold mb-1.5 flex items-center gap-2">
-                    <Terminal size={14} className="text-indigo-400" />
-                    AI Coach
+                <h4 className="text-zinc-900 dark:text-[#ebebef] text-xs font-semibold mb-1 flex items-center gap-1.5">
+                    <Terminal size={13} className="text-[#5e6ad2]" />
+                    AI Coach Diagnostic
                 </h4>
-                <p className="text-gray-400 text-xs leading-relaxed relative z-10">
+                <p className="text-zinc-600 dark:text-[#8b8b9e] text-xs leading-relaxed relative z-10">
                     {coachingTip}
                 </p>
             </div>

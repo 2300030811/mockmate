@@ -1,0 +1,914 @@
+[
+  {
+    "sno": "1",
+    "company": "Blue Star",
+    "date": "21-10-2024",
+    "pkg": "6.3 LPA",
+    "page": 1,
+    "row": 1
+  },
+  {
+    "sno": "2",
+    "company": "Siemens",
+    "date": "21-03-2025",
+    "pkg": "20.02 LPA",
+    "page": 1,
+    "row": 2
+  },
+  {
+    "sno": "3",
+    "company": "AMD",
+    "date": "20-06-2025",
+    "pkg": "11 LPA",
+    "page": 1,
+    "row": 3
+  },
+  {
+    "sno": "4",
+    "company": "Trilogy",
+    "date": "28-06-2025",
+    "pkg": "30 LPA",
+    "page": 1,
+    "row": 4
+  },
+  {
+    "sno": "5",
+    "company": "UTS",
+    "date": "30-06-2025",
+    "pkg": "3.5 LPA",
+    "page": 1,
+    "row": 5
+  },
+  {
+    "sno": "6",
+    "company": "Spring Works",
+    "date": "10-07-2025",
+    "pkg": "4 LPA",
+    "page": 1,
+    "row": 6
+  },
+  {
+    "sno": "7",
+    "company": "Schneider Electric",
+    "date": "23-07-2025",
+    "pkg": "12 LPA",
+    "page": 1,
+    "row": 7
+  },
+  {
+    "sno": "8",
+    "company": "MosChip Technologies",
+    "date": "29-07-2025",
+    "pkg": "6 LPA",
+    "page": 1,
+    "row": 8
+  },
+  {
+    "sno": "9",
+    "company": "Callease Al",
+    "date": "07-08-2025",
+    "pkg": "20 LPA",
+    "page": 1,
+    "row": 9
+  },
+  {
+    "sno": "10",
+    "company": "MathCo",
+    "date": "14-08-2025",
+    "pkg": "5.5 LPA",
+    "page": 1,
+    "row": 10
+  },
+  {
+    "sno": "11",
+    "company": "Lumen",
+    "date": "16-08-2025",
+    "pkg": "7 LPA",
+    "page": 1,
+    "row": 11
+  },
+  {
+    "sno": "12",
+    "company": "Principal Global Services",
+    "date": "19-08-2025",
+    "pkg": "8 LPA",
+    "page": 1,
+    "row": 12
+  },
+  {
+    "sno": "13",
+    "company": "KLUS\nCTS",
+    "date": "21-08-2025\nY",
+    "pkg": "4 to 6.7 LPA",
+    "page": 1,
+    "row": 13
+  },
+  {
+    "sno": "14",
+    "company": "Deloitte",
+    "date": "23-08-2025",
+    "pkg": "7.6 LPA",
+    "page": 1,
+    "row": 14
+  },
+  {
+    "sno": "15",
+    "company": "BNP Paribas",
+    "date": "23-08-2025",
+    "pkg": "7.5 LPA",
+    "page": 1,
+    "row": 15
+  },
+  {
+    "sno": "16",
+    "company": "Oracle",
+    "date": "16-09-2025",
+    "pkg": "11.067 LPA",
+    "page": 1,
+    "row": 16
+  },
+  {
+    "sno": "17",
+    "company": "LTI Mindtree\n:unselected:",
+    "date": "20-09-2025",
+    "pkg": "4.05 LPA\n:unselected:",
+    "page": 1,
+    "row": 17
+  },
+  {
+    "sno": "18",
+    "company": "Y23 B\nInfosys\n:unselected:",
+    "date": "19-09-2025\nH",
+    "pkg": ":unselected: 3.6, 6.25, 9.5 LPA",
+    "page": 1,
+    "row": 18
+  },
+  {
+    "sno": "19",
+    "company": "Paltech",
+    "date": "19-09-2025",
+    "pkg": "3 LPA",
+    "page": 1,
+    "row": 19
+  },
+  {
+    "sno": "20",
+    "company": "Student\nFacePerp",
+    "date": "Co20-09-2025",
+    "pkg": "5 LPA",
+    "page": 1,
+    "row": 20
+  },
+  {
+    "sno": "21",
+    "company": "Stellantis",
+    "date": "10-10-2025",
+    "pkg": "6 LPA",
+    "page": 1,
+    "row": 21
+  },
+  {
+    "sno": "22",
+    "company": "Accenture",
+    "date": "2023-2027 30-10-2025",
+    "pkg": "4.64, 6.51, 11.18 LPA",
+    "page": 1,
+    "row": 22
+  },
+  {
+    "sno": "23",
+    "company": "Keeline",
+    "date": "29-10-2025",
+    "pkg": "4.5 LPA",
+    "page": 1,
+    "row": 23
+  },
+  {
+    "sno": "24",
+    "company": "Infosys (Women)",
+    "date": "03-11-2025",
+    "pkg": "3.6 LPA",
+    "page": 1,
+    "row": 24
+  },
+  {
+    "sno": "25",
+    "company": "HCL Tech",
+    "date": "11-11-2025",
+    "pkg": "3.5 LPA",
+    "page": 1,
+    "row": 25
+  },
+  {
+    "sno": "26",
+    "company": "KYB Corporation",
+    "date": "14-11-2025",
+    "pkg": "3.36 LPA",
+    "page": 1,
+    "row": 26
+  },
+  {
+    "sno": "27",
+    "company": "Technoforte",
+    "date": "15-11-2025",
+    "pkg": "3.6 & 5 LPA",
+    "page": 1,
+    "row": 27
+  },
+  {
+    "sno": "28",
+    "company": "HCL Tech (Domicile Hiring)",
+    "date": "19-11-2025",
+    "pkg": "3.25 LPA",
+    "page": 1,
+    "row": 28
+  },
+  {
+    "sno": "29",
+    "company": "Capgemini",
+    "date": "22-11-2025",
+    "pkg": "4.25, 5.75, 7.5 LPA",
+    "page": 1,
+    "row": 29
+  },
+  {
+    "sno": "30",
+    "company": "TCS",
+    "date": "20-11-2025",
+    "pkg": "3.45, 7, 9 LPA",
+    "page": 1,
+    "row": 30
+  },
+  {
+    "sno": "31",
+    "company": "SLK",
+    "date": "29-11-2025",
+    "pkg": "3.2 LPA",
+    "page": 1,
+    "row": 31
+  },
+  {
+    "sno": "32",
+    "company": "HighRadius",
+    "date": "30-11-2025",
+    "pkg": "4 LPA",
+    "page": 1,
+    "row": 32
+  },
+  {
+    "sno": "33",
+    "company": "MRF",
+    "date": "03-12-2025",
+    "pkg": "2.5 LPA",
+    "page": 1,
+    "row": 33
+  },
+  {
+    "sno": "34",
+    "company": "Doyensys",
+    "date": "01-12-2025",
+    "pkg": "5.5 LPA",
+    "page": 1,
+    "row": 34
+  },
+  {
+    "sno": "35",
+    "company": "Sagility",
+    "date": "10-12-2025",
+    "pkg": "3.5 to 4 LPA",
+    "page": 1,
+    "row": 35
+  },
+  {
+    "sno": "36",
+    "company": "Musigma",
+    "date": "06-12-2025",
+    "pkg": "5 LPA",
+    "page": 1,
+    "row": 36
+  },
+  {
+    "sno": "37",
+    "company": "Soft Suave Technologies",
+    "date": "13-12-2025",
+    "pkg": "4 LPA",
+    "page": 1,
+    "row": 37
+  },
+  {
+    "sno": "38",
+    "company": "Stanza Living",
+    "date": "10-12-2025",
+    "pkg": "4.5 LPA",
+    "page": 1,
+    "row": 38
+  },
+  {
+    "sno": "39",
+    "company": "Springworks",
+    "date": "05-12-2025",
+    "pkg": "4 to 6 LPA",
+    "page": 1,
+    "row": 39
+  },
+  {
+    "sno": "40",
+    "company": "Infosys (Specialist Program- mer)",
+    "date": "11-12-2025",
+    "pkg": "6.25 to 21 LPA",
+    "page": 2,
+    "row": 1
+  },
+  {
+    "sno": "41",
+    "company": "City Union Bank",
+    "date": "16-12-2025",
+    "pkg": "3 LPA",
+    "page": 2,
+    "row": 2
+  },
+  {
+    "sno": "42",
+    "company": "Code Young",
+    "date": "16-12-2025",
+    "pkg": "4 LPA",
+    "page": 2,
+    "row": 3
+  },
+  {
+    "sno": "43",
+    "company": "CredResolve",
+    "date": "18-12-2025",
+    "pkg": "5.5 to 8.0 LPA",
+    "page": 2,
+    "row": 4
+  },
+  {
+    "sno": "44",
+    "company": "CouthIT",
+    "date": "22-12-2025",
+    "pkg": "4 to 6 LPA",
+    "page": 2,
+    "row": 5
+  },
+  {
+    "sno": "45",
+    "company": "Learnbay",
+    "date": "23-12-2025",
+    "pkg": "5 LPA",
+    "page": 2,
+    "row": 6
+  },
+  {
+    "sno": "46",
+    "company": "K12",
+    "date": "30-12-2025",
+    "pkg": "5 LPA",
+    "page": 2,
+    "row": 7
+  },
+  {
+    "sno": "47",
+    "company": "Krutanic",
+    "date": "26-12-2025",
+    "pkg": "6, 7 LPA",
+    "page": 2,
+    "row": 8
+  },
+  {
+    "sno": "48",
+    "company": "Shiksha Vertex",
+    "date": "23-12-2025",
+    "pkg": "6 LPA",
+    "page": 2,
+    "row": 9
+  },
+  {
+    "sno": "49",
+    "company": "Jyesta Corporate Entity",
+    "date": "24-12-2025",
+    "pkg": "9 LPA",
+    "page": 2,
+    "row": 10
+  },
+  {
+    "sno": "50",
+    "company": "Jade Global",
+    "date": "12-12-2025",
+    "pkg": "4.09 LPA",
+    "page": 2,
+    "row": 11
+  },
+  {
+    "sno": "51",
+    "company": "Infinity Learn",
+    "date": "23-12-2025",
+    "pkg": "5.8 LPA",
+    "page": 2,
+    "row": 12
+  },
+  {
+    "sno": "52",
+    "company": "Inspire Leap",
+    "date": "30-12-2025",
+    "pkg": "6, 6.5 LPA",
+    "page": 2,
+    "row": 13
+  },
+  {
+    "sno": "53",
+    "company": "SprintM",
+    "date": "02-01-2026",
+    "pkg": "6 LPA",
+    "page": 2,
+    "row": 14
+  },
+  {
+    "sno": "54",
+    "company": "Learnflu",
+    "date": "03-01-2026",
+    "pkg": "4, 6 LPA",
+    "page": 2,
+    "row": 15
+  },
+  {
+    "sno": "55",
+    "company": "MPM Infosoft",
+    "date": "26-12-2025",
+    "pkg": "6 to 8 LPA",
+    "page": 2,
+    "row": 16
+  },
+  {
+    "sno": "56",
+    "company": "KLUS\nKalvium",
+    "date": "24-12-2025\nY",
+    "pkg": "6 LPA",
+    "page": 2,
+    "row": 17
+  },
+  {
+    "sno": "57",
+    "company": "Adani Group",
+    "date": "06-01-2026",
+    "pkg": "6.5 LPA",
+    "page": 2,
+    "row": 18
+  },
+  {
+    "sno": "58",
+    "company": "Medha Servo Drives Pvt Ltd",
+    "date": "09-01-2026",
+    "pkg": "5.43 LPA",
+    "page": 2,
+    "row": 19
+  },
+  {
+    "sno": "59",
+    "company": "TTEC",
+    "date": "07-01-2026",
+    "pkg": "3.6 LPA",
+    "page": 2,
+    "row": 20
+  },
+  {
+    "sno": "60",
+    "company": "V.2.33 B\nAdaptamed, LLC",
+    "date": "19-01-2026\nH",
+    "pkg": "5 LPA\n:unselected:",
+    "page": 2,
+    "row": 21
+  },
+  {
+    "sno": "61",
+    "company": "Arvind Fashion Pvt. Ltd",
+    "date": "09-01-2026",
+    "pkg": "3 to 3.5 LPA\n:unselected:",
+    "page": 2,
+    "row": 22
+  },
+  {
+    "sno": "62",
+    "company": "Glow Logics",
+    "date": "09-01-2026",
+    "pkg": "6.2 LPA",
+    "page": 2,
+    "row": 23
+  },
+  {
+    "sno": "63",
+    "company": "Student\nVS Techworld5",
+    "date": "C009-01-2026",
+    "pkg": "5 to 10 LPA",
+    "page": 2,
+    "row": 24
+  },
+  {
+    "sno": "64",
+    "company": "Dhee Coding Labs",
+    "date": "09-01-2026",
+    "pkg": "4 LPA",
+    "page": 2,
+    "row": 25
+  },
+  {
+    "sno": "65",
+    "company": "Webile Apps",
+    "date": "09-01-2026",
+    "pkg": "4 LPA",
+    "page": 2,
+    "row": 26
+  },
+  {
+    "sno": "66",
+    "company": "2023\nMivada",
+    "date": "22-01-2026",
+    "pkg": "6.5 LPA\n7",
+    "page": 2,
+    "row": 27
+  },
+  {
+    "sno": "67",
+    "company": "Launched Global",
+    "date": "01-01-2026",
+    "pkg": "5 to 7 LPA",
+    "page": 2,
+    "row": 28
+  },
+  {
+    "sno": "68",
+    "company": "Omega Healthcare",
+    "date": "22-01-2026",
+    "pkg": "4 LPA",
+    "page": 2,
+    "row": 29
+  },
+  {
+    "sno": "69",
+    "company": "Sonata Software",
+    "date": "20-01-2026",
+    "pkg": "6 LPA",
+    "page": 2,
+    "row": 30
+  },
+  {
+    "sno": "70",
+    "company": "Unlox",
+    "date": "25-01-2026",
+    "pkg": "5 to 7 LPA",
+    "page": 2,
+    "row": 31
+  },
+  {
+    "sno": "71",
+    "company": "DemandNXT",
+    "date": "26-01-2026",
+    "pkg": "3.5 to 4.6 LPA",
+    "page": 2,
+    "row": 32
+  },
+  {
+    "sno": "72",
+    "company": "Sotio Tech",
+    "date": "21-01-2026",
+    "pkg": "3.25 LPA",
+    "page": 2,
+    "row": 33
+  },
+  {
+    "sno": "73",
+    "company": "Acmegrade",
+    "date": "24-01-2026",
+    "pkg": "5 LPA",
+    "page": 2,
+    "row": 34
+  },
+  {
+    "sno": "74",
+    "company": "Appstrail",
+    "date": "29-01-2026",
+    "pkg": "6 LPA",
+    "page": 2,
+    "row": 35
+  },
+  {
+    "sno": "75",
+    "company": "Qspiders",
+    "date": "29-01-2026",
+    "pkg": "3.5, 5.5, 9.5 LPA",
+    "page": 2,
+    "row": 36
+  },
+  {
+    "sno": "76",
+    "company": "Intrainz",
+    "date": "28-01-2026",
+    "pkg": "4 to 6 LPA",
+    "page": 2,
+    "row": 37
+  },
+  {
+    "sno": "77",
+    "company": "Thiran Technologies",
+    "date": "31-01-2026",
+    "pkg": "3.5 to 4 LPA",
+    "page": 2,
+    "row": 38
+  },
+  {
+    "sno": "78",
+    "company": "Pursuit Future Technologies",
+    "date": "04-02-2026",
+    "pkg": "4 LPA",
+    "page": 2,
+    "row": 39
+  },
+  {
+    "sno": "79",
+    "company": "AllDigiTech",
+    "date": "07-02-2026",
+    "pkg": "3 to 3.5 LPA",
+    "page": 2,
+    "row": 40
+  },
+  {
+    "sno": "80",
+    "company": "Kia",
+    "date": "06-02-2026",
+    "pkg": "4 LPA",
+    "page": 2,
+    "row": 41
+  },
+  {
+    "sno": "81",
+    "company": "HashedIn Technologies",
+    "date": "13-02-2026",
+    "pkg": "8.1 LPA",
+    "page": 2,
+    "row": 42
+  },
+  {
+    "sno": "82",
+    "company": "Hexaware",
+    "date": "14-02-2026",
+    "pkg": "3.2 LPA",
+    "page": 2,
+    "row": 43
+  },
+  {
+    "sno": "83",
+    "company": "Alpha Innovation",
+    "date": "14-02-2026",
+    "pkg": "4 to 5.5 LPA",
+    "page": 2,
+    "row": 44
+  },
+  {
+    "sno": "84",
+    "company": "Corizo",
+    "date": "17-02-2026",
+    "pkg": "6.25 LPA",
+    "page": 3,
+    "row": 1
+  },
+  {
+    "sno": "85",
+    "company": "Arcelor Mittal Nippon Steel In- dia",
+    "date": "06-02-2026",
+    "pkg": "6 LPA",
+    "page": 3,
+    "row": 2
+  },
+  {
+    "sno": "86",
+    "company": "NCR",
+    "date": "13-02-2026",
+    "pkg": "10 LPA",
+    "page": 3,
+    "row": 3
+  },
+  {
+    "sno": "87",
+    "company": "Teleperformance",
+    "date": "12-02-2026",
+    "pkg": "3 to 4.5 LPA",
+    "page": 3,
+    "row": 4
+  },
+  {
+    "sno": "88",
+    "company": "NXTwave",
+    "date": "10-02-2026",
+    "pkg": "8 LPA",
+    "page": 3,
+    "row": 5
+  },
+  {
+    "sno": "89",
+    "company": "Divis Laboratories",
+    "date": "04-02-2026",
+    "pkg": "3 LPA",
+    "page": 3,
+    "row": 6
+  },
+  {
+    "sno": "90",
+    "company": "Solar Square Energy",
+    "date": "11-02-2026",
+    "pkg": "3 LPA",
+    "page": 3,
+    "row": 7
+  },
+  {
+    "sno": "91",
+    "company": "BigBasket",
+    "date": "10-02-2026",
+    "pkg": "3.5 LPA",
+    "page": 3,
+    "row": 8
+  },
+  {
+    "sno": "92",
+    "company": "ESSL",
+    "date": "13-02-2026",
+    "pkg": "3.5 LPA",
+    "page": 3,
+    "row": 9
+  },
+  {
+    "sno": "93",
+    "company": "Aristok Technologies",
+    "date": "24-02-2026",
+    "pkg": "4.5 LPA",
+    "page": 3,
+    "row": 10
+  },
+  {
+    "sno": "94",
+    "company": "Sutherland",
+    "date": "23-02-2026",
+    "pkg": "3.25 LPA",
+    "page": 3,
+    "row": 11
+  },
+  {
+    "sno": "95",
+    "company": "Palni",
+    "date": "25-02-2026",
+    "pkg": "2.5 LPA",
+    "page": 3,
+    "row": 12
+  },
+  {
+    "sno": "96",
+    "company": "R-Tech",
+    "date": "02-03-2026",
+    "pkg": "4 LPA",
+    "page": 3,
+    "row": 13
+  },
+  {
+    "sno": "97",
+    "company": "Muthoot",
+    "date": "09-03-2026",
+    "pkg": "2.6 to 3.6 LPA",
+    "page": 3,
+    "row": 14
+  },
+  {
+    "sno": "98",
+    "company": "AT&T",
+    "date": "05-03-2026",
+    "pkg": "19 LPA",
+    "page": 3,
+    "row": 15
+  },
+  {
+    "sno": "99",
+    "company": "Mindenious Edutech LUS",
+    "date": "07-03-2026",
+    "pkg": "7 LPA",
+    "page": 3,
+    "row": 16
+  },
+  {
+    "sno": "100",
+    "company": "Delta Technology",
+    "date": "12-03-2026\nY",
+    "pkg": "3 to 5 LPA",
+    "page": 3,
+    "row": 17
+  },
+  {
+    "sno": "101",
+    "company": "Altruist Technologies",
+    "date": "14-03-2026",
+    "pkg": "3 LPA",
+    "page": 3,
+    "row": 18
+  },
+  {
+    "sno": "102",
+    "company": "Intellect Design",
+    "date": "11-03-2026",
+    "pkg": "5 LPA",
+    "page": 3,
+    "row": 19
+  },
+  {
+    "sno": "103",
+    "company": "ExcelR",
+    "date": "14-03-2026",
+    "pkg": "3 to 5 LPA",
+    "page": 3,
+    "row": 20
+  },
+  {
+    "sno": "104",
+    "company": "India Pvt. Ltd.\nArshith Fresh India Pvt. Ltd.\n:unselected:",
+    "date": "20-03-2026\nH",
+    "pkg": "4 LPA\n:unselected:",
+    "page": 3,
+    "row": 21
+  },
+  {
+    "sno": "105",
+    "company": "Lancesoft\n:unselected:",
+    "date": "25-03-2026",
+    "pkg": "3.5 LPA\n:unselected:",
+    "page": 3,
+    "row": 22
+  },
+  {
+    "sno": "106",
+    "company": "TREKVERSE",
+    "date": "25-03-2026",
+    "pkg": "4.5 LPA",
+    "page": 3,
+    "row": 23
+  },
+  {
+    "sno": "107",
+    "company": "Student\nAksi Aerospace",
+    "date": "Co31-03-2026",
+    "pkg": "4 to 5 LPA",
+    "page": 3,
+    "row": 24
+  },
+  {
+    "sno": "108",
+    "company": "Square Yards",
+    "date": "08-04-2026",
+    "pkg": "4 LPA",
+    "page": 3,
+    "row": 25
+  },
+  {
+    "sno": "109",
+    "company": "Persevax",
+    "date": "26-03-2026",
+    "pkg": "5 to 7 LPA",
+    "page": 3,
+    "row": 26
+  },
+  {
+    "sno": "110",
+    "company": "2023\nHCL GUVI",
+    "date": "28-03-2026\n27",
+    "pkg": "3.5 to 4 LPA",
+    "page": 3,
+    "row": 27
+  },
+  {
+    "sno": "111",
+    "company": "MosChip Technologies",
+    "date": "30-03-2026",
+    "pkg": "3 LPA",
+    "page": 3,
+    "row": 28
+  },
+  {
+    "sno": "112",
+    "company": "Microland",
+    "date": "31-03-2026",
+    "pkg": "7 LPA",
+    "page": 3,
+    "row": 29
+  },
+  {
+    "sno": "113",
+    "company": "Worksbot",
+    "date": "01-04-2026",
+    "pkg": "3 LPA",
+    "page": 3,
+    "row": 30
+  },
+  {
+    "sno": "114",
+    "company": "Concentrix",
+    "date": "03-04-2026",
+    "pkg": "3 LPA",
+    "page": 3,
+    "row": 31
+  }
+]

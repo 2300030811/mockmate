@@ -145,18 +145,18 @@ Code (if any): ${question.code}
 
   return (
     <>
-      {!isControlled && (
+      {!isControlled && !isOpen && (
         <button
           onClick={handleOpen}
-          className="fixed bottom-20 md:bottom-6 right-6 z-40 bg-gradient-to-tr from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 text-white p-3.5 rounded-full shadow-xl shadow-orange-500/25 transition-all hover:scale-110 active:scale-95 group flex items-center justify-center border border-white/20"
+          className="fixed bottom-20 md:bottom-6 right-6 z-40 bg-[#5e6ad2] hover:bg-[#4f59b8] text-white p-3 rounded-full shadow-lg shadow-[#5e6ad2]/25 transition-all hover:scale-105 active:scale-95 group flex items-center justify-center border border-white/20 cursor-pointer"
           title="Ask Bob"
           aria-label="Ask Bob AI Assistant"
         >
           <div className="relative">
-            <Bot className="w-6 h-6 text-white" />
-            <Sparkles className="w-3 h-3 text-yellow-200 absolute -top-1 -right-1 animate-pulse" />
+            <Bot className="w-5 h-5 text-white" />
+            <span className="w-2 h-2 rounded-full bg-emerald-400 border border-[#5e6ad2] absolute -top-0.5 -right-0.5 animate-pulse" />
           </div>
-          <span className="absolute right-full mr-2 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs font-bold px-2.5 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-lg border border-white/10">
+          <span className="absolute right-full mr-2.5 top-1/2 -translate-y-1/2 bg-zinc-900 dark:bg-[#14141e] text-white dark:text-[#ebebef] border border-zinc-800 dark:border-[#2a2a3a] text-xs font-mono font-medium px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-subtle">
             Ask Bob AI
           </span>
         </button>
@@ -177,15 +177,15 @@ Code (if any): ${question.code}
               drag={!isMobile}
               dragMomentum={false}
               dragConstraints={{ left: 0, right: 0, top: -100, bottom: 0 }}
-              initial={{ opacity: 0, y: 100, scale: 0.95 }}
+              initial={{ opacity: 0, y: 30, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 100, scale: 0.95 }}
-              className={`fixed bottom-4 left-4 right-4 md:left-auto md:bottom-24 md:right-8 z-[101] 
-                md:w-[450px] 
-                h-[60vh] md:h-[600px] 
-                rounded-3xl 
+              exit={{ opacity: 0, y: 30, scale: 0.98 }}
+              className={`fixed bottom-4 left-4 right-4 md:left-auto md:bottom-6 md:right-6 z-[101] 
+                md:w-[420px] 
+                h-[540px] md:h-[580px] 
+                rounded-2xl 
                 shadow-2xl flex flex-col overflow-hidden border pointer-events-auto 
-                bg-white dark:bg-gray-900 border-white dark:border-gray-700
+                bg-white dark:bg-[#14141e] border-zinc-200 dark:border-[#1e1e2a]
               `}
             >
               <BobHeader

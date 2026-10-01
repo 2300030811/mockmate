@@ -178,22 +178,7 @@ export class QuizGenerator {
       }
     }
 
-    // Capture the last error details more robustly
-    let lastMsg = "Unknown error";
-    if (lastError) {
-        if (lastError instanceof Error) {
-            lastMsg = lastError.message;
-        } else if (typeof lastError === 'object') {
-            try {
-                lastMsg = JSON.stringify(lastError);
-            } catch {
-                lastMsg = String(lastError);
-            }
-        } else {
-            lastMsg = String(lastError);
-        }
-    }
-
+    const lastMsg = lastError instanceof Error ? lastError.message : String(lastError ?? "Unknown error");
     logger.error("❌ [QuizGenerator] Final Failure. Last Error:", lastError);
     throw new Error(`All providers failed. Last error: ${lastMsg}`);
   }

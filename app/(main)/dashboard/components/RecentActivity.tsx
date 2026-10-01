@@ -60,16 +60,24 @@ export const RecentActivity = memo(function RecentActivity({ activity }: { activ
 
   return (
     <m.div 
-      initial={prefersReduced ? false : { opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={prefersReduced ? { duration: 0 } : { delay: 0.2 }}
-      className="space-y-6"
+      initial={prefersReduced ? false : { opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={prefersReduced ? { duration: 0 } : { delay: 0.1 }}
+      className="space-y-4"
     >
-       <h2 className="text-xl font-bold flex items-center gap-2">
-          <Calendar className="text-blue-500" /> Recent Activity
-       </h2>
+       <div className="flex items-center justify-between border-b border-zinc-200 dark:border-[#1e1e2a] pb-2 mb-3">
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#5e6ad2]" />
+            <h2 className="text-xs font-mono font-semibold uppercase tracking-[0.08em] text-zinc-500 dark:text-[#8b8b9e]">
+              Recent Activity Log
+            </h2>
+          </div>
+          <span className="text-[11px] font-mono text-zinc-400 dark:text-[#5a5a6e]">
+            {items.length} records
+          </span>
+       </div>
        
-       <div className="space-y-5" role="list" aria-label="Recent quiz activity">
+       <div className="rounded-xl border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-4 sm:p-5 shadow-subtle space-y-4" role="list" aria-label="Recent quiz activity">
           {items.length > 0 ? (
              <>
                {groupOrder.map(label => {
@@ -77,48 +85,52 @@ export const RecentActivity = memo(function RecentActivity({ activity }: { activ
                  if (!group || group.length === 0) return null;
                  return (
                    <div key={label} className="space-y-2">
-                     <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500 px-1">{label}</h3>
+                     <h3 className="text-[10px] font-mono font-semibold uppercase tracking-wider text-zinc-400 dark:text-[#5a5a6e] px-1">{label}</h3>
                      {group.map((act) => {
                        const isArena = act.isArena;
                        const status = act.winStatus;
                        const displayCategory = act.category.replace(/^arena:(win|loss|tie):/, '').replace(/^arena_/, '').toUpperCase();
-                       const name = isArena ? `Arena: ${displayCategory}` : `${act.category} Quiz`;
+                       const name = isArena ? `Arena: ${displayCategory}` : `${act.category} Simulation`;
 
                        return (
                          <div
                            key={act.id ?? `${act.category}-${act.completed_at}`}
                            role="listitem"
                            aria-label={`${name} - Score: ${act.score}, ${calculateActivityXP(act.score, act.total_questions, isArena ?? false, status ?? null)} XP`}
-                           className={`bg-white/70 dark:bg-gray-900/50 border ${isArena ? (status === 'win' ? 'border-emerald-500/30' : 'border-red-500/30') : 'border-gray-200 dark:border-gray-800'} hover:border-blue-500/30 p-4 rounded-2xl flex items-center justify-between transition-colors group shadow-sm dark:shadow-none`}
+                           className={`rounded-lg border ${
+                             isArena 
+                               ? (status === 'win' ? 'border-emerald-500/30' : 'border-rose-500/30') 
+                               : 'border-zinc-200/80 dark:border-[#1a1a26]'
+                           } bg-zinc-50/60 dark:bg-[#101018] hover:border-zinc-300 dark:hover:border-[#28283c] p-3.5 flex items-center justify-between transition-colors`}
                          >
-                           <div className="flex items-center gap-4">
-                             <div className={`w-10 h-10 rounded-full flex items-center justify-center border font-bold transition-all ${
+                           <div className="flex items-center gap-3.5 min-w-0">
+                             <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-mono text-xs font-bold shrink-0 border ${
                                isArena
-                                 ? (status === 'win' ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-500' : 'bg-red-500/10 border-red-500/50 text-red-500')
-                                 : 'bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white group-hover:border-blue-500/50'
+                                 ? (status === 'win' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' : 'bg-rose-500/10 border-rose-500/30 text-rose-500')
+                                 : 'bg-white dark:bg-[#161622] border-zinc-200 dark:border-[#20202e] text-zinc-800 dark:text-[#ebebef]'
                              }`}>
                                {act.score}
                              </div>
-                             <div>
-                               <p className="font-bold text-gray-900 dark:text-white capitalize flex items-center gap-2">
-                                 {name}
+                             <div className="min-w-0">
+                               <p className="text-sm font-semibold text-zinc-900 dark:text-[#ebebef] capitalize flex items-center gap-2 truncate">
+                                 <span className="truncate">{name}</span>
                                  {isArena && status && (
-                                   <span className={`text-[8px] px-1.5 py-0.5 rounded-md font-black uppercase ${
-                                     status === 'win' ? 'bg-emerald-500/20 text-emerald-400' :
-                                     status === 'loss' ? 'bg-red-500/20 text-red-400' : 'bg-gray-500/20 text-gray-400'
+                                   <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-bold uppercase shrink-0 ${
+                                     status === 'win' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' :
+                                     status === 'loss' ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
                                    }`}>
                                      {status}
                                    </span>
                                  )}
                                </p>
-                               <p className="text-xs text-gray-500"><ClientDate date={act.completed_at} /></p>
+                               <p className="text-xs font-mono text-zinc-400 dark:text-[#5a5a6e]"><ClientDate date={act.completed_at} /></p>
                              </div>
                            </div>
-                           <div className="text-right">
-                             <p className={`font-bold text-sm ${isArena && status === 'win' ? 'text-blue-400' : 'text-emerald-400'}`}>
+                           <div className="text-right shrink-0 pl-3">
+                             <p className="font-mono font-bold text-xs text-emerald-600 dark:text-emerald-400">
                                +{calculateActivityXP(act.score, act.total_questions, isArena ?? false, status ?? null)} XP
                              </p>
-                             <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">
+                             <p className="text-[10px] font-mono text-zinc-400 dark:text-[#5a5a6e] uppercase">
                                {isArena ? 'Combat Log' : 'Completed'}
                              </p>
                            </div>
@@ -133,21 +145,21 @@ export const RecentActivity = memo(function RecentActivity({ activity }: { activ
                  <button
                    onClick={loadMore}
                    disabled={loadingMore}
-                   className="w-full py-3 text-sm font-bold text-blue-500 dark:text-blue-400 hover:text-blue-400 dark:hover:text-blue-300 bg-gray-100/50 dark:bg-gray-900/30 hover:bg-gray-200/50 dark:hover:bg-gray-900/50 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 rounded-xl transition-all flex items-center justify-center gap-2"
+                   className="w-full py-2.5 text-xs font-mono font-semibold text-zinc-600 dark:text-[#8b8b9e] hover:text-zinc-900 dark:hover:text-white bg-zinc-50 dark:bg-[#14141e] hover:bg-zinc-100 dark:hover:bg-[#1a1a26] border border-zinc-200 dark:border-[#1e1e2a] rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer mt-2"
                    aria-label="Load more activity items"
                  >
                    {loadingMore ? (
-                     <><Loader2 className="w-4 h-4 animate-spin" /> Loading...</>
+                     <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading...</>
                    ) : (
-                     <><ChevronDown className="w-4 h-4" /> Load More</>
+                     <><ChevronDown className="w-3.5 h-3.5" /> Load More Activity</>
                    )}
                  </button>
                )}
              </>
           ) : (
-             <div className="bg-gray-100/50 dark:bg-gray-900/30 border border-gray-200 dark:border-gray-800 border-dashed p-8 rounded-2xl text-center text-gray-500">
-                <TrendingUp className="mx-auto mb-2 opacity-50" />
-                <p>No recent activity found. Start a quiz!</p>
+             <div className="border border-dashed border-zinc-200 dark:border-[#1e1e2a] p-8 rounded-lg text-center text-zinc-400 dark:text-[#5a5a6e]">
+                <TrendingUp className="mx-auto mb-2 opacity-40 w-5 h-5" />
+                <p className="text-xs font-mono">No recent activity found. Start a quiz!</p>
              </div>
           )}
        </div>

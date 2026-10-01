@@ -253,5 +253,26 @@ export const careerOpsRepository = {
       .eq("id", id);
     return throwIfError(res);
   },
+
+  async markStaleCompanyPostingsExpired(
+    db: SupabaseClient,
+    companies: string[],
+    scannedBeforeIso: string
+  ) {
+    if (companies.length === 0) return [];
+    const res = await db
+      .from("career_ops_job_postings")
+      .update({
+        posting_status: "expired",
+        last_liveness_result: "expired",
+        closed_at: new Date().toISOString(),
+        last_liveness_checked_at: new Date().toISOString(),
+      })
+      .in("company", companies)
+      .eq("posting_status", "active")
+      .lt("last_seen_at", scannedBeforeIso);
+    return throwIfError(res);
+  },
 };
+
 

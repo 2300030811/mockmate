@@ -1,10 +1,32 @@
 "use client";
 
+import { useState } from "react";
 import { m } from "framer-motion";
-import { Flame, Volume2, VolumeX, AlertCircle, Trophy, Target, Hammer, Check, Copy, RotateCcw, ArrowRight, Trash2, Sparkles } from "lucide-react";
+import {
+  Flame,
+  AlertCircle,
+  Trophy,
+  Target,
+  Hammer,
+  Check,
+  Copy,
+  RotateCcw,
+  ArrowRight,
+  Trash2,
+  Sparkles,
+  Bookmark,
+  CheckCircle2,
+} from "lucide-react";
 import Link from "next/link";
 import { ScoreCard } from "./ScoreCard";
 import { RoastData } from "../types";
+
+const DIMENSION_META: Record<string, { label: string; desc: string }> = {
+  clarity: { label: "Clarity", desc: "ATS readability & brevity" },
+  impact: { label: "Impact", desc: "Metrics & quantifiable outcomes" },
+  technical: { label: "Technical", desc: "Stack depth & architecture signal" },
+  layout: { label: "Layout", desc: "Hierarchy, density & spacing" },
+};
 
 interface RoastResultsProps {
   roastData: RoastData;
@@ -35,421 +57,563 @@ export function RoastResults({
   onClearHistory,
   onTrack,
   isTracking,
-  trackerFeedback
+  trackerFeedback,
 }: RoastResultsProps) {
+  const [copiedSkill, setCopiedSkill] = useState<string | null>(null);
+
+  const handleCopySkill = (skill: string) => {
+    navigator.clipboard.writeText(skill);
+    setCopiedSkill(skill);
+    setTimeout(() => setCopiedSkill(null), 1500);
+  };
+
   const flawCount = roastData.criticalFlaws.length;
   const winCount = roastData.winningPoints.length;
+  const totalSuggestions = roastData.suggestions.length;
+  const completedCount = completedSuggestions.length;
+  const roadmapProgress =
+    totalSuggestions > 0 ? Math.round((completedCount / totalSuggestions) * 100) : 0;
 
   return (
     <m.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="space-y-8 md:space-y-10 pb-16 md:pb-20"
+      className="space-y-6 text-left pb-16"
     >
-      {/* Top Score & Verdict Card */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 items-stretch">
-         <m.div 
-           initial={{ opacity: 0, x: -20 }}
-           animate={{ opacity: 1, x: 0 }}
-           className="lg:col-span-7 bg-gray-900/80 border border-gray-800 rounded-[2.25rem] md:rounded-[3rem] p-6 sm:p-8 lg:p-9 backdrop-blur-3xl relative overflow-hidden group hover:border-orange-500/20 transition-colors flex flex-col justify-between"
-         >
-            <div className="absolute top-0 right-0 p-6 sm:p-10 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
-              <Flame size={200} />
-            </div>
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-5 sm:mb-6">
-                <h2 className="text-xs font-black uppercase tracking-[0.2em] text-orange-500 flex items-center gap-2">
-                  <Flame size={14} className="animate-pulse" /> The Brutal Verdict ({selectedTone})
+      {/* ── 1. TOP SCORE & VERDICT SUMMARY (Unified 8 / 4 Column Grid) ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-stretch">
+        {/* The Diagnostic Verdict Card (8 Cols) */}
+        <m.div
+          initial={{ opacity: 0, x: -15 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="lg:col-span-8 rounded-lg border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-5 sm:p-6 shadow-surface flex flex-col justify-between relative overflow-hidden"
+        >
+          {/* Subtle Decorative Watermark Glyph */}
+          <div
+            aria-hidden="true"
+            className="absolute -top-3 right-3 text-7xl font-serif text-zinc-100 dark:text-[#181824] select-none pointer-events-none -z-0 opacity-80"
+          >
+            &rdquo;
+          </div>
+
+          <div className="relative z-10">
+            <div className="flex items-center justify-between gap-2 border-b border-zinc-200/80 dark:border-[#1a1a26] pb-3 mb-4">
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+                <h2 className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-900 dark:text-[#ebebef] flex items-center gap-1.5">
+                  <Flame size={13} className="text-orange-500" />
+                  <span>The Diagnostic Verdict</span>
+                  <span className="text-[10px] font-mono font-medium text-orange-600 dark:text-orange-400 bg-orange-500/10 px-1.5 py-0.2 rounded border border-orange-500/20">
+                    {selectedTone}
+                  </span>
                 </h2>
-                <button 
-                  onClick={onSpeak}
-                  aria-label={isSpeaking ? "Stop speaking" : "Listen to roast"}
-                  className={`p-2 rounded-xl transition-all ${isSpeaking ? 'bg-orange-500 text-white animate-pulse' : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'}`}
-                  title={isSpeaking ? "Stop Speaking" : "Listen to Roast"}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={onCopy}
+                  className="px-2.5 py-1 rounded text-[11px] font-mono flex items-center gap-1.5 transition-all border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50 dark:bg-[#101017] text-zinc-600 dark:text-[#8b8b9e] hover:text-zinc-900 dark:hover:text-[#ebebef] hover:border-zinc-300 dark:hover:border-[#3a3a52] active:scale-95"
+                  title="Copy verdict text"
                 >
-                  {isSpeaking ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                  {copied ? (
+                    <Check size={12} className="text-emerald-500" />
+                  ) : (
+                    <Copy size={12} />
+                  )}
+                  <span>{copied ? "Copied" : "Copy"}</span>
                 </button>
               </div>
-              <div className="text-2xl sm:text-3xl md:text-4xl font-black italic text-white leading-[1.3] drop-shadow-sm mb-8 md:mb-10">
-                &quot;{roastData.brutalRoast}&quot;
-              </div>
             </div>
 
-            {/* Skill Breakdown Chart */}
-            <div className="relative z-10 grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-5 pt-6 border-t border-white/5">
-              {Object.entries(roastData.skillBreakdown || {}).map(([skill, score]: [string, number], idx) => (
-                <div key={skill} className="space-y-2">
-                  <div className="flex justify-between items-end">
-                    <span className="text-[10px] font-black uppercase text-gray-500 tracking-wider whitespace-nowrap">{skill}</span>
-                    <span className="text-sm font-black text-white">{score}%</span>
-                  </div>
+            <blockquote className="text-sm sm:text-base md:text-lg font-medium italic text-zinc-900 dark:text-[#ebebef] leading-relaxed mb-6">
+              &quot;{roastData.brutalRoast}&quot;
+            </blockquote>
+          </div>
+
+          {/* Skill Breakdown Strip */}
+          <div className="pt-4 border-t border-zinc-100 dark:border-[#1a1a26] relative z-10">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-mono text-zinc-400 dark:text-[#6e6e84] uppercase tracking-wider">
+                Heuristic Dimension Analysis
+              </span>
+              <span className="text-[10px] font-mono text-zinc-400 dark:text-[#6e6e84]">
+                Target: &gt;70%
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              {Object.entries(roastData.skillBreakdown || {}).map(([skill, score]: [string, number], idx) => {
+                const statusTag =
+                  score >= 70 ? "Strong" : score >= 50 ? "Moderate" : "Deficit";
+                const statusColor =
+                  score >= 70
+                    ? "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+                    : score >= 50
+                    ? "text-[#5e6ad2] bg-[#5e6ad2]/10 border-[#5e6ad2]/20"
+                    : "text-rose-500 bg-rose-500/10 border-rose-500/20";
+                const meta = DIMENSION_META[skill.toLowerCase()];
+
+                return (
                   <div
-                    className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden"
-                    role="progressbar"
-                    aria-valuenow={score}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-label={`${skill}: ${score}%`}
+                    key={skill}
+                    title={meta ? `${meta.label}: ${meta.desc}` : `${skill} rubric score`}
+                    className="p-2.5 rounded bg-zinc-50 dark:bg-[#0f0f16] border border-zinc-200/60 dark:border-[#1a1a26] space-y-1.5 hover:border-zinc-300 dark:hover:border-[#3a3a52] hover:-translate-y-0.5 transition-all duration-150 cursor-help"
                   >
-                    <m.div 
-                      initial={{ width: 0 }}
-                      animate={{ width: `${score}%` }}
-                      transition={{ delay: 0.8 + (idx * 0.1) }}
-                      className="h-full bg-gradient-to-r from-orange-500 to-red-500 rounded-full"
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-         </m.div>
+                    <div className="flex justify-between items-baseline text-[10px] font-mono">
+                      <span className="text-zinc-500 dark:text-[#8b8b9e] uppercase truncate">
+                        {skill}
+                      </span>
+                      <span className="font-semibold text-zinc-900 dark:text-[#ebebef]">
+                        {score}%
+                      </span>
+                    </div>
 
-         <ScoreCard 
-           score={roastData.professionalScore} 
-           isSpeaking={isSpeaking} 
-           onSpeak={onSpeak} 
-         />
+                    <div
+                      className="h-1.5 w-full bg-zinc-200/80 dark:bg-[#1a1a26] rounded-full overflow-hidden"
+                      role="progressbar"
+                      aria-valuenow={score}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                    >
+                      <m.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${score}%` }}
+                        transition={{ delay: 0.3 + idx * 0.1, duration: 0.8 }}
+                        className={`h-full rounded-full ${
+                          score >= 70
+                            ? "bg-emerald-500"
+                            : score >= 50
+                            ? "bg-[#5e6ad2]"
+                            : "bg-rose-500"
+                        }`}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between text-[9px] font-mono">
+                      <span className={`px-1.5 py-0.2 rounded border ${statusColor} font-semibold uppercase`}>
+                        {statusTag}
+                      </span>
+                      {meta && (
+                        <span className="text-[8.5px] text-zinc-400 dark:text-[#5a5a6e] hidden sm:inline truncate ml-1">
+                          {meta.desc.split("&")[0]}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </m.div>
+
+        {/* ScoreCard (4 Cols) */}
+        <ScoreCard
+          score={roastData.professionalScore}
+          isSpeaking={isSpeaking}
+          onSpeak={onSpeak}
+        />
       </div>
 
-      {/* Insights + Action Layout */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 md:gap-6 lg:gap-7 items-start">
-        <div className="xl:col-span-8 space-y-4 md:space-y-6 lg:space-y-7">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 items-start">
-            {/* Flaws Card */}
+      {/* ── 2. DEEP AUDIT MATRIX & ATS COMPATIBILITY (Synchronized 8 / 4 Column Grid) ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
+        {/* Left Column (8 Cols): Flaws, Wins & Interactive Roadmap */}
+        <div className="lg:col-span-8 space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 items-start">
+            {/* Critical Flaws Card */}
             <m.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="bg-gray-900/50 border border-red-500/10 rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 hover:border-red-500/30 transition-all h-fit"
+              className="rounded-lg border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-5 shadow-surface hover:border-zinc-300 dark:hover:border-[#3a3a52] transition-colors"
             >
-              <h3 className="text-lg md:text-xl font-bold text-red-400 mb-5 md:mb-6 flex items-center gap-3 justify-between">
-                <span className="flex items-center gap-3">
-                  <AlertCircle size={22} className="text-red-500" /> Critical Flaws
+              <div className="flex items-center justify-between gap-2 border-b border-zinc-200/80 dark:border-[#1a1a26] pb-3 mb-3.5">
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-[4px] bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500">
+                    <AlertCircle size={12} />
+                  </div>
+                  <h3 className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-900 dark:text-[#ebebef]">
+                    Critical Flaws
+                  </h3>
+                </div>
+                <span className="text-[9.5px] font-mono font-medium px-1.5 py-0.2 rounded bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                  {flawCount} flagged
                 </span>
-                <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg border border-red-500/25 bg-red-500/10 text-red-300">
-                  {flawCount}
-                </span>
-              </h3>
-              <ul className="space-y-3 md:space-y-4">
+              </div>
+
+              <ul className="space-y-2.5">
                 {roastData.criticalFlaws.length > 0 ? (
                   roastData.criticalFlaws.map((flaw: string, i: number) => (
                     <li
                       key={i}
-                      className="group/item rounded-2xl border border-red-500/15 bg-red-500/[0.03] hover:bg-red-500/[0.08] transition-all px-4 py-3"
+                      className="group p-2.5 rounded-[5px] bg-zinc-50 dark:bg-[#0f0f16] border border-zinc-200/70 dark:border-[#1a1a26] text-xs text-zinc-700 dark:text-[#c0c0d4] leading-relaxed flex items-start gap-2.5 hover:border-zinc-300 dark:hover:border-[#3a3a52] hover:bg-zinc-100/60 dark:hover:bg-[#13131f] transition-all duration-150"
                     >
-                      <div className="flex items-start gap-3.5">
-                        <span className="shrink-0 inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-red-500/30 bg-red-500/15 text-red-300 text-[10px] font-black tracking-wider">
-                          F{i + 1}
-                        </span>
-                        <p className="text-sm md:text-[15px] text-gray-300 leading-relaxed font-medium">{flaw}</p>
-                      </div>
+                      <span className="text-[10px] font-mono font-bold text-rose-500 shrink-0 mt-0.5 group-hover:scale-110 transition-transform">
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+                      <span>{flaw}</span>
                     </li>
                   ))
                 ) : (
-                  <li className="rounded-2xl border border-emerald-500/25 bg-emerald-500/10 text-emerald-300 text-sm px-4 py-3.5 flex items-center gap-2">
-                    <Check size={15} className="shrink-0" /> No critical flaws detected. This resume is cleaner than average.
+                  <li className="p-3 rounded-[5px] bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+                    <Check size={14} className="shrink-0" />
+                    <span>No critical formatting or content flaws detected.</span>
                   </li>
                 )}
               </ul>
             </m.div>
 
-            {/* Wins Card */}
+            {/* Winning Points Card */}
             <m.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="bg-gray-900/50 border border-emerald-500/10 rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 hover:border-emerald-500/30 transition-all h-fit"
+              className="rounded-lg border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-5 shadow-surface hover:border-zinc-300 dark:hover:border-[#3a3a52] transition-colors"
             >
-              <h3 className="text-lg md:text-xl font-bold text-emerald-400 mb-5 md:mb-6 flex items-center gap-3 justify-between">
-                <span className="flex items-center gap-3">
-                  <Trophy size={22} className="text-emerald-500" /> Winning Points
+              <div className="flex items-center justify-between gap-2 border-b border-zinc-200/80 dark:border-[#1a1a26] pb-3 mb-3.5">
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-[4px] bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
+                    <Trophy size={12} />
+                  </div>
+                  <h3 className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-900 dark:text-[#ebebef]">
+                    Winning Points
+                  </h3>
+                </div>
+                <span className="text-[9.5px] font-mono font-medium px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                  {winCount} strengths
                 </span>
-                <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg border border-emerald-500/25 bg-emerald-500/10 text-emerald-300">
-                  {winCount}
-                </span>
-              </h3>
-              <ul className="space-y-3 md:space-y-4">
+              </div>
+
+              <ul className="space-y-2.5">
                 {roastData.winningPoints.length > 0 ? (
                   roastData.winningPoints.map((win: string, i: number) => (
                     <li
                       key={i}
-                      className="group/item rounded-2xl border border-emerald-500/15 bg-emerald-500/[0.03] hover:bg-emerald-500/[0.08] transition-all px-4 py-3"
+                      className="group p-2.5 rounded-[5px] bg-zinc-50 dark:bg-[#0f0f16] border border-zinc-200/70 dark:border-[#1a1a26] text-xs text-zinc-700 dark:text-[#c0c0d4] leading-relaxed flex items-start gap-2.5 hover:border-zinc-300 dark:hover:border-[#3a3a52] hover:bg-zinc-100/60 dark:hover:bg-[#13131f] transition-all duration-150"
                     >
-                      <div className="flex items-start gap-3.5">
-                        <span className="shrink-0 inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/15 text-emerald-300 text-[10px] font-black tracking-wider">
-                          W{i + 1}
-                        </span>
-                        <p className="text-sm md:text-[15px] text-gray-300 leading-relaxed font-medium">{win}</p>
-                      </div>
+                      <span className="text-[10px] font-mono font-bold text-emerald-500 shrink-0 mt-0.5 group-hover:scale-110 transition-transform">
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+                      <span>{win}</span>
                     </li>
                   ))
                 ) : (
-                  <li className="rounded-2xl border border-blue-500/25 bg-blue-500/10 text-blue-300 text-sm px-4 py-3.5 flex items-center gap-2">
-                    <Sparkles size={15} className="shrink-0" /> No standout strengths found yet. Use the roadmap below to create stronger signals.
+                  <li className="p-3 rounded-[5px] bg-blue-500/10 border border-blue-500/20 text-xs text-blue-600 dark:text-blue-400 flex items-center gap-2">
+                    <Sparkles size={14} className="shrink-0" />
+                    <span>Focus on the action items below to establish competitive strengths.</span>
                   </li>
                 )}
               </ul>
             </m.div>
           </div>
 
-          {/* Suggestions */}
+          {/* Actionable Suggestions / Roadmap */}
           <m.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.45 }}
-            className="bg-gray-900/80 border border-white/5 rounded-[2.25rem] md:rounded-[3rem] p-6 sm:p-8 md:p-10 backdrop-blur-3xl"
+            transition={{ delay: 0.4 }}
+            className="rounded-lg border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-5 sm:p-6 shadow-surface"
           >
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6 mb-8 md:mb-10">
-              <h3 className="text-xl md:text-2xl font-black text-white flex items-center gap-4">
-                <div className="w-12 h-12 bg-indigo-500 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                  <Hammer size={24} className="text-white" />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-200/80 dark:border-[#1a1a26] pb-3 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-[5px] bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 flex items-center justify-center text-[#5e6ad2]">
+                  <Hammer size={13} />
                 </div>
-                Roadmap to Redemption
-              </h3>
-              <div className="flex flex-wrap items-center gap-4">
-                <div className="text-xs font-bold text-gray-500 uppercase">
-                  {completedSuggestions.length} / {roastData.suggestions.length} Fixed
+                <div>
+                  <h3 className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-900 dark:text-[#ebebef]">
+                    Actionable Roadmap to Redemption
+                  </h3>
+                  <p className="text-[11px] text-zinc-500 dark:text-[#8b8b9e]">
+                    Click items to track your revisions
+                  </p>
                 </div>
-                <button
-                  onClick={onCopy}
-                  aria-label={copied ? "Copied to clipboard" : "Copy roast to clipboard"}
-                  className="flex items-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all font-bold text-sm"
-                >
-                  {copied ? <Check size={16} className="text-emerald-400" /> : <Copy size={16} />}
-                  {copied ? "COPIED!" : "COPY ROAST"}
-                </button>
+              </div>
+
+              {/* Live Roadmap Completion Progress */}
+              <div className="flex items-center gap-2.5 self-start sm:self-auto">
+                <div className="w-24 h-1.5 bg-zinc-100 dark:bg-[#0f0f16] rounded-full overflow-hidden border border-zinc-200 dark:border-[#1e1e2a]">
+                  <div
+                    className="h-full bg-emerald-500 rounded-full transition-all duration-300"
+                    style={{ width: `${roadmapProgress}%` }}
+                  />
+                </div>
+                <div className="text-[10px] font-mono text-zinc-500 dark:text-[#8b8b9e] px-2 py-0.5 rounded bg-zinc-100 dark:bg-[#101017] border border-zinc-200 dark:border-[#1e1e2a]">
+                  {completedCount} / {totalSuggestions} Fixed ({roadmapProgress}%)
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-              {roastData.suggestions.length > 0 ? (
-                roastData.suggestions.map((s: string, i: number) => {
-                  const isDone = completedSuggestions.includes(i);
-                  return (
-                    <button
-                      key={i}
-                      onClick={() => onToggleSuggestion(i)}
-                      role="checkbox"
-                      aria-checked={isDone}
-                      className={`flex gap-5 p-6 rounded-3xl border transition-all cursor-pointer group select-none text-left w-full ${
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+              {roastData.suggestions.map((suggestion: string, i: number) => {
+                const isDone = completedSuggestions.includes(i);
+                return (
+                  <m.button
+                    key={i}
+                    whileHover={{ scale: 1.008 }}
+                    whileTap={{ scale: 0.995 }}
+                    onClick={() => onToggleSuggestion(i)}
+                    role="checkbox"
+                    aria-checked={isDone}
+                    className={`p-3 rounded-md border text-left flex items-start gap-2.5 transition-colors cursor-pointer select-none ${
+                      isDone
+                        ? "bg-emerald-500/5 border-emerald-500/30 text-zinc-400 dark:text-[#6e6e84] line-through"
+                        : "bg-zinc-50 dark:bg-[#0f0f16] border-zinc-200/80 dark:border-[#1a1a26] hover:border-[#5e6ad2]/50 hover:bg-zinc-100/60 dark:hover:bg-[#141420] text-zinc-800 dark:text-[#ebebef]"
+                    }`}
+                  >
+                    <div
+                      className={`w-4 h-4 rounded-[4px] border flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
                         isDone
-                          ? "bg-emerald-500/10 border-emerald-500/30"
-                          : "bg-white/5 border-white/5 hover:border-indigo-500/30"
+                          ? "bg-emerald-500 border-emerald-500 text-white"
+                          : "border-zinc-300 dark:border-[#3a3a52] bg-white dark:bg-[#14141e]"
                       }`}
                     >
-                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-all ${
-                        isDone ? "bg-emerald-500 text-white" : "bg-indigo-500/10 text-indigo-400 group-hover:scale-110"
-                      }`}>
-                        {isDone ? <Check size={24} strokeWidth={3} /> : <Sparkles size={20} />}
-                      </div>
-                      <p className={`text-base leading-relaxed font-medium transition-all ${
-                        isDone ? "text-gray-400 line-through opacity-50" : "text-gray-300"
-                      }`}>{s}</p>
-                    </button>
-                  );
-                })
-              ) : (
-                <p className="text-gray-500 italic text-sm col-span-2">No suggestions generated.</p>
-              )}
+                      {isDone && <Check size={11} strokeWidth={3} />}
+                    </div>
+                    <span className="text-xs leading-relaxed">{suggestion}</span>
+                  </m.button>
+                );
+              })}
             </div>
+
+            {/* 100% Roadmap Completion Delight Banner */}
+            {roadmapProgress === 100 && totalSuggestions > 0 && (
+              <m.div
+                initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                className="mt-4 p-3.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs"
+              >
+                <div className="flex items-center gap-2.5 text-emerald-700 dark:text-emerald-400 font-medium">
+                  <CheckCircle2 size={16} className="shrink-0 text-emerald-500" />
+                  <span>All identified red flags addressed! Ready to test your updated resume score.</span>
+                </div>
+                <button
+                  onClick={onReset}
+                  className="px-3 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-[11px] font-semibold flex items-center gap-1.5 shrink-0 transition-colors shadow-sm"
+                >
+                  <span>Re-Scan Resume</span>
+                  <ArrowRight size={12} />
+                </button>
+              </m.div>
+            )}
           </m.div>
         </div>
 
-        {/* ATS Analysis */}
+        {/* Right Column (4 Cols): ATS Compatibility Sidebar */}
         <m.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="xl:col-span-4 bg-gray-900/50 border border-blue-500/10 rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 hover:border-blue-500/30 transition-all xl:sticky xl:top-24"
+          transition={{ delay: 0.35 }}
+          className="lg:col-span-4 rounded-lg border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-5 shadow-surface space-y-4 lg:sticky lg:top-20"
         >
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-bold text-blue-400 flex items-center gap-3">
-              <Target size={24} className="text-blue-500" /> ATS Survival
-            </h3>
+          <div className="flex items-center justify-between gap-2 border-b border-zinc-200/80 dark:border-[#1a1a26] pb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-[5px] bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 flex items-center justify-center text-[#5e6ad2]">
+                <Target size={13} />
+              </div>
+              <h3 className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-900 dark:text-[#ebebef]">
+                ATS Compatibility
+              </h3>
+            </div>
+
             {onTrack && (
               <button
                 onClick={onTrack}
                 disabled={isTracking}
-                className="px-3 py-1.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-2 py-1 rounded text-[10px] font-mono flex items-center gap-1.5 transition-colors border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50 dark:bg-[#101017] text-[#5e6ad2] hover:border-[#5e6ad2]/40"
               >
-                {isTracking ? "Tracking..." : "Track this role"}
-                <ArrowRight size={12} />
+                <Bookmark size={11} />
+                <span>{isTracking ? "Saving..." : "Track Role"}</span>
               </button>
             )}
           </div>
 
           {trackerFeedback && (
-            <m.div
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="mb-6 p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-blue-300 text-[10px] font-bold flex items-center gap-2"
-            >
-              <Check size={12} className="text-emerald-400" />
-              {trackerFeedback}
-            </m.div>
-          )}
-
-          {/* Disclaimer when no JD provided */}
-          {!roastData.atsAnalysis.jobDescriptionProvided && (
-            <div className="mb-6 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl text-yellow-400 text-xs flex items-start gap-2">
-              <AlertCircle size={14} className="shrink-0 mt-0.5" />
-              <span>No job description provided — ATS score is based on general best practices only. Add a job description for accurate keyword match analysis.</span>
+            <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-md text-emerald-600 dark:text-emerald-400 text-xs font-mono flex items-center gap-2">
+              <Check size={12} />
+              <span>{trackerFeedback}</span>
             </div>
           )}
 
-          <div className="space-y-6">
-            {/* ATS Score + Match Rating */}
-            <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
-              <span className="text-[10px] font-black uppercase text-gray-500 block mb-3 tracking-[0.2em]">ATS Score</span>
-              <div className="flex items-end gap-3 mb-3">
-                <span className={`text-4xl font-black tabular-nums ${
-                  roastData.atsAnalysis.atsScore >= 75 ? "text-emerald-400" :
-                  roastData.atsAnalysis.atsScore >= 45 ? "text-blue-400" : "text-red-400"
-                }`}>
+          {!roastData.atsAnalysis.jobDescriptionProvided && (
+            <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-md text-amber-700 dark:text-amber-400 text-[11px] leading-relaxed flex items-start gap-2 font-mono">
+              <AlertCircle size={13} className="shrink-0 mt-0.5" />
+              <span>No JD provided — ATS score evaluated against generalized industry heuristics.</span>
+            </div>
+          )}
+
+          {/* ATS Metric Strip with Mini Subscore Gauges */}
+          <div className="p-3.5 rounded-lg bg-zinc-50 dark:bg-[#0f0f16] border border-zinc-200/80 dark:border-[#1a1a26] space-y-3">
+            <div className="flex items-baseline justify-between">
+              <div>
+                <div className="text-[10px] font-mono text-zinc-400 dark:text-[#6e6e84] uppercase">
+                  ATS Match Score
+                </div>
+                <div className="text-3xl font-bold font-mono text-zinc-900 dark:text-[#ebebef] mt-0.5">
                   {roastData.atsAnalysis.atsScore}
-                </span>
-                <span className="text-gray-500 text-sm font-bold mb-1">/100</span>
-                <span className={`ml-auto text-xs font-black uppercase px-3 py-1 rounded-lg ${
-                  roastData.atsAnalysis.matchRating === "High" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
-                  roastData.atsAnalysis.matchRating === "Medium" ? "bg-blue-500/10 text-blue-400 border border-blue-500/20" : "bg-red-500/10 text-red-400 border border-red-500/20"
-                }`}>
-                  {roastData.atsAnalysis.matchRating}
-                </span>
+                  <span className="text-sm font-normal text-zinc-400 dark:text-[#5a5a6e]"> / 100</span>
+                </div>
               </div>
-              <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
-                <m.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${roastData.atsAnalysis.atsScore}%` }}
-                  transition={{ delay: 0.6, duration: 1 }}
-                  className={`h-full rounded-full ${
-                    roastData.atsAnalysis.atsScore >= 75 ? "bg-gradient-to-r from-emerald-500 to-emerald-400" :
-                    roastData.atsAnalysis.atsScore >= 45 ? "bg-gradient-to-r from-blue-500 to-blue-400" : "bg-gradient-to-r from-red-500 to-red-400"
-                  }`}
-                />
+              <span
+                className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded border ${
+                  roastData.atsAnalysis.matchRating === "High"
+                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                    : roastData.atsAnalysis.matchRating === "Medium"
+                    ? "bg-[#5e6ad2]/10 text-[#5e6ad2] border-[#5e6ad2]/20"
+                    : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
+                }`}
+              >
+                {roastData.atsAnalysis.matchRating} Match
+              </span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 pt-1 text-[10px] font-mono text-center">
+              <div className="p-2 rounded bg-white dark:bg-[#14141e] border border-zinc-200/60 dark:border-[#1e1e2a] space-y-1">
+                <div className="text-zinc-400 dark:text-[#5a5a6e]">FORMAT</div>
+                <div className="font-semibold text-zinc-800 dark:text-[#ebebef]">
+                  {roastData.atsAnalysis.formatScore}
+                </div>
+                <div className="w-full h-1 bg-zinc-100 dark:bg-[#0f0f16] rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-emerald-500 rounded-full"
+                    style={{ width: `${roastData.atsAnalysis.formatScore}%` }}
+                  />
+                </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 mt-4">
-                {[
-                  { label: "Format", value: roastData.atsAnalysis.formatScore },
-                  { label: "Content", value: roastData.atsAnalysis.contentScore },
-                  { label: "Keyword", value: roastData.atsAnalysis.keywordScore },
-                ].map((item) => (
-                  <div key={item.label} className="rounded-xl border border-white/10 bg-white/5 px-2.5 py-2">
-                    <p className="text-[9px] uppercase font-black tracking-wider text-gray-500 mb-1">{item.label}</p>
-                    <p className="text-sm font-black text-white mb-1">{item.value}</p>
-                    <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
-                      <m.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${item.value}%` }}
-                        transition={{ delay: 0.7, duration: 0.6 }}
-                        className="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-400"
-                      />
-                    </div>
-                  </div>
+              <div className="p-2 rounded bg-white dark:bg-[#14141e] border border-zinc-200/60 dark:border-[#1e1e2a] space-y-1">
+                <div className="text-zinc-400 dark:text-[#5a5a6e]">CONTENT</div>
+                <div className="font-semibold text-zinc-800 dark:text-[#ebebef]">
+                  {roastData.atsAnalysis.contentScore}
+                </div>
+                <div className="w-full h-1 bg-zinc-100 dark:bg-[#0f0f16] rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full ${
+                      roastData.atsAnalysis.contentScore >= 60 ? "bg-[#5e6ad2]" : "bg-rose-500"
+                    }`}
+                    style={{ width: `${roastData.atsAnalysis.contentScore}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="p-2 rounded bg-white dark:bg-[#14141e] border border-zinc-200/60 dark:border-[#1e1e2a] space-y-1">
+                <div className="text-zinc-400 dark:text-[#5a5a6e]">KEYWORD</div>
+                <div className="font-semibold text-zinc-800 dark:text-[#ebebef]">
+                  {roastData.atsAnalysis.keywordScore}
+                </div>
+                <div className="w-full h-1 bg-zinc-100 dark:bg-[#0f0f16] rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full ${
+                      roastData.atsAnalysis.keywordScore >= 60 ? "bg-[#5e6ad2]" : "bg-amber-500"
+                    }`}
+                    style={{ width: `${roastData.atsAnalysis.keywordScore}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Keywords Present */}
+          {roastData.atsAnalysis.presentKeywords?.length > 0 && (
+            <div className="space-y-1.5">
+              <div className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 dark:text-[#6e6e84]">
+                Detected Keywords
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {roastData.atsAnalysis.presentKeywords.map((tag: string, i: number) => (
+                  <span
+                    key={i}
+                    className="px-1.5 py-0.5 rounded text-[9.5px] font-mono bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                  >
+                    {tag}
+                  </span>
                 ))}
               </div>
             </div>
+          )}
 
-            {/* Present Keywords */}
-            {roastData.atsAnalysis.presentKeywords?.length > 0 && (
-              <div className="space-y-3">
-                <span className="text-[10px] font-black uppercase text-gray-400 block tracking-[0.2em]">Keywords Found</span>
-                <div className="flex flex-wrap gap-2">
-                  {roastData.atsAnalysis.presentKeywords.map((tag: string, i: number) => (
-                    <span key={i} className="px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-[11px] font-bold rounded-xl">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
+          {/* Missing Hard Skills */}
+          {roastData.atsAnalysis.missingHardSkills?.length > 0 && (
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-rose-500/80">
+                <span>Missing Hard Skills</span>
+                <span className="text-[9px] text-zinc-400 dark:text-[#5a5a6e] lowercase font-normal">
+                  (click to copy)
+                </span>
               </div>
-            )}
+              <div className="flex flex-wrap gap-1">
+                {roastData.atsAnalysis.missingHardSkills.map((tag: string, i: number) => {
+                  const isCopied = copiedSkill === tag;
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => handleCopySkill(tag)}
+                      title={`Click to copy "${tag}"`}
+                      className={`px-2 py-0.5 rounded text-[9.5px] font-mono border transition-all cursor-pointer flex items-center gap-1 group ${
+                        isCopied
+                          ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/40 scale-105 shadow-sm"
+                          : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 hover:border-rose-500/40 hover:bg-rose-500/15 active:scale-95"
+                      }`}
+                    >
+                      <span>{isCopied ? "✓ Copied" : tag}</span>
+                      {!isCopied && (
+                        <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[8px] text-rose-400">
+                          +
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
-            {/* Missing Hard Skills */}
-            {roastData.atsAnalysis.missingHardSkills?.length > 0 && (
-              <div className="space-y-3">
-                <span className="text-[10px] font-black uppercase text-gray-400 block tracking-[0.2em]">Hard Skills Missing</span>
-                <div className="flex flex-wrap gap-2">
-                  {roastData.atsAnalysis.missingHardSkills.map((tag: string, i: number) => (
-                    <span key={i} className="px-3 py-1.5 bg-red-500/10 border border-red-500/20 text-red-300 text-[11px] font-bold rounded-xl">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
+          {/* ATS Tips */}
+          {roastData.atsAnalysis.atsTips?.length > 0 && (
+            <div className="pt-2 border-t border-zinc-100 dark:border-[#1a1a26] space-y-1.5">
+              <div className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 dark:text-[#6e6e84]">
+                ATS Parsing Recommendations
               </div>
-            )}
-
-            {/* Missing Soft Skills */}
-            {roastData.atsAnalysis.missingSoftSkills?.length > 0 && (
-              <div className="space-y-3">
-                <span className="text-[10px] font-black uppercase text-gray-400 block tracking-[0.2em]">Soft Skills Missing</span>
-                <div className="flex flex-wrap gap-2">
-                  {roastData.atsAnalysis.missingSoftSkills.map((tag: string, i: number) => (
-                    <span key={i} className="px-3 py-1.5 bg-orange-500/10 border border-orange-500/20 text-orange-300 text-[11px] font-bold rounded-xl">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Content & Structure Issues */}
-            {roastData.atsAnalysis.contentIssues?.length > 0 && (
-              <div className="pt-4 border-t border-white/5">
-                <span className="text-[10px] font-black uppercase text-gray-500 block mb-3 tracking-[0.2em]">Content & Structure Issues</span>
-                <ul className="space-y-2">
-                  {roastData.atsAnalysis.contentIssues.map((issue: string, i: number) => (
-                    <li key={i} className="text-xs text-gray-400 leading-relaxed flex gap-2">
-                      <span className="text-blue-500 shrink-0">•</span>
-                      {issue}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* ATS Tips */}
-            {roastData.atsAnalysis.atsTips?.length > 0 && (
-              <div className="pt-4 border-t border-white/5">
-                <span className="text-[10px] font-black uppercase text-gray-500 block mb-3 tracking-[0.2em]">ATS Improvement Tips</span>
-                <ul className="space-y-2">
-                  {roastData.atsAnalysis.atsTips.map((tip: string, i: number) => (
-                    <li key={i} className="text-xs text-blue-300 leading-relaxed flex gap-2">
-                      <span className="text-blue-500 shrink-0">{i + 1}.</span>
-                      {tip}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
+              <ul className="space-y-1.5 text-xs text-zinc-600 dark:text-[#a0a0b8] leading-relaxed">
+                {roastData.atsAnalysis.atsTips.map((tip: string, i: number) => (
+                  <li key={i} className="flex gap-2">
+                    <span className="text-[#5e6ad2] font-mono text-[10px] shrink-0">•</span>
+                    <span>{tip}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </m.div>
       </div>
 
-      {/* Footer Actions */}
-      <m.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.7 }}
-        className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-6 pt-6 md:pt-8"
-      >
-         <button 
-           onClick={onReset}
-           className="w-full md:w-auto px-12 py-5 bg-gray-900 border border-gray-800 hover:border-white/20 text-white rounded-[2rem] font-black text-sm flex items-center justify-center gap-3 transition-all hover:scale-105"
-         >
-           <RotateCcw size={20} /> ROAST ANOTHER
-         </button>
-         <Link 
-           href="/arena"
-           className="w-full md:w-auto px-12 py-5 bg-white text-black hover:bg-gray-200 rounded-[2rem] font-black text-sm flex items-center justify-center gap-3 transition-all hover:scale-105 shadow-xl shadow-white/10"
-         >
-           GO TO INTERVIEW ARENA <ArrowRight size={20} />
-         </Link>
-         <button 
-           onClick={onClearHistory}
-           className="w-full md:w-auto px-8 py-5 text-gray-500 hover:text-red-500 rounded-[2rem] font-black text-[10px] flex items-center justify-center gap-3 transition-all uppercase tracking-widest"
-         >
-           <Trash2 size={16} /> Clear History
-         </button>
-      </m.div>
+      {/* ── FOOTER ACTIONS TOOLBAR ── */}
+      <div className="pt-6 border-t border-zinc-200 dark:border-[#1e1e2a] flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onReset}
+            className="px-4 py-2 rounded-md font-medium text-xs bg-orange-600 hover:bg-orange-500 text-white flex items-center gap-1.5 transition-colors shadow-subtle"
+          >
+            <RotateCcw size={13} />
+            <span>Roast Another Resume</span>
+          </button>
+
+          <Link
+            href="/arena"
+            className="px-4 py-2 rounded-md font-medium text-xs border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-100 hover:bg-zinc-200 dark:bg-[#1e1e2a] dark:hover:bg-[#28283a] text-zinc-800 dark:text-[#ebebef] flex items-center gap-1.5 transition-colors"
+          >
+            <span>Practice Interview Arena</span>
+            <ArrowRight size={13} />
+          </Link>
+        </div>
+
+        <button
+          onClick={onClearHistory}
+          className="text-[11px] font-mono text-zinc-400 hover:text-rose-500 flex items-center gap-1 transition-colors"
+        >
+          <Trash2 size={12} />
+          <span>Clear Cached Report</span>
+        </button>
+      </div>
     </m.div>
   );
 }

@@ -2,19 +2,26 @@ import { test, expect } from '@playwright/test';
 
 test.describe('System Design Canvas', () => {
     test.beforeEach(async ({ page }) => {
+        await page.addInitScript(() => {
+            window.localStorage.setItem('mockmate_cookie_consent', 'accepted');
+            window.localStorage.setItem('mockmate-sd-onboarded', 'true');
+        });
         // Navigate to the system design page
         await page.goto('/system-design');
-        // Wait for the canvas to be visible
-        await page.waitForSelector('#sd-canvas');
+        // Wait for canvas and toolbar button readiness
+        await expect(page.locator('#sd-canvas')).toBeVisible();
+        await expect(
+            page.getByRole('button', { name: 'Load Balancer' })
+        ).toBeVisible({ timeout: 10_000 });
     });
 
     test('should add a node to the canvas', async ({ page }) => {
-        // Click on a node type in the toolbar (e.g., Load Balancer)
-        await page.click('button[title="Load Balancer"]');
+        // Click on a node type in the toolbar using role-based selector
+        const loadBalancer = page.getByRole('button', { name: 'Load Balancer' });
+        await loadBalancer.click();
 
         // Check if a node was added to the canvas
-        const nodes = await page.locator('.group.cursor-grab').count();
-        expect(nodes).toBeGreaterThan(0);
+        await expect(page.locator('.group.cursor-grab')).toHaveCount(1);
     });
 
     test('should open and close the challenge panel', async ({ page }) => {
@@ -35,7 +42,8 @@ test.describe('System Design Canvas', () => {
 
     test('should trigger architectural audit', async ({ page }) => {
         // Add a node so we can audit
-        await page.click('button[title="Load Balancer"]');
+        const loadBalancer = page.getByRole('button', { name: 'Load Balancer' });
+        await loadBalancer.click();
 
         // Click on Audit button
         await page.click('#sd-header-audit');

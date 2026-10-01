@@ -84,7 +84,7 @@ describe('QuizGenerator', () => {
     expect(result[0].options).toEqual(expect.arrayContaining(mockQuestions[0].options));
   });
 
-  it('should fallback to Groq and then OpenAI if Gemini fails in auto mode', async () => {
+  it('should try all providers in auto mode before failing', async () => {
     geminiGenerateMock.mockRejectedValue(new Error('Gemini Fail'));
     groqGenerateMock.mockRejectedValue(new Error('Groq Fail'));
     

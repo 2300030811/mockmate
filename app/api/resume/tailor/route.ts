@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { Groq } from 'groq-sdk';
 import { getNextKey } from '@/utils/keyManager';
+import { AI_MODELS } from '@/lib/ai/gateway';
 import { resumeGeneratePayloadSchema } from '../generate/schema';
 
 export const runtime = 'nodejs';
@@ -51,13 +52,13 @@ Output strictly valid JSON.`;
         const apiKey = getNextKey("GROQ_API_KEY") || process.env.GROQ_API_KEY;
         if (!apiKey) throw new Error("Groq API Key missing");
 
-        const groq = new Groq({ apiKey });
+        const groq = new Groq({ apiKey, dangerouslyAllowBrowser: true });
         const chatCompletion = await groq.chat.completions.create({
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
           ],
-          model: 'llama-3.3-70b-versatile',
+          model: AI_MODELS.STRUCTURED,
           response_format: { type: 'json_object' },
           temperature: 0.2,
           max_tokens: 4000,

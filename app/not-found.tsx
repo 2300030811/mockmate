@@ -1,39 +1,51 @@
 import Link from "next/link";
-import { Bot, Sparkles, ArrowLeft } from "lucide-react";
+import { ArrowLeft, Home, Compass } from "lucide-react";
+import { HomeBackground } from "@/components/home/HomeBackground";
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950 px-4">
-      <div className="text-center max-w-md">
-        {/* Animated illustration */}
-        <div className="relative mx-auto w-32 h-32 mb-8">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full animate-pulse" />
-          <div className="absolute inset-2 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Bot className="w-16 h-16 text-blue-500 dark:text-blue-400" />
-            <Sparkles className="w-5 h-5 text-yellow-400 absolute top-2 right-4 animate-bounce" />
-          </div>
+    <div className="min-h-screen bg-white dark:bg-[#0d0d12] text-zinc-900 dark:text-[#ebebef] relative selection:bg-[#5e6ad2]/20 flex flex-col items-center justify-center p-4 sm:p-6 transition-colors overflow-hidden">
+      {/* 28px Precision Grid & Horizon Illumination */}
+      <HomeBackground />
+
+      <div className="relative z-10 w-full max-w-md mx-auto space-y-4 text-center">
+        {/* Status Pill */}
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-100 dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] text-xs font-mono text-zinc-600 dark:text-[#8b8b9e]">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#5e6ad2] animate-pulse" />
+          <span className="font-semibold text-zinc-900 dark:text-[#ebebef]">404 Resolution</span>
+          <span className="opacity-40">•</span>
+          <span>Endpoint Missing</span>
         </div>
 
-        <h1 className="text-8xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 mb-4">
-          404
-        </h1>
-        <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-3">
-          Page Not Found
-        </h2>
-        <p className="text-gray-500 dark:text-gray-400 mb-2">
-          The page you&apos;re looking for doesn&apos;t exist or has been moved.
-        </p>
-        <p className="text-sm text-gray-400 dark:text-gray-500 mb-8">
-          Don&apos;t worry — Bob&apos;s got your back. Let&apos;s get you home.
-        </p>
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Home
-        </Link>
+        {/* 404 Card */}
+        <div className="w-full bg-white dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] rounded-2xl p-6 sm:p-8 shadow-subtle space-y-5">
+          <div className="space-y-1">
+            <span className="text-6xl sm:text-7xl font-mono font-black tracking-tighter text-zinc-900 dark:text-[#ebebef]">
+              404
+            </span>
+            <div className="w-12 h-0.5 bg-[#5e6ad2] mx-auto rounded-full" />
+          </div>
+
+          <div className="space-y-1.5">
+            <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-zinc-900 dark:text-[#ebebef]">
+              Page Not Found
+            </h1>
+            <p className="text-xs sm:text-sm text-zinc-600 dark:text-[#8b8b9e] leading-relaxed">
+              The requested route or resource does not exist or may have been relocated within the MockMate platform.
+            </p>
+          </div>
+
+          {/* Action Button */}
+          <div className="pt-2">
+            <Link
+              href="/"
+              className="w-full py-3 px-5 rounded-xl text-xs font-semibold bg-[#5e6ad2] hover:bg-[#4f5ac4] text-white shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 shadow-[#5e6ad2]/20"
+            >
+              <ArrowLeft size={14} />
+              <span>Back to MockMate Hub</span>
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );

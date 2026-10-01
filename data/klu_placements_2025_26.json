@@ -1,0 +1,2359 @@
+[
+  {
+    "sno": 1,
+    "source_page": 1,
+    "source_row": 1,
+    "raw_company": "Blue Star",
+    "cleaned_company": "Blue Star",
+    "normalized_company": "bluestar",
+    "drive_name": "Blue Star",
+    "role_title": null,
+    "raw_date": "21-10-2024",
+    "date_of_visit": "2024-10-21",
+    "raw_package_text": "6.3 LPA",
+    "package_min_lpa": 6.3,
+    "package_max_lpa": 6.3,
+    "package_values": [
+      6.3
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 2,
+    "source_page": 1,
+    "source_row": 2,
+    "raw_company": "Siemens",
+    "cleaned_company": "Siemens",
+    "normalized_company": "siemens",
+    "drive_name": "Siemens",
+    "role_title": null,
+    "raw_date": "21-03-2025",
+    "date_of_visit": "2025-03-21",
+    "raw_package_text": "20.02 LPA",
+    "package_min_lpa": 20.02,
+    "package_max_lpa": 20.02,
+    "package_values": [
+      20.02
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 3,
+    "source_page": 1,
+    "source_row": 3,
+    "raw_company": "AMD",
+    "cleaned_company": "AMD",
+    "normalized_company": "amd",
+    "drive_name": "AMD",
+    "role_title": null,
+    "raw_date": "20-06-2025",
+    "date_of_visit": "2025-06-20",
+    "raw_package_text": "11 LPA",
+    "package_min_lpa": 11,
+    "package_max_lpa": 11,
+    "package_values": [
+      11
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 4,
+    "source_page": 1,
+    "source_row": 4,
+    "raw_company": "Trilogy",
+    "cleaned_company": "Trilogy",
+    "normalized_company": "trilogy",
+    "drive_name": "Trilogy",
+    "role_title": null,
+    "raw_date": "28-06-2025",
+    "date_of_visit": "2025-06-28",
+    "raw_package_text": "30 LPA",
+    "package_min_lpa": 30,
+    "package_max_lpa": 30,
+    "package_values": [
+      30
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 5,
+    "source_page": 1,
+    "source_row": 5,
+    "raw_company": "UTS",
+    "cleaned_company": "UTS",
+    "normalized_company": "uts",
+    "drive_name": "UTS",
+    "role_title": null,
+    "raw_date": "30-06-2025",
+    "date_of_visit": "2025-06-30",
+    "raw_package_text": "3.5 LPA",
+    "package_min_lpa": 3.5,
+    "package_max_lpa": 3.5,
+    "package_values": [
+      3.5
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 6,
+    "source_page": 1,
+    "source_row": 6,
+    "raw_company": "Spring Works",
+    "cleaned_company": "Spring Works",
+    "normalized_company": "springworks",
+    "drive_name": "Spring Works",
+    "role_title": null,
+    "raw_date": "10-07-2025",
+    "date_of_visit": "2025-07-10",
+    "raw_package_text": "4 LPA",
+    "package_min_lpa": 4,
+    "package_max_lpa": 4,
+    "package_values": [
+      4
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 7,
+    "source_page": 1,
+    "source_row": 7,
+    "raw_company": "Schneider Electric",
+    "cleaned_company": "Schneider Electric",
+    "normalized_company": "schneiderelectric",
+    "drive_name": "Schneider Electric",
+    "role_title": null,
+    "raw_date": "23-07-2025",
+    "date_of_visit": "2025-07-23",
+    "raw_package_text": "12 LPA",
+    "package_min_lpa": 12,
+    "package_max_lpa": 12,
+    "package_values": [
+      12
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 8,
+    "source_page": 1,
+    "source_row": 8,
+    "raw_company": "MosChip Technologies",
+    "cleaned_company": "MosChip Technologies",
+    "normalized_company": "moschiptechnologies",
+    "drive_name": "MosChip Technologies",
+    "role_title": null,
+    "raw_date": "29-07-2025",
+    "date_of_visit": "2025-07-29",
+    "raw_package_text": "6 LPA",
+    "package_min_lpa": 6,
+    "package_max_lpa": 6,
+    "package_values": [
+      6
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 9,
+    "source_page": 1,
+    "source_row": 9,
+    "raw_company": "Callease Al",
+    "cleaned_company": "Callease Al",
+    "normalized_company": "calleaseal",
+    "drive_name": "Callease Al",
+    "role_title": null,
+    "raw_date": "07-08-2025",
+    "date_of_visit": "2025-08-07",
+    "raw_package_text": "20 LPA",
+    "package_min_lpa": 20,
+    "package_max_lpa": 20,
+    "package_values": [
+      20
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 10,
+    "source_page": 1,
+    "source_row": 10,
+    "raw_company": "MathCo",
+    "cleaned_company": "MathCo",
+    "normalized_company": "mathco",
+    "drive_name": "MathCo",
+    "role_title": null,
+    "raw_date": "14-08-2025",
+    "date_of_visit": "2025-08-14",
+    "raw_package_text": "5.5 LPA",
+    "package_min_lpa": 5.5,
+    "package_max_lpa": 5.5,
+    "package_values": [
+      5.5
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 11,
+    "source_page": 1,
+    "source_row": 11,
+    "raw_company": "Lumen",
+    "cleaned_company": "Lumen",
+    "normalized_company": "lumen",
+    "drive_name": "Lumen",
+    "role_title": null,
+    "raw_date": "16-08-2025",
+    "date_of_visit": "2025-08-16",
+    "raw_package_text": "7 LPA",
+    "package_min_lpa": 7,
+    "package_max_lpa": 7,
+    "package_values": [
+      7
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 12,
+    "source_page": 1,
+    "source_row": 12,
+    "raw_company": "Principal Global Services",
+    "cleaned_company": "Principal Global Services",
+    "normalized_company": "principalglobalservices",
+    "drive_name": "Principal Global Services",
+    "role_title": null,
+    "raw_date": "19-08-2025",
+    "date_of_visit": "2025-08-19",
+    "raw_package_text": "8 LPA",
+    "package_min_lpa": 8,
+    "package_max_lpa": 8,
+    "package_values": [
+      8
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 13,
+    "source_page": 1,
+    "source_row": 13,
+    "raw_company": "KLUS\nCTS",
+    "cleaned_company": "CTS",
+    "normalized_company": "cts",
+    "drive_name": "CTS",
+    "role_title": null,
+    "raw_date": "21-08-2025\nY",
+    "date_of_visit": "2025-08-21",
+    "raw_package_text": "4 to 6.7 LPA",
+    "package_min_lpa": 4,
+    "package_max_lpa": 6.7,
+    "package_values": [
+      4,
+      6.7
+    ],
+    "warnings": [
+      "Filtered watermark line: \"KLUS\"",
+      "Cleaned date \"21-08-2025\nY\" -> \"2025-08-21\""
+    ],
+    "requires_review": false
+  },
+  {
+    "sno": 14,
+    "source_page": 1,
+    "source_row": 14,
+    "raw_company": "Deloitte",
+    "cleaned_company": "Deloitte",
+    "normalized_company": "deloitte",
+    "drive_name": "Deloitte",
+    "role_title": null,
+    "raw_date": "23-08-2025",
+    "date_of_visit": "2025-08-23",
+    "raw_package_text": "7.6 LPA",
+    "package_min_lpa": 7.6,
+    "package_max_lpa": 7.6,
+    "package_values": [
+      7.6
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 15,
+    "source_page": 1,
+    "source_row": 15,
+    "raw_company": "BNP Paribas",
+    "cleaned_company": "BNP Paribas",
+    "normalized_company": "bnpparibas",
+    "drive_name": "BNP Paribas",
+    "role_title": null,
+    "raw_date": "23-08-2025",
+    "date_of_visit": "2025-08-23",
+    "raw_package_text": "7.5 LPA",
+    "package_min_lpa": 7.5,
+    "package_max_lpa": 7.5,
+    "package_values": [
+      7.5
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 16,
+    "source_page": 1,
+    "source_row": 16,
+    "raw_company": "Oracle",
+    "cleaned_company": "Oracle",
+    "normalized_company": "oracle",
+    "drive_name": "Oracle",
+    "role_title": null,
+    "raw_date": "16-09-2025",
+    "date_of_visit": "2025-09-16",
+    "raw_package_text": "11.067 LPA",
+    "package_min_lpa": 11.067,
+    "package_max_lpa": 11.067,
+    "package_values": [
+      11.067
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 17,
+    "source_page": 1,
+    "source_row": 17,
+    "raw_company": "LTI Mindtree\n:unselected:",
+    "cleaned_company": "LTI Mindtree",
+    "normalized_company": "ltimindtree",
+    "drive_name": "LTI Mindtree",
+    "role_title": null,
+    "raw_date": "20-09-2025",
+    "date_of_visit": "2025-09-20",
+    "raw_package_text": "4.05 LPA",
+    "package_min_lpa": 4.05,
+    "package_max_lpa": 4.05,
+    "package_values": [
+      4.05
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 18,
+    "source_page": 1,
+    "source_row": 18,
+    "raw_company": "Y23 B\nInfosys\n:unselected:",
+    "cleaned_company": "Infosys",
+    "normalized_company": "infosys",
+    "drive_name": "Infosys",
+    "role_title": null,
+    "raw_date": "19-09-2025\nH",
+    "date_of_visit": "2025-09-19",
+    "raw_package_text": "3.6, 6.25, 9.5 LPA",
+    "package_min_lpa": 3.6,
+    "package_max_lpa": 9.5,
+    "package_values": [
+      3.6,
+      6.25,
+      9.5
+    ],
+    "warnings": [
+      "Filtered watermark line: \"Y23 B\"",
+      "Cleaned date \"19-09-2025\nH\" -> \"2025-09-19\""
+    ],
+    "requires_review": false
+  },
+  {
+    "sno": 19,
+    "source_page": 1,
+    "source_row": 19,
+    "raw_company": "Paltech",
+    "cleaned_company": "Paltech",
+    "normalized_company": "paltech",
+    "drive_name": "Paltech",
+    "role_title": null,
+    "raw_date": "19-09-2025",
+    "date_of_visit": "2025-09-19",
+    "raw_package_text": "3 LPA",
+    "package_min_lpa": 3,
+    "package_max_lpa": 3,
+    "package_values": [
+      3
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 20,
+    "source_page": 1,
+    "source_row": 20,
+    "raw_company": "Student\nFacePerp",
+    "cleaned_company": "FacePerp",
+    "normalized_company": "faceperp",
+    "drive_name": "FacePerp",
+    "role_title": null,
+    "raw_date": "Co20-09-2025",
+    "date_of_visit": "2025-09-20",
+    "raw_package_text": "5 LPA",
+    "package_min_lpa": 5,
+    "package_max_lpa": 5,
+    "package_values": [
+      5
+    ],
+    "warnings": [
+      "Filtered watermark line: \"Student\"",
+      "Cleaned date \"Co20-09-2025\" -> \"2025-09-20\""
+    ],
+    "requires_review": false
+  },
+  {
+    "sno": 21,
+    "source_page": 1,
+    "source_row": 21,
+    "raw_company": "Stellantis",
+    "cleaned_company": "Stellantis",
+    "normalized_company": "stellantis",
+    "drive_name": "Stellantis",
+    "role_title": null,
+    "raw_date": "10-10-2025",
+    "date_of_visit": "2025-10-10",
+    "raw_package_text": "6 LPA",
+    "package_min_lpa": 6,
+    "package_max_lpa": 6,
+    "package_values": [
+      6
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 22,
+    "source_page": 1,
+    "source_row": 22,
+    "raw_company": "Accenture",
+    "cleaned_company": "Accenture",
+    "normalized_company": "accenture",
+    "drive_name": "Accenture",
+    "role_title": null,
+    "raw_date": "2023-2027 30-10-2025",
+    "date_of_visit": "2025-10-30",
+    "raw_package_text": "4.64, 6.51, 11.18 LPA",
+    "package_min_lpa": 4.64,
+    "package_max_lpa": 11.18,
+    "package_values": [
+      4.64,
+      6.51,
+      11.18
+    ],
+    "warnings": [
+      "Cleaned date \"2023-2027 30-10-2025\" -> \"2025-10-30\""
+    ],
+    "requires_review": false
+  },
+  {
+    "sno": 23,
+    "source_page": 1,
+    "source_row": 23,
+    "raw_company": "Keeline",
+    "cleaned_company": "Keeline",
+    "normalized_company": "keeline",
+    "drive_name": "Keeline",
+    "role_title": null,
+    "raw_date": "29-10-2025",
+    "date_of_visit": "2025-10-29",
+    "raw_package_text": "4.5 LPA",
+    "package_min_lpa": 4.5,
+    "package_max_lpa": 4.5,
+    "package_values": [
+      4.5
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 24,
+    "source_page": 1,
+    "source_row": 24,
+    "raw_company": "Infosys (Women)",
+    "cleaned_company": "Infosys",
+    "normalized_company": "infosys",
+    "drive_name": "Infosys (Women)",
+    "role_title": null,
+    "raw_date": "03-11-2025",
+    "date_of_visit": "2025-11-03",
+    "raw_package_text": "3.6 LPA",
+    "package_min_lpa": 3.6,
+    "package_max_lpa": 3.6,
+    "package_values": [
+      3.6
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 25,
+    "source_page": 1,
+    "source_row": 25,
+    "raw_company": "HCL Tech",
+    "cleaned_company": "HCL Tech",
+    "normalized_company": "hcltech",
+    "drive_name": "HCL Tech",
+    "role_title": null,
+    "raw_date": "11-11-2025",
+    "date_of_visit": "2025-11-11",
+    "raw_package_text": "3.5 LPA",
+    "package_min_lpa": 3.5,
+    "package_max_lpa": 3.5,
+    "package_values": [
+      3.5
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 26,
+    "source_page": 1,
+    "source_row": 26,
+    "raw_company": "KYB Corporation",
+    "cleaned_company": "KYB Corporation",
+    "normalized_company": "kybcorporation",
+    "drive_name": "KYB Corporation",
+    "role_title": null,
+    "raw_date": "14-11-2025",
+    "date_of_visit": "2025-11-14",
+    "raw_package_text": "3.36 LPA",
+    "package_min_lpa": 3.36,
+    "package_max_lpa": 3.36,
+    "package_values": [
+      3.36
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 27,
+    "source_page": 1,
+    "source_row": 27,
+    "raw_company": "Technoforte",
+    "cleaned_company": "Technoforte",
+    "normalized_company": "technoforte",
+    "drive_name": "Technoforte",
+    "role_title": null,
+    "raw_date": "15-11-2025",
+    "date_of_visit": "2025-11-15",
+    "raw_package_text": "3.6 & 5 LPA",
+    "package_min_lpa": 3.6,
+    "package_max_lpa": 5,
+    "package_values": [
+      3.6,
+      5
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 28,
+    "source_page": 1,
+    "source_row": 28,
+    "raw_company": "HCL Tech (Domicile Hiring)",
+    "cleaned_company": "HCL Tech",
+    "normalized_company": "hcltech",
+    "drive_name": "HCL Tech (Domicile Hiring)",
+    "role_title": null,
+    "raw_date": "19-11-2025",
+    "date_of_visit": "2025-11-19",
+    "raw_package_text": "3.25 LPA",
+    "package_min_lpa": 3.25,
+    "package_max_lpa": 3.25,
+    "package_values": [
+      3.25
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 29,
+    "source_page": 1,
+    "source_row": 29,
+    "raw_company": "Capgemini",
+    "cleaned_company": "Capgemini",
+    "normalized_company": "capgemini",
+    "drive_name": "Capgemini",
+    "role_title": null,
+    "raw_date": "22-11-2025",
+    "date_of_visit": "2025-11-22",
+    "raw_package_text": "4.25, 5.75, 7.5 LPA",
+    "package_min_lpa": 4.25,
+    "package_max_lpa": 7.5,
+    "package_values": [
+      4.25,
+      5.75,
+      7.5
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 30,
+    "source_page": 1,
+    "source_row": 30,
+    "raw_company": "TCS",
+    "cleaned_company": "TCS",
+    "normalized_company": "tcs",
+    "drive_name": "TCS",
+    "role_title": null,
+    "raw_date": "20-11-2025",
+    "date_of_visit": "2025-11-20",
+    "raw_package_text": "3.45, 7, 9 LPA",
+    "package_min_lpa": 3.45,
+    "package_max_lpa": 9,
+    "package_values": [
+      3.45,
+      7,
+      9
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 31,
+    "source_page": 1,
+    "source_row": 31,
+    "raw_company": "SLK",
+    "cleaned_company": "SLK",
+    "normalized_company": "slk",
+    "drive_name": "SLK",
+    "role_title": null,
+    "raw_date": "29-11-2025",
+    "date_of_visit": "2025-11-29",
+    "raw_package_text": "3.2 LPA",
+    "package_min_lpa": 3.2,
+    "package_max_lpa": 3.2,
+    "package_values": [
+      3.2
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 32,
+    "source_page": 1,
+    "source_row": 32,
+    "raw_company": "HighRadius",
+    "cleaned_company": "HighRadius",
+    "normalized_company": "highradius",
+    "drive_name": "HighRadius",
+    "role_title": null,
+    "raw_date": "30-11-2025",
+    "date_of_visit": "2025-11-30",
+    "raw_package_text": "4 LPA",
+    "package_min_lpa": 4,
+    "package_max_lpa": 4,
+    "package_values": [
+      4
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 33,
+    "source_page": 1,
+    "source_row": 33,
+    "raw_company": "MRF",
+    "cleaned_company": "MRF",
+    "normalized_company": "mrf",
+    "drive_name": "MRF",
+    "role_title": null,
+    "raw_date": "03-12-2025",
+    "date_of_visit": "2025-12-03",
+    "raw_package_text": "2.5 LPA",
+    "package_min_lpa": 2.5,
+    "package_max_lpa": 2.5,
+    "package_values": [
+      2.5
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 34,
+    "source_page": 1,
+    "source_row": 34,
+    "raw_company": "Doyensys",
+    "cleaned_company": "Doyensys",
+    "normalized_company": "doyensys",
+    "drive_name": "Doyensys",
+    "role_title": null,
+    "raw_date": "01-12-2025",
+    "date_of_visit": "2025-12-01",
+    "raw_package_text": "5.5 LPA",
+    "package_min_lpa": 5.5,
+    "package_max_lpa": 5.5,
+    "package_values": [
+      5.5
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 35,
+    "source_page": 1,
+    "source_row": 35,
+    "raw_company": "Sagility",
+    "cleaned_company": "Sagility",
+    "normalized_company": "sagility",
+    "drive_name": "Sagility",
+    "role_title": null,
+    "raw_date": "10-12-2025",
+    "date_of_visit": "2025-12-10",
+    "raw_package_text": "3.5 to 4 LPA",
+    "package_min_lpa": 3.5,
+    "package_max_lpa": 4,
+    "package_values": [
+      3.5,
+      4
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 36,
+    "source_page": 1,
+    "source_row": 36,
+    "raw_company": "Musigma",
+    "cleaned_company": "Musigma",
+    "normalized_company": "musigma",
+    "drive_name": "Musigma",
+    "role_title": null,
+    "raw_date": "06-12-2025",
+    "date_of_visit": "2025-12-06",
+    "raw_package_text": "5 LPA",
+    "package_min_lpa": 5,
+    "package_max_lpa": 5,
+    "package_values": [
+      5
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 37,
+    "source_page": 1,
+    "source_row": 37,
+    "raw_company": "Soft Suave Technologies",
+    "cleaned_company": "Soft Suave Technologies",
+    "normalized_company": "softsuavetechnologies",
+    "drive_name": "Soft Suave Technologies",
+    "role_title": null,
+    "raw_date": "13-12-2025",
+    "date_of_visit": "2025-12-13",
+    "raw_package_text": "4 LPA",
+    "package_min_lpa": 4,
+    "package_max_lpa": 4,
+    "package_values": [
+      4
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 38,
+    "source_page": 1,
+    "source_row": 38,
+    "raw_company": "Stanza Living",
+    "cleaned_company": "Stanza Living",
+    "normalized_company": "stanzaliving",
+    "drive_name": "Stanza Living",
+    "role_title": null,
+    "raw_date": "10-12-2025",
+    "date_of_visit": "2025-12-10",
+    "raw_package_text": "4.5 LPA",
+    "package_min_lpa": 4.5,
+    "package_max_lpa": 4.5,
+    "package_values": [
+      4.5
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 39,
+    "source_page": 1,
+    "source_row": 39,
+    "raw_company": "Springworks",
+    "cleaned_company": "Springworks",
+    "normalized_company": "springworks",
+    "drive_name": "Springworks",
+    "role_title": null,
+    "raw_date": "05-12-2025",
+    "date_of_visit": "2025-12-05",
+    "raw_package_text": "4 to 6 LPA",
+    "package_min_lpa": 4,
+    "package_max_lpa": 6,
+    "package_values": [
+      4,
+      6
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 40,
+    "source_page": 2,
+    "source_row": 1,
+    "raw_company": "Infosys (Specialist Program- mer)",
+    "cleaned_company": "Infosys",
+    "normalized_company": "infosys",
+    "drive_name": "Infosys (Specialist Programmer)",
+    "role_title": "Specialist Programmer",
+    "raw_date": "11-12-2025",
+    "date_of_visit": "2025-12-11",
+    "raw_package_text": "6.25 to 21 LPA",
+    "package_min_lpa": 6.25,
+    "package_max_lpa": 21,
+    "package_values": [
+      6.25,
+      21
+    ],
+    "warnings": [
+      "De-hyphenated line-break word"
+    ],
+    "requires_review": false
+  },
+  {
+    "sno": 41,
+    "source_page": 2,
+    "source_row": 2,
+    "raw_company": "City Union Bank",
+    "cleaned_company": "City Union Bank",
+    "normalized_company": "cityunionbank",
+    "drive_name": "City Union Bank",
+    "role_title": null,
+    "raw_date": "16-12-2025",
+    "date_of_visit": "2025-12-16",
+    "raw_package_text": "3 LPA",
+    "package_min_lpa": 3,
+    "package_max_lpa": 3,
+    "package_values": [
+      3
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 42,
+    "source_page": 2,
+    "source_row": 3,
+    "raw_company": "Code Young",
+    "cleaned_company": "Code Young",
+    "normalized_company": "codeyoung",
+    "drive_name": "Code Young",
+    "role_title": null,
+    "raw_date": "16-12-2025",
+    "date_of_visit": "2025-12-16",
+    "raw_package_text": "4 LPA",
+    "package_min_lpa": 4,
+    "package_max_lpa": 4,
+    "package_values": [
+      4
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 43,
+    "source_page": 2,
+    "source_row": 4,
+    "raw_company": "CredResolve",
+    "cleaned_company": "CredResolve",
+    "normalized_company": "credresolve",
+    "drive_name": "CredResolve",
+    "role_title": null,
+    "raw_date": "18-12-2025",
+    "date_of_visit": "2025-12-18",
+    "raw_package_text": "5.5 to 8.0 LPA",
+    "package_min_lpa": 5.5,
+    "package_max_lpa": 8,
+    "package_values": [
+      5.5,
+      8
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 44,
+    "source_page": 2,
+    "source_row": 5,
+    "raw_company": "CouthIT",
+    "cleaned_company": "CouthIT",
+    "normalized_company": "couthit",
+    "drive_name": "CouthIT",
+    "role_title": null,
+    "raw_date": "22-12-2025",
+    "date_of_visit": "2025-12-22",
+    "raw_package_text": "4 to 6 LPA",
+    "package_min_lpa": 4,
+    "package_max_lpa": 6,
+    "package_values": [
+      4,
+      6
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 45,
+    "source_page": 2,
+    "source_row": 6,
+    "raw_company": "Learnbay",
+    "cleaned_company": "Learnbay",
+    "normalized_company": "learnbay",
+    "drive_name": "Learnbay",
+    "role_title": null,
+    "raw_date": "23-12-2025",
+    "date_of_visit": "2025-12-23",
+    "raw_package_text": "5 LPA",
+    "package_min_lpa": 5,
+    "package_max_lpa": 5,
+    "package_values": [
+      5
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 46,
+    "source_page": 2,
+    "source_row": 7,
+    "raw_company": "K12",
+    "cleaned_company": "K12",
+    "normalized_company": "k12",
+    "drive_name": "K12",
+    "role_title": null,
+    "raw_date": "30-12-2025",
+    "date_of_visit": "2025-12-30",
+    "raw_package_text": "5 LPA",
+    "package_min_lpa": 5,
+    "package_max_lpa": 5,
+    "package_values": [
+      5
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 47,
+    "source_page": 2,
+    "source_row": 8,
+    "raw_company": "Krutanic",
+    "cleaned_company": "Krutanic",
+    "normalized_company": "krutanic",
+    "drive_name": "Krutanic",
+    "role_title": null,
+    "raw_date": "26-12-2025",
+    "date_of_visit": "2025-12-26",
+    "raw_package_text": "6, 7 LPA",
+    "package_min_lpa": 6,
+    "package_max_lpa": 7,
+    "package_values": [
+      6,
+      7
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 48,
+    "source_page": 2,
+    "source_row": 9,
+    "raw_company": "Shiksha Vertex",
+    "cleaned_company": "Shiksha Vertex",
+    "normalized_company": "shikshavertex",
+    "drive_name": "Shiksha Vertex",
+    "role_title": null,
+    "raw_date": "23-12-2025",
+    "date_of_visit": "2025-12-23",
+    "raw_package_text": "6 LPA",
+    "package_min_lpa": 6,
+    "package_max_lpa": 6,
+    "package_values": [
+      6
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 49,
+    "source_page": 2,
+    "source_row": 10,
+    "raw_company": "Jyesta Corporate Entity",
+    "cleaned_company": "Jyesta Corporate Entity",
+    "normalized_company": "jyestacorporateentity",
+    "drive_name": "Jyesta Corporate Entity",
+    "role_title": null,
+    "raw_date": "24-12-2025",
+    "date_of_visit": "2025-12-24",
+    "raw_package_text": "9 LPA",
+    "package_min_lpa": 9,
+    "package_max_lpa": 9,
+    "package_values": [
+      9
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 50,
+    "source_page": 2,
+    "source_row": 11,
+    "raw_company": "Jade Global",
+    "cleaned_company": "Jade Global",
+    "normalized_company": "jadeglobal",
+    "drive_name": "Jade Global",
+    "role_title": null,
+    "raw_date": "12-12-2025",
+    "date_of_visit": "2025-12-12",
+    "raw_package_text": "4.09 LPA",
+    "package_min_lpa": 4.09,
+    "package_max_lpa": 4.09,
+    "package_values": [
+      4.09
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 51,
+    "source_page": 2,
+    "source_row": 12,
+    "raw_company": "Infinity Learn",
+    "cleaned_company": "Infinity Learn",
+    "normalized_company": "infinitylearn",
+    "drive_name": "Infinity Learn",
+    "role_title": null,
+    "raw_date": "23-12-2025",
+    "date_of_visit": "2025-12-23",
+    "raw_package_text": "5.8 LPA",
+    "package_min_lpa": 5.8,
+    "package_max_lpa": 5.8,
+    "package_values": [
+      5.8
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 52,
+    "source_page": 2,
+    "source_row": 13,
+    "raw_company": "Inspire Leap",
+    "cleaned_company": "Inspire Leap",
+    "normalized_company": "inspireleap",
+    "drive_name": "Inspire Leap",
+    "role_title": null,
+    "raw_date": "30-12-2025",
+    "date_of_visit": "2025-12-30",
+    "raw_package_text": "6, 6.5 LPA",
+    "package_min_lpa": 6,
+    "package_max_lpa": 6.5,
+    "package_values": [
+      6,
+      6.5
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 53,
+    "source_page": 2,
+    "source_row": 14,
+    "raw_company": "SprintM",
+    "cleaned_company": "SprintM",
+    "normalized_company": "sprintm",
+    "drive_name": "SprintM",
+    "role_title": null,
+    "raw_date": "02-01-2026",
+    "date_of_visit": "2026-01-02",
+    "raw_package_text": "6 LPA",
+    "package_min_lpa": 6,
+    "package_max_lpa": 6,
+    "package_values": [
+      6
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 54,
+    "source_page": 2,
+    "source_row": 15,
+    "raw_company": "Learnflu",
+    "cleaned_company": "Learnflu",
+    "normalized_company": "learnflu",
+    "drive_name": "Learnflu",
+    "role_title": null,
+    "raw_date": "03-01-2026",
+    "date_of_visit": "2026-01-03",
+    "raw_package_text": "4, 6 LPA",
+    "package_min_lpa": 4,
+    "package_max_lpa": 6,
+    "package_values": [
+      4,
+      6
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 55,
+    "source_page": 2,
+    "source_row": 16,
+    "raw_company": "MPM Infosoft",
+    "cleaned_company": "MPM Infosoft",
+    "normalized_company": "mpminfosoft",
+    "drive_name": "MPM Infosoft",
+    "role_title": null,
+    "raw_date": "26-12-2025",
+    "date_of_visit": "2025-12-26",
+    "raw_package_text": "6 to 8 LPA",
+    "package_min_lpa": 6,
+    "package_max_lpa": 8,
+    "package_values": [
+      6,
+      8
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 56,
+    "source_page": 2,
+    "source_row": 17,
+    "raw_company": "KLUS\nKalvium",
+    "cleaned_company": "Kalvium",
+    "normalized_company": "kalvium",
+    "drive_name": "Kalvium",
+    "role_title": null,
+    "raw_date": "24-12-2025\nY",
+    "date_of_visit": "2025-12-24",
+    "raw_package_text": "6 LPA",
+    "package_min_lpa": 6,
+    "package_max_lpa": 6,
+    "package_values": [
+      6
+    ],
+    "warnings": [
+      "Filtered watermark line: \"KLUS\"",
+      "Cleaned date \"24-12-2025\nY\" -> \"2025-12-24\""
+    ],
+    "requires_review": false
+  },
+  {
+    "sno": 57,
+    "source_page": 2,
+    "source_row": 18,
+    "raw_company": "Adani Group",
+    "cleaned_company": "Adani Group",
+    "normalized_company": "adanigroup",
+    "drive_name": "Adani Group",
+    "role_title": null,
+    "raw_date": "06-01-2026",
+    "date_of_visit": "2026-01-06",
+    "raw_package_text": "6.5 LPA",
+    "package_min_lpa": 6.5,
+    "package_max_lpa": 6.5,
+    "package_values": [
+      6.5
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 58,
+    "source_page": 2,
+    "source_row": 19,
+    "raw_company": "Medha Servo Drives Pvt Ltd",
+    "cleaned_company": "Medha Servo Drives Pvt Ltd",
+    "normalized_company": "medhaservodrivespvtltd",
+    "drive_name": "Medha Servo Drives Pvt Ltd",
+    "role_title": null,
+    "raw_date": "09-01-2026",
+    "date_of_visit": "2026-01-09",
+    "raw_package_text": "5.43 LPA",
+    "package_min_lpa": 5.43,
+    "package_max_lpa": 5.43,
+    "package_values": [
+      5.43
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 59,
+    "source_page": 2,
+    "source_row": 20,
+    "raw_company": "TTEC",
+    "cleaned_company": "TTEC",
+    "normalized_company": "ttec",
+    "drive_name": "TTEC",
+    "role_title": null,
+    "raw_date": "07-01-2026",
+    "date_of_visit": "2026-01-07",
+    "raw_package_text": "3.6 LPA",
+    "package_min_lpa": 3.6,
+    "package_max_lpa": 3.6,
+    "package_values": [
+      3.6
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 60,
+    "source_page": 2,
+    "source_row": 21,
+    "raw_company": "V.2.33 B\nAdaptamed, LLC",
+    "cleaned_company": "Adaptamed, LLC",
+    "normalized_company": "adaptamedllc",
+    "drive_name": "Adaptamed, LLC",
+    "role_title": null,
+    "raw_date": "19-01-2026\nH",
+    "date_of_visit": "2026-01-19",
+    "raw_package_text": "5 LPA",
+    "package_min_lpa": 5,
+    "package_max_lpa": 5,
+    "package_values": [
+      5
+    ],
+    "warnings": [
+      "Filtered watermark line: \"V.2.33 B\"",
+      "Cleaned date \"19-01-2026\nH\" -> \"2026-01-19\""
+    ],
+    "requires_review": false
+  },
+  {
+    "sno": 61,
+    "source_page": 2,
+    "source_row": 22,
+    "raw_company": "Arvind Fashion Pvt. Ltd",
+    "cleaned_company": "Arvind Fashion Pvt. Ltd",
+    "normalized_company": "arvindfashionpvtltd",
+    "drive_name": "Arvind Fashion Pvt. Ltd",
+    "role_title": null,
+    "raw_date": "09-01-2026",
+    "date_of_visit": "2026-01-09",
+    "raw_package_text": "3 to 3.5 LPA",
+    "package_min_lpa": 3,
+    "package_max_lpa": 3.5,
+    "package_values": [
+      3,
+      3.5
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 62,
+    "source_page": 2,
+    "source_row": 23,
+    "raw_company": "Glow Logics",
+    "cleaned_company": "Glow Logics",
+    "normalized_company": "glowlogics",
+    "drive_name": "Glow Logics",
+    "role_title": null,
+    "raw_date": "09-01-2026",
+    "date_of_visit": "2026-01-09",
+    "raw_package_text": "6.2 LPA",
+    "package_min_lpa": 6.2,
+    "package_max_lpa": 6.2,
+    "package_values": [
+      6.2
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 63,
+    "source_page": 2,
+    "source_row": 24,
+    "raw_company": "Student\nVS Techworld5",
+    "cleaned_company": "VS Techworld5",
+    "normalized_company": "vstechworld5",
+    "drive_name": "VS Techworld5",
+    "role_title": null,
+    "raw_date": "C009-01-2026",
+    "date_of_visit": "2026-01-09",
+    "raw_package_text": "5 to 10 LPA",
+    "package_min_lpa": 5,
+    "package_max_lpa": 10,
+    "package_values": [
+      5,
+      10
+    ],
+    "warnings": [
+      "Filtered watermark line: \"Student\"",
+      "Cleaned date \"C009-01-2026\" -> \"2026-01-09\""
+    ],
+    "requires_review": false
+  },
+  {
+    "sno": 64,
+    "source_page": 2,
+    "source_row": 25,
+    "raw_company": "Dhee Coding Labs",
+    "cleaned_company": "Dhee Coding Labs",
+    "normalized_company": "dheecodinglabs",
+    "drive_name": "Dhee Coding Labs",
+    "role_title": null,
+    "raw_date": "09-01-2026",
+    "date_of_visit": "2026-01-09",
+    "raw_package_text": "4 LPA",
+    "package_min_lpa": 4,
+    "package_max_lpa": 4,
+    "package_values": [
+      4
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 65,
+    "source_page": 2,
+    "source_row": 26,
+    "raw_company": "Webile Apps",
+    "cleaned_company": "Webile Apps",
+    "normalized_company": "webileapps",
+    "drive_name": "Webile Apps",
+    "role_title": null,
+    "raw_date": "09-01-2026",
+    "date_of_visit": "2026-01-09",
+    "raw_package_text": "4 LPA",
+    "package_min_lpa": 4,
+    "package_max_lpa": 4,
+    "package_values": [
+      4
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 66,
+    "source_page": 2,
+    "source_row": 27,
+    "raw_company": "2023\nMivada",
+    "cleaned_company": "Mivada",
+    "normalized_company": "mivada",
+    "drive_name": "Mivada",
+    "role_title": null,
+    "raw_date": "22-01-2026",
+    "date_of_visit": "2026-01-22",
+    "raw_package_text": "6.5 LPA\n7",
+    "package_min_lpa": 6.5,
+    "package_max_lpa": 6.5,
+    "package_values": [
+      6.5
+    ],
+    "warnings": [
+      "Filtered watermark line: \"2023\"",
+      "Filtered trailing package watermark tokens from \"6.5 LPA\n7\""
+    ],
+    "requires_review": false
+  },
+  {
+    "sno": 67,
+    "source_page": 2,
+    "source_row": 28,
+    "raw_company": "Launched Global",
+    "cleaned_company": "Launched Global",
+    "normalized_company": "launchedglobal",
+    "drive_name": "Launched Global",
+    "role_title": null,
+    "raw_date": "01-01-2026",
+    "date_of_visit": "2026-01-01",
+    "raw_package_text": "5 to 7 LPA",
+    "package_min_lpa": 5,
+    "package_max_lpa": 7,
+    "package_values": [
+      5,
+      7
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 68,
+    "source_page": 2,
+    "source_row": 29,
+    "raw_company": "Omega Healthcare",
+    "cleaned_company": "Omega Healthcare",
+    "normalized_company": "omegahealthcare",
+    "drive_name": "Omega Healthcare",
+    "role_title": null,
+    "raw_date": "22-01-2026",
+    "date_of_visit": "2026-01-22",
+    "raw_package_text": "4 LPA",
+    "package_min_lpa": 4,
+    "package_max_lpa": 4,
+    "package_values": [
+      4
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 69,
+    "source_page": 2,
+    "source_row": 30,
+    "raw_company": "Sonata Software",
+    "cleaned_company": "Sonata Software",
+    "normalized_company": "sonatasoftware",
+    "drive_name": "Sonata Software",
+    "role_title": null,
+    "raw_date": "20-01-2026",
+    "date_of_visit": "2026-01-20",
+    "raw_package_text": "6 LPA",
+    "package_min_lpa": 6,
+    "package_max_lpa": 6,
+    "package_values": [
+      6
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 70,
+    "source_page": 2,
+    "source_row": 31,
+    "raw_company": "Unlox",
+    "cleaned_company": "Unlox",
+    "normalized_company": "unlox",
+    "drive_name": "Unlox",
+    "role_title": null,
+    "raw_date": "25-01-2026",
+    "date_of_visit": "2026-01-25",
+    "raw_package_text": "5 to 7 LPA",
+    "package_min_lpa": 5,
+    "package_max_lpa": 7,
+    "package_values": [
+      5,
+      7
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 71,
+    "source_page": 2,
+    "source_row": 32,
+    "raw_company": "DemandNXT",
+    "cleaned_company": "DemandNXT",
+    "normalized_company": "demandnxt",
+    "drive_name": "DemandNXT",
+    "role_title": null,
+    "raw_date": "26-01-2026",
+    "date_of_visit": "2026-01-26",
+    "raw_package_text": "3.5 to 4.6 LPA",
+    "package_min_lpa": 3.5,
+    "package_max_lpa": 4.6,
+    "package_values": [
+      3.5,
+      4.6
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 72,
+    "source_page": 2,
+    "source_row": 33,
+    "raw_company": "Sotio Tech",
+    "cleaned_company": "Sotio Tech",
+    "normalized_company": "sotiotech",
+    "drive_name": "Sotio Tech",
+    "role_title": null,
+    "raw_date": "21-01-2026",
+    "date_of_visit": "2026-01-21",
+    "raw_package_text": "3.25 LPA",
+    "package_min_lpa": 3.25,
+    "package_max_lpa": 3.25,
+    "package_values": [
+      3.25
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 73,
+    "source_page": 2,
+    "source_row": 34,
+    "raw_company": "Acmegrade",
+    "cleaned_company": "Acmegrade",
+    "normalized_company": "acmegrade",
+    "drive_name": "Acmegrade",
+    "role_title": null,
+    "raw_date": "24-01-2026",
+    "date_of_visit": "2026-01-24",
+    "raw_package_text": "5 LPA",
+    "package_min_lpa": 5,
+    "package_max_lpa": 5,
+    "package_values": [
+      5
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 74,
+    "source_page": 2,
+    "source_row": 35,
+    "raw_company": "Appstrail",
+    "cleaned_company": "Appstrail",
+    "normalized_company": "appstrail",
+    "drive_name": "Appstrail",
+    "role_title": null,
+    "raw_date": "29-01-2026",
+    "date_of_visit": "2026-01-29",
+    "raw_package_text": "6 LPA",
+    "package_min_lpa": 6,
+    "package_max_lpa": 6,
+    "package_values": [
+      6
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 75,
+    "source_page": 2,
+    "source_row": 36,
+    "raw_company": "Qspiders",
+    "cleaned_company": "Qspiders",
+    "normalized_company": "qspiders",
+    "drive_name": "Qspiders",
+    "role_title": null,
+    "raw_date": "29-01-2026",
+    "date_of_visit": "2026-01-29",
+    "raw_package_text": "3.5, 5.5, 9.5 LPA",
+    "package_min_lpa": 3.5,
+    "package_max_lpa": 9.5,
+    "package_values": [
+      3.5,
+      5.5,
+      9.5
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 76,
+    "source_page": 2,
+    "source_row": 37,
+    "raw_company": "Intrainz",
+    "cleaned_company": "Intrainz",
+    "normalized_company": "intrainz",
+    "drive_name": "Intrainz",
+    "role_title": null,
+    "raw_date": "28-01-2026",
+    "date_of_visit": "2026-01-28",
+    "raw_package_text": "4 to 6 LPA",
+    "package_min_lpa": 4,
+    "package_max_lpa": 6,
+    "package_values": [
+      4,
+      6
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 77,
+    "source_page": 2,
+    "source_row": 38,
+    "raw_company": "Thiran Technologies",
+    "cleaned_company": "Thiran Technologies",
+    "normalized_company": "thirantechnologies",
+    "drive_name": "Thiran Technologies",
+    "role_title": null,
+    "raw_date": "31-01-2026",
+    "date_of_visit": "2026-01-31",
+    "raw_package_text": "3.5 to 4 LPA",
+    "package_min_lpa": 3.5,
+    "package_max_lpa": 4,
+    "package_values": [
+      3.5,
+      4
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 78,
+    "source_page": 2,
+    "source_row": 39,
+    "raw_company": "Pursuit Future Technologies",
+    "cleaned_company": "Pursuit Future Technologies",
+    "normalized_company": "pursuitfuturetechnologies",
+    "drive_name": "Pursuit Future Technologies",
+    "role_title": null,
+    "raw_date": "04-02-2026",
+    "date_of_visit": "2026-02-04",
+    "raw_package_text": "4 LPA",
+    "package_min_lpa": 4,
+    "package_max_lpa": 4,
+    "package_values": [
+      4
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 79,
+    "source_page": 2,
+    "source_row": 40,
+    "raw_company": "AllDigiTech",
+    "cleaned_company": "AllDigiTech",
+    "normalized_company": "alldigitech",
+    "drive_name": "AllDigiTech",
+    "role_title": null,
+    "raw_date": "07-02-2026",
+    "date_of_visit": "2026-02-07",
+    "raw_package_text": "3 to 3.5 LPA",
+    "package_min_lpa": 3,
+    "package_max_lpa": 3.5,
+    "package_values": [
+      3,
+      3.5
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 80,
+    "source_page": 2,
+    "source_row": 41,
+    "raw_company": "Kia",
+    "cleaned_company": "Kia",
+    "normalized_company": "kia",
+    "drive_name": "Kia",
+    "role_title": null,
+    "raw_date": "06-02-2026",
+    "date_of_visit": "2026-02-06",
+    "raw_package_text": "4 LPA",
+    "package_min_lpa": 4,
+    "package_max_lpa": 4,
+    "package_values": [
+      4
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 81,
+    "source_page": 2,
+    "source_row": 42,
+    "raw_company": "HashedIn Technologies",
+    "cleaned_company": "HashedIn Technologies",
+    "normalized_company": "hashedintechnologies",
+    "drive_name": "HashedIn Technologies",
+    "role_title": null,
+    "raw_date": "13-02-2026",
+    "date_of_visit": "2026-02-13",
+    "raw_package_text": "8.1 LPA",
+    "package_min_lpa": 8.1,
+    "package_max_lpa": 8.1,
+    "package_values": [
+      8.1
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 82,
+    "source_page": 2,
+    "source_row": 43,
+    "raw_company": "Hexaware",
+    "cleaned_company": "Hexaware",
+    "normalized_company": "hexaware",
+    "drive_name": "Hexaware",
+    "role_title": null,
+    "raw_date": "14-02-2026",
+    "date_of_visit": "2026-02-14",
+    "raw_package_text": "3.2 LPA",
+    "package_min_lpa": 3.2,
+    "package_max_lpa": 3.2,
+    "package_values": [
+      3.2
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 83,
+    "source_page": 2,
+    "source_row": 44,
+    "raw_company": "Alpha Innovation",
+    "cleaned_company": "Alpha Innovation",
+    "normalized_company": "alphainnovation",
+    "drive_name": "Alpha Innovation",
+    "role_title": null,
+    "raw_date": "14-02-2026",
+    "date_of_visit": "2026-02-14",
+    "raw_package_text": "4 to 5.5 LPA",
+    "package_min_lpa": 4,
+    "package_max_lpa": 5.5,
+    "package_values": [
+      4,
+      5.5
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 84,
+    "source_page": 3,
+    "source_row": 1,
+    "raw_company": "Corizo",
+    "cleaned_company": "Corizo",
+    "normalized_company": "corizo",
+    "drive_name": "Corizo",
+    "role_title": null,
+    "raw_date": "17-02-2026",
+    "date_of_visit": "2026-02-17",
+    "raw_package_text": "6.25 LPA",
+    "package_min_lpa": 6.25,
+    "package_max_lpa": 6.25,
+    "package_values": [
+      6.25
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 85,
+    "source_page": 3,
+    "source_row": 2,
+    "raw_company": "Arcelor Mittal Nippon Steel In- dia",
+    "cleaned_company": "Arcelor Mittal Nippon Steel India",
+    "normalized_company": "arcelormittalnipponsteelindia",
+    "drive_name": "Arcelor Mittal Nippon Steel India",
+    "role_title": null,
+    "raw_date": "06-02-2026",
+    "date_of_visit": "2026-02-06",
+    "raw_package_text": "6 LPA",
+    "package_min_lpa": 6,
+    "package_max_lpa": 6,
+    "package_values": [
+      6
+    ],
+    "warnings": [
+      "De-hyphenated line-break word"
+    ],
+    "requires_review": false
+  },
+  {
+    "sno": 86,
+    "source_page": 3,
+    "source_row": 3,
+    "raw_company": "NCR",
+    "cleaned_company": "NCR",
+    "normalized_company": "ncr",
+    "drive_name": "NCR",
+    "role_title": null,
+    "raw_date": "13-02-2026",
+    "date_of_visit": "2026-02-13",
+    "raw_package_text": "10 LPA",
+    "package_min_lpa": 10,
+    "package_max_lpa": 10,
+    "package_values": [
+      10
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 87,
+    "source_page": 3,
+    "source_row": 4,
+    "raw_company": "Teleperformance",
+    "cleaned_company": "Teleperformance",
+    "normalized_company": "teleperformance",
+    "drive_name": "Teleperformance",
+    "role_title": null,
+    "raw_date": "12-02-2026",
+    "date_of_visit": "2026-02-12",
+    "raw_package_text": "3 to 4.5 LPA",
+    "package_min_lpa": 3,
+    "package_max_lpa": 4.5,
+    "package_values": [
+      3,
+      4.5
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 88,
+    "source_page": 3,
+    "source_row": 5,
+    "raw_company": "NXTwave",
+    "cleaned_company": "NXTwave",
+    "normalized_company": "nxtwave",
+    "drive_name": "NXTwave",
+    "role_title": null,
+    "raw_date": "10-02-2026",
+    "date_of_visit": "2026-02-10",
+    "raw_package_text": "8 LPA",
+    "package_min_lpa": 8,
+    "package_max_lpa": 8,
+    "package_values": [
+      8
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 89,
+    "source_page": 3,
+    "source_row": 6,
+    "raw_company": "Divis Laboratories",
+    "cleaned_company": "Divis Laboratories",
+    "normalized_company": "divislaboratories",
+    "drive_name": "Divis Laboratories",
+    "role_title": null,
+    "raw_date": "04-02-2026",
+    "date_of_visit": "2026-02-04",
+    "raw_package_text": "3 LPA",
+    "package_min_lpa": 3,
+    "package_max_lpa": 3,
+    "package_values": [
+      3
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 90,
+    "source_page": 3,
+    "source_row": 7,
+    "raw_company": "Solar Square Energy",
+    "cleaned_company": "Solar Square Energy",
+    "normalized_company": "solarsquareenergy",
+    "drive_name": "Solar Square Energy",
+    "role_title": null,
+    "raw_date": "11-02-2026",
+    "date_of_visit": "2026-02-11",
+    "raw_package_text": "3 LPA",
+    "package_min_lpa": 3,
+    "package_max_lpa": 3,
+    "package_values": [
+      3
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 91,
+    "source_page": 3,
+    "source_row": 8,
+    "raw_company": "BigBasket",
+    "cleaned_company": "BigBasket",
+    "normalized_company": "bigbasket",
+    "drive_name": "BigBasket",
+    "role_title": null,
+    "raw_date": "10-02-2026",
+    "date_of_visit": "2026-02-10",
+    "raw_package_text": "3.5 LPA",
+    "package_min_lpa": 3.5,
+    "package_max_lpa": 3.5,
+    "package_values": [
+      3.5
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 92,
+    "source_page": 3,
+    "source_row": 9,
+    "raw_company": "ESSL",
+    "cleaned_company": "ESSL",
+    "normalized_company": "essl",
+    "drive_name": "ESSL",
+    "role_title": null,
+    "raw_date": "13-02-2026",
+    "date_of_visit": "2026-02-13",
+    "raw_package_text": "3.5 LPA",
+    "package_min_lpa": 3.5,
+    "package_max_lpa": 3.5,
+    "package_values": [
+      3.5
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 93,
+    "source_page": 3,
+    "source_row": 10,
+    "raw_company": "Aristok Technologies",
+    "cleaned_company": "Aristok Technologies",
+    "normalized_company": "aristoktechnologies",
+    "drive_name": "Aristok Technologies",
+    "role_title": null,
+    "raw_date": "24-02-2026",
+    "date_of_visit": "2026-02-24",
+    "raw_package_text": "4.5 LPA",
+    "package_min_lpa": 4.5,
+    "package_max_lpa": 4.5,
+    "package_values": [
+      4.5
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 94,
+    "source_page": 3,
+    "source_row": 11,
+    "raw_company": "Sutherland",
+    "cleaned_company": "Sutherland",
+    "normalized_company": "sutherland",
+    "drive_name": "Sutherland",
+    "role_title": null,
+    "raw_date": "23-02-2026",
+    "date_of_visit": "2026-02-23",
+    "raw_package_text": "3.25 LPA",
+    "package_min_lpa": 3.25,
+    "package_max_lpa": 3.25,
+    "package_values": [
+      3.25
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 95,
+    "source_page": 3,
+    "source_row": 12,
+    "raw_company": "Palni",
+    "cleaned_company": "Palni",
+    "normalized_company": "palni",
+    "drive_name": "Palni",
+    "role_title": null,
+    "raw_date": "25-02-2026",
+    "date_of_visit": "2026-02-25",
+    "raw_package_text": "2.5 LPA",
+    "package_min_lpa": 2.5,
+    "package_max_lpa": 2.5,
+    "package_values": [
+      2.5
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 96,
+    "source_page": 3,
+    "source_row": 13,
+    "raw_company": "R-Tech",
+    "cleaned_company": "R-Tech",
+    "normalized_company": "rtech",
+    "drive_name": "R-Tech",
+    "role_title": null,
+    "raw_date": "02-03-2026",
+    "date_of_visit": "2026-03-02",
+    "raw_package_text": "4 LPA",
+    "package_min_lpa": 4,
+    "package_max_lpa": 4,
+    "package_values": [
+      4
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 97,
+    "source_page": 3,
+    "source_row": 14,
+    "raw_company": "Muthoot",
+    "cleaned_company": "Muthoot",
+    "normalized_company": "muthoot",
+    "drive_name": "Muthoot",
+    "role_title": null,
+    "raw_date": "09-03-2026",
+    "date_of_visit": "2026-03-09",
+    "raw_package_text": "2.6 to 3.6 LPA",
+    "package_min_lpa": 2.6,
+    "package_max_lpa": 3.6,
+    "package_values": [
+      2.6,
+      3.6
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 98,
+    "source_page": 3,
+    "source_row": 15,
+    "raw_company": "AT&T",
+    "cleaned_company": "AT&T",
+    "normalized_company": "att",
+    "drive_name": "AT&T",
+    "role_title": null,
+    "raw_date": "05-03-2026",
+    "date_of_visit": "2026-03-05",
+    "raw_package_text": "19 LPA",
+    "package_min_lpa": 19,
+    "package_max_lpa": 19,
+    "package_values": [
+      19
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 99,
+    "source_page": 3,
+    "source_row": 16,
+    "raw_company": "Mindenious Edutech LUS",
+    "cleaned_company": "Mindenious Edutech",
+    "normalized_company": "mindeniousedutech",
+    "drive_name": "Mindenious Edutech",
+    "role_title": null,
+    "raw_date": "07-03-2026",
+    "date_of_visit": "2026-03-07",
+    "raw_package_text": "7 LPA",
+    "package_min_lpa": 7,
+    "package_max_lpa": 7,
+    "package_values": [
+      7
+    ],
+    "warnings": [
+      "Removed trailing LUS watermark"
+    ],
+    "requires_review": false
+  },
+  {
+    "sno": 100,
+    "source_page": 3,
+    "source_row": 17,
+    "raw_company": "Delta Technology",
+    "cleaned_company": "Delta Technology",
+    "normalized_company": "deltatechnology",
+    "drive_name": "Delta Technology",
+    "role_title": null,
+    "raw_date": "12-03-2026\nY",
+    "date_of_visit": "2026-03-12",
+    "raw_package_text": "3 to 5 LPA",
+    "package_min_lpa": 3,
+    "package_max_lpa": 5,
+    "package_values": [
+      3,
+      5
+    ],
+    "warnings": [
+      "Cleaned date \"12-03-2026\nY\" -> \"2026-03-12\""
+    ],
+    "requires_review": false
+  },
+  {
+    "sno": 101,
+    "source_page": 3,
+    "source_row": 18,
+    "raw_company": "Altruist Technologies",
+    "cleaned_company": "Altruist Technologies",
+    "normalized_company": "altruisttechnologies",
+    "drive_name": "Altruist Technologies",
+    "role_title": null,
+    "raw_date": "14-03-2026",
+    "date_of_visit": "2026-03-14",
+    "raw_package_text": "3 LPA",
+    "package_min_lpa": 3,
+    "package_max_lpa": 3,
+    "package_values": [
+      3
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 102,
+    "source_page": 3,
+    "source_row": 19,
+    "raw_company": "Intellect Design",
+    "cleaned_company": "Intellect Design",
+    "normalized_company": "intellectdesign",
+    "drive_name": "Intellect Design",
+    "role_title": null,
+    "raw_date": "11-03-2026",
+    "date_of_visit": "2026-03-11",
+    "raw_package_text": "5 LPA",
+    "package_min_lpa": 5,
+    "package_max_lpa": 5,
+    "package_values": [
+      5
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 103,
+    "source_page": 3,
+    "source_row": 20,
+    "raw_company": "ExcelR",
+    "cleaned_company": "ExcelR",
+    "normalized_company": "excelr",
+    "drive_name": "ExcelR",
+    "role_title": null,
+    "raw_date": "14-03-2026",
+    "date_of_visit": "2026-03-14",
+    "raw_package_text": "3 to 5 LPA",
+    "package_min_lpa": 3,
+    "package_max_lpa": 5,
+    "package_values": [
+      3,
+      5
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 104,
+    "source_page": 3,
+    "source_row": 21,
+    "raw_company": "India Pvt. Ltd.\nArshith Fresh India Pvt. Ltd.\n:unselected:",
+    "cleaned_company": "Arshith Fresh India Pvt. Ltd.",
+    "normalized_company": "arshithfreshindiapvtltd",
+    "drive_name": "Arshith Fresh India Pvt. Ltd.",
+    "role_title": null,
+    "raw_date": "20-03-2026\nH",
+    "date_of_visit": "2026-03-20",
+    "raw_package_text": "4 LPA",
+    "package_min_lpa": 4,
+    "package_max_lpa": 4,
+    "package_values": [
+      4
+    ],
+    "warnings": [
+      "Removed duplicate leading phrase in company name",
+      "Cleaned date \"20-03-2026\nH\" -> \"2026-03-20\""
+    ],
+    "requires_review": false
+  },
+  {
+    "sno": 105,
+    "source_page": 3,
+    "source_row": 22,
+    "raw_company": "Lancesoft\n:unselected:",
+    "cleaned_company": "Lancesoft",
+    "normalized_company": "lancesoft",
+    "drive_name": "Lancesoft",
+    "role_title": null,
+    "raw_date": "25-03-2026",
+    "date_of_visit": "2026-03-25",
+    "raw_package_text": "3.5 LPA",
+    "package_min_lpa": 3.5,
+    "package_max_lpa": 3.5,
+    "package_values": [
+      3.5
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 106,
+    "source_page": 3,
+    "source_row": 23,
+    "raw_company": "TREKVERSE",
+    "cleaned_company": "TREKVERSE",
+    "normalized_company": "trekverse",
+    "drive_name": "TREKVERSE",
+    "role_title": null,
+    "raw_date": "25-03-2026",
+    "date_of_visit": "2026-03-25",
+    "raw_package_text": "4.5 LPA",
+    "package_min_lpa": 4.5,
+    "package_max_lpa": 4.5,
+    "package_values": [
+      4.5
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 107,
+    "source_page": 3,
+    "source_row": 24,
+    "raw_company": "Student\nAksi Aerospace",
+    "cleaned_company": "Aksi Aerospace",
+    "normalized_company": "aksiaerospace",
+    "drive_name": "Aksi Aerospace",
+    "role_title": null,
+    "raw_date": "Co31-03-2026",
+    "date_of_visit": "2026-03-31",
+    "raw_package_text": "4 to 5 LPA",
+    "package_min_lpa": 4,
+    "package_max_lpa": 5,
+    "package_values": [
+      4,
+      5
+    ],
+    "warnings": [
+      "Filtered watermark line: \"Student\"",
+      "Cleaned date \"Co31-03-2026\" -> \"2026-03-31\""
+    ],
+    "requires_review": false
+  },
+  {
+    "sno": 108,
+    "source_page": 3,
+    "source_row": 25,
+    "raw_company": "Square Yards",
+    "cleaned_company": "Square Yards",
+    "normalized_company": "squareyards",
+    "drive_name": "Square Yards",
+    "role_title": null,
+    "raw_date": "08-04-2026",
+    "date_of_visit": "2026-04-08",
+    "raw_package_text": "4 LPA",
+    "package_min_lpa": 4,
+    "package_max_lpa": 4,
+    "package_values": [
+      4
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 109,
+    "source_page": 3,
+    "source_row": 26,
+    "raw_company": "Persevax",
+    "cleaned_company": "Persevax",
+    "normalized_company": "persevax",
+    "drive_name": "Persevax",
+    "role_title": null,
+    "raw_date": "26-03-2026",
+    "date_of_visit": "2026-03-26",
+    "raw_package_text": "5 to 7 LPA",
+    "package_min_lpa": 5,
+    "package_max_lpa": 7,
+    "package_values": [
+      5,
+      7
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 110,
+    "source_page": 3,
+    "source_row": 27,
+    "raw_company": "2023\nHCL GUVI",
+    "cleaned_company": "HCL GUVI",
+    "normalized_company": "hclguvi",
+    "drive_name": "HCL GUVI",
+    "role_title": null,
+    "raw_date": "28-03-2026\n27",
+    "date_of_visit": "2026-03-28",
+    "raw_package_text": "3.5 to 4 LPA",
+    "package_min_lpa": 3.5,
+    "package_max_lpa": 4,
+    "package_values": [
+      3.5,
+      4
+    ],
+    "warnings": [
+      "Filtered watermark line: \"2023\"",
+      "Cleaned date \"28-03-2026\n27\" -> \"2026-03-28\""
+    ],
+    "requires_review": false
+  },
+  {
+    "sno": 111,
+    "source_page": 3,
+    "source_row": 28,
+    "raw_company": "MosChip Technologies",
+    "cleaned_company": "MosChip Technologies",
+    "normalized_company": "moschiptechnologies",
+    "drive_name": "MosChip Technologies",
+    "role_title": null,
+    "raw_date": "30-03-2026",
+    "date_of_visit": "2026-03-30",
+    "raw_package_text": "3 LPA",
+    "package_min_lpa": 3,
+    "package_max_lpa": 3,
+    "package_values": [
+      3
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 112,
+    "source_page": 3,
+    "source_row": 29,
+    "raw_company": "Microland",
+    "cleaned_company": "Microland",
+    "normalized_company": "microland",
+    "drive_name": "Microland",
+    "role_title": null,
+    "raw_date": "31-03-2026",
+    "date_of_visit": "2026-03-31",
+    "raw_package_text": "7 LPA",
+    "package_min_lpa": 7,
+    "package_max_lpa": 7,
+    "package_values": [
+      7
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 113,
+    "source_page": 3,
+    "source_row": 30,
+    "raw_company": "Worksbot",
+    "cleaned_company": "Worksbot",
+    "normalized_company": "worksbot",
+    "drive_name": "Worksbot",
+    "role_title": null,
+    "raw_date": "01-04-2026",
+    "date_of_visit": "2026-04-01",
+    "raw_package_text": "3 LPA",
+    "package_min_lpa": 3,
+    "package_max_lpa": 3,
+    "package_values": [
+      3
+    ],
+    "warnings": [],
+    "requires_review": false
+  },
+  {
+    "sno": 114,
+    "source_page": 3,
+    "source_row": 31,
+    "raw_company": "Concentrix",
+    "cleaned_company": "Concentrix",
+    "normalized_company": "concentrix",
+    "drive_name": "Concentrix",
+    "role_title": null,
+    "raw_date": "03-04-2026",
+    "date_of_visit": "2026-04-03",
+    "raw_package_text": "3 LPA",
+    "package_min_lpa": 3,
+    "package_max_lpa": 3,
+    "package_values": [
+      3
+    ],
+    "warnings": [],
+    "requires_review": false
+  }
+]

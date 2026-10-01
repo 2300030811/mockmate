@@ -3,6 +3,7 @@
 import { Groq } from "groq-sdk";
 import { getNextKey, getNumKeys } from "@/utils/keyManager";
 import { logger } from "@/lib/logger";
+import { AI_MODELS } from "@/lib/ai/gateway";
 
 const WIZARD_SYSTEM_PROMPT = `You are an adaptive, conversational resume builder assistant.
 Your goal is to build a highly structured JSON resume progressively by asking the user ONE targeted question at a time about their career, experience, projects, or education.
@@ -48,13 +49,13 @@ Process the answer, update the resume JSON, and formulate the next question. Out
         const apiKey = getNextKey("GROQ_API_KEY") || process.env.GROQ_API_KEY;
         if (!apiKey) throw new Error("Groq API Key missing");
 
-        const groq = new Groq({ apiKey });
+        const groq = new Groq({ apiKey, dangerouslyAllowBrowser: true });
         const chatCompletion = await groq.chat.completions.create({
           messages: [
             { role: "system", content: WIZARD_SYSTEM_PROMPT },
             { role: "user", content: prompt },
           ],
-          model: "llama-3.3-70b-versatile",
+          model: AI_MODELS.STRUCTURED,
           temperature: 0.1,
           response_format: { type: "json_object" },
         });

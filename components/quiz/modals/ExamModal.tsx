@@ -54,97 +54,94 @@ export function ExamModal({ config, examCount, setExamCount, onClose, onStart }:
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
         transition={{ duration: 0.2 }}
-        className="rounded-2xl shadow-2xl max-w-lg w-full p-6 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+        className="rounded-xl border border-zinc-200 dark:border-[#1e1e2a] shadow-2xl max-w-lg w-full p-6 bg-white dark:bg-[#14141e] text-zinc-900 dark:text-[#ebebef]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">
-            Exam Instructions
-          </h2>
+        <div className="flex justify-between items-center mb-5 border-b pb-4 border-zinc-200 dark:border-[#1e1e2a]">
+          <div>
+            <h2 className="text-base font-semibold tracking-[-0.015em] text-zinc-900 dark:text-[#ebebef]">
+              Proctored Exam Simulation Protocol
+            </h2>
+            <p className="text-xs text-zinc-500 dark:text-[#8b8b9e] mt-0.5">
+              Simulated vendor exam under strict timing and passing constraints
+            </p>
+          </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-full transition hover:bg-gray-100 dark:hover:bg-gray-700"
+            className="p-1 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-[#ebebef] hover:bg-zinc-100 dark:hover:bg-[#1a1a26] transition-colors"
           >
             <CloseIcon />
           </button>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="p-3 rounded-lg text-center bg-gray-50 dark:bg-gray-700">
-            <p className="text-xs uppercase font-bold text-gray-500 dark:text-gray-400">
-              Duration
+        <div className="grid grid-cols-2 gap-3 mb-5">
+          <div className="p-3 rounded-lg text-center bg-zinc-50 dark:bg-[#101017] border border-zinc-200 dark:border-[#1e1e2a]">
+            <p className="text-[10px] uppercase font-mono tracking-wider text-zinc-400 dark:text-[#6e6e84]">
+              Allocated Duration
             </p>
-            <p className="text-xl font-bold">
-              {config.exam.duration} Mins
+            <p className="text-lg font-bold font-mono text-zinc-900 dark:text-[#ebebef] mt-0.5">
+              {config.exam.duration} Minutes
             </p>
           </div>
-          <div className="p-3 rounded-lg text-center bg-gray-50 dark:bg-gray-700">
-            <p className="text-xs uppercase font-bold text-gray-500 dark:text-gray-400">
-              Questions
+          <div className="p-3 rounded-lg text-center bg-zinc-50 dark:bg-[#101017] border border-zinc-200 dark:border-[#1e1e2a]">
+            <p className="text-[10px] uppercase font-mono tracking-wider text-zinc-400 dark:text-[#6e6e84]">
+              Question Target
             </p>
-            <p className="text-xl font-bold">
-              {examCount} Items
+            <p className="text-lg font-bold font-mono text-[#5e6ad2] mt-0.5">
+              {examCount} Questions
             </p>
           </div>
         </div>
 
-        <div className="mb-6 p-4 rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-700/30">
-          <label className="block text-sm font-semibold mb-3 text-gray-700 dark:text-gray-200">
-            Select number of questions:
+        <div className="mb-5 p-4 rounded-lg border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50 dark:bg-[#101017]">
+          <label className="block text-xs font-semibold mb-2.5 text-zinc-700 dark:text-[#c4c4d4]">
+            Select Examination Scope:
           </label>
           <div className="grid grid-cols-3 gap-2">
             {config.exam.options.map((count) => (
               <button
                 key={count}
                 onClick={() => setExamCount(count)}
-                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                className={`px-3 py-2 rounded-lg text-xs font-semibold font-mono transition-all cursor-pointer ${
                   examCount === count
-                    ? config.practice.activeClass
-                    : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-100 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500 dark:border-transparent"
+                    ? "bg-[#5e6ad2] text-white shadow-subtle border border-[#5e6ad2]"
+                    : "bg-white dark:bg-[#181824] text-zinc-700 dark:text-[#8b8b9e] border border-zinc-200 dark:border-[#222232] hover:border-zinc-300 dark:hover:border-zinc-700"
                 }`}
               >
-                {count}
+                {count} Questions
               </button>
             ))}
           </div>
-          <p className="text-xs mt-2 text-gray-400 dark:text-gray-500">
-            Default: {config.exam.default} (Real exam format).
+          <p className="text-[11px] mt-2 text-zinc-500 dark:text-[#8b8b9e]">
+            Official Exam Standard: <span className="font-semibold text-zinc-800 dark:text-[#ebebef]">{config.exam.default} Questions</span>
           </p>
         </div>
 
-        <div className="space-y-3 mb-6 text-gray-700 dark:text-gray-300">
-          <ul className="list-disc pl-5 space-y-2">
-            <li>
-              <strong>Passing Score:</strong> {config.exam.passingScore}.
-            </li>
-            <li>The timer starts immediately.</li>
-            <li>
-              Results are <strong>hidden</strong> until submission.
-            </li>
-            <li className="font-bold px-2 py-1 rounded inline-block text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20">
-              ⚠️ DO NOT REFRESH the page during the test.
-            </li>
-          </ul>
+        <div className="space-y-2 mb-5 text-xs text-zinc-600 dark:text-[#8b8b9e]">
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            <span>Passing Cutoff Benchmark: <strong className="text-zinc-900 dark:text-[#ebebef]">{config.exam.passingScore}</strong></span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+            <span>Results and detailed answer keys remain locked until submission</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+            <span className="text-rose-600 dark:text-rose-400 font-medium">Do not refresh browser during exam to preserve session state</span>
+          </div>
         </div>
 
-        <div className="mb-6 pt-4 border-t border-gray-100 dark:border-gray-700">
-          <p className="text-xs text-center leading-relaxed text-gray-400 dark:text-gray-500">
-            By starting, you agree that these questions are for practice
-            only. Accuracy is not guaranteed. The app is not responsible for
-            errors or exam outcomes.
-          </p>
-        </div>
-
-        <div className="flex gap-3">
+        <div className="flex justify-end gap-2.5 pt-3 border-t border-zinc-200 dark:border-[#1e1e2a]">
           <button
             onClick={onClose}
-            className="flex-1 py-3 rounded-lg font-semibold transition bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+            className="px-4 py-2 rounded-lg text-xs font-medium transition bg-zinc-100 hover:bg-zinc-200 dark:bg-[#1a1a26] dark:hover:bg-[#222232] text-zinc-700 dark:text-[#8b8b9e] cursor-pointer"
           >
             Decline
           </button>
           <button
             onClick={onStart}
-            className={`flex-[2] py-3 rounded-lg font-bold transition ${config.practice.activeClass}`}
+            className="px-5 py-2 rounded-lg text-xs font-semibold transition bg-[#5e6ad2] hover:bg-[#4f59b8] text-white shadow-subtle cursor-pointer"
           >
             Agree & Start Exam
           </button>

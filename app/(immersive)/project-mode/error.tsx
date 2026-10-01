@@ -2,56 +2,78 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/Button';
 import { RotateCcw, Home, Terminal } from 'lucide-react';
+import { HomeBackground } from '@/components/home/HomeBackground';
 
 export default function ProjectModeError({
-    error,
-    reset,
+  error,
+  reset,
 }: {
-    error: Error & { digest?: string };
-    reset: () => void;
+  error: Error & { digest?: string };
+  reset: () => void;
 }) {
-    useEffect(() => {
-        console.error('[Project Mode Error]', error);
-    }, [error]);
+  useEffect(() => {
+    console.error('[Project Mode Error]', error);
+  }, [error]);
 
-    return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center">
-            <div className="p-8 rounded-2xl bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border border-gray-200/30 dark:border-white/10 shadow-xl max-w-md w-full">
-                <div className="w-14 h-14 rounded-full bg-purple-500/10 flex items-center justify-center mx-auto mb-4">
-                    <Terminal className="w-7 h-7 text-purple-500" />
-                </div>
+  return (
+    <div className="min-h-screen bg-white dark:bg-[#0d0d12] text-zinc-900 dark:text-[#ebebef] relative selection:bg-[#5e6ad2]/20 flex flex-col items-center justify-center p-4 sm:p-6 transition-colors overflow-hidden">
+      {/* 28px Precision Grid & Horizon Illumination */}
+      <HomeBackground />
 
-                <h2 className="text-xl font-bold mb-2 dark:text-white">
-                    Terminal Failure!
-                </h2>
-                <p className="text-gray-600 dark:text-gray-400 mb-6 text-sm leading-relaxed">
-                    {process.env.NODE_ENV === "development"
-                        ? error.message
-                        : "An unexpected exception occurred in Project Mode. Don't worry, your progress is mostly saved."}
-                </p>
-
-                <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                    <Button
-                        onClick={reset}
-                        variant="primary"
-                        className="gap-2"
-                    >
-                        <RotateCcw className="w-4 h-4" />
-                        Reload Workspace
-                    </Button>
-                    <Link href="/">
-                        <Button
-                            variant="ghost"
-                            className="gap-2 text-gray-700 dark:text-gray-300 w-full"
-                        >
-                            <Home className="w-4 h-4" />
-                            Main Menu
-                        </Button>
-                    </Link>
-                </div>
-            </div>
+      <div className="relative z-10 w-full max-w-md mx-auto space-y-4 text-center">
+        {/* Status Pill */}
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-xs font-mono text-purple-600 dark:text-purple-400">
+          <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />
+          <span className="font-semibold">Terminal Exception</span>
+          <span className="opacity-40">•</span>
+          <span>Workspace Halted</span>
         </div>
-    );
+
+        {/* Card */}
+        <div className="w-full bg-white dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] rounded-2xl p-6 sm:p-8 shadow-subtle space-y-5">
+          <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center mx-auto">
+            <Terminal size={24} />
+          </div>
+
+          <div className="space-y-1.5">
+            <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-zinc-900 dark:text-[#ebebef]">
+              Workspace Execution Error
+            </h1>
+            <p className="text-xs sm:text-sm text-zinc-600 dark:text-[#8b8b9e] leading-relaxed">
+              {process.env.NODE_ENV === "development"
+                ? error.message || "An exception halted Project Mode execution."
+                : "An unexpected exception interrupted Project Mode. Your workspace state is safely recorded."}
+            </p>
+          </div>
+
+          {error.digest && (
+            <div className="p-2.5 rounded-lg bg-zinc-50 dark:bg-[#0d0d12] border border-zinc-200/80 dark:border-[#1e1e2a] text-[11px] font-mono text-zinc-400 dark:text-zinc-500 text-left truncate">
+              Digest: {error.digest}
+            </div>
+          )}
+
+          {/* Action Row */}
+          <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-2">
+            <button
+              type="button"
+              onClick={reset}
+              className="w-full sm:flex-1 py-2.5 px-4 rounded-xl text-xs font-semibold bg-[#5e6ad2] hover:bg-[#4f5ac4] text-white shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 shadow-[#5e6ad2]/20"
+            >
+              <RotateCcw size={13} />
+              <span>Reload Workspace</span>
+            </button>
+
+            <Link
+              href="/"
+              className="w-full sm:flex-1 py-2.5 px-4 rounded-xl text-xs font-semibold bg-zinc-100 dark:bg-[#1e1e2a] hover:bg-zinc-200 dark:hover:bg-[#252536] text-zinc-800 dark:text-[#ebebef] border border-zinc-200/80 dark:border-[#2a2a3c] flex items-center justify-center gap-2 transition-all"
+            >
+              <Home size={13} />
+              <span>Back to Hub</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }

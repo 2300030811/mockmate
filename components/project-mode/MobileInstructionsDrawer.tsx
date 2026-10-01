@@ -28,27 +28,25 @@ export const MobileInstructionsDrawer = React.memo(function MobileInstructionsDr
       {isOpen && (
         <>
           {/* Backdrop */}
-          <m.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+          <div
+            className="fixed inset-0 z-40 bg-black/40 md:hidden transition-opacity"
+            aria-hidden="true"
             onClick={onClose}
-            className="fixed inset-0 z-40 bg-black/40 md:hidden"
           />
           
           {/* Drawer */}
-          <m.div
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+          <aside
+            role="dialog"
+            aria-label="Challenge instructions"
             className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white dark:bg-gray-900 rounded-t-3xl max-h-[80vh] overflow-y-auto flex flex-col shadow-2xl"
           >
             {/* Header */}
             <div className="sticky top-0 flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
               <h3 className="font-bold text-lg text-gray-900 dark:text-white">Challenge</h3>
               <button
+                type="button"
                 onClick={onClose}
+                aria-label="Close instructions"
                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-400 transition-colors"
               >
                 <X size={20} />
@@ -148,12 +146,12 @@ export const MobileInstructionsDrawer = React.memo(function MobileInstructionsDr
             </div>
 
             {/* Close Button at Bottom */}
-            <div className="sticky bottom-0 p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
-              <Button onClick={onClose} className="w-full">
-                Got it, let&apos;s code!
+            <div className="sticky bottom-0 p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 relative z-50 pointer-events-auto">
+              <Button type="button" onClick={onClose} className="w-full">
+                Got it
               </Button>
             </div>
-          </m.div>
+          </aside>
         </>
       )}
     </AnimatePresence>

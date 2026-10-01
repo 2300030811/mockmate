@@ -17,9 +17,13 @@ const MIN_ZOOM = 0.4;
 const MAX_ZOOM = 1.5;
 const ZOOM_STEP = 0.1;
 
+// ponytail: stable reference — inline default created a new object every render,
+// which infinite-looped usePagination's useCallback/useEffect deps
+const DEFAULT_MARGINS: MarginSettings = { top: 10, bottom: 10, left: 10, right: 10 };
+
 export function PaginatedPreview({
   pageSize = 'A4',
-  margins = { top: 10, bottom: 10, left: 10, right: 10 },
+  margins = DEFAULT_MARGINS,
   ...resumeProps
 }: PaginatedPreviewProps) {
   const measurementRef = useRef<HTMLDivElement>(null);

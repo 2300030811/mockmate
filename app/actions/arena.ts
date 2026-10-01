@@ -10,10 +10,26 @@ interface Question {
   id: string | number;
   question: string;
   type?: string;
-  options?: string[];
-  answer?: string | string[];
+  options?: any;
+  answer?: any;
   explanation?: string;
   code?: string;
+}
+
+function normalizeAnswer(ans: unknown): string {
+  if (typeof ans === "string") return ans;
+  if (typeof ans === "number" || typeof ans === "boolean") return String(ans);
+  if (Array.isArray(ans)) return ans.map(normalizeAnswer).join("|||");
+  if (typeof ans === "object" && ans !== null) {
+    try {
+      return Object.entries(ans as Record<string, unknown>)
+        .map(([k, v]) => `${k}: ${normalizeAnswer(v)}`)
+        .join(" • ");
+    } catch {
+      return JSON.stringify(ans);
+    }
+  }
+  return ans ? String(ans) : "";
 }
 
 export async function startArenaMatch(category?: string) {
@@ -29,21 +45,37 @@ export async function startArenaMatch(category?: string) {
       throw new Error(`The questions database for '${actualCategory}' is currently offline or empty. Please try another category.`);
     }
 
-    const filtered = rawQuestions.filter(q => q.type === 'mcq' || q.type === 'MSQ' || q.options);
+    // Filter questions that are multiple-choice or have options
+    const filtered = rawQuestions.filter(q => {
+      if (!q.question) return false;
+      if (Array.isArray(q.options) && q.options.length >= 2) return true;
+      if (q.type === 'mcq' || q.type === 'MSQ') return true;
+      return false;
+    });
     
-    if (filtered.length === 0) {
+    const pool = filtered.length >= 5 ? filtered : rawQuestions;
+    if (pool.length === 0) {
       throw new Error(`No compatible questions found for category: ${actualCategory}`);
     }
 
-    const shuffled = shuffleArray(filtered).slice(0, 5);
+    const shuffled = shuffleArray(pool).slice(0, 5);
 
     const formattedQuestions: ArenaQuestion[] = shuffled.map(q => {
+      let options: string[] = [];
+      if (Array.isArray(q.options) && q.options.length > 0) {
+        options = q.options.map(opt => typeof opt === "string" ? opt : String(opt));
+      } else if (typeof q.answer === "object" && q.answer !== null && !Array.isArray(q.answer)) {
+        options = Object.keys(q.answer);
+      } else {
+        options = ["True", "False"];
+      }
+
       return {
         id: String(q.id),
-        q: q.question,
-        options: q.options || [],
-        a: Array.isArray(q.answer) ? q.answer[0] : (q.answer as string),
-        tip: q.explanation || "",
+        q: typeof q.question === "string" ? q.question : String(q.question || ""),
+        options,
+        a: normalizeAnswer(q.answer),
+        tip: typeof q.explanation === "string" ? q.explanation : String(q.explanation || ""),
         category: actualCategory,
         code: q.code
       };

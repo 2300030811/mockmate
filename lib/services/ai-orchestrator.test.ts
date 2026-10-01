@@ -7,7 +7,7 @@ import { z } from "zod";
 vi.mock("@/lib/ai/gateway", () => ({
   generateText: vi.fn(),
   AI_MODELS: {
-    DEFAULT: "llama-3.3-70b-versatile",
+    DEFAULT: "qwen/qwen3.8-27b",
   },
 }));
 

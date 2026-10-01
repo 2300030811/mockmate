@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Modal } from "@/components/ui/Modal";
 import { EmptyState, LoadingState } from "@/components/ui/States";
-import { Star, ChevronLeft, ChevronRight } from "lucide-react";
+import { Star, ChevronLeft, ChevronRight, ShieldAlert, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { QuizAnswer } from "@/types";
 import type { QuizCategoryId } from "@/lib/quiz-registry";
 
@@ -168,7 +168,7 @@ export function UniversalQuizShell({ category, mode, count = null }: UniversalQu
   const answeredCount = Object.keys(userAnswers).length;
 
   return (
-    <div className="h-screen w-full flex flex-col overflow-hidden bg-white dark:bg-gray-950 text-gray-900 dark:text-white">
+    <div className="h-screen w-full flex flex-col overflow-hidden bg-white dark:bg-[#0d0d12] text-zinc-900 dark:text-[#ebebef] transition-colors">
       <QuizNavbar
         category={category}
         mode={mode}
@@ -195,19 +195,30 @@ export function UniversalQuizShell({ category, mode, count = null }: UniversalQu
             <div className="max-w-4xl mx-auto">
 
               {/* Header with Progress & Mark */}
-              <div className="flex justify-between items-center mb-8">
+              <div className="flex justify-between items-center mb-6 pb-4 border-b border-zinc-200/80 dark:border-[#1e1e2a]">
                 <div className="flex-1 max-w-md">
-                  <p className="text-sm font-medium opacity-50 mb-2">Question {currentQuestionIndex + 1} of {questions.length}</p>
-                  <ProgressBar value={progressPercentage} className="h-2" />
+                  <div className="flex items-center justify-between text-xs font-mono text-zinc-500 dark:text-[#8b8b9e] mb-2">
+                    <span className="font-semibold text-zinc-900 dark:text-[#ebebef]">
+                      Question {currentQuestionIndex + 1} of {questions.length}
+                    </span>
+                    <span className="tabular-nums font-mono">{Math.round(progressPercentage)}% Completed</span>
+                  </div>
+                  <ProgressBar value={progressPercentage} className="h-1.5" />
                 </div>
-                <Button
+                <button
                   onClick={() => toggleMark(currentQ.id)}
-                  variant="ghost"
-                  size="icon"
-                  className={`ml-4 ${markedQuestions.includes(currentQ.id) ? "text-yellow-500" : "opacity-40 hover:opacity-100"}`}
+                  className={`ml-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-mono transition-colors cursor-pointer ${
+                    markedQuestions.includes(currentQ.id)
+                      ? "bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400 font-semibold"
+                      : "bg-zinc-50 dark:bg-[#14141e] border-zinc-200 dark:border-[#1e1e2a] text-zinc-500 dark:text-[#8b8b9e] hover:text-zinc-900 dark:hover:text-[#ebebef]"
+                  }`}
+                  title={markedQuestions.includes(currentQ.id) ? "Unmark question" : "Mark question for review"}
                 >
-                  <Star className={`w-6 h-6 ${markedQuestions.includes(currentQ.id) ? "fill-current" : ""}`} />
-                </Button>
+                  <Star className={`w-3.5 h-3.5 ${markedQuestions.includes(currentQ.id) ? "fill-current" : ""}`} />
+                  <span className="hidden sm:inline">
+                    {markedQuestions.includes(currentQ.id) ? "Marked" : "Mark for Review"}
+                  </span>
+                </button>
               </div>
 
               {/* Question Content */}
@@ -226,7 +237,6 @@ export function UniversalQuizShell({ category, mode, count = null }: UniversalQu
                     userAnswer={userAnswers[currentQ.id]}
                     onAnswer={onAnswerQuestion}
                     isReviewMode={isSubmitted}
-
                     mode={mode}
                   />
                 </m.div>
@@ -248,15 +258,104 @@ export function UniversalQuizShell({ category, mode, count = null }: UniversalQu
       <Modal
         isOpen={showConfirm}
         onClose={closeSubmitModal}
-        title="Submit Results?"
-        description={`You have answered ${answeredCount} out of ${questions.length} questions.`}
-        footer={
-          <div className="flex gap-4 w-full">
-            <Button onClick={closeSubmitModal} variant="ghost" className="flex-1">Continue</Button>
-            <Button onClick={() => { closeSubmitModal(); handleSubmit(); }} variant="primary" className="flex-1">Submit</Button>
+        icon={
+          <div className="w-9 h-9 rounded-xl bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 flex items-center justify-center text-[#5e6ad2]">
+            <ShieldAlert className="w-5 h-5" />
           </div>
         }
-      />
+        title="Submit Assessment?"
+        description="Verify your completion telemetry before locking and grading your session."
+        footer={
+          <div className="flex items-center gap-2.5 w-full">
+            <Button
+              onClick={closeSubmitModal}
+              variant="outline"
+              className="flex-1 h-9 rounded-xl text-xs font-medium border-zinc-200 dark:border-[#262636] hover:bg-zinc-100 dark:hover:bg-[#1a1a26] text-zinc-700 dark:text-[#c4c4d4]"
+            >
+              Continue Assessment
+            </Button>
+            <Button
+              onClick={() => { closeSubmitModal(); handleSubmit(); }}
+              className="flex-1 h-9 rounded-xl text-xs font-semibold bg-[#5e6ad2] hover:bg-[#525ec2] text-white shadow-sm transition-all"
+            >
+              Confirm & Submit
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-3 pt-1 pb-1">
+          {/* Bento Telemetry Metrics */}
+          <div className="grid grid-cols-2 gap-2.5">
+            <div className="p-3 rounded-xl bg-zinc-50 dark:bg-[#101017] border border-zinc-200 dark:border-[#1e1e2a]">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 dark:text-[#6e6e84]">
+                  Answered
+                </span>
+                <span className="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  Recorded
+                </span>
+              </div>
+              <p className="font-mono text-lg font-bold text-zinc-900 dark:text-[#ebebef]">
+                <span className="text-emerald-600 dark:text-emerald-400">{answeredCount}</span>
+                <span className="text-xs text-zinc-400 dark:text-[#6e6e84] font-normal"> / {questions.length}</span>
+              </p>
+            </div>
+
+            <div className="p-3 rounded-xl bg-zinc-50 dark:bg-[#101017] border border-zinc-200 dark:border-[#1e1e2a]">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 dark:text-[#6e6e84]">
+                  Unanswered
+                </span>
+                <span className={`inline-flex items-center gap-1 text-[10px] font-mono font-medium ${
+                  questions.length - answeredCount > 0 ? "text-amber-500" : "text-zinc-400"
+                }`}>
+                  {questions.length - answeredCount > 0 ? "Pending" : "Cleared"}
+                </span>
+              </div>
+              <p className="font-mono text-lg font-bold">
+                <span className={questions.length - answeredCount > 0 ? "text-amber-500" : "text-zinc-400 dark:text-[#6e6e84]"}>
+                  {questions.length - answeredCount}
+                </span>
+                <span className="text-xs text-zinc-400 dark:text-[#6e6e84] font-normal"> remaining</span>
+              </p>
+            </div>
+          </div>
+
+          {/* Linear completion bar */}
+          <div className="p-3 rounded-xl bg-zinc-50 dark:bg-[#101017] border border-zinc-200 dark:border-[#1e1e2a]">
+            <div className="flex items-center justify-between text-xs font-mono mb-2">
+              <span className="text-zinc-500 dark:text-[#8b8b9e]">Completion Rate</span>
+              <span className="font-bold text-zinc-900 dark:text-[#ebebef]">
+                {questions.length > 0 ? Math.round((answeredCount / questions.length) * 100) : 0}%
+              </span>
+            </div>
+            <div className="h-1.5 w-full bg-zinc-200 dark:bg-[#1a1a26] rounded-full overflow-hidden">
+              <div
+                className="h-full bg-[#5e6ad2] transition-all duration-300 rounded-full"
+                style={{ width: `${questions.length > 0 ? (answeredCount / questions.length) * 100 : 0}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Advisory Notice */}
+          {questions.length - answeredCount > 0 ? (
+            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 flex items-start gap-2.5 text-xs">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
+              <p className="leading-relaxed">
+                <strong className="font-semibold">{questions.length - answeredCount} unanswered item{questions.length - answeredCount > 1 ? 's' : ''}</strong> will be marked incorrect (0 pts). Once submitted, this attempt cannot be resumed.
+              </p>
+            </div>
+          ) : (
+            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 flex items-start gap-2.5 text-xs">
+              <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-500" />
+              <p className="leading-relaxed">
+                All questions answered! Your responses are ready for final grading and leaderboard ranking.
+              </p>
+            </div>
+          )}
+        </div>
+      </Modal>
 
       {mode !== 'exam' && <BobAssistant question={currentQ} />}
     </div>

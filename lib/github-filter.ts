@@ -2,6 +2,7 @@ import { Groq } from "groq-sdk";
 import { getNextKey } from "@/utils/keyManager";
 import { logger } from "@/lib/logger";
 import { GitHubRepo } from "@/lib/github-fetch";
+import { AI_MODELS } from "@/lib/ai/gateway";
 
 const FILTER_SYSTEM_PROMPT = `You are an expert technical recruiter analyzing GitHub repositories to identify the most impressive and relevant projects for a software engineering position.
 
@@ -53,13 +54,13 @@ export async function filterTopGitHubProjects(repos: GitHubRepo[]): Promise<GitH
 
     const prompt = `Repository Data:\n${JSON.stringify(simplifiedRepos, null, 2)}\n\nSelect the top 7 most impressive projects based on the criteria. Output ONLY a valid JSON object like: { "selected_repos": ["repo1", "repo2", ...] }`;
 
-    const groq = new Groq({ apiKey });
+    const groq = new Groq({ apiKey, dangerouslyAllowBrowser: true });
     const chatCompletion = await groq.chat.completions.create({
       messages: [
         { role: "system", content: FILTER_SYSTEM_PROMPT },
         { role: "user", content: prompt },
       ],
-      model: "llama-3.3-70b-versatile",
+      model: AI_MODELS.DEFAULT,
       temperature: 0.1,
       response_format: { type: "json_object" },
     });

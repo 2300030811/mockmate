@@ -8,24 +8,24 @@ interface BobPromptsProps {
 
 export function BobPrompts({ onPromptClick }: BobPromptsProps) {
   return (
-    <div className="px-4 py-2 flex gap-2 overflow-x-auto no-scrollbar border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
+    <div className="px-3.5 py-2 flex gap-1.5 overflow-x-auto no-scrollbar border-t border-zinc-200/80 dark:border-[#1e1e2a] bg-zinc-50/80 dark:bg-[#101018]">
       <button
         onClick={() => onPromptClick("Can you explain why the correct answer is correct?")}
-        className="whitespace-nowrap flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50 transition-colors"
+        className="whitespace-nowrap flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono border border-zinc-200 dark:border-[#20202e] bg-white dark:bg-[#14141e] text-zinc-600 dark:text-[#8b8b9e] hover:text-[#5e6ad2] dark:hover:text-[#ebebef] hover:border-[#5e6ad2]/40 transition-colors cursor-pointer shadow-subtle"
       >
-        <Lightbulb className="w-3 h-3" /> Explain Logic
+        <Lightbulb className="w-3 h-3 text-[#5e6ad2]" /> Explain Logic
       </button>
       <button
         onClick={() => onPromptClick("Why are the other options wrong?")}
-        className="whitespace-nowrap flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-300 dark:hover:bg-red-900/50 transition-colors"
+        className="whitespace-nowrap flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono border border-zinc-200 dark:border-[#20202e] bg-white dark:bg-[#14141e] text-zinc-600 dark:text-[#8b8b9e] hover:text-rose-500 dark:hover:text-rose-400 hover:border-rose-500/30 transition-colors cursor-pointer shadow-subtle"
       >
-        <X className="w-3 h-3" /> Why others wrong?
+        <X className="w-3 h-3 text-rose-500" /> Why others wrong?
       </button>
       <button
         onClick={() => onPromptClick("Give me a similar example.")}
-        className="whitespace-nowrap flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:hover:bg-purple-900/50 transition-colors"
+        className="whitespace-nowrap flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono border border-zinc-200 dark:border-[#20202e] bg-white dark:bg-[#14141e] text-zinc-600 dark:text-[#8b8b9e] hover:text-[#5e6ad2] dark:hover:text-[#ebebef] hover:border-[#5e6ad2]/40 transition-colors cursor-pointer shadow-subtle"
       >
-        <Code2 className="w-3 h-3" /> Give Example
+        <Code2 className="w-3 h-3 text-[#5e6ad2]" /> Give Example
       </button>
     </div>
   );

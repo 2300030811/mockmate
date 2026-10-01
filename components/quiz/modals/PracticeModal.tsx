@@ -54,68 +54,89 @@ export function PracticeModal({ config, practiceCount, setPracticeCount, onClose
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
         transition={{ duration: 0.2 }}
-        className="rounded-2xl shadow-2xl max-w-lg w-full p-6 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+        className="rounded-xl border border-zinc-200 dark:border-[#1e1e2a] shadow-2xl max-w-lg w-full p-6 bg-white dark:bg-[#14141e] text-zinc-900 dark:text-[#ebebef]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-between items-center mb-4 border-b pb-4 border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-bold flex items-center gap-2">
-            Practice Mode
-          </h3>
+        <div className="flex justify-between items-center mb-4 border-b pb-4 border-zinc-200 dark:border-[#1e1e2a]">
+          <div>
+            <h3 className="text-base font-semibold tracking-[-0.015em] text-zinc-900 dark:text-[#ebebef]">
+              Practice Labs Configuration
+            </h3>
+            <p className="text-xs text-zinc-500 dark:text-[#8b8b9e] mt-0.5">
+              Self-paced mastery with instant feedback and explanations
+            </p>
+          </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-full transition hover:bg-gray-100 dark:hover:bg-gray-700"
+            className="p-1 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-[#ebebef] hover:bg-zinc-100 dark:hover:bg-[#1a1a26] transition-colors"
           >
             <CloseIcon />
           </button>
         </div>
 
-        <div className={`mb-6 p-4 rounded-lg text-sm ${config.cards.practice.iconBgLight} text-gray-900 border border-current dark:bg-opacity-20`}>
-          <p>
-            <strong>Note:</strong> This mode is for study purposes. Correct
-            answers and explanations will be shown immediately after
-            answering.
-          </p>
+        <div className="mb-5 p-3.5 rounded-lg text-xs bg-zinc-50 dark:bg-[#101017] border border-zinc-200 dark:border-[#1e1e2a] text-zinc-600 dark:text-[#8b8b9e]">
+          <strong className="text-zinc-900 dark:text-[#ebebef]">Study Protocol: </strong>
+          Correct answers, detailed vendor rationales, and domain breakdowns are revealed immediately after submitting each question.
         </div>
 
-        <ul className="space-y-2 text-sm list-disc pl-5 mb-6 text-gray-600 dark:text-gray-400">
-          <li>Accuracy is not guaranteed. Focus on concepts.</li>
-          <li>Questions are from public sources.</li>
-          <li>No timer attached.</li>
+        <ul className="space-y-1.5 text-xs mb-5 text-zinc-500 dark:text-[#8b8b9e]">
+          <li className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            <span>Interactive Engines Active (Drag & Drop, Hotspots, Code Snippets)</span>
+          </li>
+          <li className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#5e6ad2]" />
+            <span>No countdown timer pressure — take notes and analyze concepts</span>
+          </li>
+          <li className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+            <span>AI Assistant available on every question for step-by-step guidance</span>
+          </li>
         </ul>
 
         {/* Question Count Selection */}
-        <div className="mb-6 p-4 rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-700/30">
-          <label className="block text-sm font-semibold mb-3 text-gray-700 dark:text-gray-200">
-            How many questions do you want to practice?
+        <div className="mb-6 p-4 rounded-lg border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50 dark:bg-[#101017]">
+          <label className="block text-xs font-semibold mb-2.5 text-zinc-700 dark:text-[#c4c4d4]">
+            Select Practice Pool Size:
           </label>
           <div className="grid grid-cols-3 gap-2 mb-3">
+            <button
+              onClick={() => setPracticeCount("all")}
+              className={`px-3 py-2 rounded-lg text-xs font-semibold font-mono transition-all cursor-pointer ${
+                practiceCount === "all"
+                  ? "bg-[#5e6ad2] text-white shadow-subtle border border-[#5e6ad2]"
+                  : "bg-white dark:bg-[#181824] text-zinc-700 dark:text-[#8b8b9e] border border-zinc-200 dark:border-[#222232] hover:border-zinc-300 dark:hover:border-zinc-700"
+              }`}
+            >
+              All Questions
+            </button>
             {config.practice.options.map((count) => (
               <button
                 key={count}
-                onClick={() => setPracticeCount(count as (number | "all"))}
-                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                onClick={() => setPracticeCount(count)}
+                className={`px-3 py-2 rounded-lg text-xs font-semibold font-mono transition-all cursor-pointer ${
                   practiceCount === count
-                    ? (config.practice.activeClass || "bg-blue-600 text-white shadow-lg shadow-blue-500/30")
-                    : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-100 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500 dark:border-transparent"
+                    ? "bg-[#5e6ad2] text-white shadow-subtle border border-[#5e6ad2]"
+                    : "bg-white dark:bg-[#181824] text-zinc-700 dark:text-[#8b8b9e] border border-zinc-200 dark:border-[#222232] hover:border-zinc-300 dark:hover:border-zinc-700"
                 }`}
               >
-                {count}
+                {count} Questions
               </button>
             ))}
             
              <button
                onClick={() => setPracticeCount(1)} 
-               className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                 typeof practiceCount === "number" && !config.practice.options.includes(practiceCount as number)
-                   ? (config.practice.activeClass || "bg-blue-600 text-white shadow-lg shadow-blue-500/30")
-                   : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-100 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500 dark:border-transparent"
+               className={`px-3 py-2 rounded-lg text-xs font-semibold font-mono transition-all cursor-pointer ${
+                 typeof practiceCount === "number" && !config.practice.options.includes(practiceCount)
+                   ? "bg-[#5e6ad2] text-white shadow-subtle border border-[#5e6ad2]"
+                   : "bg-white dark:bg-[#181824] text-zinc-700 dark:text-[#8b8b9e] border border-zinc-200 dark:border-[#222232] hover:border-zinc-300 dark:hover:border-zinc-700"
                }`}
              >
-               Custom
+               Custom Size
              </button>
           </div>
           
-          {typeof practiceCount === "number" && !config.practice.options.includes(practiceCount as number) && (
+          {typeof practiceCount === "number" && !config.practice.options.includes(practiceCount) && (
             <input
               type="number"
               min="1"
@@ -126,25 +147,25 @@ export function PracticeModal({ config, practiceCount, setPracticeCount, onClose
                 if (!isNaN(val) && val > 0) setPracticeCount(val);
               }}
               placeholder="Enter number of questions (e.g. 25)"
-              className={`w-full px-4 py-2 rounded-lg text-sm transition-all focus:outline-none focus:ring-2 ${config.practice.ringClass || "focus:ring-blue-500"} bg-white text-gray-900 border border-gray-300 dark:bg-gray-600 dark:text-white dark:border-gray-500 dark:placeholder-gray-400`}
+              className="w-full px-3 py-2 rounded-lg text-xs font-mono transition-all focus:outline-none focus:border-[#5e6ad2] bg-white dark:bg-[#181824] text-zinc-900 dark:text-[#ebebef] border border-zinc-200 dark:border-[#222232]"
               autoFocus
             />
           )}
         </div>
 
-        <div className="flex justify-end gap-3">
+        <div className="flex justify-end gap-2.5">
           <button
             onClick={onClose}
-            className="px-5 py-2 rounded-lg font-medium transition bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+            className="px-4 py-2 rounded-lg text-xs font-medium transition bg-zinc-100 hover:bg-zinc-200 dark:bg-[#1a1a26] dark:hover:bg-[#222232] text-zinc-700 dark:text-[#8b8b9e] cursor-pointer"
           >
-            Back
+            Cancel
           </button>
           <button
             onClick={onStart}
             disabled={typeof practiceCount === "number" && practiceCount <= 0}
-            className={`px-5 py-2 rounded-lg font-bold transition ${config.practice.activeClass} disabled:opacity-40 disabled:cursor-not-allowed`}
+            className="px-5 py-2 rounded-lg text-xs font-semibold transition bg-[#5e6ad2] hover:bg-[#4f59b8] text-white shadow-subtle disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           >
-            Start Practice
+            Launch Practice Lab
           </button>
         </div>
       </m.div>

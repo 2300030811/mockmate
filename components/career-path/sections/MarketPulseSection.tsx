@@ -1,60 +1,104 @@
+"use client";
+
 import React from "react";
-import { Briefcase } from "lucide-react";
-import { Card } from "@/components/ui/Card";
+import { TrendingUp, Banknote, ShieldCheck, Compass, Zap } from "lucide-react";
 import { MarketPulseSectionProps } from "../types";
 
 export const MarketPulseSection = React.memo(({ marketInsights }: MarketPulseSectionProps) => {
-  const confidence = marketInsights?.confidence || "medium";
+  if (!marketInsights) return null;
 
-  const confidenceColor: Record<string, string> = {
-    high: "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/20",
-    medium: "text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-500/10 border-yellow-200 dark:border-yellow-500/20",
-    low: "text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-500/10 border-orange-200 dark:border-orange-500/20",
-  };
+  const confidence = marketInsights.confidence || "medium";
+  const isHighConfidence = confidence === "high";
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2 uppercase tracking-tighter italic">
-          <Briefcase className="text-emerald-500" size={20} />
-          Market Pulse
-        </h2>
-        <span className={`text-[10px] uppercase font-black tracking-widest px-2.5 py-1 rounded-md border ${confidenceColor[confidence]}`}>
-          {confidence === "high" ? "🎯 High Confidence" : confidence === "medium" ? "⚡ Medium Confidence" : "📊 Estimated"}
+    <div className="w-full bg-white dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] rounded-2xl p-5 sm:p-6 shadow-subtle space-y-4 relative overflow-hidden">
+      {/* Subtle Green Horizon Glow */}
+      <div className="absolute top-0 right-0 w-64 h-32 bg-emerald-500/[0.04] blur-2xl pointer-events-none" />
+
+      {/* Header */}
+      <div className="flex items-center justify-between gap-2 border-b border-zinc-100 dark:border-[#1e1e2a] pb-3">
+        <div className="flex items-center gap-2">
+          <span className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+            <TrendingUp size={15} />
+          </span>
+          <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-900 dark:text-[#ebebef]">
+            Market Pulse & Economics
+          </h3>
+        </div>
+
+        <span
+          className={`text-[10px] font-mono px-2.5 py-0.5 rounded-full border font-bold uppercase tracking-wider flex items-center gap-1 ${
+            isHighConfidence
+              ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+              : "bg-zinc-100 dark:bg-[#0d0d12] border-zinc-200 dark:border-[#1e1e2a] text-zinc-500 dark:text-[#8b8b9e]"
+          }`}
+        >
+          <ShieldCheck size={11} />
+          <span>{confidence} Confidence</span>
         </span>
       </div>
-      <Card className="p-6 bg-emerald-50/50 dark:bg-emerald-500/5 border-emerald-200 dark:border-emerald-500/10 shadow-sm relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-3xl -mr-10 -mt-10" />
-        <div className="space-y-6">
+
+      <div className="space-y-4">
+        {/* Salary Benchmark Card */}
+        <div className="p-4 rounded-xl bg-zinc-50 dark:bg-[#0d0d12] border border-zinc-200/80 dark:border-[#1e1e2a] space-y-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400">Demand Heat</span>
-            <div className="flex gap-1 h-3 items-center">
-              {[1, 2, 3, 4, 5].map((lvl) => (
-                <div
-                  key={lvl}
-                  className={`w-2 h-full rounded-full transition-colors ${
-                    (marketInsights?.demand === "high" && lvl <= 5) ||
-                    (marketInsights?.demand === "medium" && lvl <= 3) ||
-                    (lvl <= 2)
-                      ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"
-                      : "bg-emerald-200 dark:bg-emerald-950"
-                  }`}
-                />
-              ))}
-            </div>
+            <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 flex items-center gap-1">
+              <Banknote size={12} className="text-emerald-500" />
+              <span>Target Salary Benchmark</span>
+            </span>
+            <span className="text-[10px] font-mono text-zinc-400">Annual CTC</span>
           </div>
-          <div>
-            <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 block mb-1">Salary Benchmark</span>
-            <p className="text-2xl font-black text-gray-900 dark:text-white tracking-tighter italic">{marketInsights.salaryRange}</p>
+
+          <div className="flex items-baseline gap-2">
+            <p className="text-xl sm:text-2xl font-extrabold font-mono text-zinc-900 dark:text-[#ebebef] truncate">
+              {marketInsights.salaryRange || "Industry Standard"}
+            </p>
           </div>
-          <div>
-            <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 block mb-2">Trend Velocity</span>
-            <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed font-medium selection:bg-emerald-500/20">
+          <p className="text-[11px] text-zinc-500 dark:text-[#8b8b9e] leading-snug">
+            Aggregated across verified hiring loops and placement tier distributions.
+          </p>
+        </div>
+
+        {/* Demand Heat Meter */}
+        <div className="p-4 rounded-xl bg-zinc-50 dark:bg-[#0d0d12] border border-zinc-200/80 dark:border-[#1e1e2a] space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 flex items-center gap-1">
+              <Zap size={12} className="text-amber-500" />
+              <span>Hiring Volume & Demand Heat</span>
+            </span>
+            <span className="text-xs font-mono font-bold capitalize text-emerald-600 dark:text-emerald-400">
+              {marketInsights.demand} Demand
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            {[1, 2, 3, 4, 5].map((lvl) => (
+              <div
+                key={lvl}
+                className={`h-2 flex-1 rounded-full transition-colors ${
+                  (marketInsights.demand === "high" && lvl <= 5) ||
+                  (marketInsights.demand === "medium" && lvl <= 3) ||
+                  lvl <= 2
+                    ? "bg-emerald-500"
+                    : "bg-zinc-200 dark:bg-zinc-800"
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Outlook Statement */}
+        {marketInsights.outlook && (
+          <div className="p-3.5 rounded-xl bg-emerald-500/[0.04] border border-emerald-500/15 space-y-1">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-700 dark:text-emerald-400 font-bold flex items-center gap-1">
+              <Compass size={11} /> Trajectory Forecast
+            </span>
+            <p className="text-xs text-zinc-600 dark:text-[#a0a0b2] leading-relaxed">
               {marketInsights.outlook}
             </p>
           </div>
-        </div>
-      </Card>
+        )}
+      </div>
     </div>
   );
 });

@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { getRecentResults } from "@/app/actions/results";
 import { getRecentCareerPaths } from "@/app/actions/career-save";
 import { getRecentCareerOpsApplications, getRecentCareerOpsFollowUps } from "@/app/actions/career-ops";
-import { m, AnimatePresence } from "framer-motion";
 import { Trophy, Clock, ChevronRight, BarChart3, RotateCcw, Briefcase, Map, BellRing } from "lucide-react";
 import Link from "next/link";
 import type { CareerOpsApplicationItem, CareerOpsRecentActivityItem } from "@/types/career-ops";
@@ -30,14 +29,14 @@ interface CareerPathEntry {
 }
 
 const STATUS_STYLES: Record<string, string> = {
-  evaluated: "bg-slate-500/10 text-slate-500",
-  applied: "bg-blue-500/10 text-blue-500",
-  responded: "bg-cyan-500/10 text-cyan-500",
-  interview: "bg-indigo-500/10 text-indigo-500",
-  offer: "bg-emerald-500/10 text-emerald-500",
-  rejected: "bg-rose-500/10 text-rose-500",
-  discarded: "bg-amber-500/10 text-amber-500",
-  skip: "bg-gray-500/10 text-gray-500",
+  evaluated: "bg-slate-500/10 text-slate-500 border border-slate-500/20",
+  applied: "bg-blue-500/10 text-blue-500 border border-blue-500/20",
+  responded: "bg-cyan-500/10 text-cyan-500 border border-cyan-500/20",
+  interview: "bg-indigo-500/10 text-indigo-500 border border-indigo-500/20",
+  offer: "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20",
+  rejected: "bg-rose-500/10 text-rose-500 border border-rose-500/20",
+  discarded: "bg-amber-500/10 text-amber-500 border border-amber-500/20",
+  skip: "bg-gray-500/10 text-gray-500 border border-gray-500/20",
 };
 
 export function ResultsHistory() {
@@ -48,143 +47,130 @@ export function ResultsHistory() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function loadHistory() {
-      const [quizHistory, careerHistory, trackerHistory, followUpHistory] = await Promise.all([
-        getRecentResults(),
-        getRecentCareerPaths(),
-        getRecentCareerOpsApplications(4),
-        getRecentCareerOpsFollowUps(3)
-      ]);
-      setResults(quizHistory as QuizResult[]);
-      setCareerPaths(careerHistory as CareerPathEntry[]);
-      setTrackerApps(trackerHistory);
-      setRecentFollowUps(followUpHistory);
-      setLoading(false);
+    let isMounted = true;
+
+    async function loadData() {
+      try {
+        const [recentResults, recentPaths, recentApps, followUps] = await Promise.all([
+          getRecentResults(),
+          getRecentCareerPaths(),
+          getRecentCareerOpsApplications(4),
+          getRecentCareerOpsFollowUps(3),
+        ]);
+
+        if (isMounted) {
+          setResults(recentResults);
+          setCareerPaths(recentPaths);
+          setTrackerApps(recentApps);
+          setRecentFollowUps(followUps);
+        }
+      } catch (err) {
+        console.error("Failed to load recent activity:", err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
     }
-    loadHistory();
+
+    loadData();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  if (loading) return null;
-  const hasData =
-    results.length > 0 ||
-    careerPaths.length > 0 ||
-    trackerApps.length > 0 ||
-    recentFollowUps.length > 0;
-  if (!hasData) return null;
+  const hasContent = results.length > 0 || careerPaths.length > 0 || trackerApps.length > 0;
+  if (!loading && !hasContent) return null;
 
   return (
-    <m.section 
-      id="history"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="mt-12 text-left"
-    >
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-500/10 rounded-lg">
-            <BarChart3 className="w-5 h-5 text-blue-500" />
-          </div>
-          <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400">
-            Your Activity
+    <section className="text-left space-y-4" aria-label="Recent Candidate Activity">
+      <div className="flex items-center justify-between border-b border-zinc-200 dark:border-[#1e1e2a] pb-3">
+        <div className="flex items-center gap-2">
+          <BarChart3 className="w-3.5 h-3.5 text-[#5e6ad2]" />
+          <h2 className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-500 dark:text-[#8b8b9e]">
+            Recent Candidate Activity
           </h2>
         </div>
       </div>
 
-      <div className="space-y-8">
+      <div className="space-y-6">
         {/* Quiz Results */}
         {results.length > 0 && (
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-4 flex items-center gap-2">
-              <Trophy className="w-4 h-4" /> Recent Quizzes
+            <h3 className="text-xs font-medium text-zinc-500 dark:text-[#8b8b9e] uppercase tracking-wider mb-3 flex items-center gap-1.5">
+              <Trophy className="w-3.5 h-3.5 text-zinc-400" /> Recent Assessments
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <AnimatePresence mode="popLayout">
-                {results.slice(0, 4).map((result, idx) => (
-                  <m.div
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {results.slice(0, 4).map((result) => {
+                const isArena = result.quiz_mode === "arena" || isArenaCategory(result.category);
+                const isPDF = result.category.startsWith("PDF:");
+
+                let displayCat = result.category;
+                if (isArena) {
+                  displayCat = parseArenaBaseCategory(result.category).toUpperCase() + " ARENA";
+                } else if (isPDF) {
+                  displayCat = "PDF QUIZ";
+                } else {
+                  displayCat = result.category.toUpperCase();
+                }
+
+                const quizSlug = parseArenaBaseCategory(result.category);
+                const href = isArena
+                  ? "/arena"
+                  : isPDF
+                  ? "/upload"
+                  : result.quiz_mode === "daily-challenge" || result.category === "daily-challenge"
+                  ? "/daily-challenge"
+                  : `/${quizSlug === "pcap" ? "pcap-quiz" : quizSlug + "-quiz"}`;
+
+                const percentage = Math.round((result.score / result.total_questions) * 100);
+
+                return (
+                  <div
                     key={result.id}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: idx * 0.1 }}
-                    whileHover={{ y: -5 }}
-                    className="group relative overflow-hidden bg-white/40 dark:bg-gray-900/40 backdrop-blur-xl border border-white/20 dark:border-gray-800 rounded-2xl p-4 shadow-sm hover:shadow-xl transition-all duration-300"
+                    className="rounded-lg border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-4 flex flex-col justify-between hover:border-zinc-300 dark:hover:border-[#2a2a3a] transition-colors"
                   >
-                    {/* Display and Link Logic */}
-                    {(() => {
-                      const isArena = result.quiz_mode === "arena" || isArenaCategory(result.category);
-                      const isPDF = result.category.startsWith('PDF:');
-                      
-                      // Sanitize category for display
-                      let displayCat = result.category;
-                      if (isArena) {
-                        displayCat = parseArenaBaseCategory(result.category).toUpperCase() + " ARENA";
-                      } else if (isPDF) {
-                        displayCat = "PDF QUIZ";
-                      } else {
-                        displayCat = result.category.toUpperCase();
-                      }
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[9.5px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-[#181824] text-zinc-600 dark:text-[#8b8b9e] border border-zinc-200 dark:border-[#1e1e2a]">
+                          {displayCat}
+                        </span>
+                        <div className="flex items-center gap-1 text-[11px] text-zinc-400 dark:text-[#5a5a6e]">
+                          <Clock className="w-3 h-3" />
+                          <ClientDate date={result.completed_at} placeholder="..." />
+                        </div>
+                      </div>
 
-                      // Sanitize category for link
-                      const quizSlug = parseArenaBaseCategory(result.category);
-                      const href = isArena 
-                        ? '/arena' 
-                        : isPDF 
-                          ? '/upload'
-                          : result.quiz_mode === 'daily-challenge' || result.category === 'daily-challenge'
-                            ? '/daily-challenge'
-                            : `/${quizSlug === 'pcap' ? 'pcap-quiz' : quizSlug + '-quiz'}`;
+                      <div className="flex items-baseline justify-between mt-3">
+                        <div>
+                          <p className="text-xl font-semibold text-zinc-900 dark:text-[#ebebef] tabular-nums t leading-none">
+                            {percentage}%
+                          </p>
+                          <p className="text-[11px] text-zinc-500 dark:text-[#8b8b9e] mt-1 tabular-nums t">
+                            {result.score}/{result.total_questions} Correct
+                          </p>
+                        </div>
 
-                      return (
-                        <>
-                          <div className="flex items-center justify-between mb-3">
-                            <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md ${
-                              isArena ? 'bg-red-500/10 text-red-500' : isPDF ? 'bg-purple-500/10 text-purple-500' : 'bg-blue-500/10 text-blue-500'
-                            }`}>
-                              {displayCat}
-                            </span>
-                            <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                              <Clock className="w-3 h-3" />
-                              <ClientDate date={result.completed_at} placeholder="..." />
-                            </div>
-                          </div>
+                        <Link
+                          href={href}
+                          className="p-1.5 rounded-[5px] bg-zinc-100 dark:bg-[#181824] hover:bg-zinc-200 dark:hover:bg-[#222232] text-zinc-600 dark:text-[#ebebef] transition-colors"
+                          title="Retake Quiz"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                        </Link>
+                      </div>
+                    </div>
 
-                          <div className="flex items-end justify-between">
-                            <div>
-                              <p className="text-2xl font-black text-gray-900 dark:text-white">
-                                {Math.round((result.score / result.total_questions) * 100)}%
-                              </p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">
-                                {result.score}/{result.total_questions} Correct
-                              </p>
-                            </div>
-                            
-                            <Link
-                              href={href}
-                              className={`p-2.5 bg-gray-100 dark:bg-gray-800 rounded-xl transition-all duration-300 group-hover:text-white ${
-                                isArena ? 'group-hover:bg-red-600' : isPDF ? 'group-hover:bg-purple-600' : 'group-hover:bg-blue-600'
-                              }`}
-                            >
-                              <RotateCcw className="w-4 h-4" />
-                            </Link>
-                          </div>
-                        </>
-                      );
-                    })()}
-
-                    <div className="mt-3 h-1 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                      <m.div 
-                        initial={{ width: 0 }}
-                        animate={{ width: `${(result.score / result.total_questions) * 100}%` }}
-                        transition={{ duration: 1, delay: 0.5 }}
-                        className={`h-full bg-gradient-to-r ${
-                          (result.score / result.total_questions) >= 0.7 
-                            ? "from-emerald-500 to-teal-400" 
-                            : "from-orange-500 to-yellow-400"
+                    <div className="mt-3 h-1 w-full bg-zinc-100 dark:bg-[#1e1e2a] rounded-full overflow-hidden">
+                      <div
+                        style={{ width: `${percentage}%` }}
+                        className={`h-full ${
+                          percentage >= 70 ? "bg-emerald-500/80" : "bg-amber-500/80"
                         }`}
                       />
                     </div>
-                  </m.div>
-                ))}
-              </AnimatePresence>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -192,131 +178,127 @@ export function ResultsHistory() {
         {/* Career Paths */}
         {careerPaths.length > 0 && (
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-4 flex items-center gap-2">
-              <Map className="w-4 h-4" /> Career Roadmaps
+            <h3 className="text-xs font-medium text-zinc-500 dark:text-[#8b8b9e] uppercase tracking-wider mb-3 flex items-center gap-1.5">
+              <Map className="w-3.5 h-3.5 text-zinc-400" /> Target Roadmaps
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <AnimatePresence mode="popLayout">
-                {careerPaths.slice(0, 4).map((path, idx) => (
-                  <m.div
-                    key={path.id}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: idx * 0.1 }}
-                    whileHover={{ y: -5 }}
-                    className="group relative overflow-hidden bg-white/40 dark:bg-gray-900/40 backdrop-blur-xl border border-white/20 dark:border-gray-800 rounded-2xl p-4 shadow-sm hover:shadow-xl transition-all duration-300"
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                         <div className="p-1.5 bg-purple-500/10 rounded-lg">
-                           <Briefcase className="w-4 h-4 text-purple-500" />
-                         </div>
-                         <span className="text-xs font-bold text-gray-700 dark:text-gray-200 truncate max-w-[120px]">
-                           {path.job_role}
-                         </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {careerPaths.slice(0, 4).map((path) => (
+                <div
+                  key={path.id}
+                  className="rounded-lg border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-4 flex flex-col justify-between hover:border-zinc-300 dark:hover:border-[#2a2a3a] transition-colors"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <Briefcase className="w-3.5 h-3.5 text-[#5e6ad2] shrink-0" />
+                        <span className="text-xs font-semibold text-zinc-800 dark:text-[#ebebef] truncate">
+                          {path.job_role}
+                        </span>
                       </div>
-                      <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                      <div className="text-[11px] text-zinc-400 dark:text-[#5a5a6e]">
                         <ClientDate date={path.created_at} placeholder="..." />
                       </div>
                     </div>
 
-                    <div className="flex items-end justify-between">
+                    <div className="flex items-baseline justify-between mt-3">
                       <div>
-                        <p className="text-2xl font-black text-gray-900 dark:text-white">
+                        <p className="text-xl font-semibold text-zinc-900 dark:text-[#ebebef] tabular-nums t leading-none">
                           {path.match_score}%
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                           Match Score
+                        <p className="text-[11px] text-zinc-500 dark:text-[#8b8b9e] mt-1">
+                          Role Match Score
                         </p>
                       </div>
-                      
+
                       <Link
                         href="/career-path"
-                        className="p-2.5 bg-gray-100 dark:bg-gray-800 rounded-xl group-hover:bg-purple-600 group-hover:text-white transition-all duration-300"
+                        className="p-1.5 rounded-[5px] bg-zinc-100 dark:bg-[#181824] hover:bg-zinc-200 dark:hover:bg-[#222232] text-zinc-600 dark:text-[#ebebef] transition-colors"
                       >
-                        <ChevronRight className="w-4 h-4" />
+                        <ChevronRight className="w-3.5 h-3.5" />
                       </Link>
                     </div>
+                  </div>
 
-                    <div className="mt-3 h-1 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                      <m.div 
-                        initial={{ width: 0 }}
-                        animate={{ width: `${path.match_score}%` }}
-                        transition={{ duration: 1, delay: 0.5 }}
-                        className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
-                      />
-                    </div>
-                  </m.div>
-                ))}
-              </AnimatePresence>
+                  <div className="mt-3 h-1 w-full bg-zinc-100 dark:bg-[#1e1e2a] rounded-full overflow-hidden">
+                    <div
+                      style={{ width: `${path.match_score}%` }}
+                      className="h-full bg-[#5e6ad2]"
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}
 
+        {/* Tracker Applications */}
         {(trackerApps.length > 0 || recentFollowUps.length > 0) && (
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-4 flex items-center gap-2">
-              <Briefcase className="w-4 h-4" /> Application Tracker
+            <h3 className="text-xs font-medium text-zinc-500 dark:text-[#8b8b9e] uppercase tracking-wider mb-3 flex items-center gap-1.5">
+              <Briefcase className="w-3.5 h-3.5 text-zinc-400" /> Application Pipeline
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-              {trackerApps.map((application, idx) => {
-                const statusClass = STATUS_STYLES[application.status] || "bg-gray-500/10 text-gray-500";
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+              {trackerApps.map((application) => {
+                const statusClass =
+                  STATUS_STYLES[application.status] || "bg-zinc-100 dark:bg-[#181824] text-zinc-500";
 
                 return (
-                  <m.div
+                  <div
                     key={application.id}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: idx * 0.1 }}
-                    whileHover={{ y: -5 }}
-                    className="group relative overflow-hidden bg-white/40 dark:bg-gray-900/40 backdrop-blur-xl border border-white/20 dark:border-gray-800 rounded-2xl p-4 shadow-sm hover:shadow-xl transition-all duration-300"
+                    className="rounded-lg border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-4 flex flex-col justify-between hover:border-zinc-300 dark:hover:border-[#2a2a3a] transition-colors"
                   >
-                    <div className="flex items-start justify-between mb-3 gap-2">
-                      <div className="min-w-0">
-                        <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{application.jobRole}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{application.company}</p>
+                    <div>
+                      <div className="flex items-start justify-between mb-2 gap-2">
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold text-zinc-900 dark:text-[#ebebef] truncate">
+                            {application.jobRole}
+                          </p>
+                          <p className="text-[11px] text-zinc-500 dark:text-[#8b8b9e] truncate">
+                            {application.company}
+                          </p>
+                        </div>
+                        <span className={`text-[9.5px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded ${statusClass}`}>
+                          {application.status}
+                        </span>
                       </div>
-                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md ${statusClass}`}>
-                        {application.status}
-                      </span>
-                    </div>
 
-                    <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
-                      <p className="flex items-center gap-1.5">
-                        Next follow-up: {application.nextFollowUpDate ? <ClientDate date={application.nextFollowUpDate} /> : "Not set"}
-                      </p>
-                      <p>
-                        Match score: {application.matchScore ?? "N/A"}
-                      </p>
+                      <div className="text-[11px] text-zinc-500 dark:text-[#8b8b9e] space-y-1 mt-2">
+                        <p className="flex items-center gap-1">
+                          Follow-up: {application.nextFollowUpDate ? <ClientDate date={application.nextFollowUpDate} /> : "None"}
+                        </p>
+                        <p className="t">
+                          Match score: {application.matchScore ? `${application.matchScore}%` : "Pending"}
+                        </p>
+                      </div>
                     </div>
 
                     <Link
                       href="/career-path"
-                      className="inline-flex items-center gap-1 mt-3 text-xs font-bold text-blue-500 hover:text-blue-400 transition-colors"
+                      className="inline-flex items-center gap-1 mt-3 text-[11px] font-medium text-[#5e6ad2] hover:underline"
                     >
-                      Open Tracker <ChevronRight className="w-3 h-3" />
+                      Open Pipeline <ChevronRight className="w-3 h-3" />
                     </Link>
-                  </m.div>
+                  </div>
                 );
               })}
             </div>
 
             {recentFollowUps.length > 0 && (
-              <div className="rounded-2xl border border-blue-100 dark:border-blue-500/20 bg-blue-50/60 dark:bg-blue-500/5 p-4">
-                <p className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-300 mb-2 flex items-center gap-1.5">
-                  <BellRing className="w-3.5 h-3.5" /> Recent Follow-ups
+              <div className="rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50 dark:bg-[#101017] p-3 text-xs">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-[#8b8b9e] mb-2 flex items-center gap-1.5">
+                  <BellRing className="w-3 h-3 text-[#5e6ad2]" /> Upcoming Follow-ups
                 </p>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {recentFollowUps.map((item) => (
                     <div
                       key={item.id}
-                      className="text-xs text-gray-700 dark:text-gray-300 flex items-center justify-between gap-3"
+                      className="text-[11.5px] text-zinc-600 dark:text-[#8b8b9e] flex items-center justify-between gap-3"
                     >
                       <span className="truncate">
                         {item.jobRole} at {item.company}
                       </span>
-                      <span className="text-blue-600 dark:text-blue-300 font-semibold uppercase tracking-wide flex items-center gap-1.5">
+                      <span className="text-[#5e6ad2] font-medium uppercase tracking-wide text-[10px]">
                         {item.channel} · <ClientDate date={item.followedUpOn} />
                       </span>
                     </div>
@@ -327,7 +309,6 @@ export function ResultsHistory() {
           </div>
         )}
       </div>
-    </m.section>
+    </section>
   );
 }
-

@@ -3,24 +3,31 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center rounded-xl text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background transition-all duration-200",
+  "inline-flex items-center justify-center rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#5e6ad2] disabled:opacity-50 disabled:pointer-events-none transition-all duration-150 active:scale-[0.99]",
   {
     variants: {
       variant: {
-        default: "bg-white text-gray-900 border border-gray-200 hover:bg-gray-100 dark:bg-gray-900 dark:text-gray-100 dark:border-gray-700 dark:hover:bg-gray-800",
-        primary: "bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-[length:200%_auto] text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_10px_15px_-3px_rgba(59,130,246,0.3)] hover:animate-gradient hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_10px_20px_-3px_rgba(59,130,246,0.5)] border-transparent hover:scale-[1.03] active:scale-[0.97]",
-        secondary: "bg-gray-800 text-white border border-gray-700 hover:bg-gray-700",
-        ghost: "bg-transparent text-white border border-white/20 hover:bg-white/10",
-        glass: "bg-white/80 border border-gray-200 text-gray-800 shadow-sm backdrop-blur-md hover:bg-white hover:shadow-md dark:bg-gray-900/80 dark:border-gray-700 dark:text-gray-100 dark:hover:bg-gray-900",
-        destructive: "bg-red-500 text-white hover:bg-red-600 dark:hover:bg-red-600 hover:scale-[1.02] active:scale-[0.98]",
-        outline: "border border-input hover:bg-accent hover:text-accent-foreground",
-        link: "underline-offset-4 hover:underline text-primary",
+        default:
+          "bg-white text-zinc-900 border border-zinc-200 hover:bg-zinc-100 dark:bg-[#14141e] dark:text-[#ebebef] dark:border-[#1e1e2a] dark:hover:bg-[#181824]",
+        primary:
+          "bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-[#ebebef] dark:text-[#0d0d12] dark:hover:bg-white shadow-subtle border border-transparent font-semibold",
+        secondary:
+          "bg-zinc-100 text-zinc-900 hover:bg-zinc-200 dark:bg-[#181824] dark:text-[#ebebef] dark:hover:bg-[#20202e] border border-transparent",
+        ghost:
+          "bg-transparent text-zinc-600 hover:text-zinc-900 dark:text-[#8b8b9e] dark:hover:text-[#ebebef] hover:bg-zinc-100 dark:hover:bg-white/[0.04]",
+        glass:
+          "bg-white/90 border border-zinc-200 text-zinc-800 hover:bg-zinc-100 dark:bg-[#14141e]/90 dark:border-[#1e1e2a] dark:text-[#ebebef] dark:hover:bg-[#181824]",
+        destructive:
+          "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 hover:bg-red-500/20",
+        outline:
+          "border border-zinc-200 dark:border-[#1e1e2a] hover:bg-zinc-100 dark:hover:bg-[#161622] text-zinc-900 dark:text-[#ebebef]",
+        link: "underline-offset-4 hover:underline text-[#5e6ad2]",
       },
       size: {
-        default: "h-11 px-6 py-3 font-bold",
-        sm: "h-9 px-4 py-2 rounded-lg font-semibold text-xs",
-        lg: "h-14 px-8 py-4 rounded-2xl font-bold text-lg",
-        icon: "h-10 w-10 p-2 rounded-full",
+        default: "h-9 px-4 py-2",
+        sm: "h-8 px-3 py-1.5 text-xs",
+        lg: "h-10 px-5 py-2.5 text-sm",
+        icon: "h-8 w-8 p-1.5",
       },
     },
     defaultVariants: {

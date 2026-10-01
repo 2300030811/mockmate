@@ -1,31 +1,13 @@
 "use client";
 
-import { useState, useEffect, useMemo, memo, lazy, Suspense } from "react";
+import { useState, useEffect, useMemo, memo } from "react";
 import { m, AnimatePresence } from "framer-motion";
 import { Cpu, Zap, X } from "lucide-react";
 import { ArenaQuestion, Opponent, BattleResult } from "../types";
 import { getAvatarIcon } from "@/lib/icons";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
-// Lazy-load syntax highlighter (~70KB) — only loaded when a question has code
-const LazyCodeBlock = lazy(() =>
-  import('react-syntax-highlighter/dist/esm/prism').then(mod => {
-    const SyntaxHighlighter = mod.default || (mod as any).Prism;
-    return import('react-syntax-highlighter/dist/esm/styles/prism').then(styles => ({
-      default: ({ code }: { code: string }) => (
-        <SyntaxHighlighter
-          language="javascript"
-          style={styles.vscDarkPlus}
-          customStyle={{ margin: 0, padding: '1.5rem', fontSize: '0.85rem', lineHeight: '1.6', background: 'rgba(0,0,0,0.6)' }}
-          wrapLines={true}
-          wrapLongLines={true}
-        >
-          {code}
-        </SyntaxHighlighter>
-      )
-    }));
-  })
-);
+import { SyntaxBlock } from "@/components/quiz/SyntaxBlock";
 
 interface AnswerOptionsProps {
   question: ArenaQuestion;
@@ -66,17 +48,17 @@ const AnswerOptions = memo(function AnswerOptions({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 w-full">
       {isMulti && !hasSubmitted && (
         <div className="flex justify-center">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 border border-amber-500/30 rounded-full text-xs font-black uppercase tracking-widest text-amber-400">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 border border-amber-500/30 rounded-full text-xs font-mono font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
             Select all that apply
           </span>
         </div>
       )}
 
       <div
-        className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-5 px-4 md:px-0"
+        className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 px-2 md:px-0"
         role="group"
         aria-label={isMulti ? "Select all correct answers" : "Multiple choice options"}
       >
@@ -99,28 +81,34 @@ const AnswerOptions = memo(function AnswerOptions({
               aria-pressed={
                 isMulti ? multiSelected.includes(opt) : userSelected === opt
               }
-              className={`relative p-4 md:p-8 rounded-xl md:rounded-[2rem] border-2 font-black text-xs md:text-xl transition-all text-left flex items-center justify-between group overflow-hidden
+              className={`relative p-3.5 md:p-4 rounded-xl border font-medium text-xs md:text-sm transition-all text-left flex items-center justify-between group overflow-hidden shadow-subtle cursor-pointer select-none
                 ${
                   isCorrect
-                    ? "bg-emerald-600/20 border-emerald-500/50 text-emerald-400"
+                    ? "bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-emerald-300"
                     : isWrong
-                    ? "bg-red-600/20 border-red-500/50 text-red-400"
+                    ? "bg-rose-500/10 border-rose-500 text-rose-700 dark:text-rose-300"
                     : isSelectedForMulti
-                    ? "bg-amber-500/10 border-amber-500/40 text-amber-300"
+                    ? "bg-amber-500/10 border-amber-500/40 text-amber-700 dark:text-amber-300"
                     : hasSubmitted
-                    ? "bg-gray-900 border-gray-800 text-gray-800"
-                    : "bg-white/5 border-white/5 hover:border-white/20 text-white/80"
+                    ? "bg-zinc-100 dark:bg-[#14141e] border-zinc-200 dark:border-[#1e1e2a] text-zinc-400 opacity-60"
+                    : "bg-white dark:bg-[#14141e] border-zinc-200 dark:border-[#1e1e2a] hover:border-[#5e6ad2] text-zinc-800 dark:text-[#ebebef] hover:shadow-md"
                 }`}
             >
-              <span className="flex gap-3 md:gap-4 items-center">
+              <span className="flex gap-3 md:gap-3.5 items-center flex-1">
                 <span
-                  className={`w-6 h-6 md:w-8 md:h-8 rounded-lg flex items-center justify-center text-[10px] md:text-xs flex-shrink-0
-                    ${isSelectedForMulti ? "bg-amber-500/30 border border-amber-400" : "bg-black/40"}`}
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-mono font-bold flex-shrink-0 transition-colors
+                    ${isCorrect
+                      ? "bg-emerald-500 text-white"
+                      : isWrong
+                      ? "bg-rose-500 text-white"
+                      : isSelectedForMulti
+                      ? "bg-amber-500 text-white"
+                      : "bg-zinc-100 dark:bg-[#181824] text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-[#1e1e2a]"}`}
                   aria-hidden="true"
                 >
                   {isSelectedForMulti ? "✓" : String.fromCharCode(65 + i)}
                 </span>
-                {opt}
+                <span className="leading-snug">{typeof opt === 'string' ? opt : String(opt)}</span>
               </span>
             </button>
           );
@@ -132,14 +120,14 @@ const AnswerOptions = memo(function AnswerOptions({
           <button
             onClick={submitMulti}
             disabled={multiSelected.length === 0}
-            className={`px-10 py-3 rounded-2xl font-black text-sm uppercase tracking-widest transition-all
+            className={`px-8 py-2.5 rounded-xl font-semibold text-xs uppercase tracking-wider transition-all cursor-pointer
               ${
                 multiSelected.length > 0
-                  ? "bg-red-600 hover:bg-red-700 text-white active:scale-95"
-                  : "bg-white/5 text-gray-600 cursor-not-allowed border border-white/5"
+                  ? "bg-[#5e6ad2] hover:bg-[#4f5ac4] text-white active:scale-95 shadow-subtle"
+                  : "bg-zinc-100 dark:bg-[#181824] text-zinc-400 cursor-not-allowed border border-zinc-200 dark:border-[#1e1e2a]"
               }`}
           >
-            Confirm ({multiSelected.length} selected)
+            Confirm Selection ({multiSelected.length})
           </button>
         </div>
       )}
@@ -164,7 +152,7 @@ interface ArenaBattleProps {
   onForfeit?: () => void;
 }
 
-// ─── Sub-components for better performance (Extracted to top-level for stable references) ───
+// ─── Sub-components for better performance ───
 
 const BattleHUD = memo(function BattleHUD({
   userScore,
@@ -174,7 +162,6 @@ const BattleHUD = memo(function BattleHUD({
   opponent,
   userAvatar,
   onForfeit,
-  prefersReducedMotion
 }: {
   userScore: number;
   opponentScore: number;
@@ -183,60 +170,70 @@ const BattleHUD = memo(function BattleHUD({
   opponent: Opponent | null;
   userAvatar?: string;
   onForfeit?: () => void;
-  prefersReducedMotion: boolean;
 }) {
   const UserIcon = getAvatarIcon(userAvatar);
   return (
-    <div className="h-20 md:h-28 border-b border-white/5 bg-gray-950/80 backdrop-blur-3xl flex items-center pl-4 sm:pl-12 md:pl-44 pr-4 md:pr-12 gap-2 md:gap-12 shrink-0">
-      <div className="flex-1 flex items-center gap-3 md:gap-4">
-        <div className="relative shrink-0 scale-75 md:scale-100">
-          <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center text-white shadow-2xl relative z-10">
-            <UserIcon size={24} />
-          </div>
+    <div className="h-16 md:h-20 border-b border-zinc-200 dark:border-[#1e1e2a] bg-white/95 dark:bg-[#14141e]/95 backdrop-blur-md flex items-center px-4 sm:px-8 justify-between shrink-0 shadow-subtle">
+      {/* User score side */}
+      <div className="flex-1 flex items-center gap-3">
+        <div className="w-10 h-10 md:w-11 md:h-11 rounded-xl bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 flex items-center justify-center text-[#5e6ad2] shadow-sm shrink-0">
+          <UserIcon size={20} />
         </div>
-        <div className="block" aria-live="polite" aria-label={`Your score: ${userScore} points`}>
-          <div className="text-xs md:text-xl font-black text-white leading-none">{userScore} <span className="text-gray-400 text-xs md:text-sm ml-0.5 md:ml-1">PTS</span></div>
+        <div>
+          <div className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500 uppercase tracking-wider font-semibold">You</div>
+          <div className="text-base md:text-xl font-bold tracking-tight text-zinc-900 dark:text-[#ebebef] leading-none" aria-live="polite">
+            {userScore} <span className="text-[11px] font-mono text-zinc-400 dark:text-zinc-500 font-normal">PTS</span>
+          </div>
         </div>
       </div>
 
-      <div className="flex flex-col items-center justify-center shrink-0 px-1 md:px-8">
-        <div className={`relative scale-75 md:scale-100 ${isLowTime ? 'text-red-500 scale-110 transition-transform' : ''}`} role="timer" aria-label={`${timeLeft} seconds remaining`} aria-live="polite">
-          <svg className="w-16 h-16 md:w-20 md:h-20 -rotate-90">
-            <circle cx="40" cy="40" r="36" stroke="currentColor" strokeWidth="3" fill="none" className="text-white/5" />
+      {/* Center: Timer */}
+      <div className="flex flex-col items-center justify-center shrink-0 px-2 sm:px-6">
+        <div className="relative w-12 h-12 md:w-14 md:h-14 flex items-center justify-center" role="timer" aria-label={`${timeLeft} seconds remaining`}>
+          <svg className="w-full h-full -rotate-90" viewBox="0 0 56 56">
+            <circle cx="28" cy="28" r="23" stroke="currentColor" strokeWidth="3" fill="none" className="text-zinc-200 dark:text-zinc-800" />
             <m.circle
-              cx="40" cy="40" r="36" stroke="currentColor" strokeWidth="3" fill="none"
-              className={isLowTime ? "text-red-600" : "text-red-500"}
+              cx="28" cy="28" r="23" stroke="currentColor" strokeWidth="3" fill="none"
+              className={isLowTime ? "text-rose-500" : "text-[#5e6ad2]"}
               strokeLinecap="round"
               initial={{ pathLength: 1 }}
-              animate={{ pathLength: timeLeft / 30 }}
-              transition={{ duration: 1, ease: "linear" }}
+              animate={{ pathLength: Math.max(0, timeLeft / 30) }}
+              transition={{ duration: 0.5, ease: "linear" }}
             />
           </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className={`text-xl md:text-2xl font-black font-mono leading-none ${!prefersReducedMotion && isLowTime ? 'animate-bounce' : ''}`} aria-hidden="true">{timeLeft}</span>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className={`text-sm md:text-base font-bold font-mono ${isLowTime ? 'text-rose-500 animate-pulse' : 'text-zinc-900 dark:text-[#ebebef]'}`}>
+              {timeLeft}
+            </span>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-end gap-3 md:gap-4">
-        <div className="block text-right" aria-live="polite" aria-label={`${opponent?.name || 'Opponent'} score: ${opponentScore} points`}>
-          <div className="text-xs md:text-xl font-black text-white leading-none">{opponentScore} <span className="text-gray-400 text-xs md:text-sm ml-0.5 md:ml-1">PTS</span></div>
+      {/* Opponent score side */}
+      <div className="flex-1 flex items-center justify-end gap-3">
+        <div className="text-right">
+          <div className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500 uppercase tracking-wider font-semibold truncate max-w-[100px] sm:max-w-none">
+            {opponent?.name || "Opponent"}
+          </div>
+          <div className="text-base md:text-xl font-bold tracking-tight text-zinc-900 dark:text-[#ebebef] leading-none" aria-live="polite">
+            {opponentScore} <span className="text-[11px] font-mono text-zinc-400 dark:text-zinc-500 font-normal">PTS</span>
+          </div>
         </div>
-        <div className="relative shrink-0 scale-75 md:scale-100">
-          <div className="w-14 h-14 bg-gradient-to-br from-red-600 to-orange-800 rounded-xl flex items-center justify-center text-2xl shadow-2xl relative z-10">{opponent?.avatar}</div>
+        <div className="w-10 h-10 md:w-11 md:h-11 rounded-xl bg-gradient-to-br from-rose-500/10 to-orange-500/10 border border-rose-500/20 flex items-center justify-center text-xl shadow-sm shrink-0">
+          {opponent?.avatar}
         </div>
-      </div>
 
-      {onForfeit && (
-        <button
-          onClick={onForfeit}
-          className="shrink-0 p-2 hover:bg-red-900/30 rounded-lg transition-colors ml-2"
-          aria-label="Forfeit battle"
-          title="Forfeit battle"
-        >
-          <X className="w-5 h-5 md:w-6 md:h-6 text-red-500 hover:text-red-400" />
-        </button>
-      )}
+        {onForfeit && (
+          <button
+            onClick={onForfeit}
+            className="shrink-0 p-2 text-zinc-400 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors border border-transparent hover:border-rose-500/20 ml-1 cursor-pointer"
+            aria-label="Forfeit battle"
+            title="Forfeit battle"
+          >
+            <X className="w-4 h-4 md:w-5 md:h-5" />
+          </button>
+        )}
+      </div>
     </div>
   );
 });
@@ -247,30 +244,38 @@ const ScoreDeltaBar = memo(function ScoreDeltaBar({ userScore, opponentScore }: 
   const delta = Math.abs(userScore - opponentScore);
 
   return (
-    <div className="flex items-center justify-center gap-3 px-4 py-2 bg-white/[0.02] border-b border-white/5 text-[10px] md:text-xs font-black">
-      <span className="text-blue-400">{userScore} pts</span>
-      <span className="text-gray-600 uppercase tracking-widest text-[9px]">you</span>
+    <div className="flex items-center justify-center gap-3 px-4 py-1.5 bg-zinc-50/80 dark:bg-[#14141e]/50 border-b border-zinc-200/80 dark:border-[#1e1e2a] text-[11px] font-mono">
+      <span className="text-[#5e6ad2] font-semibold">{userScore} pts</span>
+      <span className="text-zinc-400 uppercase tracking-widest text-[9px] font-sans">YOU</span>
       {isTied ? (
-        <span className="px-3 py-0.5 bg-white/5 border border-white/10 rounded-full text-gray-400">tied</span>
+        <span className="px-2.5 py-0.5 bg-zinc-200/70 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-full text-[10px] font-sans font-medium">TIED</span>
       ) : (
-        <span className={`px-3 py-0.5 rounded-full border ${isAhead ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border-red-500/20 text-red-400'}`}>
+        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-sans font-semibold border ${
+          isAhead
+            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+            : 'bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-400'
+        }`}>
           {isAhead ? `+${delta} ahead` : `-${delta} behind`}
         </span>
       )}
-      <span className="text-gray-600 uppercase tracking-widest text-[9px]">them</span>
-      <span className="text-red-400">{opponentScore} pts</span>
+      <span className="text-zinc-400 uppercase tracking-widest text-[9px] font-sans">THEM</span>
+      <span className="text-rose-500 dark:text-rose-400 font-semibold">{opponentScore} pts</span>
     </div>
   );
 });
 
 const ProgressDots = memo(function ProgressDots({ currentQuestion, totalQuestions }: { currentQuestion: number, totalQuestions: number }) {
   return (
-    <div className="flex items-center justify-center gap-2 pt-3 pb-1">
+    <div className="flex items-center justify-center gap-1.5 pt-3 pb-1">
       {Array.from({ length: totalQuestions }).map((_, i) => (
         <div
           key={i}
           className={`h-1 rounded-full transition-all duration-300
-            ${i < currentQuestion ? "w-6 bg-emerald-500" : i === currentQuestion ? "w-8 bg-red-500" : "w-6 bg-white/10"}`}
+            ${i < currentQuestion
+              ? "w-6 bg-emerald-500"
+              : i === currentQuestion
+              ? "w-8 bg-[#5e6ad2]"
+              : "w-6 bg-zinc-200 dark:bg-zinc-800"}`}
         />
       ))}
     </div>
@@ -290,16 +295,20 @@ const OpponentStatusStrip = memo(function OpponentStatusStrip({
 }) {
   const hasAnsweredCurrent = opponentProgress >= ((currentQuestion + 1) / totalQuestions) * 100;
   return (
-    <div className="mx-4 mt-3 flex items-center gap-2 px-3 py-2 bg-white/[0.02] border border-white/5 rounded-xl text-xs">
-      <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
-      <span className="text-gray-500 truncate">
-        <span className="text-red-400 font-black mr-1">{opponentName}</span>
-        {hasAnsweredCurrent ? "has answered this question" : "is answering..."}
-      </span>
-      <div className="ml-auto flex gap-1 shrink-0">
-        {Array.from({ length: currentQuestion }).map((_, i) => (
-          <span key={i} className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 text-gray-500 font-mono">Q{i + 1} ✓</span>
-        ))}
+    <div className="max-w-3xl mx-auto w-full px-4 mt-2">
+      <div className="flex items-center gap-2.5 px-3 py-1.5 bg-white dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] rounded-xl text-xs shadow-subtle">
+        <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse flex-shrink-0" />
+        <span className="text-zinc-600 dark:text-[#8b8b9e] truncate">
+          <span className="text-zinc-900 dark:text-[#ebebef] font-bold mr-1">{opponentName}</span>
+          {hasAnsweredCurrent ? "has answered this question" : "is answering..."}
+        </span>
+        <div className="ml-auto flex gap-1 shrink-0">
+          {Array.from({ length: currentQuestion }).map((_, i) => (
+            <span key={i} className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-[#181824] border border-zinc-200 dark:border-[#1e1e2a] text-zinc-600 dark:text-zinc-400 font-mono">
+              Q{i + 1} ✓
+            </span>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -321,24 +330,33 @@ const QuestionDisplay = memo(function QuestionDisplay({
   return (
     <div className="text-center space-y-4">
       <div className="flex flex-col items-center gap-2">
-        <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs font-black uppercase text-gray-400">
-          <Cpu size={12} /> QUESTION {currentIdx + 1} / {totalCount}
+        <div className="inline-flex items-center gap-2 px-3 py-1 bg-zinc-100 dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] rounded-full text-xs font-mono font-semibold uppercase text-zinc-600 dark:text-[#8b8b9e] shadow-subtle">
+          <Cpu size={12} className="text-[#5e6ad2]" /> QUESTION {currentIdx + 1} / {totalCount}
         </div>
-        <div className="text-[10px] md:text-sm font-bold text-red-500/80 uppercase tracking-[0.2em]">{category} CATEGORY</div>
+        <div className="text-[11px] font-mono font-bold text-[#5e6ad2] uppercase tracking-wider">{category} Category</div>
       </div>
-      <h2 className={`font-black leading-tight text-white italic px-4 ${question?.code ? 'text-lg md:text-3xl' : 'text-lg md:text-4xl'}`}>
-        {question?.q}
+      <h2 className={`font-bold tracking-tight text-zinc-900 dark:text-[#ebebef] px-4 leading-tight ${question?.code ? 'text-lg md:text-2xl' : 'text-xl md:text-3xl'}`}>
+        {typeof question?.q === 'string' ? question.q : String(question?.q || '')}
       </h2>
 
       {question?.code && (
         <m.div
-          initial={prefersReducedMotion ? {} : { opacity: 0, y: 10 }}
+          initial={prefersReducedMotion ? {} : { opacity: 0, y: 8 }}
           animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
-          className="w-full max-w-2xl mx-auto mt-4 md:mt-6 text-left overflow-hidden rounded-xl md:rounded-2xl border border-white/10 shadow-2xl max-h-[40vh] overflow-y-auto custom-scrollbar"
+          className="w-full max-w-2xl mx-auto mt-4 text-left max-h-[42vh] overflow-y-auto custom-scrollbar"
         >
-          <Suspense fallback={<div className="p-6 bg-black/60 rounded-xl animate-pulse h-24" />}>
-            <LazyCodeBlock code={question.code} />
-          </Suspense>
+          <SyntaxBlock
+            code={question.code}
+            language={
+              category.toLowerCase().includes("python") || category.toLowerCase() === "pcap"
+                ? "python"
+                : category.toLowerCase().includes("java")
+                ? "java"
+                : category.toLowerCase().includes("sql")
+                ? "sql"
+                : "javascript"
+            }
+          />
         </m.div>
       )}
     </div>
@@ -361,40 +379,44 @@ const RoundScoreboard = memo(function RoundScoreboard({
   battleResults: BattleResult[]
 }) {
   return (
-    <div className="mx-4 mb-4 bg-white/[0.02] border border-white/5 rounded-xl overflow-hidden shrink-0">
-      <div className="px-3 py-1.5 border-b border-white/5 text-[9px] md:text-[10px] font-black uppercase tracking-widest text-gray-600">
-        Round scoreboard
-      </div>
-      {[
-        { label: "You", color: "text-blue-400", score: userScore },
-        { label: opponentName, color: "text-red-400", score: opponentScore },
-      ].map((player, pi) => (
-        <div key={pi} className="flex items-center gap-3 px-3 py-2 border-b border-white/[0.03] last:border-none">
-          <span className={`text-[10px] md:text-xs font-black min-w-[60px] md:min-w-[70px] truncate ${player.color}`}>{player.label}</span>
-          <div className="flex gap-1 flex-1">
-            {Array.from({ length: totalQuestions }).map((_, qi) => (
-              <div
-                key={qi}
-                className={`flex-1 h-4 md:h-5 rounded text-[8px] md:text-[9px] flex items-center justify-center font-black
-                  ${qi < currentQuestion 
-                    ? (pi === 0 
-                      ? (battleResults[qi]?.correct ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400")
-                      : "bg-red-500/20 text-red-400") 
-                    : qi === currentQuestion 
-                      ? "bg-white/5 text-gray-600 border border-white/10" 
-                      : "bg-white/[0.03] text-gray-800"}`}
-              >
-                {qi < currentQuestion 
-                  ? (pi === 0 
-                    ? (battleResults[qi]?.correct ? "W" : "L") 
-                    : "L") 
-                  : qi === currentQuestion ? `${qi + 1}` : "—"}
-              </div>
-            ))}
-          </div>
-          <span className={`text-[10px] md:text-xs font-black min-w-[35px] md:min-w-[40px] text-right ${player.color}`}>{player.score} pts</span>
+    <div className="max-w-3xl mx-auto w-full px-4 mb-3">
+      <div className="bg-white dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] rounded-xl overflow-hidden shadow-subtle shrink-0">
+        <div className="px-3.5 py-1.5 border-b border-zinc-100 dark:border-[#1e1e2a] text-[10px] font-mono font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+          Round Scoreboard
         </div>
-      ))}
+        {[
+          { label: "You", color: "text-[#5e6ad2]", score: userScore, isUser: true },
+          { label: opponentName, color: "text-rose-500", score: opponentScore, isUser: false },
+        ].map((player, pi) => (
+          <div key={pi} className="flex items-center gap-3 px-3.5 py-1.5 border-b border-zinc-100 dark:border-[#1e1e2a]/50 last:border-none">
+            <span className={`text-xs font-bold min-w-[70px] truncate ${player.color}`}>{player.label}</span>
+            <div className="flex gap-1.5 flex-1">
+              {Array.from({ length: totalQuestions }).map((_, qi) => {
+                const hasResult = qi < currentQuestion;
+                const isCurrent = qi === currentQuestion;
+                const wonRound = player.isUser ? battleResults[qi]?.correct : !battleResults[qi]?.correct;
+
+                return (
+                  <div
+                    key={qi}
+                    className={`flex-1 h-5 rounded text-[10px] flex items-center justify-center font-bold font-mono transition-colors
+                      ${hasResult 
+                        ? (wonRound
+                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20" 
+                          : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20")
+                        : isCurrent 
+                          ? "bg-[#5e6ad2]/10 text-[#5e6ad2] border border-[#5e6ad2]/30" 
+                          : "bg-zinc-100 dark:bg-zinc-800/40 text-zinc-400"}`}
+                  >
+                    {hasResult ? (wonRound ? "✓" : "✗") : isCurrent ? `${qi + 1}` : "—"}
+                  </div>
+                );
+              })}
+            </div>
+            <span className={`text-xs font-mono font-bold min-w-[45px] text-right ${player.color}`}>{player.score} pts</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 });
@@ -446,28 +468,23 @@ export function ArenaBattle({
   return (
     <m.div
       key="battle"
-      initial={{ opacity: 0, scale: 1.05 }}
-      animate={{
-        opacity: 1,
-        scale: 1,
-        backgroundColor: !prefersReducedMotion && isLowTime ? ["rgba(5,5,5,1)", "rgba(153,27,27,0.15)", "rgba(5,5,5,1)"] : "rgba(5,5,5,1)"
-      }}
-      transition={!prefersReducedMotion && isLowTime ? { repeat: Infinity, duration: 1 } : {}}
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
       className="flex-1 flex flex-col min-h-0 relative z-10"
     >
       <AnimatePresence>
         {combo > 1 && (
           <m.div
-            initial={prefersReducedMotion ? {} : { opacity: 0, x: -50, scale: 0.5 }}
+            initial={prefersReducedMotion ? {} : { opacity: 0, x: -30, scale: 0.8 }}
             animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, x: 0, scale: 1 }}
-            exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 1.5 }}
-            transition={prefersReducedMotion ? {} : { type: "spring", stiffness: 200, damping: 20 }}
-            className="absolute top-32 left-8 z-20"
+            exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 1.2 }}
+            transition={prefersReducedMotion ? {} : { type: "spring", stiffness: 250, damping: 20 }}
+            className="absolute top-24 left-6 z-20 pointer-events-none"
           >
-            <div className="bg-gradient-to-r from-orange-500 via-red-600 to-purple-600 px-4 py-2 rounded-full font-black italic shadow-[0_0_30px_rgba(239,68,68,0.5)] flex items-center gap-2 border border-white/20">
-              <Zap className="w-5 h-5 text-yellow-400 fill-yellow-400 animate-pulse" />
-              <span className="text-2xl text-white">{combo}x</span>
-              <span className="text-xs text-white/80 uppercase tracking-tighter">COMBO</span>
+            <div className="bg-gradient-to-r from-amber-500 to-orange-600 text-white px-3.5 py-1.5 rounded-full font-bold shadow-lg flex items-center gap-1.5 border border-white/20">
+              <Zap className="w-4 h-4 fill-white animate-pulse" />
+              <span className="text-sm font-mono tracking-tight">{combo}x COMBO</span>
             </div>
           </m.div>
         )}
@@ -481,17 +498,16 @@ export function ArenaBattle({
         opponent={opponent} 
         userAvatar={userAvatar} 
         onForfeit={() => setShowForfeitConfirm(true)} 
-        prefersReducedMotion={prefersReducedMotion} 
       />
 
-      <div className="h-1 flex w-full bg-white/5 shrink-0">
+      <div className="h-1 flex w-full bg-zinc-200 dark:bg-[#1e1e2a] shrink-0">
         <m.div
-          className="h-full bg-gradient-to-r from-blue-700 to-blue-400"
+          className="h-full bg-[#5e6ad2]"
           animate={{ width: `${(currentQuestion / questions.length) * 100}%` }}
         />
         <div className="flex-1" />
         <m.div
-          className="h-full bg-gradient-to-l from-red-700 to-red-400"
+          className="h-full bg-rose-500"
           animate={{ width: `${opponentProgress}%` }}
         />
       </div>
@@ -508,22 +524,24 @@ export function ArenaBattle({
       />
 
       <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
-        <div className="min-h-full p-4 md:p-12 flex flex-col items-center">
+        <div className="min-h-full p-4 md:p-8 flex flex-col items-center">
           <AnimatePresence>
             {showForfeitConfirm && (
-              <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                 <m.div
-                  initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                  className="bg-gray-900 border border-white/10 rounded-2xl p-6 md:p-8 max-w-sm w-full shadow-2xl"
+                  exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                  className="bg-white dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] rounded-2xl p-6 max-w-sm w-full shadow-2xl"
                 >
-                  <h3 className="text-lg md:text-xl font-black text-white mb-2">Forfeit Battle?</h3>
-                  <p className="text-sm md:text-base text-gray-400 mb-6">Are you sure you want to forfeit? You will lose this match and receive no points.</p>
-                  <div className="flex gap-3">
+                  <h3 className="text-base font-bold text-zinc-900 dark:text-[#ebebef] mb-1.5">Forfeit Battle?</h3>
+                  <p className="text-xs text-zinc-500 dark:text-[#8b8b9e] mb-6 leading-relaxed">
+                    Are you sure you want to forfeit? You will lose this match and conclude the duel immediately.
+                  </p>
+                  <div className="flex gap-2.5">
                     <button
                       onClick={() => setShowForfeitConfirm(false)}
-                      className="flex-1 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-black transition-colors"
+                      className="flex-1 py-2 px-3 bg-zinc-100 dark:bg-[#181824] hover:bg-zinc-200 dark:hover:bg-[#1e1e2a] text-zinc-700 dark:text-zinc-300 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
                     >
                       Cancel
                     </button>
@@ -532,7 +550,7 @@ export function ArenaBattle({
                         setShowForfeitConfirm(false);
                         onForfeit?.();
                       }}
-                      className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-black transition-colors"
+                      className="flex-1 py-2 px-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold transition-colors cursor-pointer"
                     >
                       Forfeit
                     </button>
@@ -544,10 +562,10 @@ export function ArenaBattle({
           
           <m.div
             key={currentQuestion}
-            initial={prefersReducedMotion ? {} : { opacity: 0, scale: 0.95 }}
+            initial={prefersReducedMotion ? {} : { opacity: 0, scale: 0.97 }}
             animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, scale: 1 }}
-            transition={prefersReducedMotion ? {} : { duration: 0.3, ease: "easeOut" }}
-            className="w-full max-w-4xl space-y-8 md:space-y-12 my-auto"
+            transition={prefersReducedMotion ? {} : { duration: 0.25, ease: "easeOut" }}
+            className="w-full max-w-3xl space-y-6 md:space-y-8 my-auto"
           >
             <QuestionDisplay 
               question={currentQ} 
@@ -564,8 +582,16 @@ export function ArenaBattle({
             />
 
             {!userSelected && (
-              <p className="text-center text-xs md:text-sm text-gray-500 mt-6 opacity-60">
-                💡 Tip: Press <kbd className="px-1.5 py-0.5 bg-gray-800 border border-gray-600 rounded text-white text-xs">1</kbd>-<kbd className="px-1.5 py-0.5 bg-gray-800 border border-gray-600 rounded text-white text-xs">4</kbd> or <kbd className="px-1.5 py-0.5 bg-gray-800 border border-gray-600 rounded text-white text-xs">A</kbd>-<kbd className="px-1.5 py-0.5 bg-gray-800 border border-gray-600 rounded text-white text-xs">D</kbd> to answer
+              <p className="text-center text-xs text-zinc-500 dark:text-zinc-400 mt-4 flex items-center justify-center gap-1.5">
+                <span>💡 Tip: Press</span>
+                <kbd className="px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded text-zinc-700 dark:text-zinc-300 font-mono text-[11px]">1</kbd>
+                <span>–</span>
+                <kbd className="px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded text-zinc-700 dark:text-zinc-300 font-mono text-[11px]">4</kbd>
+                <span>or</span>
+                <kbd className="px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded text-zinc-700 dark:text-zinc-300 font-mono text-[11px]">A</kbd>
+                <span>–</span>
+                <kbd className="px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded text-zinc-700 dark:text-zinc-300 font-mono text-[11px]">D</kbd>
+                <span>to answer</span>
               </p>
             )}
           </m.div>

@@ -2,7 +2,10 @@ import { Groq } from 'groq-sdk';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getNextKey, getNumKeys, reportKeyFailure, reportKeySuccess } from "@/utils/keyManager";
 import { logger } from "@/lib/logger";
+import { extractJsonObject } from "@/lib/ai/response-parser";
 import { z } from "zod";
+
+const GENERATE_TEXT_TIMEOUT_MS = 60_000;
 
 export const ChatMessageSchema = z.object({
   role: z.enum(["system", "user", "assistant"]),
@@ -10,10 +13,25 @@ export const ChatMessageSchema = z.object({
 });
 
 export const AI_MODELS = {
-  DEFAULT: "llama-3.3-70b-versatile",
+  DEFAULT: "qwen/qwen3.8-27b",
   FAST: "openai/gpt-oss-20b",
-  STRUCTURED: "llama-3.3-70b-versatile",
+  STRUCTURED: "qwen/qwen3.8-27b",
 } as const;
+
+// ponytail: resolveGroqModel / resolveGeminiModel prevent cross-provider model leakage and normalize deprecated llama names
+function resolveGroqModel(model?: string): string {
+  if (!model || model.includes("llama-3") || model.startsWith("gemini-")) {
+    return AI_MODELS.DEFAULT;
+  }
+  return model;
+}
+
+function resolveGeminiModel(model?: string): string {
+  if (!model || model === "gemini-2.0-flash" || !model.startsWith("gemini-")) {
+    return "gemini-2.5-flash";
+  }
+  return model;
+}
 
 export interface ChatMessage {
     role: 'system' | 'user' | 'assistant';
@@ -49,9 +67,9 @@ async function createGroqStream(
     systemPrompt: string,
     apiKey: string
 ): Promise<AsyncIterable<string>> {
-    const groq = new Groq({ apiKey });
+    const groq = new Groq({ apiKey, dangerouslyAllowBrowser: true });
     const completion = await groq.chat.completions.create({
-        model: 'llama-3.3-70b-versatile',
+        model: AI_MODELS.DEFAULT,
         stream: true,
         messages: [
             { role: 'system', content: systemPrompt },
@@ -71,7 +89,7 @@ async function createGeminiStream(
 ): Promise<AsyncIterable<string>> {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-        model: "gemini-2.0-flash",
+        model: "gemini-2.5-flash",
         systemInstruction: systemPrompt
     });
 
@@ -104,6 +122,11 @@ export async function generateText(
     ? [{ role: "user", content: messages }] 
     : messages;
 
+  // ponytail: qwen/qwen3.8-27b template requires ≥1 user message; inject one when callers pass an empty array (e.g. interview greeting)
+  if (!messageHistory.some(m => m.role === "user")) {
+    messageHistory.push({ role: "user", content: "Begin." });
+  }
+
   const temp = options?.temperature ?? 0.5;
   const maxTokens = options?.maxTokens ?? 1000;
 
@@ -132,24 +155,58 @@ export async function generateText(
 
         try {
           logger.info(`🤖 [Gateway] Attempting Groq completion...`);
-          const groq = new Groq({ apiKey });
-          const completion = await groq.chat.completions.create({
-            model: options?.model || AI_MODELS.DEFAULT,
-            messages: [
-              { role: "system", content: systemPrompt },
-              ...messageHistory
-            ],
-            temperature: temp,
-            max_tokens: maxTokens,
-            response_format: options?.responseFormat,
-          });
-
-          const content = completion.choices[0]?.message?.content || "";
-          if (content) {
-            if (!customKey) reportKeySuccess(apiKey);
-            return { content, provider: "groq" };
+          const groq = new Groq({ apiKey, dangerouslyAllowBrowser: true });
+          const primaryModel = resolveGroqModel(options?.model);
+          const modelsToTry = [primaryModel];
+          if (primaryModel === "qwen/qwen3.8-27b") {
+            modelsToTry.push("openai/gpt-oss-120b");
+          } else if (primaryModel === "openai/gpt-oss-120b") {
+            modelsToTry.push("qwen/qwen3.8-27b");
           }
-          throw new Error("Empty response from Groq");
+
+          let modelContent: string | null = null;
+          let lastGroqError: unknown = null;
+
+          for (const modelToUse of modelsToTry) {
+            try {
+              const effectiveMaxTokens = (modelToUse === "qwen/qwen3.8-27b" && maxTokens > 2000) ? 2000 : maxTokens;
+              const completion = await Promise.race([
+                groq.chat.completions.create({
+                  model: modelToUse,
+                  messages: [
+                    { role: "system", content: systemPrompt },
+                    ...messageHistory
+                  ],
+                  temperature: temp,
+                  max_tokens: effectiveMaxTokens,
+                  response_format: options?.responseFormat,
+                }),
+                new Promise<never>((_, reject) =>
+                  setTimeout(() => reject(new DOMException("Groq request timed out", "AbortError")), GENERATE_TEXT_TIMEOUT_MS)
+                ),
+              ]);
+
+              const content = completion.choices[0]?.message?.content || "";
+              if (content) {
+                modelContent = content;
+                break;
+              }
+            } catch (modelErr: any) {
+              lastGroqError = modelErr;
+              const isRateLimit = modelErr?.status === 429 || modelErr?.message?.includes("rate_limit") || modelErr?.message?.includes("OTPM");
+              if (isRateLimit && modelsToTry.indexOf(modelToUse) < modelsToTry.length - 1) {
+                logger.warn(`⚠️ [Gateway] Model ${modelToUse} rate-limited on Groq. Trying fallback model ${modelsToTry[modelsToTry.indexOf(modelToUse) + 1]}...`);
+                continue;
+              }
+              throw modelErr;
+            }
+          }
+
+          if (modelContent) {
+            if (!customKey) reportKeySuccess(apiKey);
+            return { content: modelContent, provider: "groq" };
+          }
+          throw lastGroqError || new Error("Empty response from Groq");
         } catch (err: unknown) {
           logger.warn(`⚠️ [Gateway] Groq completion attempt failed:`, err);
           if (!customKey) reportKeyFailure(apiKey);
@@ -158,9 +215,9 @@ export async function generateText(
       }
     } else if (provider === "gemini") {
       const customKey = options?.customApiKey;
-      const numGeminiKeys = customKey ? 1 : (getNumKeys("GOOGLE_API_KEY") || 1);
+      const numGeminiKeys = customKey ? 1 : (getNumKeys("GOOGLE_API_KEY") || getNumKeys("GEMINI_API_KEY") || 1);
       for (let attempt = 0; attempt < numGeminiKeys; attempt++) {
-        const apiKey = customKey || getNextKey("GOOGLE_API_KEY") || process.env.GOOGLE_API_KEY;
+        const apiKey = customKey || getNextKey("GOOGLE_API_KEY") || getNextKey("GEMINI_API_KEY") || process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY;
         if (!apiKey) {
           lastError = new Error("Gemini API Key missing");
           continue;
@@ -170,22 +227,27 @@ export async function generateText(
           logger.info(`🤖 [Gateway] Attempting Gemini completion...`);
           const genAI = new GoogleGenerativeAI(apiKey);
           const model = genAI.getGenerativeModel({
-            model: options?.model || "gemini-2.0-flash",
+            model: resolveGeminiModel(options?.model),
             systemInstruction: systemPrompt
           });
 
-          const result = await model.generateContent({
-            contents: messageHistory
-              .filter(m => m.role !== 'system')
-              .map(m => ({
-                role: m.role === 'assistant' ? 'model' : 'user',
-                parts: [{ text: m.content }]
-              })),
-            generationConfig: {
-              temperature: temp,
-              maxOutputTokens: maxTokens
-            }
-          });
+          const result = await Promise.race([
+            model.generateContent({
+              contents: messageHistory
+                .filter(m => m.role !== 'system')
+                .map(m => ({
+                  role: m.role === 'assistant' ? 'model' : 'user',
+                  parts: [{ text: m.content }]
+                })),
+              generationConfig: {
+                temperature: temp,
+                maxOutputTokens: maxTokens
+              }
+            }),
+            new Promise<never>((_, reject) =>
+              setTimeout(() => reject(new DOMException("Gemini request timed out", "AbortError")), GENERATE_TEXT_TIMEOUT_MS)
+            ),
+          ]);
 
           const content = result.response.text();
           if (content) {
@@ -218,31 +280,9 @@ export async function generateStructuredOutput<T>(
     model: options?.model
   });
 
-  let cleaned = content.trim();
-  if (cleaned.includes("```")) {
-    cleaned = cleaned
-      .replace(/```json\n?/gi, "")
-      .replace(/```\n?/gi, "")
-      .trim();
-  }
-
-  const firstCurly = cleaned.indexOf("{");
-  const lastCurly = cleaned.lastIndexOf("}");
-  const firstBracket = cleaned.indexOf("[");
-  const lastBracket = cleaned.lastIndexOf("]");
-
-  let jsonStr = cleaned;
-  if (firstCurly !== -1 && firstBracket !== -1) {
-    if (firstCurly < firstBracket) {
-      jsonStr = cleaned.substring(firstCurly, lastCurly + 1);
-    } else {
-      jsonStr = cleaned.substring(firstBracket, lastBracket + 1);
-    }
-  } else if (firstCurly !== -1) {
-    jsonStr = cleaned.substring(firstCurly, lastCurly + 1);
-  } else if (firstBracket !== -1) {
-    jsonStr = cleaned.substring(firstBracket, lastBracket + 1);
-  }
+  // ponytail: reuse extractJsonObject from response-parser instead of reimplementing fence-stripping + bracket-finding
+  const jsonStr = extractJsonObject(content);
+  if (!jsonStr) throw new Error("No JSON found in AI response");
 
   const parsed = JSON.parse(jsonStr);
   const validated = schema.parse(parsed);
@@ -251,14 +291,14 @@ export async function generateStructuredOutput<T>(
 
 export async function streamChat(messages: ChatMessage[], systemPrompt: string): Promise<ReadableStream> {
     const groqKey = getNextKey("GROQ_API_KEY");
-    const geminiKey = getNextKey("GOOGLE_API_KEY");
+    const geminiKey = getNextKey("GOOGLE_API_KEY") || getNextKey("GEMINI_API_KEY") || process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY;
 
     let providerUsed: 'groq' | 'gemini' | null = null;
     let primaryStream: AsyncIterable<string> | null = null;
 
     if (groqKey) {
         try {
-            logger.info("🦁 Bob is using Groq...");
+            logger.info("🤖 Bob is using Groq...");
             primaryStream = await createGroqStream(messages, systemPrompt, groqKey);
             providerUsed = 'groq';
         } catch (groqErr: unknown) {
@@ -270,7 +310,7 @@ export async function streamChat(messages: ChatMessage[], systemPrompt: string):
 
     if (!primaryStream && geminiKey) {
         try {
-            logger.info("🦁 Bob is using Gemini...");
+            logger.info("🤖 Bob is using Gemini...");
             primaryStream = await createGeminiStream(messages, systemPrompt, geminiKey);
             providerUsed = 'gemini';
         } catch (geminiErr: unknown) {

@@ -34,7 +34,7 @@ const STRENGTH_LABELS = ["", "Weak", "Fair", "Strong"];
 const STRENGTH_TEXT_COLORS = ["", "text-red-500", "text-yellow-500", "text-green-500"];
 
 const INPUT_BASE =
-  "w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium disabled:opacity-50";
+  "w-full bg-zinc-50 dark:bg-[#0d0d12] border border-zinc-200 dark:border-[#1e1e2a] focus:border-[#5e6ad2] text-zinc-900 dark:text-[#ebebef] rounded-xl py-2.5 text-sm outline-none transition-all placeholder:text-zinc-400 font-medium disabled:opacity-50";
 
 /* ─── Validate password against server rules (returns first failing message or null) ─── */
 
@@ -194,31 +194,31 @@ export function AlertBanner({ variant, Icon, children }: AlertBannerProps) {
 export function SocialButtons({ disabled }: { disabled?: boolean }) {
   return (
     <>
-      <div className="flex items-center gap-4 my-2">
-        <div className="flex-1 h-px bg-gray-200 dark:bg-gray-800" />
-        <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+      <div className="flex items-center gap-3 my-2">
+        <div className="flex-1 h-px bg-zinc-200 dark:bg-[#1e1e2a]" />
+        <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
           Or continue with
         </span>
-        <div className="flex-1 h-px bg-gray-200 dark:bg-gray-800" />
+        <div className="flex-1 h-px bg-zinc-200 dark:bg-[#1e1e2a]" />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <Button
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          type="button"
           onClick={() => signInWithSocial("google")}
           disabled={disabled}
-          variant="glass"
-          className="flex items-center gap-2 rounded-2xl"
+          className="flex items-center justify-center gap-2 h-9 rounded-xl border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50 dark:bg-[#181824] hover:bg-zinc-100 dark:hover:bg-[#222232] text-xs font-medium text-zinc-700 dark:text-zinc-300 transition-colors shadow-subtle cursor-pointer disabled:opacity-50"
         >
-          <Chrome className="w-4 h-4" /> Google
-        </Button>
-        <Button
+          <Chrome className="w-3.5 h-3.5" /> Google
+        </button>
+        <button
+          type="button"
           onClick={() => signInWithSocial("github")}
           disabled={disabled}
-          variant="glass"
-          className="flex items-center gap-2 rounded-2xl"
+          className="flex items-center justify-center gap-2 h-9 rounded-xl border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50 dark:bg-[#181824] hover:bg-zinc-100 dark:hover:bg-[#222232] text-xs font-medium text-zinc-700 dark:text-zinc-300 transition-colors shadow-subtle cursor-pointer disabled:opacity-50"
         >
-          <Github className="w-4 h-4" /> GitHub
-        </Button>
+          <Github className="w-3.5 h-3.5" /> GitHub
+        </button>
       </div>
     </>
   );

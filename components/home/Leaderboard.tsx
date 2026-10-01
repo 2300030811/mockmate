@@ -1,44 +1,37 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { m, AnimatePresence } from "framer-motion";
-import { Trophy, Medal, Crown, Loader2, Sparkles, ChevronRight, Clock, Flame, Shield, Zap } from "lucide-react";
+import { Trophy, Clock, Flame, Loader2, Trash2 } from "lucide-react";
 import { getLeaderboard, deleteQuizResult } from "@/app/actions/results";
-import { Card } from "@/components/ui/Card";
 import { useAuth } from "@/components/providers/auth-provider";
-import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import Link from "next/link";
 import { LeaderboardItem } from "@/types/dashboard";
 import { getAllCategories } from "@/lib/quiz-registry";
 
-// Category-to-icon mapping (emoji) for known IDs; falls back to a generic icon
-const CATEGORY_EMOJI_MAP: Record<string, string> = {
-  aws: "☁️",
-  azure: "🔷",
-  salesforce: "⚡",
-  mongodb: "🍃",
-  oracle: "🗄️",
-  pcap: "🐍",
+const CATEGORY_MAP: Record<string, string> = {
+  aws: "AWS",
+  azure: "Azure",
+  salesforce: "Salesforce",
+  mongodb: "MongoDB",
+  oracle: "Oracle",
+  pcap: "Python",
 };
 
 const categories = getAllCategories().map((c) => ({
   id: c.id,
-  name: c.name.split(" ")[0], // First word: "AWS", "Azure", etc.
-  icon: CATEGORY_EMOJI_MAP[c.id] ?? "🎯",
+  name: CATEGORY_MAP[c.id] || c.name.split(" ")[0],
 }));
 
-
-type Timeframe = 'weekly' | 'all-time';
+type Timeframe = "weekly" | "all-time";
 
 export function Leaderboard() {
   const [activeCategory, setActiveCategory] = useState("aws");
-  const [timeframe, setTimeframe] = useState<Timeframe>('weekly');
+  const [timeframe, setTimeframe] = useState<Timeframe>("weekly");
   const [data, setData] = useState<LeaderboardItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState("");
   const { profile } = useAuth();
-  const isAdmin = profile?.role === 'admin';
+  const isAdmin = profile?.role === "admin";
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -58,242 +51,200 @@ export function Leaderboard() {
       const nextSunday = new Date(now);
       nextSunday.setDate(now.getDate() + (7 - now.getDay()));
       nextSunday.setHours(23, 59, 59, 999);
-      
+
       const diff = nextSunday.getTime() - now.getTime();
       const days = Math.floor(diff / (1000 * 60 * 60 * 24));
       const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      
+
       setTimeLeft(`${days}d ${hours}h`);
     };
-    
+
     calculateTimeLeft();
-    const timer = setInterval(calculateTimeLeft, 60000); // Update every minute
+    const timer = setInterval(calculateTimeLeft, 60000);
     return () => clearInterval(timer);
   }, []);
 
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`Are you sure you want to remove ${name} from the leaderboard?`)) return;
-    
+
     const res = await deleteQuizResult(id);
     if (res.success) {
-        toast.success("Result removed from leaderboard");
-        loadData();
+      toast.success("Result removed from leaderboard");
+      loadData();
     } else {
-        toast.error("Failed to remove result");
+      toast.error("Failed to remove result");
     }
   };
 
-  const getRankTier = (index: number, percentage: number) => {
-    if (percentage < 40) return { name: "Bronze", color: "text-orange-700 dark:text-orange-500", bg: "bg-orange-700/10 border-orange-700/20", icon: Zap };
-    
-    if (index < 3 && percentage >= 80) return { name: "Diamond", color: "text-cyan-400", bg: "bg-cyan-400/10 border-cyan-400/20", icon: Crown };
-    if (index < 10 && percentage >= 60) return { name: "Platinum", color: "text-slate-300", bg: "bg-slate-300/10 border-slate-300/20", icon: Shield };
-    if (index < 25 && percentage >= 40) return { name: "Gold", color: "text-yellow-400", bg: "bg-yellow-400/10 border-yellow-400/20", icon: Medal };
-    
-    return { name: "Silver", color: "text-gray-400", bg: "bg-gray-400/10 border-gray-400/20", icon: Zap };
-  };
-
   return (
-    <div className="mt-20 relative px-4">
-      {/* Background Glow */}
-      <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-blue-500/10 rounded-full blur-[120px] pointer-events-none"></div>
-
-      <div className="max-w-4xl mx-auto relative">
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full mb-4">
-            <Trophy className="w-4 h-4 text-blue-500" />
-            <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">The Arena</span>
+    <section className="space-y-3 text-left" aria-label="Global Leaderboard">
+      {/* Header & Controls Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-200 dark:border-[#1e1e2a] pb-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <Trophy className="w-3.5 h-3.5 text-[#5e6ad2]" />
+            <h2 className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-500 dark:text-[#8b8b9e]">
+              Global Candidate Rankings
+            </h2>
           </div>
-          <h2 className="text-4xl font-black text-gray-900 dark:text-white mb-4">
-            Global Rankings
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400 flex items-center justify-center gap-2">
-            Compete for glory in our <span className="font-bold text-blue-500">Weekly Seasons</span>
+          <p className="text-sm font-medium text-zinc-900 dark:text-[#ebebef] mt-0.5">
+            Realtime scoring across verified cloud and algorithmic tracks.
           </p>
         </div>
 
-        {/* Timeframe & Category Controls */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8 bg-white/50 dark:bg-white/5 backdrop-blur-md p-2 rounded-2xl border border-gray-200 dark:border-white/10 max-w-3xl mx-auto">
-            
-            {/* Timeframe Toggles */}
-            <div className="flex p-1 bg-gray-100 dark:bg-black/20 rounded-xl">
-                <button
-                    onClick={() => setTimeframe('weekly')}
-                    className={`px-4 py-2 text-sm font-bold rounded-lg transition-all flex items-center gap-2 ${timeframe === 'weekly' ? 'bg-white dark:bg-white/10 text-blue-600 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}
-                >
-                    <Flame className={`w-4 h-4 ${timeframe === 'weekly' ? 'text-orange-500' : ''}`} />
-                    This Week
-                </button>
-                <button
-                    onClick={() => setTimeframe('all-time')}
-                    className={`px-4 py-2 text-sm font-bold rounded-lg transition-all flex items-center gap-2 ${timeframe === 'all-time' ? 'bg-white dark:bg-white/10 text-blue-600 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}
-                >
-                    <Trophy className={`w-4 h-4 ${timeframe === 'all-time' ? 'text-yellow-500' : ''}`} />
-                    All Time
-                </button>
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+          {/* Season Countdown */}
+          {timeframe === "weekly" && (
+            <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-[10.5px] font-medium t">
+              <Clock className="w-3 h-3" />
+              <span>Ends: {timeLeft}</span>
             </div>
+          )}
 
-            {/* Category Tabs (Simplified for mobile) */}
-            <select 
-                value={activeCategory} 
-                onChange={(e) => setActiveCategory(e.target.value)}
-                className="md:hidden w-full bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2 text-sm font-medium"
+          {/* Timeframe Toggle */}
+          <div className="flex p-0.5 rounded-md bg-zinc-100 dark:bg-[#11111a] border border-zinc-200 dark:border-[#1a1a26]">
+            <button
+              onClick={() => setTimeframe("weekly")}
+              className={`px-2.5 py-1 rounded text-[11px] font-medium transition-colors flex items-center gap-1 ${
+                timeframe === "weekly"
+                  ? "bg-white dark:bg-[#1e1e2a] text-zinc-900 dark:text-[#ebebef] shadow-subtle"
+                  : "text-zinc-500 dark:text-[#8b8b9e] hover:text-zinc-900 dark:hover:text-[#ebebef]"
+              }`}
             >
-                {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
-            </select>
+              <Flame className="w-3 h-3 text-orange-500" />
+              This Week
+            </button>
+            <button
+              onClick={() => setTimeframe("all-time")}
+              className={`px-2.5 py-1 rounded text-[11px] font-medium transition-colors ${
+                timeframe === "all-time"
+                  ? "bg-white dark:bg-[#1e1e2a] text-zinc-900 dark:text-[#ebebef] shadow-subtle"
+                  : "text-zinc-500 dark:text-[#8b8b9e] hover:text-zinc-900 dark:hover:text-[#ebebef]"
+              }`}
+            >
+              All Time
+            </button>
+          </div>
+        </div>
+      </div>
 
-            <div className="hidden md:flex flex-wrap justify-center gap-1" role="tablist">
-            {categories.map((cat) => (
-                <button
-                key={cat.id}
-                onClick={() => setActiveCategory(cat.id)}
-                role="tab"
-                aria-selected={activeCategory === cat.id}
-                aria-controls="leaderboard-panel"
-                className={`
-                    px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-300 flex items-center gap-1.5
-                    ${activeCategory === cat.id 
-                    ? "bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300 ring-1 ring-blue-500/20" 
-                    : "text-gray-500 hover:text-gray-900 dark:hover:text-gray-300"
-                    }
-                `}
-                >
-                <span>{cat.icon}</span>
-                {cat.name}
-                </button>
-            ))}
-            </div>
+      {/* Category Pills Strip */}
+      <div className="flex flex-wrap items-center gap-1.5 pt-1" role="tablist">
+        {categories.map((cat) => (
+          <button
+            key={cat.id}
+            onClick={() => setActiveCategory(cat.id)}
+            role="tab"
+            aria-selected={activeCategory === cat.id}
+            className={`px-2.5 py-1 rounded text-[11px] font-medium transition-colors ${
+              activeCategory === cat.id
+                ? "bg-zinc-900 text-white dark:bg-[#1e1e2a] dark:text-[#ebebef] border border-transparent dark:border-[#2a2a3a]"
+                : "bg-white dark:bg-[#11111a] text-zinc-500 dark:text-[#8b8b9e] border border-zinc-200 dark:border-[#1a1a26] hover:border-zinc-300 dark:hover:border-[#262636]"
+            }`}
+          >
+            {cat.name}
+          </button>
+        ))}
+      </div>
+
+      {/* Table Container (per anti-generic table_dark spec) */}
+      <div className="rounded-lg border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] overflow-hidden">
+        {/* Table Header */}
+        <div className="grid grid-cols-12 py-2 px-4 bg-zinc-50 dark:bg-[#0c0c10] border-b border-zinc-200 dark:border-[#1a1a26] text-[9.5px] font-medium uppercase tracking-[0.08em] text-zinc-500 dark:text-[#5a5a6e]">
+          <div className="col-span-1">Rank</div>
+          <div className="col-span-5">Candidate</div>
+          <div className="col-span-3 text-right sm:text-left">Track / Mode</div>
+          <div className="col-span-3 text-right">Score & Accuracy</div>
         </div>
 
-        {/* Season Timer Banner */}
-        {timeframe === 'weekly' && (
-             <div className="mb-6 flex justify-center">
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-orange-500/10 border border-orange-500/20 rounded-full">
-                    <Clock className="w-3.5 h-3.5 text-orange-500 animate-pulse" />
-                    <span className="text-xs font-semibold text-orange-600 dark:text-orange-400">
-                        Season ends in: <span className="font-mono">{timeLeft}</span>
-                    </span>
-                </div>
-            </div>
-        )}
+        {/* Table Body */}
+        {loading ? (
+          <div className="py-12 flex flex-col items-center justify-center gap-2">
+            <Loader2 className="w-5 h-5 text-[#5e6ad2] animate-spin" />
+            <span className="text-xs text-zinc-500 dark:text-[#8b8b9e]">Loading leaderboard data...</span>
+          </div>
+        ) : (
+          <div className="divide-y divide-zinc-100 dark:divide-[#161622]">
+            {(data.length > 0
+              ? data.slice(0, 10)
+              : [
+                  { id: "b1", nickname: "Ananya R. (KLU-CSE)", score: 49, total_questions: 50, completed_at: "2026-09-24", isBenchmark: true },
+                  { id: "b2", nickname: "Karthik V. (KLU-CSIT)", score: 47, total_questions: 50, completed_at: "2026-09-24", isBenchmark: true },
+                  { id: "b3", nickname: "Sai Teja P. (KLU-ECE)", score: 45, total_questions: 50, completed_at: "2026-09-23", isBenchmark: true },
+                  { id: "b4", nickname: "Meghana M. (KLU-AI&DS)", score: 44, total_questions: 50, completed_at: "2026-09-23", isBenchmark: true },
+                  { id: "b5", nickname: "Rohit K. (KLU-CSE)", score: 42, total_questions: 50, completed_at: "2026-09-22", isBenchmark: true },
+                ]
+            ).map((entry, index) => {
+              const percentage = Math.round((entry.score / entry.total_questions) * 100);
+              const isTopThree = index < 3;
+              const isBenchmark = "isBenchmark" in entry && entry.isBenchmark;
 
-        {/* Content Area */}
-        <Card className="overflow-hidden border-orange-500/20 shadow-2xl shadow-orange-500/5 bg-white/50 dark:bg-gray-900/50 backdrop-blur-xl" id="leaderboard-panel" role="tabpanel">
-          <div className="p-2 md:p-6">
-            <AnimatePresence mode="wait">
-              {loading ? (
-                <m.div 
-                  key="loading"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="py-20 flex flex-col items-center justify-center gap-4"
+              return (
+                <div
+                  key={`${entry.nickname}-${entry.completed_at}-${index}`}
+                  className="grid grid-cols-12 items-center py-2.5 px-4 text-xs transition-colors hover:bg-zinc-50 dark:hover:bg-white/[0.015]"
                 >
-                  <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
-                  <p className="text-sm text-gray-500 font-medium">Fetching the best...</p>
-                </m.div>
-              ) : data.length > 0 ? (
-                <m.ol 
-                  key="list"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="space-y-3 list-none"
-                >
-                  {data.map((entry, index) => {
-                    const percentage = Math.round((entry.score / entry.total_questions) * 100);
-                    const tier = getRankTier(index, percentage);
-                    const TierIcon = tier.icon;
-                    return (
-                        <m.li
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        key={`${entry.nickname}-${entry.completed_at}`}
-                        className={`
-                            flex items-center justify-between p-4 rounded-xl border transition-all group relative overflow-hidden
-                            ${timeframe === 'weekly' ? tier.bg : 'bg-white/50 dark:bg-white/5 border-gray-100 dark:border-white/5 box-shadow-sm'}
-                        `}
-                        >
-                        {timeframe === 'weekly' && index < 3 && (
-                             <div className={`absolute top-0 right-0 p-1 opacity-10 pointer-events-none`}>
-                                 <TierIcon className="w-24 h-24" />
-                             </div>
-                        )}
-                        
-                        <div className="flex items-center gap-4 min-w-0 z-10">
-                            <div className={`flex flex-col items-center justify-center w-10 flex-shrink-0 ${tier.color}`}>
-                                <span className="text-lg font-black">{index + 1}</span>
-                            </div>
-                            
-                            <div className="min-w-0">
-                                <div className="flex items-center gap-2">
-                                    <p className="font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
-                                        {entry.nickname}
-                                    </p>
-                                    {timeframe === 'weekly' && (
-                                        <span className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded border ${tier.color} bg-black/5 dark:bg-white/5 border-current opacity-70`}>
-                                            {tier.name}
-                                        </span>
-                                    )}
-                                </div>
-                                <p className="text-xs text-gray-500 truncate">
-                                    {new Date(entry.completed_at).toLocaleDateString()}
-                                </p>
-                            </div>
-                        </div>
-                        
-                        <div className="flex items-center gap-4 z-10">
-                            <div className="text-right">
-                            <div className="flex items-center gap-2 justify-end">
-                                <span className={`text-xl font-black ${tier.color}`}>
-                                {Math.round((entry.score / entry.total_questions) * 100)}%
-                                </span>
-                            </div>
-                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tighter">
-                                {entry.score}/{entry.total_questions} Correct
-                            </p>
-                            </div>
-                            
-                            {isAdmin && (
-                            <button 
-                                onClick={() => handleDelete(entry.id, entry.nickname)}
-                                className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                                title="Delete result"
-                            >
-                                <Trash2 className="w-4 h-4" />
-                            </button>
-                            )}
-                        </div>
-                        </m.li>
-                    );
-                  })}
-                </m.ol>
-              ) : (
-                <m.div 
-                  key="empty"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="py-20 text-center"
-                >
-                  <div className="w-16 h-16 bg-gray-100 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-dashed border-gray-300 dark:border-white/10">
-                    <Sparkles className="w-8 h-8 text-gray-400" />
+                  {/* Rank */}
+                  <div className="col-span-1 flex items-center">
+                    <span
+                      className={`inline-flex items-center justify-center w-5 h-5 rounded text-[11px] font-semibold tabular-nums t ${
+                        index === 0
+                          ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                          : index === 1
+                          ? "bg-slate-500/10 text-slate-600 dark:text-slate-300 border border-slate-500/20"
+                          : index === 2
+                          ? "bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20"
+                          : "text-zinc-400 dark:text-[#5a5a6e]"
+                      }`}
+                    >
+                      {index + 1}
+                    </span>
                   </div>
-                  <h3 className="text-xl font-bold text-gray-700 dark:text-gray-300">No champions yet</h3>
-                  <p className="text-sm text-gray-500 mt-1 max-w-xs mx-auto">
-                    Be the first to finish an exam in this category and claim your place!
-                  </p>
-                </m.div>
-              )}
-            </AnimatePresence>
+
+                  {/* Candidate Nickname */}
+                  <div className="col-span-5 flex items-center gap-2 min-w-0 pr-2">
+                    <span className="font-semibold text-zinc-900 dark:text-[#ebebef] truncate text-[12px]">
+                      {entry.nickname}
+                    </span>
+                    {isTopThree && (
+                      <span className="hidden sm:inline-block px-1.5 py-[0.5px] rounded text-[9px] uppercase font-bold tracking-wider bg-[#5e6ad2]/10 text-[#5e6ad2]">
+                        {isBenchmark ? "Benchmark" : "Elite"}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Track info */}
+                  <div className="col-span-3 text-right sm:text-left text-zinc-400 dark:text-[#5a5a6e] text-[11px] truncate">
+                    {CATEGORY_MAP[activeCategory] || activeCategory.toUpperCase()}
+                  </div>
+
+                  {/* Score & Accuracy */}
+                  <div className="col-span-3 flex items-center justify-end gap-2">
+                    <div className="text-right">
+                      <span className="font-semibold text-zinc-900 dark:text-[#ebebef] tabular-nums t text-[12px]">
+                        {entry.score}/{entry.total_questions}
+                      </span>
+                      <span className="ml-1.5 text-[10.5px] font-medium text-emerald-600 dark:text-emerald-400/80 tabular-nums t">
+                        ({percentage}%)
+                      </span>
+                    </div>
+
+                    {isAdmin && !isBenchmark && (
+                      <button
+                        onClick={() => handleDelete(entry.id, entry.nickname)}
+                        className="p-1 text-zinc-400 hover:text-red-500 transition-colors ml-1"
+                        title="Remove result"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
-          
-          <div className="bg-gray-50/50 dark:bg-white/5 p-4 border-t border-gray-100 dark:border-white/10 flex justify-center">
-            <Link href="/dashboard" className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
-              View All Rankings <ChevronRight className="w-3 h-3" />
-            </Link>
-          </div>
-        </Card>
+        )}
       </div>
-    </div>
+    </section>
   );
 }

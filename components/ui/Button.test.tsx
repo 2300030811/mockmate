@@ -10,13 +10,13 @@ describe("Button Component", () => {
         render(<Button>Click Me</Button>);
         const button = screen.getByRole("button", { name: "Click Me" });
         expect(button).toBeInTheDocument();
-        expect(button).toHaveClass("bg-white", "text-gray-900");
+        expect(button).toHaveClass("bg-white", "text-zinc-900");
     });
 
     it("renders primary variant correctly", () => {
         render(<Button variant="primary">Submit</Button>);
         const button = screen.getByRole("button", { name: "Submit" });
-        expect(button).toHaveClass("bg-gradient-to-r", "from-blue-600");
+        expect(button).toHaveClass("bg-zinc-900", "text-white");
     });
 
     it("handles click events", () => {

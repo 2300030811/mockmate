@@ -5,8 +5,6 @@ import { m, AnimatePresence } from "framer-motion";
 import { Trophy, Send, CheckCircle2, Loader2, RefreshCw } from "lucide-react";
 import { saveQuizResult } from "@/app/actions/results";
 import { getSessionId, getStoredNickname, setStoredNickname } from "@/utils/session";
-import { Button } from "../ui/Button";
-import { Card } from "../ui/Card";
 import { useAuth } from "@/components/providers/auth-provider";
 
 interface NicknamePromptProps {
@@ -58,76 +56,77 @@ export function NicknamePrompt({ userAnswers, totalQuestions, category }: Nickna
   };
 
   return (
-    <Card className="mt-8 overflow-hidden border-blue-500/20 bg-blue-50/50 dark:bg-blue-500/5 backdrop-blur-md">
-      <div className="p-6">
-        <AnimatePresence mode="wait">
-          {!submitted ? (
-            <m.div
-              key="prompt"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="flex flex-col md:flex-row items-center gap-6"
-            >
-              <div className="bg-blue-600 dark:bg-blue-500 p-4 rounded-2xl shadow-lg shadow-blue-500/20">
-                <Trophy className="w-8 h-8 text-white" />
+    <div className="rounded-xl border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50/70 dark:bg-[#101017] p-4 sm:p-5 shadow-sm text-left">
+      <AnimatePresence mode="wait">
+        {!submitted ? (
+          <m.div
+            key="prompt"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+          >
+            <div className="flex items-start gap-3.5 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 flex items-center justify-center text-[#5e6ad2] shrink-0">
+                <Trophy className="w-5 h-5" />
               </div>
-              
-              <div className="flex-1 text-center md:text-left">
-                <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
+              <div className="min-w-0">
+                <h4 className="text-sm font-semibold tracking-[-0.01em] text-zinc-900 dark:text-[#ebebef]">
                   Claim your spot!
                 </h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Great job! Enter a nickname to show up on the global leaderboard.
+                <p className="text-xs text-zinc-500 dark:text-[#8b8b9e] mt-0.5 leading-relaxed">
+                  Enter a callsign or nickname to publish your score to the global {category.toUpperCase()} leaderboard.
                 </p>
               </div>
+            </div>
 
-                <div className="flex w-full md:w-auto gap-2 relative">
-                  <div className="relative flex-1 md:flex-initial">
-                    <input
-                      type="text"
-                      placeholder="Your nickname..."
-                      value={nickname}
-                      onChange={(e) => setNickname(e.target.value)}
-                      className="w-full md:w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium pr-10"
-                      maxLength={20}
-                      onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-                    />
-                    {syncing && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <RefreshCw className="w-3 h-3 animate-spin text-blue-500" />
-                      </div>
-                    )}
+            <div className="flex items-center gap-2 relative shrink-0">
+              <div className="relative w-full sm:w-auto">
+                <input
+                  type="text"
+                  placeholder="Enter nickname..."
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                  className="w-full sm:w-44 bg-white dark:bg-[#151522] border border-zinc-300 dark:border-[#262638] rounded-lg px-3 py-1.5 text-xs font-mono text-zinc-900 dark:text-[#ebebef] placeholder:text-zinc-400 dark:placeholder:text-[#6e6e84] outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors pr-7 h-8.5"
+                  maxLength={20}
+                  onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+                />
+                {syncing && (
+                  <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
+                    <RefreshCw className="w-3 h-3 animate-spin text-[#5e6ad2]" />
                   </div>
-                  <Button 
-                      onClick={handleSubmit} 
-                      disabled={!nickname.trim() || loading}
-                      size="sm"
-                      className="shrink-0 h-[38px]"
-                  >
-                    {loading ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Send className="w-4 h-4" />
-                    )}
-                  </Button>
-                  {syncing && <p className="absolute -bottom-5 left-0 text-[10px] text-blue-500 font-bold animate-pulse px-1">Syncing profile...</p>}
-                  {error && <p className="absolute -bottom-5 left-0 text-[10px] text-red-500 font-bold px-1">{error}</p>}
-                </div>
-            </m.div>
-          ) : (
-            <m.div
-              key="success"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="flex items-center justify-center gap-3 py-2 text-green-600 dark:text-green-400"
-            >
-              <CheckCircle2 className="w-6 h-6" />
-              <span className="font-bold">You&apos;re on the board, {nickname}!</span>
-            </m.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </Card>
+                )}
+              </div>
+              <button
+                onClick={handleSubmit}
+                disabled={!nickname.trim() || loading}
+                className="shrink-0 h-8.5 px-3 rounded-lg bg-[#5e6ad2] hover:bg-[#525ec2] disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                {loading ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <>
+                    <span>Submit</span>
+                    <Send className="w-3 h-3" />
+                  </>
+                )}
+              </button>
+              {syncing && <p className="absolute -bottom-4.5 left-0 text-[10px] text-[#5e6ad2] font-mono animate-pulse">Syncing profile...</p>}
+              {error && <p className="absolute -bottom-4.5 left-0 text-[10px] text-rose-500 font-mono">{error}</p>}
+            </div>
+          </m.div>
+        ) : (
+          <m.div
+            key="success"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex items-center justify-center gap-2 py-1.5 px-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-mono font-medium"
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            <span>Score published to leaderboard for callsign: <strong className="font-semibold text-emerald-700 dark:text-emerald-300">{nickname}</strong></span>
+          </m.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

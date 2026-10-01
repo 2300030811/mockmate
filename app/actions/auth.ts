@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
+import { createAdminClient } from "@/utils/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { profileRepository } from "@/lib/db/profile-repository";
 import { redirect } from "next/navigation";
@@ -201,10 +202,11 @@ export async function resetPassword(email: string) {
 }
 
 /**
- * Soft-delete the user's account. Marks the profile as deleted (7-day grace period)
- * and signs the user out.
+ * Permanently delete or soft-delete the user's account in compliance with
+ * the India DPDP Act (2023) Right to Erasure and GDPR Article 17.
+ * Cascades across user tables and deletes the auth.users record.
  */
-export async function deleteAccount() {
+export async function deleteAccount(options?: { hardDelete?: boolean }) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -212,9 +214,32 @@ export async function deleteAccount() {
     return { error: "Not authenticated." };
   }
 
+  const hardDelete = options?.hardDelete ?? true;
+
   try {
-    // Soft-delete: mark profile with deleted_at timestamp
-    await profileRepository.updateProfile(supabase, user.id, { deleted_at: new Date().toISOString() });
+    if (hardDelete) {
+      // 1. Explicitly wipe associated user records across tables
+      await Promise.allSettled([
+        supabase.from("quiz_results").delete().eq("user_id", user.id),
+        supabase.from("career_paths").delete().eq("user_id", user.id),
+        supabase.from("interview_sessions").delete().eq("user_id", user.id),
+        supabase.from("system_designs").delete().eq("user_id", user.id),
+        supabase.from("career_ops_tracking").delete().eq("user_id", user.id),
+        supabase.from("profiles").delete().eq("id", user.id),
+      ]);
+
+      // 2. Cascade delete auth.users record via Admin Client
+      try {
+        const admin = createAdminClient();
+        await admin.auth.admin.deleteUser(user.id);
+      } catch (adminErr: unknown) {
+        const msg = adminErr instanceof Error ? adminErr.message : String(adminErr);
+        logger.warn("Admin deleteUser fallback notice:", msg);
+      }
+    } else {
+      // Soft-delete: mark profile with deleted_at timestamp
+      await profileRepository.updateProfile(supabase, user.id, { deleted_at: new Date().toISOString() });
+    }
   } catch (error: any) {
     logger.error("Account deletion error", error.message || error);
     return { error: "Failed to delete account. Please try again." };

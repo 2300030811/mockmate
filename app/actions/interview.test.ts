@@ -14,9 +14,9 @@ vi.mock("@/lib/rate-limit", () => ({
 vi.mock("@/lib/ai/gateway", () => ({
   generateText: generateTextMock,
   AI_MODELS: {
-    DEFAULT: "llama-3.3-70b-versatile",
+    DEFAULT: "qwen/qwen3.8-27b",
     FAST: "openai/gpt-oss-20b",
-    STRUCTURED: "llama-3.3-70b-versatile",
+    STRUCTURED: "qwen/qwen3.8-27b",
   },
 }));
 
@@ -112,7 +112,7 @@ describe("chatWithAI", () => {
       expect.any(String),
       "auto",
       expect.objectContaining({
-        model: "llama-3.3-70b-versatile",
+        model: "qwen/qwen3.8-27b",
         temperature: 0.7,
         maxTokens: 500
       })

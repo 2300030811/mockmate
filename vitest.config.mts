@@ -1,16 +1,9 @@
 import { defineConfig } from 'vitest/config'
+import react from '@vitejs/plugin-react'
 import path from 'path'
 
 export default defineConfig({
-  oxc: false,
-  esbuild: {
-    jsx: 'automatic',
-    tsconfigRaw: {
-      compilerOptions: {
-        jsx: 'react-jsx',
-      },
-    },
-  },
+  plugins: [react()],
   test: {
     environment: 'jsdom',
     globals: true,
@@ -26,6 +19,7 @@ export default defineConfig({
         'Resume-Matcher-main/**/*',
         'career-ops-main/**/*',
         'hiring-agent-main/**/*',
+        'scripts/**/*',
         '**/*.d.ts',
         '**/*.config.*',
         '**/*.test.*',

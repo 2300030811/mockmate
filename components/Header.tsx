@@ -4,129 +4,111 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
-import { Button, buttonVariants } from "@/components/ui/Button";
-import { Home, Sun, Moon } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { Sun, Moon, Building2, Swords, Trophy, Layers, Code2, Compass } from "lucide-react";
 import { UserAuthSection } from "./UserAuthSection";
 import { m, AnimatePresence } from "framer-motion";
 
-// Routes where the global header should be hidden (immersive/full-screen experiences)
+// Routes where standard top header is replaced by tool-specific controls
 const HIDDEN_ROUTE_PATTERNS = [
   "/session",
   "-quiz",
-  "/interview",
-  "/demo",
-  "/arena",
-  "/daily-challenge",
   "/system-design",
-  "/career-path",
-  "/resume-roaster",
-  "/resume-builder",
-  "/ats-optimizer",
-  "/certification",
-  "/project-mode",
 ];
 
 export function Header() {
   const pathname = usePathname();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const isDark = (resolvedTheme || theme) === "dark";
-  const [scrolled, setScrolled] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  const toggleTheme = () => {
-    setTheme(isDark ? "light" : "dark");
-  };
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const isHiddenRoute = HIDDEN_ROUTE_PATTERNS.some(
     (pattern) => pathname?.includes(pattern)
   );
 
-  useEffect(() => {
-    setMounted(true);
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 10);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
   if (isHiddenRoute) return null;
 
-  const isHomePage = pathname === "/" || pathname === "";
+  const navLinks = [
+    { label: "Career Path", href: "/career-path", icon: Compass },
+    { label: "Placements", href: "/placements", icon: Building2, tag: "KLU" },
+    { label: "Certifications", href: "/certification", icon: Trophy },
+    { label: "Arena", href: "/arena", icon: Swords },
+    { label: "System Design", href: "/system-design", icon: Layers },
+    { label: "Daily Challenge", href: "/daily-challenge", icon: Code2 },
+  ];
 
   return (
-    <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 pointer-events-none ${scrolled ? "py-2" : "py-4 sm:py-6"
-        }`}
-    >
-      <div className={`max-w-6xl mx-auto px-4 sm:px-6 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] pointer-events-auto ${scrolled ? "scale-[0.98] -translate-y-1" : "scale-100"}`}>
-        <nav
-          className={`
-            flex items-center justify-between gap-2 p-1 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] rounded-full border shadow-sm
-            bg-white/40 dark:bg-gray-900/40 backdrop-blur-md border-gray-200/30 dark:border-white/5
-            ${scrolled
-              ? "bg-white/90 dark:bg-gray-950/90 backdrop-blur-2xl border-gray-200/50 dark:border-white/10 shadow-2xl shadow-black/5 dark:shadow-black/20"
-              : "hover:bg-white/60 dark:hover:bg-gray-900/60"
-            }
-          `}
-        >
-          {/* Left: Auth & Nav Cluster */}
-          <div className="flex items-center">
-            <UserAuthSection />
+    <header className="fixed top-0 left-0 right-0 h-14 z-50 border-b border-zinc-200 dark:border-[#1e1e2a] bg-white/95 dark:bg-[#0d0d12]/95 backdrop-blur-md transition-colors">
+      <div className="max-w-7xl mx-auto h-full px-4 sm:px-6 flex items-center justify-between gap-4">
+        {/* Left: Brand Identity & Primary Navigation */}
+        <div className="flex items-center gap-3 sm:gap-6">
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="w-[22px] h-[22px] rounded-[5px] bg-[#5e6ad2] flex items-center justify-center text-[10px] font-bold text-white leading-none shadow-subtle group-hover:bg-[#4f5ac4] transition-colors">
+              M
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[13px] font-semibold text-zinc-900 dark:text-[#ebebef] tracking-[-0.01em]">
+                MockMate
+              </span>
+              <span className="hidden sm:inline-block px-1.5 py-[1px] rounded text-[9.5px] font-medium tracking-wide uppercase bg-zinc-100 dark:bg-[#181824] text-zinc-500 dark:text-[#8b8b9e] border border-zinc-200 dark:border-[#1e1e2a]">
+                v2.6
+              </span>
+            </div>
+          </Link>
 
-            {!isHomePage && (
-              <div className="flex items-center">
-                <div className="w-px h-4 bg-gray-200 dark:bg-gray-800 mx-1 opacity-30"></div>
+          <div className="hidden lg:flex items-center gap-1 border-l border-zinc-200 dark:border-[#1e1e2a] pl-4">
+            {navLinks.map((item) => {
+              const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
+              return (
                 <Link
-                  href="/"
-                  className={buttonVariants({ variant: "glass", size: "sm", className: "border-0 shadow-none bg-transparent hover:bg-black/5 dark:hover:bg-white/5 rounded-full group gap-2 px-3" })}
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-1.5 px-2.5 py-[5px] rounded-[5px] text-[12.5px] font-medium transition-colors ${
+                    isActive
+                      ? "text-zinc-900 dark:text-[#ebebef] bg-zinc-100 dark:bg-white/[0.06]"
+                      : "text-zinc-500 dark:text-[#8b8b9e] hover:text-zinc-900 dark:hover:text-[#ebebef] hover:bg-zinc-100/60 dark:hover:bg-white/[0.03]"
+                  }`}
                 >
-                  <Home className="w-4 h-4 transition-transform group-hover:-translate-y-0.5 text-blue-500" />
-                  <span className="hidden sm:inline text-[10px] font-bold uppercase tracking-widest opacity-70">Home</span>
-                </Link>
-              </div>
-            )}
-          </div>
-
-          {/* Right: Theme Toggle */}
-          <div className="flex items-center">
-            <Button
-              onClick={toggleTheme}
-              variant="glass"
-              size="icon"
-              className="rounded-full border-0 shadow-none bg-transparent hover:bg-black/5 dark:hover:bg-white/5 w-10 h-10 transition-transform active:scale-90"
-              aria-label="Toggle Theme"
-            >
-              <div className="w-5 h-5 relative flex items-center justify-center overflow-hidden">
-                <AnimatePresence mode="wait">
-                  {mounted && (
-                    isDark ? (
-                      <m.div
-                        key="sun"
-                        initial={{ y: 20, opacity: 0, rotate: -45 }}
-                        animate={{ y: 0, opacity: 1, rotate: 0 }}
-                        exit={{ y: -20, opacity: 0, rotate: 45 }}
-                        transition={{ duration: 0.3, ease: "backOut" }}
-                      >
-                        <Sun className="w-5 h-5 text-yellow-400" />
-                      </m.div>
-                    ) : (
-                      <m.div
-                        key="moon"
-                        initial={{ y: 20, opacity: 0, rotate: 45 }}
-                        animate={{ y: 0, opacity: 1, rotate: 0 }}
-                        exit={{ y: -20, opacity: 0, rotate: -45 }}
-                        transition={{ duration: 0.3, ease: "backOut" }}
-                      >
-                        <Moon className="w-5 h-5 text-gray-700" />
-                      </m.div>
-                    )
+                  <item.icon className={`w-[13px] h-[13px] ${isActive ? "opacity-90 text-[#5e6ad2]" : "opacity-40"}`} />
+                  <span>{item.label}</span>
+                  {item.tag && (
+                    <span className="text-[9px] font-semibold uppercase px-1 py-[0.5px] rounded bg-[#5e6ad2]/10 text-[#5e6ad2] border border-[#5e6ad2]/20">
+                      {item.tag}
+                    </span>
                   )}
-                </AnimatePresence>
-              </div>
-            </Button>
+                </Link>
+              );
+            })}
           </div>
-        </nav>
+        </div>
+
+        {/* Right: Actions, Auth, Theme Toggle */}
+        <div className="flex items-center gap-2">
+          <UserAuthSection />
+
+          <div className="w-px h-4 bg-zinc-200 dark:bg-[#1e1e2a] mx-1" />
+
+          {/* Theme Toggle Button */}
+          <Button
+            onClick={() => setTheme(isDark ? "light" : "dark")}
+            variant="ghost"
+            size="icon"
+            className="w-8 h-8 rounded-[5px] text-zinc-500 hover:text-zinc-900 dark:text-[#8b8b9e] dark:hover:text-[#ebebef] border border-transparent hover:border-zinc-200 dark:hover:border-[#1e1e2a]"
+            aria-label="Toggle Theme"
+          >
+            {mounted && (
+              isDark ? (
+                <Sun className="w-3.5 h-3.5 text-zinc-400 hover:text-amber-400 transition-colors" />
+              ) : (
+                <Moon className="w-3.5 h-3.5 text-zinc-600 hover:text-zinc-900 transition-colors" />
+              )
+            )}
+          </Button>
+        </div>
       </div>
     </header>
   );

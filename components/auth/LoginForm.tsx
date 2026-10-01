@@ -45,13 +45,13 @@ export function LoginForm() {
     }, [refresh, router, searchParams]);
 
     const forgotLink = (
-        <Link href="/forgot-password" className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline">
+        <Link href="/forgot-password" className="text-xs font-medium text-[#5e6ad2] hover:underline">
             Forgot?
         </Link>
     );
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-5">
             <form onSubmit={handleSubmit} className="space-y-4">
                 {verified && !error && (
                     <AlertBanner variant="success" Icon={CheckCircle2}>
@@ -74,10 +74,10 @@ export function LoginForm() {
                     </AlertBanner>
                 )}
 
-                <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700 dark:text-gray-300 ml-1">Email</label>
+                <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 ml-0.5">Email</label>
                     <div className="relative group">
-                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 group-focus-within:text-[#5e6ad2] transition-colors" />
                         <input
                             name="email"
                             type="email"
@@ -92,22 +92,26 @@ export function LoginForm() {
 
                 <PasswordInput disabled={loading} extra={forgotLink} autoComplete="current-password" />
 
-                <Button type="submit" variant="primary" disabled={loading} className="w-full h-12 rounded-2xl">
-                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Log In"}
-                </Button>
+                <button 
+                    type="submit" 
+                    disabled={loading} 
+                    className="w-full h-10 rounded-xl bg-[#5e6ad2] hover:bg-[#4f5ac4] text-white font-semibold text-xs sm:text-sm shadow-subtle transition-all flex items-center justify-center cursor-pointer disabled:opacity-50"
+                >
+                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Log In"}
+                </button>
             </form>
 
             <SocialButtons disabled={loading} />
 
-            <p className="text-center text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-center text-xs text-zinc-500 dark:text-zinc-400">
                 Don&apos;t have an account?{" "}
-                <Link href="/signup" className="font-bold text-blue-600 dark:text-blue-400 hover:underline">
+                <Link href="/signup" className="font-semibold text-[#5e6ad2] hover:underline">
                     Sign up
                 </Link>
             </p>
 
-            <div className="text-center">
-                <Link href="/" className="text-xs font-bold text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 uppercase tracking-widest transition-colors">
+            <div className="text-center pt-1">
+                <Link href="/" className="text-[11px] font-mono uppercase tracking-wider text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors">
                     Continue as Guest
                 </Link>
             </div>

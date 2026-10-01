@@ -29,6 +29,7 @@ vi.mock("@/lib/db/career-ops-repository", () => ({
     finishScanRun: vi.fn(),
     fetchExistingPostings: vi.fn(),
     upsertJobPostings: vi.fn(),
+    markStaleCompanyPostingsExpired: vi.fn(),
   },
 }));
 
@@ -127,9 +128,14 @@ describe("GET /api/cron/scan", () => {
       expect.arrayContaining([
         expect.objectContaining({
           external_url: "https://jobs.example.com/1",
-          posting_status: "uncertain",
+          posting_status: "active",
         }),
       ])
+    );
+    expect(careerOpsRepositoryMock.markStaleCompanyPostingsExpired).toHaveBeenCalledWith(
+      {},
+      ["Acme"],
+      expect.any(String)
     );
     expect(careerOpsRepositoryMock.finishScanRun).toHaveBeenCalledWith(
       {},

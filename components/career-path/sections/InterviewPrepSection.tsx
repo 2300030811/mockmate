@@ -1,96 +1,307 @@
-import React from "react";
-import { Award, MessageSquare, Sparkles } from "lucide-react";
-import { Card } from "@/components/ui/Card";
+"use client";
+
+import React, { useState, useMemo } from "react";
+import { m, AnimatePresence } from "framer-motion";
+import {
+  Award,
+  MessageSquare,
+  Sparkles,
+  Code2,
+  Users,
+  Layers,
+  ChevronDown,
+  ChevronUp,
+  HelpCircle,
+  Lightbulb,
+  CheckCircle2,
+  ExternalLink,
+  Target,
+  Swords
+} from "lucide-react";
+import Link from "next/link";
 import { InterviewPrepSectionProps } from "../types";
 
-export const InterviewPrepSection = React.memo(({ interviewPrep }: InterviewPrepSectionProps) => (
-  <div className="pt-8 space-y-8">
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-        <MessageSquare className="text-blue-500 dark:text-blue-400" />
-        Interview Prep & Questions
-      </h2>
-      <div className="space-y-4">
-        {interviewPrep.topQuestions.map((q: any, idx: number) => {
-          const difficultyColor: Record<string, string> = {
-            easy: "bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-500/20",
-            medium: "bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-500/20",
-            hard: "bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300 border-red-200 dark:border-red-500/20",
-          };
+export const InterviewPrepSection = React.memo(
+  ({ interviewPrep }: InterviewPrepSectionProps) => {
+    const [selectedCategory, setSelectedCategory] = useState<string>("all");
+    const [expandedQuestion, setExpandedQuestion] = useState<number | null>(0);
 
-          const categoryIcon: Record<string, string> = {
-            technical: "⚙️",
-            behavioral: "💬",
-            "system-design": "🏗️",
-          };
+    const getCategoryIcon = (cat?: string) => {
+      switch (cat?.toLowerCase()) {
+        case "technical":
+          return <Code2 size={12} />;
+        case "behavioral":
+          return <Users size={12} />;
+        case "system-design":
+          return <Layers size={12} />;
+        default:
+          return <MessageSquare size={12} />;
+      }
+    };
 
-          return (
-            <Card key={idx} className="p-5 border-l-4 border-l-blue-500 bg-blue-50/50 dark:bg-blue-500/5 border-gray-200 dark:border-white/10">
-              <div className="flex items-start justify-between mb-2">
-                <h4 className="text-lg font-semibold text-gray-900 dark:text-white flex-1">&quot;{q.question}&quot;</h4>
-                <div className="flex gap-2 ml-3">
-                  {q.difficulty && (
-                    <span className={`text-[10px] uppercase font-bold tracking-widest px-2 py-1 rounded border ${difficultyColor[q.difficulty as string] || ""}`}>
-                      {q.difficulty}
-                    </span>
-                  )}
-                  {q.category && (
-                    <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-1 rounded bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30">
-                      {categoryIcon[q.category as string] || ""} {q.category}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 italic">
-                <span className="font-semibold text-blue-600 dark:text-blue-400 not-italic mr-2">Why this?</span>
-                {q.reason}
-              </p>
-            </Card>
-          );
-        })}
-      </div>
-    </div>
+    const getDifficultyClass = (diff?: string) => {
+      switch (diff?.toLowerCase()) {
+        case "easy":
+          return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
+        case "medium":
+          return "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20";
+        case "hard":
+          return "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20";
+        default:
+          return "bg-zinc-100 dark:bg-[#1e1e2a] text-zinc-500 border-zinc-200 dark:border-[#2a2a3c]";
+      }
+    };
 
-    {interviewPrep.starStories && interviewPrep.starStories.length > 0 && (
-      <div className="space-y-6 pt-4 border-t border-gray-200 dark:border-white/10">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <Sparkles className="text-yellow-500" />
-          Recommended STAR Stories
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {interviewPrep.starStories.map((story: any, idx: number) => (
-            <Card key={idx} className="p-5 bg-gradient-to-br from-yellow-50/50 to-orange-50/50 dark:from-yellow-500/5 dark:to-orange-500/5 border border-yellow-200/50 dark:border-yellow-500/20">
-              <span className="text-[10px] uppercase font-black tracking-widest text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-500/20 px-2 py-1 rounded-sm block mb-3 w-max">
-                {story.requirementMatch}
+    // Filter questions
+    const filteredQuestions = useMemo(() => {
+      if (selectedCategory === "all") return interviewPrep.topQuestions;
+      return interviewPrep.topQuestions.filter(
+        (q) => q.category?.toLowerCase() === selectedCategory.toLowerCase()
+      );
+    }, [interviewPrep.topQuestions, selectedCategory]);
+
+    const categories = useMemo(() => {
+      const set = new Set<string>();
+      interviewPrep.topQuestions.forEach((q) => {
+        if (q.category) set.add(q.category.toLowerCase());
+      });
+      return Array.from(set);
+    }, [interviewPrep.topQuestions]);
+
+    return (
+      <div className="space-y-8">
+        {/* ─────────────────────────────────────────────────────────────
+            1. ANTICIPATED INTERVIEW QUESTIONS & EVALUATOR INTENT
+           ───────────────────────────────────────────────────────────── */}
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-100 dark:border-[#1e1e2a] pb-3">
+            <div className="flex items-center gap-2">
+              <span className="w-7 h-7 rounded-lg bg-[#5e6ad2]/10 text-[#5e6ad2] flex items-center justify-center">
+                <MessageSquare size={15} />
               </span>
-              <div className="space-y-3">
-                <div>
-                  <span className="text-xs font-bold text-gray-500 dark:text-gray-400">Situation / Task</span>
-                  <p className="text-sm text-gray-800 dark:text-gray-200 font-medium">{story.situationTask}</p>
-                </div>
-                <div>
-                  <span className="text-xs font-bold text-gray-500 dark:text-gray-400">Action</span>
-                  <p className="text-sm text-gray-800 dark:text-gray-200 font-medium">{story.action}</p>
-                </div>
-                <div>
-                  <span className="text-xs font-bold text-gray-500 dark:text-gray-400">Result</span>
-                  <p className="text-sm text-green-700 dark:text-green-400 font-bold italic">{story.result}</p>
-                </div>
-                {story.seniorReflection && (
-                  <div className="mt-4 pt-3 border-t border-amber-200/50 dark:border-amber-500/20">
-                    <span className="text-[10px] uppercase font-black tracking-widest text-purple-600 dark:text-purple-400 flex items-center gap-1 mb-1">
-                      <Award size={10} /> Senior Reflection
-                    </span>
-                    <p className="text-sm text-purple-800 dark:text-purple-300 font-medium">{story.seniorReflection}</p>
-                  </div>
-                )}
+              <div>
+                <h3 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-[#ebebef]">
+                  Anticipated Technical & Behavioral Prompts
+                </h3>
               </div>
-            </Card>
-          ))}
+            </div>
+
+            {/* Category Filter Pills */}
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+              <button
+                type="button"
+                onClick={() => setSelectedCategory("all")}
+                className={`px-3 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
+                  selectedCategory === "all"
+                    ? "bg-[#5e6ad2] text-white shadow-sm font-semibold"
+                    : "bg-zinc-100 dark:bg-[#14141e] text-zinc-500 dark:text-[#8b8b9e] hover:text-zinc-900 dark:hover:text-[#ebebef] border border-zinc-200 dark:border-[#1e1e2a]"
+                }`}
+              >
+                All ({interviewPrep.topQuestions.length})
+              </button>
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-3 py-1 rounded-lg text-xs font-medium capitalize transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                    selectedCategory === cat
+                      ? "bg-[#5e6ad2] text-white shadow-sm font-semibold"
+                      : "bg-zinc-100 dark:bg-[#14141e] text-zinc-500 dark:text-[#8b8b9e] hover:text-zinc-900 dark:hover:text-[#ebebef] border border-zinc-200 dark:border-[#1e1e2a]"
+                  }`}
+                >
+                  {getCategoryIcon(cat)}
+                  <span>{cat}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Questions Accordion List */}
+          <div className="space-y-3">
+            {filteredQuestions.map((q: any, idx: number) => {
+              const isExpanded = expandedQuestion === idx;
+              return (
+                <div
+                  key={idx}
+                  className={`rounded-2xl bg-white dark:bg-[#14141e] border transition-all p-5 sm:p-6 shadow-subtle space-y-3 cursor-pointer ${
+                    isExpanded
+                      ? "border-[#5e6ad2]/60 ring-1 ring-[#5e6ad2]/20"
+                      : "border-zinc-200 dark:border-[#1e1e2a] hover:border-zinc-300 dark:hover:border-[#2a2a3c]"
+                  }`}
+                  onClick={() => setExpandedQuestion(isExpanded ? null : idx)}
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <span className="w-6 h-6 rounded-md bg-zinc-100 dark:bg-[#0d0d12] border border-zinc-200 dark:border-[#1e1e2a] text-[11px] font-mono font-bold text-zinc-500 dark:text-[#8b8b9e] flex items-center justify-center shrink-0 mt-0.5">
+                        Q{idx + 1}
+                      </span>
+                      <h4 className="text-sm sm:text-base font-bold text-zinc-900 dark:text-[#ebebef] leading-snug">
+                        &ldquo;{q.question}&rdquo;
+                      </h4>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                      {q.difficulty && (
+                        <span
+                          className={`text-[10px] uppercase font-mono font-bold px-2 py-0.5 rounded border ${getDifficultyClass(
+                            q.difficulty
+                          )}`}
+                        >
+                          {q.difficulty}
+                        </span>
+                      )}
+                      {q.category && (
+                        <span className="text-[10px] uppercase font-mono font-bold px-2 py-0.5 rounded bg-[#5e6ad2]/10 text-[#5e6ad2] border border-[#5e6ad2]/20 flex items-center gap-1">
+                          {getCategoryIcon(q.category)}
+                          <span className="capitalize">{q.category}</span>
+                        </span>
+                      )}
+                      <div className="text-zinc-400 p-0.5">
+                        {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Evaluator Intent Banner */}
+                  <div className="text-xs text-zinc-600 dark:text-[#a0a0b2] leading-relaxed pl-3.5 border-l-2 border-[#5e6ad2]/50 bg-[#5e6ad2]/[0.02] py-1 rounded-r-lg">
+                    <span className="font-semibold text-zinc-900 dark:text-[#ebebef] mr-1">
+                      Evaluator Rubric & Intent:
+                    </span>
+                    {q.reason}
+                  </div>
+
+                  {/* Expandable Answer Strategy & Blueprint */}
+                  <AnimatePresence>
+                    {isExpanded && (
+                      <m.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="pt-3 border-t border-zinc-100 dark:border-[#1e1e2a] space-y-3"
+                      >
+                        <div className="p-3.5 rounded-xl bg-amber-500/[0.06] border border-amber-500/20 space-y-1.5">
+                          <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                            <Lightbulb size={12} /> Recommended Answer Architecture
+                          </span>
+                          <p className="text-xs text-zinc-700 dark:text-[#c4c4d4] leading-relaxed">
+                            Frame your response around real production trade-offs. Start with a direct high-level summary, substantiate with one concrete technical war story from your background, and conclude with the measurable metric impact.
+                          </p>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-1">
+                          <span className="text-[11px] font-mono text-zinc-400">
+                            Recommended duration: ~2–3 minutes
+                          </span>
+                          <Link
+                            href="/arena"
+                            target="_blank"
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-zinc-100 dark:bg-[#1a1a28] hover:bg-zinc-200 dark:hover:bg-[#252538] border border-zinc-200 dark:border-[#26263a] text-xs font-semibold text-[#5e6ad2] transition-colors"
+                          >
+                            <Swords size={12} />
+                            <span>Simulate in Arena</span>
+                          </Link>
+                        </div>
+                      </m.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })}
+          </div>
         </div>
+
+        {/* ─────────────────────────────────────────────────────────────
+            2. HIGH-YIELD STAR SCENARIO POSITIONING
+           ───────────────────────────────────────────────────────────── */}
+        {interviewPrep.starStories && interviewPrep.starStories.length > 0 && (
+          <div className="space-y-4 pt-2">
+            <div className="flex items-center justify-between border-b border-zinc-100 dark:border-[#1e1e2a] pb-3">
+              <div className="flex items-center gap-2">
+                <span className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center">
+                  <Sparkles size={15} />
+                </span>
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-[#ebebef]">
+                    High-Yield STAR Behavioral Frameworks
+                  </h3>
+                  <p className="text-xs text-zinc-500 dark:text-[#8b8b9e]">
+                    Pre-engineered narrative blueprints aligning your real resume projects to core interview competency bars.
+                  </p>
+                </div>
+              </div>
+              <span className="text-xs font-mono text-zinc-400">
+                {interviewPrep.starStories.length} Frameworks
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {interviewPrep.starStories.map((story: any, idx: number) => (
+                <div
+                  key={idx}
+                  className="rounded-2xl bg-white dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] p-5 sm:p-6 shadow-subtle space-y-4 flex flex-col justify-between"
+                >
+                  <div className="space-y-3.5">
+                    {/* Target Competency Pill */}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="inline-block text-[10px] font-mono font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-md">
+                        {story.requirementMatch}
+                      </span>
+                      <span className="text-[10px] font-mono text-zinc-400">STAR Model</span>
+                    </div>
+
+                    {/* S & T */}
+                    <div className="p-3 rounded-xl bg-zinc-50 dark:bg-[#0d0d12] border border-zinc-200/80 dark:border-[#1e1e2a] space-y-1">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-indigo-500">
+                        [S/T] Situation & Context
+                      </span>
+                      <p className="text-xs text-zinc-700 dark:text-[#c4c4d4] leading-relaxed">
+                        {story.situationTask}
+                      </p>
+                    </div>
+
+                    {/* Action */}
+                    <div className="p-3 rounded-xl bg-zinc-50 dark:bg-[#0d0d12] border border-zinc-200/80 dark:border-[#1e1e2a] space-y-1">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#5e6ad2]">
+                        [A] Technical Action Taken
+                      </span>
+                      <p className="text-xs text-zinc-700 dark:text-[#c4c4d4] leading-relaxed">
+                        {story.action}
+                      </p>
+                    </div>
+
+                    {/* Result */}
+                    <div className="p-3 rounded-xl bg-emerald-500/[0.06] border border-emerald-500/20 space-y-1">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                        <CheckCircle2 size={11} /> [R] Quantified Deliverable Impact
+                      </span>
+                      <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 leading-relaxed">
+                        {story.result}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Senior Engineering Reflection */}
+                  {story.seniorReflection && (
+                    <div className="pt-3 border-t border-zinc-100 dark:border-[#1e1e2a] space-y-1">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#5e6ad2] flex items-center gap-1">
+                        <Award size={11} /> Senior Engineering Reflection & Retrospective
+                      </span>
+                      <p className="text-xs text-zinc-600 dark:text-[#a0a0b2] leading-relaxed italic">
+                        &ldquo;{story.seniorReflection}&rdquo;
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
-    )}
-  </div>
-));
+    );
+  }
+);
 
 InterviewPrepSection.displayName = "InterviewPrepSection";

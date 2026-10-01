@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AIGateway, type ChatMessage } from "@/lib/ai/chat-gateway";
-import { generateText, generateStructuredOutput } from "@/lib/ai/gateway";
+import { generateText, generateStructuredOutput, AI_MODELS } from "@/lib/ai/gateway";
 import { z } from "zod";
 
 const getNextKeyMock = vi.hoisted(() => vi.fn());
@@ -11,6 +11,10 @@ const reportKeyFailureMock = vi.hoisted(() => vi.fn());
 const groqCreateMock = vi.hoisted(() => vi.fn());
 const geminiGenerateContentStreamMock = vi.hoisted(() => vi.fn());
 const geminiGenerateContentMock = vi.hoisted(() => vi.fn());
+const geminiGetGenerativeModelMock = vi.hoisted(() => vi.fn(() => ({
+  generateContentStream: geminiGenerateContentStreamMock,
+  generateContent: geminiGenerateContentMock,
+})));
 
 vi.mock("@/utils/keyManager", () => ({
   getNextKey: getNextKeyMock,
@@ -43,10 +47,7 @@ vi.mock("groq-sdk", () => ({
 vi.mock("@google/generative-ai", () => ({
   GoogleGenerativeAI: vi.fn(function MockGoogleGenerativeAI() {
     return {
-      getGenerativeModel: vi.fn(() => ({
-        generateContentStream: geminiGenerateContentStreamMock,
-        generateContent: geminiGenerateContentMock,
-      })),
+      getGenerativeModel: geminiGetGenerativeModelMock,
     };
   }),
 }));
@@ -258,6 +259,50 @@ describe("generateText", () => {
     const geminiArgs = geminiGenerateContentMock.mock.calls[0][0];
     expect(geminiArgs.response_format).toBeUndefined();
     expect(geminiArgs.responseFormat).toBeUndefined();
+  });
+
+  it("normalizes deprecated llama models to AI_MODELS.DEFAULT when calling Groq", async () => {
+    getNextKeyMock.mockImplementation((key: string) => {
+      if (key === "GROQ_API_KEY") return "groq-key";
+      return undefined;
+    });
+
+    groqCreateMock.mockResolvedValue({
+      choices: [{ message: { content: "Groq response" } }]
+    });
+
+    await generateText("hello", "system prompt", "groq", {
+      model: "llama-3.3-70b-versatile"
+    });
+
+    expect(groqCreateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: AI_MODELS.DEFAULT
+      })
+    );
+  });
+
+  it("normalizes non-gemini models to gemini-2.0-flash when calling Gemini fallback", async () => {
+    getNextKeyMock.mockImplementation((key: string) => {
+      if (key === "GROQ_API_KEY") return "groq-key";
+      if (key === "GOOGLE_API_KEY") return "gemini-key";
+      return undefined;
+    });
+
+    groqCreateMock.mockRejectedValue(new Error("Groq failed"));
+    geminiGenerateContentMock.mockResolvedValue({
+      response: { text: () => "Gemini response" }
+    });
+
+    await generateText("hello", "system prompt", "auto", {
+      model: "qwen/qwen3.8-27b"
+    });
+
+    expect(geminiGetGenerativeModelMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: "gemini-2.5-flash"
+      })
+    );
   });
 });
 
