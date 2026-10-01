@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useTheme } from "next-themes";
 import { m, AnimatePresence } from "framer-motion";
 import { Sparkles, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
@@ -66,6 +67,15 @@ export default function SystemDesignCanvas() {
   useSystemDesignPersistence({
     nodes, connections, groups, theme: state.theme, dispatch, setInitialHistory
   });
+
+  const { resolvedTheme, theme: globalTheme, setTheme: setGlobalTheme } = useTheme();
+  const effectiveTheme = (resolvedTheme || globalTheme) === "light" ? "light" : "dark";
+
+  useEffect(() => {
+    if (state.theme !== effectiveTheme && state.theme !== "neo") {
+      dispatch({ type: "SET_THEME", theme: effectiveTheme });
+    }
+  }, [effectiveTheme, state.theme, dispatch]);
 
   useEffect(() => {
     setWindowSize({ width: window.innerWidth, height: window.innerHeight });
@@ -166,9 +176,6 @@ export default function SystemDesignCanvas() {
   }, [dispatch]);
 
   const handleNodeClick = useCallback((id: string) => {
-    console.log("NODE CLICK:", id);
-    console.log("activeTool =", state.activeTool);
-    console.log("connectStart =", state.connectStart);
 
     if (state.activeTool === "Connect") {
       if (!state.connectStart) {
@@ -306,22 +313,81 @@ export default function SystemDesignCanvas() {
     );
   }, [connections, nodes, selectedId, handleConnectionClick, handleConnectionDoubleClick, state.theme, handleCanvasClick]);
 
+  // Stable memoized callbacks to prevent child component re-renders
+  const handleToggleGrid = useCallback(() => {
+    dispatch({ type: "TOGGLE_GRID" });
+  }, [dispatch]);
+
+  const handleSetTheme = useCallback((t: "dark" | "light" | "neo") => {
+    dispatch({ type: "SET_THEME", theme: t });
+    if (t === "dark" || t === "light") setGlobalTheme(t);
+  }, [dispatch, setGlobalTheme]);
+
+  const toggleChallengePanel = useCallback(() => {
+    setIsChallengePanelOpen((prev) => !prev);
+  }, []);
+
+  const handleSetActiveTool = useCallback((tool: any) => {
+    dispatch({ type: "SET_TOOL", tool });
+  }, [dispatch]);
+
+  const handleUpdateGroupPos = useCallback((id: string, x: number, y: number, lockChildren?: boolean) => {
+    dispatch({ type: "UPDATE_GROUP_POS", id, x, y, lockChildren });
+  }, [dispatch]);
+
+  const handleUpdateGroupSize = useCallback((id: string, w: number, h: number) => {
+    dispatch({ type: "UPDATE_GROUP", id, updates: { w, h } });
+  }, [dispatch]);
+
+  const handleDragStateEnd = useCallback(() => {
+    setPendingHistorySnapshot(true);
+  }, []);
+
+  const handleShowHelp = useCallback(() => {
+    dispatch({ type: "SET_SHOW_HELP", show: true });
+  }, [dispatch]);
+
+  const handleUpdateNodes = useCallback((updates: Partial<Node>) => {
+    if (selectedId) dispatch({ type: "UPDATE_NODE", id: selectedId, updates });
+  }, [selectedId, dispatch]);
+
+  const handleUpdateConnections = useCallback((updates: Partial<Connection>) => {
+    if (selectedId) dispatch({ type: "UPDATE_CONNECTION", id: selectedId, updates });
+  }, [selectedId, dispatch]);
+
+  const handleUpdateGroups = useCallback((updates: Partial<Group>) => {
+    if (selectedId) dispatch({ type: "UPDATE_GROUP", id: selectedId, updates });
+  }, [selectedId, dispatch]);
+
+  const handleSelectId = useCallback((id: string | null) => {
+    selectElement(id, selectedType);
+  }, [selectElement, selectedType]);
+
+  const handleClearConnectionFocus = useCallback(() => {
+    dispatch({ type: "FOCUS_CONNECTION_LABEL", id: null });
+  }, [dispatch]);
+
   return (
-    <div className={`h-screen flex flex-col overflow-hidden font-sans antialiased transition-colors duration-500 ${state.theme === "light" ? "bg-gray-50 text-gray-900 selection:bg-indigo-500/30" :
-      state.theme === "neo" ? "bg-[#02000a] text-cyan-50 selection:bg-fuchsia-500/30" : "bg-[#050505] text-white selection:bg-indigo-500/30"
-      }`}>
+    <div className={`fixed inset-0 flex flex-col overflow-hidden font-sans antialiased transition-colors duration-200 ${
+      state.theme === "light"
+        ? "bg-white text-zinc-900 selection:bg-indigo-500/20"
+        : "bg-[#0d0d12] text-[#ebebef] selection:bg-[#5e6ad2]/30"
+    }`}>
 
       <CanvasHeader
         undo={undo} redo={redo} historyIndex={historyIndex} historyLength={historyLength}
         setPan={setPan} setScale={setScale} scale={scale}
-        showGrid={state.showGrid} setShowGrid={() => dispatch({ type: "TOGGLE_GRID" })}
+        showGrid={state.showGrid} setShowGrid={handleToggleGrid}
         exportSVG={exportSVG} copyJSON={copyJSON}
         handleReview={handleReview} isReviewing={state.isReviewing}
         nodesLength={nodes.length}
-        theme={state.theme} setTheme={(t) => dispatch({ type: "SET_THEME", theme: t })}
+        theme={state.theme}
+        setTheme={handleSetTheme}
         clearCanvas={clearCanvas}
         saveDesign={saveDesign}
-        toggleChallengePanel={() => setIsChallengePanelOpen(!isChallengePanelOpen)}
+        toggleChallengePanel={toggleChallengePanel}
+        isChallengePanelOpen={isChallengePanelOpen}
+        activeChallengeId={state.activeChallengeId}
         autoAlignNodes={autoAlignNodes}
       />
 
@@ -335,10 +401,12 @@ export default function SystemDesignCanvas() {
         )}
 
         <Toolbar
-          activeTool={state.activeTool} setActiveTool={(t) => dispatch({ type: "SET_TOOL", tool: t })}
+          activeTool={state.activeTool} setActiveTool={handleSetActiveTool}
           addGroup={addGroup} addNode={addNode}
           insertTemplate={insertTemplate}
           theme={state.theme}
+          nodes={nodes}
+          connections={connections}
         />
 
         <main
@@ -349,9 +417,9 @@ export default function SystemDesignCanvas() {
           onMouseUp={() => handleMouseUp(state.activeTool, canvasRef)}
           onWheel={handleWheel}
           onClick={handleCanvasClick}
-          className={`flex-1 relative overflow-hidden select-none outline-none transition-colors duration-500 ${state.theme === "light" ? "bg-white" :
-            state.theme === "neo" ? "bg-[#050212]" : "bg-[#030303]"
-            }`}
+          className={`flex-1 relative overflow-hidden select-none outline-none transition-colors duration-200 ${
+            state.theme === "light" ? "bg-white" : "bg-[#0d0d12]"
+          }`}
           style={{ cursor: state.activeTool === "Pan" ? 'grab' : 'crosshair' }}
         >
           {/* AI Scanning Overlay */}
@@ -394,9 +462,9 @@ export default function SystemDesignCanvas() {
                 group={g}
                 isSelected={selectedId === g.id}
                 onSelect={handleGroupSelect}
-                updatePos={(id, x, y, lockChildren) => dispatch({ type: "UPDATE_GROUP_POS", id, x, y, lockChildren })}
-                updateSize={(id, w, h) => dispatch({ type: "UPDATE_GROUP", id, updates: { w, h } })}
-                onDragStateEnd={() => setPendingHistorySnapshot(true)}
+                updatePos={handleUpdateGroupPos}
+                updateSize={handleUpdateGroupSize}
+                onDragStateEnd={handleDragStateEnd}
                 theme={state.theme}
                 nodes={nodes}
                 groups={groups}
@@ -416,7 +484,7 @@ export default function SystemDesignCanvas() {
                   onDelete={deleteSelected}
                   onNodeClick={handleNodeClick}
                   updatePos={updateNodePos}
-                  onDragStateEnd={() => setPendingHistorySnapshot(true)}
+                  onDragStateEnd={handleDragStateEnd}
                   theme={state.theme}
                 />
               ))}
@@ -432,9 +500,9 @@ export default function SystemDesignCanvas() {
                 <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible z-[15]">
                   <line
                     x1={x1} y1={y1} x2={mousePos.x} y2={mousePos.y}
-                    stroke="#6366f1" strokeWidth="2" strokeDasharray="5,5" opacity="0.5"
+                    stroke="#5e6ad2" strokeWidth="2" strokeDasharray="5,5" opacity="0.6"
                   />
-                  <circle cx={mousePos.x} cy={mousePos.y} r="4" fill="#6366f1" opacity="0.5" />
+                  <circle cx={mousePos.x} cy={mousePos.y} r="4" fill="#5e6ad2" opacity="0.7" />
                 </svg>
               );
             })()}
@@ -449,7 +517,7 @@ export default function SystemDesignCanvas() {
             connections={connections}
             theme={state.theme}
             activeChallengeId={state.activeChallengeId}
-            setShowHelp={() => dispatch({ type: "SET_SHOW_HELP", show: true })}
+            setShowHelp={handleShowHelp}
           />
         </main>
 
@@ -457,15 +525,15 @@ export default function SystemDesignCanvas() {
           selectedItem={selectedItem}
           selectedType={selectedType}
           nodes={nodes} connections={connections} groups={groups}
-          onUpdateNodes={(updates: Partial<Node>) => { if(selectedId) dispatch({ type: "UPDATE_NODE", id: selectedId, updates }); }}
-          onUpdateConnections={(updates: Partial<Connection>) => { if(selectedId) dispatch({ type: "UPDATE_CONNECTION", id: selectedId, updates }); }}
-          onUpdateGroups={(updates: Partial<Group>) => { if(selectedId) dispatch({ type: "UPDATE_GROUP", id: selectedId, updates }); }}
-          setSelectedId={(id: string | null) => selectElement(id, selectedType)} 
+          onUpdateNodes={handleUpdateNodes}
+          onUpdateConnections={handleUpdateConnections}
+          onUpdateGroups={handleUpdateGroups}
+          setSelectedId={handleSelectId} 
           addToHistory={recordHistory}
           deleteSelected={deleteSelected}
           theme={state.theme}
           focusConnectionId={state.focusConnectionId}
-          clearConnectionFocus={() => dispatch({ type: "FOCUS_CONNECTION_LABEL", id: null })}
+          clearConnectionFocus={handleClearConnectionFocus}
         />
       </div>
 

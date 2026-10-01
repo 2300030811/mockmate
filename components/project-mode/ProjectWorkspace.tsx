@@ -17,10 +17,11 @@ import {
   RotateCw,
   Undo2,
   Sparkles,
-  Loader2 as SpinnerIcon
+  Loader2 as SpinnerIcon,
+  Layers,
 } from "lucide-react";
 import { m } from "framer-motion";
-import React, { useState, useCallback } from "react";
+import React, { useState } from "react";
 import { ProjectInsights } from "./ProjectInsights";
 
 interface ProjectWorkspaceProps {
@@ -28,7 +29,7 @@ interface ProjectWorkspaceProps {
   isInitializing: boolean;
   isValidating: boolean;
   projectDescription: string;
-  projectId?: string; // For localStorage persistence
+  projectId?: string;
   rightPanelTab: "preview" | "console" | "insights";
   setRightPanelTab: (tab: "preview" | "console" | "insights") => void;
   challengeContext?: {
@@ -59,8 +60,6 @@ export const ProjectWorkspace = React.memo(function ProjectWorkspace({
   const [hasBooted, setHasBooted] = useState(false);
   const [showFilePicker, setShowFilePicker] = useState(false);
 
-  // Once the sandbox has run at least once, mark it as booted
-  // so the idle overlay never blocks the preview again
   React.useEffect(() => {
     if (sandpack.status === "running") {
       setHasBooted(true);
@@ -68,42 +67,47 @@ export const ProjectWorkspace = React.memo(function ProjectWorkspace({
   }, [sandpack.status]);
 
   return (
-    <div className="flex-1 min-w-0 h-full relative flex flex-col bg-white dark:bg-gray-950 overflow-hidden min-h-0">
-      <SandpackLayout className="flex-1 !rounded-none !border-0 flex overflow-hidden !h-full min-h-0">
+    <div className="flex-1 min-w-0 h-full relative flex flex-col bg-white dark:bg-[#0d0d12] overflow-hidden min-h-0">
+      <SandpackLayout className="flex-1 !rounded-none !border-0 flex overflow-hidden !h-full min-h-0 !bg-transparent">
         {/* Collapsible File Explorer */}
         <div
-          className={`border-r border-gray-200 dark:border-gray-800 flex flex-col transition-all duration-300 bg-gray-50/50 dark:bg-gray-900/50 ${showExplorer ? "w-60" : "w-0 overflow-hidden"}`}
+          className={`border-r border-zinc-200 dark:border-[#1e1e2a] flex flex-col transition-all duration-300 bg-zinc-50/50 dark:bg-[#0f0f16] ${
+            showExplorer ? "w-56" : "w-0 overflow-hidden"
+          }`}
         >
-          <div className="h-10 px-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
-            <span>File Explorer</span>
+          <div className="h-9 px-3 border-b border-zinc-200 dark:border-[#1e1e2a] flex items-center justify-between text-[10px] font-mono font-medium text-zinc-500 dark:text-[#6e6e84] uppercase tracking-wider">
+            <span>Files</span>
             <button
               onClick={() => setShowExplorer(false)}
-              className="hover:text-gray-900 dark:hover:text-white"
+              className="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
+              title="Collapse Explorer"
             >
               <ChevronLeft size={14} />
             </button>
           </div>
-          <div className="flex-1 overflow-auto">
-            <SandpackFileExplorer className="!h-full !w-full" />
+          <div className="flex-1 overflow-auto custom-scrollbar">
+            <SandpackFileExplorer className="!h-full !w-full !bg-transparent" />
           </div>
         </div>
 
-        {/* Toggle Button (When closed) */}
+        {/* Explorer Open Trigger (When collapsed) */}
         {!showExplorer && (
-          <div className="w-12 border-r border-gray-200 dark:border-gray-800 flex flex-col items-center py-6 gap-6 bg-gray-50/50 dark:bg-gray-900/50 backdrop-blur-sm text-gray-400">
+          <div className="w-10 border-r border-zinc-200 dark:border-[#1e1e2a] flex flex-col items-center py-4 bg-zinc-50/50 dark:bg-[#0f0f16] text-zinc-400">
             <button
               onClick={() => setShowExplorer(true)}
-              className="w-8 h-8 flex items-center justify-center hover:bg-white dark:hover:bg-gray-800 hover:text-blue-500 rounded-xl transition-all shadow-sm border border-transparent hover:border-gray-200 dark:hover:border-gray-700"
-              title="Open Explorer"
+              className="w-7 h-7 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-[#1a1a26] hover:text-[#5e6ad2] rounded transition-colors"
+              title="Open File Explorer"
             >
-              <PanelLeft size={18} />
+              <PanelLeft size={15} />
             </button>
           </div>
         )}
 
         {/* Main Code Editor Area */}
         <div
-          className={`flex-1 h-full flex flex-col min-w-0 ${activeTab === "code" ? "flex" : "hidden lg:flex"}`}
+          className={`flex-1 h-full flex flex-col min-w-0 ${
+            activeTab === "code" ? "flex" : "hidden lg:flex"
+          }`}
         >
           <SandpackCodeEditor
             showLineNumbers={true}
@@ -116,57 +120,76 @@ export const ProjectWorkspace = React.memo(function ProjectWorkspace({
           />
         </div>
 
-        {/* Right Panel (Preview / Console / Insights) */}
+        {/* Right Panel (Preview / Console / AI Review) */}
         <div
-          className={`w-full lg:w-[40%] flex flex-col border-l border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 ${activeTab === "preview" ? "flex" : "hidden lg:flex"}`}
+          className={`w-full lg:w-[44%] flex flex-col border-l border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#0d0d12] ${
+            activeTab === "preview" ? "flex" : "hidden lg:flex"
+          }`}
         >
-          {/* Right Panel Tabs */}
-          <div className="h-10 border-b border-gray-200 dark:border-gray-800 flex items-center bg-gray-50 dark:bg-gray-900 px-2 gap-2">
-            <button
-              onClick={() => setRightPanelTab("preview")}
-              className={`px-3 h-8 rounded-md text-xs font-medium flex items-center justify-center gap-1.5 transition-all ${rightPanelTab === "preview" ? "bg-white dark:bg-gray-800 shadow text-blue-600 dark:text-blue-400" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"}`}
-            >
-              <Play size={14} /> Preview
-            </button>
-            <button
-              onClick={() => setRightPanelTab("console")}
-              className={`px-3 h-8 rounded-md text-xs font-medium flex items-center justify-center gap-1.5 transition-all ${rightPanelTab === "console" ? "bg-white dark:bg-gray-800 shadow text-green-600 dark:text-green-400" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"}`}
-            >
-              <Terminal size={14} /> Console
-            </button>
-            <button
-              onClick={() => setRightPanelTab("insights")}
-              className={`px-3 h-8 rounded-md text-xs font-medium flex items-center justify-center gap-1.5 transition-all ${rightPanelTab === "insights" ? "bg-white dark:bg-gray-800 shadow text-purple-600 dark:text-purple-400" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"}`}
-            >
-              <BrainCircuit size={14} /> AI Review
-            </button>
+          {/* Right Panel Segmented Tab Strip */}
+          <div className="h-9 border-b border-zinc-200 dark:border-[#1e1e2a] flex items-center bg-zinc-50 dark:bg-[#101018] px-2 gap-1 justify-between">
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setRightPanelTab("preview")}
+                className={`px-2.5 h-7 rounded text-[11px] font-medium flex items-center gap-1.5 transition-colors ${
+                  rightPanelTab === "preview"
+                    ? "bg-white dark:bg-[#1e1e2a] text-zinc-900 dark:text-[#ebebef] shadow-subtle border border-zinc-200/80 dark:border-[#2a2a3c]"
+                    : "text-zinc-500 dark:text-[#8b8b9e] hover:text-zinc-900 dark:hover:text-[#ebebef]"
+                }`}
+              >
+                <Play className="w-3 h-3 text-[#5e6ad2]" /> Preview
+              </button>
+              <button
+                onClick={() => setRightPanelTab("console")}
+                className={`px-2.5 h-7 rounded text-[11px] font-medium flex items-center gap-1.5 transition-colors ${
+                  rightPanelTab === "console"
+                    ? "bg-white dark:bg-[#1e1e2a] text-emerald-600 dark:text-emerald-400 shadow-subtle border border-zinc-200/80 dark:border-[#2a2a3c]"
+                    : "text-zinc-500 dark:text-[#8b8b9e] hover:text-zinc-900 dark:hover:text-[#ebebef]"
+                }`}
+              >
+                <Terminal className="w-3 h-3 text-emerald-500" /> Console
+              </button>
+              <button
+                onClick={() => setRightPanelTab("insights")}
+                className={`px-2.5 h-7 rounded text-[11px] font-medium flex items-center gap-1.5 transition-colors ${
+                  rightPanelTab === "insights"
+                    ? "bg-white dark:bg-[#1e1e2a] text-[#5e6ad2] shadow-subtle border border-zinc-200/80 dark:border-[#2a2a3c]"
+                    : "text-zinc-500 dark:text-[#8b8b9e] hover:text-zinc-900 dark:hover:text-[#ebebef]"
+                }`}
+              >
+                <BrainCircuit className="w-3 h-3 text-[#5e6ad2]" /> AI Review
+              </button>
+            </div>
 
-            <div className="flex-1" />
-
-            {/* Permanent Custom Run/Restart Button */}
-            <div className="flex items-center gap-2 pr-1">
+            {/* Right Action Controls: Reset & Run */}
+            <div className="flex items-center gap-1.5 pr-0.5">
               <button
                 onClick={() => sandpack.resetAllFiles()}
-                className="h-8 px-3 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-md text-xs font-medium flex items-center gap-1.5 transition-all"
+                className="h-7 px-2 hover:bg-zinc-100 dark:hover:bg-[#1a1a26] text-zinc-500 dark:text-[#8b8b9e] hover:text-zinc-900 dark:hover:text-[#ebebef] rounded text-[11px] font-medium flex items-center gap-1 transition-colors"
                 title="Reset all files to original state"
               >
-                <Undo2 size={14} /> Reset
+                <Undo2 size={13} />
+                <span>Reset</span>
               </button>
 
               {sandpack.status === "idle" || sandpack.status === "timeout" ? (
                 <button
                   onClick={() => sandpack.runSandpack()}
-                  className="h-8 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-bold flex items-center gap-2 shadow-sm transition-all animate-pulse hover:animate-none"
+                  className="h-7 px-3 bg-[#5e6ad2] hover:bg-[#4f5ac4] text-white rounded text-[11px] font-medium flex items-center gap-1.5 shadow-subtle transition-colors"
                 >
-                  <Play size={14} fill="currentColor" /> Run Code
+                  <Play size={12} fill="currentColor" /> Run Code
                 </button>
               ) : (
                 <button
-                  onClick={() => Object.values(sandpack.clients).forEach((client: any) => client.dispatch({ type: 'refresh' }))}
-                  className="h-8 px-4 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-md text-xs font-bold flex items-center gap-2 transition-all border border-gray-200 dark:border-gray-700"
-                  title="Reload the preview"
+                  onClick={() =>
+                    Object.values(sandpack.clients).forEach((client: any) =>
+                      client.dispatch({ type: "refresh" })
+                    )
+                  }
+                  className="h-7 px-2.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-[#14141e] dark:hover:bg-[#1e1e2a] text-zinc-700 dark:text-[#ebebef] rounded text-[11px] font-medium flex items-center gap-1 border border-zinc-200 dark:border-[#1e1e2a] transition-colors"
+                  title="Reload preview"
                 >
-                  <RotateCw size={14} /> Reload
+                  <RotateCw size={12} /> Reload
                 </button>
               )}
             </div>
@@ -175,31 +198,40 @@ export const ProjectWorkspace = React.memo(function ProjectWorkspace({
           <div className="flex-1 relative overflow-hidden">
             {/* 1. Preview Tab */}
             <div
-              className={`absolute inset-0 flex flex-col ${rightPanelTab === "preview" ? "z-10" : "z-0 opacity-0 pointer-events-none"}`}
+              className={`absolute inset-0 flex flex-col ${
+                rightPanelTab === "preview" ? "z-10" : "z-0 opacity-0 pointer-events-none"
+              }`}
             >
               {isInitializing ? (
-                <div className="absolute inset-0 z-20 bg-gray-50/95 dark:bg-gray-900/95 flex flex-col items-center justify-center p-4 backdrop-blur-sm">
-                  <div className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mb-4"></div>
-                  <p className="text-xs text-gray-900 dark:text-white font-bold uppercase tracking-wider mb-1">
-                    Booting DevCube...
+                <div className="absolute inset-0 z-20 bg-white/95 dark:bg-[#0d0d12]/95 flex flex-col items-center justify-center p-4 backdrop-blur-sm">
+                  <div className="w-8 h-8 border-2 border-[#5e6ad2]/20 border-t-[#5e6ad2] rounded-full animate-spin mb-3" />
+                  <p className="text-xs text-zinc-800 dark:text-[#ebebef] font-semibold tracking-wide mb-0.5">
+                    Mounting Sandpack Runtime...
                   </p>
-                  <p className="text-[10px] text-gray-500 font-medium">
-                    Initializing project environment
+                  <p className="text-[10.5px] font-mono text-zinc-500 dark:text-[#6e6e84]">
+                    Compiling virtual dependencies
                   </p>
                 </div>
               ) : !hasBooted && (sandpack.status === "idle" || sandpack.status === "timeout") && (
-                <div className="absolute inset-0 z-20 bg-gray-50/80 dark:bg-gray-900/80 flex flex-col items-center justify-center p-4 backdrop-blur-sm group cursor-pointer" onClick={() => sandpack.runSandpack()}>
-                  <div className="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center mb-6 shadow-xl shadow-blue-500/20 group-hover:scale-110 transition-transform animate-pulse group-hover:animate-none">
-                    <Play size={32} fill="currentColor" className="ml-1" />
+                <div
+                  className="absolute inset-0 z-20 bg-zinc-50/90 dark:bg-[#0d0d12]/90 flex flex-col items-center justify-center p-6 backdrop-blur-sm group cursor-pointer"
+                  onClick={() => sandpack.runSandpack()}
+                >
+                  <div className="w-12 h-12 bg-[#5e6ad2] text-white rounded-lg flex items-center justify-center mb-4 shadow-subtle group-hover:scale-105 transition-transform">
+                    <Play size={20} fill="currentColor" className="ml-0.5" />
                   </div>
-                  <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">Ready to Run</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 max-w-[200px] text-center font-medium">
-                    The environment is ready. Click anywhere or press the <b className="text-blue-500">Run Code</b> button to start.
+                  <h3 className="text-sm font-semibold text-zinc-900 dark:text-[#ebebef] mb-1">
+                    Ready to Run
+                  </h3>
+                  <p className="text-xs text-zinc-500 dark:text-[#8b8b9e] max-w-[240px] text-center leading-relaxed">
+                    Virtual runtime initialized. Click anywhere or press{" "}
+                    <b className="text-[#5e6ad2] font-semibold">Run Code</b> to preview.
                   </p>
                 </div>
               )}
+
               <SandpackPreview
-                className="!h-full"
+                className="!h-full !bg-white"
                 showNavigator
                 showRefreshButton
                 showOpenInCodeSandbox={false}
@@ -210,32 +242,40 @@ export const ProjectWorkspace = React.memo(function ProjectWorkspace({
                 <m.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="absolute inset-0 z-30 bg-blue-600/90 backdrop-blur-md flex flex-col items-center justify-center text-white"
+                  className="absolute inset-0 z-30 bg-[#0d0d12]/90 backdrop-blur-md flex flex-col items-center justify-center text-white"
                 >
-                  <div className="relative mb-6">
-                    <SpinnerIcon size={64} className="animate-spin opacity-20" />
-                    <Sparkles size={32} className="absolute inset-0 m-auto animate-pulse" />
+                  <div className="relative mb-4">
+                    <SpinnerIcon size={48} className="animate-spin text-[#5e6ad2]" />
+                    <Sparkles size={20} className="absolute inset-0 m-auto text-emerald-400 animate-pulse" />
                   </div>
-                  <h3 className="text-2xl font-black mb-2">Analyzing Solution</h3>
-                  <p className="text-blue-100 text-sm font-medium animate-pulse">Running engineering heuristics...</p>
+                  <h3 className="text-lg font-semibold mb-1 text-[#ebebef]">
+                    Analyzing Solution
+                  </h3>
+                  <p className="text-zinc-400 text-xs font-mono animate-pulse">
+                    Running automated test assertions...
+                  </p>
                 </m.div>
               )}
             </div>
 
             {/* 2. Console Tab */}
             <div
-              className={`absolute inset-0 flex flex-col bg-black ${rightPanelTab === "console" ? "z-10" : "z-0 opacity-0 pointer-events-none"}`}
+              className={`absolute inset-0 flex flex-col bg-[#0d0d12] ${
+                rightPanelTab === "console" ? "z-10" : "z-0 opacity-0 pointer-events-none"
+              }`}
             >
-              <div className="px-4 py-2 bg-gray-900 border-b border-gray-800 text-xs font-mono text-gray-400 flex items-center gap-2">
-                <Terminal size={12} className="text-green-500" />
-                <span>Terminal Output</span>
+              <div className="px-3 py-1.5 bg-[#14141e] border-b border-[#1e1e2a] text-[11px] font-mono text-zinc-400 flex items-center gap-2">
+                <Terminal size={12} className="text-emerald-500" />
+                <span>Virtual Process Console</span>
               </div>
-              <SandpackConsole className="flex-1 !bg-black !h-full" />
+              <SandpackConsole className="flex-1 !bg-[#0d0d12] !h-full" />
             </div>
 
             {/* 3. AI Code Review Tab */}
             <div
-              className={`absolute inset-0 flex flex-col ${rightPanelTab === "insights" ? "z-10" : "z-0 opacity-0 pointer-events-none"}`}
+              className={`absolute inset-0 flex flex-col ${
+                rightPanelTab === "insights" ? "z-10" : "z-0 opacity-0 pointer-events-none"
+              }`}
             >
               <ProjectInsights
                 files={sandpack.files}
@@ -250,13 +290,12 @@ export const ProjectWorkspace = React.memo(function ProjectWorkspace({
         </div>
       </SandpackLayout>
 
-      {/* Mobile Bottom Toolbar (only visible on mobile) */}
-      <div className="md:hidden h-12 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 flex items-center justify-between px-3 gap-2 overflow-x-auto">
-        {/* File Picker Dropdown - click-based for touch devices */}
+      {/* Mobile Bottom Toolbar */}
+      <div className="md:hidden h-11 border-t border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#0d0d12] flex items-center justify-between px-3 gap-2 overflow-x-auto">
         <div className="relative z-50">
           <button
             onClick={() => setShowFilePicker((prev) => !prev)}
-            className="h-8 px-3 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md text-xs font-medium flex items-center gap-1.5 transition-all whitespace-nowrap"
+            className="h-7 px-2.5 bg-zinc-100 dark:bg-[#14141e] hover:bg-zinc-200 dark:hover:bg-[#1e1e2a] text-zinc-700 dark:text-[#ebebef] border border-zinc-200 dark:border-[#1e1e2a] rounded text-[11px] font-medium flex items-center gap-1.5 transition-colors whitespace-nowrap"
             aria-expanded={showFilePicker}
             aria-haspopup="listbox"
             aria-label="Open file picker"
@@ -267,7 +306,7 @@ export const ProjectWorkspace = React.memo(function ProjectWorkspace({
             <>
               <div className="fixed inset-0 z-30" onClick={() => setShowFilePicker(false)} />
               <div
-                className="absolute bottom-full left-0 mb-2 flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-800 z-[60] max-h-48 overflow-y-auto min-w-[180px]"
+                className="absolute bottom-full left-0 mb-1.5 flex flex-col bg-white dark:bg-[#14141e] rounded-md shadow-lg border border-zinc-200 dark:border-[#1e1e2a] z-[60] max-h-48 overflow-y-auto min-w-[180px]"
                 role="listbox"
               >
                 {Object.keys(sandpack.files).map((fileName) => (
@@ -275,8 +314,15 @@ export const ProjectWorkspace = React.memo(function ProjectWorkspace({
                     key={fileName}
                     role="option"
                     aria-selected={sandpack.activeFile === fileName}
-                    className={`px-3 py-2 text-xs text-left hover:bg-blue-50 dark:hover:bg-blue-500/10 text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-800 last:border-0 whitespace-nowrap ${sandpack.activeFile === fileName ? 'bg-blue-50 dark:bg-blue-500/10 font-semibold' : ''}`}
-                    onClick={() => { sandpack.openFile(fileName); setShowFilePicker(false); }}
+                    className={`px-3 py-1.5 text-xs text-left hover:bg-zinc-100 dark:hover:bg-[#1e1e2a] text-zinc-700 dark:text-[#ebebef] border-b border-zinc-100 dark:border-[#1a1a26] last:border-0 whitespace-nowrap font-mono ${
+                      sandpack.activeFile === fileName
+                        ? "bg-[#5e6ad2]/10 text-[#5e6ad2] font-semibold"
+                        : ""
+                    }`}
+                    onClick={() => {
+                      sandpack.openFile(fileName);
+                      setShowFilePicker(false);
+                    }}
                     title={fileName}
                   >
                     {fileName}
@@ -289,20 +335,23 @@ export const ProjectWorkspace = React.memo(function ProjectWorkspace({
 
         <div className="flex-1" />
 
-        {/* Mobile Quick Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {sandpack.status === "idle" || sandpack.status === "timeout" ? (
             <button
               onClick={() => sandpack.runSandpack()}
-              className="h-8 px-2 bg-green-600 hover:bg-green-700 text-white rounded-md text-xs font-bold flex items-center gap-1 transition-all"
+              className="h-7 px-2.5 bg-[#5e6ad2] hover:bg-[#4f5ac4] text-white rounded text-[11px] font-medium flex items-center gap-1 transition-colors"
               aria-label="Run code"
             >
-              <Play size={12} fill="currentColor" /> Run
+              <Play size={11} fill="currentColor" /> Run
             </button>
           ) : (
             <button
-              onClick={() => Object.values(sandpack.clients).forEach((client: any) => client.dispatch({ type: 'refresh' }))}
-              className="h-8 px-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md text-xs font-bold flex items-center gap-1 transition-all"
+              onClick={() =>
+                Object.values(sandpack.clients).forEach((client: any) =>
+                  client.dispatch({ type: "refresh" })
+                )
+              }
+              className="h-7 px-2.5 bg-zinc-100 dark:bg-[#14141e] hover:bg-zinc-200 dark:hover:bg-[#1e1e2a] text-zinc-700 dark:text-[#ebebef] border border-zinc-200 dark:border-[#1e1e2a] rounded text-[11px] font-medium flex items-center gap-1 transition-colors"
               aria-label="Reload preview"
             >
               ⟳ Reload

@@ -30,8 +30,13 @@ export const NodeComponent = memo(({
   onDragStateEnd
 }: NodeProps) => {
   const Config = NODE_CONFIG[node.type];
-  const isLight = theme === 'light';
-  const isNeo = theme === 'neo';
+  const Icon = Config?.icon;
+
+  const showSubtitle =
+    Boolean(node.metadata?.tech) ||
+    node.name.trim().toLowerCase() !== node.type.trim().toLowerCase();
+
+  const subtitleText = node.metadata?.tech || node.type;
 
   return (
     <m.div
@@ -39,26 +44,26 @@ export const NodeComponent = memo(({
       dragMomentum={false}
       dragElastic={0}
       onDragEnd={(_, info) => {
-        const rawX = node.x + (info.offset.x / scale);
-        const rawY = node.y + (info.offset.y / scale);
+        const rawX = node.x + info.offset.x / scale;
+        const rawY = node.y + info.offset.y / scale;
         const snappedX = Math.round(rawX / GRID_SIZE) * GRID_SIZE;
         const snappedY = Math.round(rawY / GRID_SIZE) * GRID_SIZE;
         updatePos(node.id, snappedX, snappedY);
         if (onDragStateEnd) onDragStateEnd();
       }}
-      whileDrag={{ scale: 1.05, zIndex: 50, cursor: 'grabbing' }}
-      initial={{ opacity: 0, scale: 0.8 }}
+      whileDrag={{ scale: 1.03, zIndex: 50, cursor: "grabbing" }}
+      initial={{ opacity: 0, scale: 0.9 }}
       animate={{
         opacity: 1,
-        scale: isSelected ? 1.05 : 1,
+        scale: isSelected ? 1.02 : 1
       }}
       transition={{
         type: "spring",
-        stiffness: 300,
-        damping: 25,
+        stiffness: 350,
+        damping: 25
       }}
       style={{
-        position: 'absolute',
+        position: "absolute",
         x: node.x,
         y: node.y,
         left: 0,
@@ -66,37 +71,106 @@ export const NodeComponent = memo(({
       }}
       className={`
         pointer-events-auto
-        w-24 h-24 rounded-2xl flex flex-col items-center justify-center gap-2 cursor-grab z-20 group
-        backdrop-blur-xl border border-b-4 transition-all duration-300
-        ${Config.bg} ${isLight ? Config.border.replace('border-white/5', 'border-gray-200') : isNeo ? Config.border.replace('border-white/5', 'border-fuchsia-500/20') : Config.border} ${isLight ? 'bg-white/80' : isNeo ? 'bg-[#050212]/80' : ''}
-        ${isSelected ? `ring-2 scale-105 ${isLight ? 'shadow-[0_0_30px_rgba(0,0,0,0.1)] ring-indigo-400' : isNeo ? 'shadow-[0_0_30px_rgba(217,70,239,0.2)] ring-cyan-400' : 'shadow-[0_0_30px_rgba(255,255,255,0.2)] ring-white/60'}` : `shadow-lg hover:-translate-y-1 ${isLight ? 'hover:shadow-[0_8px_30px_rgba(0,0,0,0.1)]' : isNeo ? 'hover:shadow-[0_8px_30px_rgba(6,182,212,0.1)]' : 'hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)]'}`}
-        ${isConnecting ? `ring-2 shadow-[0_0_20px_rgba(99,102,241,0.4)] ${isNeo ? 'ring-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.4)]' : 'ring-indigo-400'}` : ''}
+        w-24 h-24 rounded-xl flex flex-col items-center justify-center p-2 cursor-grab z-20 group
+        border backdrop-blur-md transition-all duration-150 select-none
+        ${
+          theme === "light"
+            ? "bg-white/95 border-zinc-200 text-zinc-900 shadow-sm hover:border-zinc-300"
+            : "bg-[#14141e]/95 border-[#1e1e2a] text-[#ebebef] shadow-sm hover:border-zinc-600"
+        }
+        ${
+          isSelected
+            ? "ring-2 ring-[#5e6ad2] border-[#5e6ad2] shadow-md"
+            : ""
+        }
+        ${
+          isConnecting
+            ? "ring-2 ring-emerald-500 border-emerald-500 shadow-md"
+            : ""
+        }
       `}
+      tabIndex={0}
+      role="button"
+      aria-label={`${node.name} architecture node, type ${node.type}. Use arrow keys to reposition, Enter to select, Delete to remove.`}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onNodeClick(node.id);
+        } else if (e.key === "Delete" || e.key === "Backspace") {
+          e.preventDefault();
+          onDelete(node.id);
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          updatePos(node.id, node.x, node.y - GRID_SIZE);
+          onDragStateEnd?.();
+        } else if (e.key === "ArrowDown") {
+          e.preventDefault();
+          updatePos(node.id, node.x, node.y + GRID_SIZE);
+          onDragStateEnd?.();
+        } else if (e.key === "ArrowLeft") {
+          e.preventDefault();
+          updatePos(node.id, node.x - GRID_SIZE, node.y);
+          onDragStateEnd?.();
+        } else if (e.key === "ArrowRight") {
+          e.preventDefault();
+          updatePos(node.id, node.x + GRID_SIZE, node.y);
+          onDragStateEnd?.();
+        }
+      }}
       onClick={(e) => {
         e.stopPropagation();
         onNodeClick(node.id);
       }}
     >
-      <div className={`p-3 rounded-xl shadow-[inset_0_2px_10px_rgba(0,0,0,0.3)] ${Config.color} ${isLight ? 'bg-gray-100/80 shadow-[inset_0_2px_5px_rgba(0,0,0,0.05)]' : isNeo ? 'bg-fuchsia-950/40 shadow-[inset_0_2px_10px_rgba(217,70,239,0.1)]' : 'bg-gray-900/60'}`}>
-        <Config.icon size={28} strokeWidth={1.5} />
+      {/* Node Icon Tile */}
+      <div
+        className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+          showSubtitle ? "mb-1" : "mb-1.5"
+        } ${
+          theme === "light"
+            ? "bg-zinc-100 text-zinc-800"
+            : "bg-[#181824] text-[#ebebef] border border-[#262638]"
+        }`}
+      >
+        {Icon && <Icon size={16} className={Config?.color} />}
       </div>
-      <span className={`text-[10px] font-bold uppercase px-2 text-center leading-tight tracking-wider truncate w-full ${isLight ? 'text-gray-700' : isNeo ? 'text-cyan-50' : 'text-gray-300'}`}>
+
+      {/* Node Custom Name */}
+      <span className="text-[10.5px] font-semibold tracking-tight text-center leading-tight truncate w-full px-0.5">
         {node.name}
       </span>
 
+      {/* Conditional Subtitle (Only if custom name or tech spec exists) */}
+      {showSubtitle && (
+        <span
+          className={`text-[8.5px] font-mono uppercase tracking-wider truncate max-w-full ${
+            node.metadata?.tech
+              ? "text-[#5e6ad2] dark:text-[#7b87f5] font-semibold"
+              : "text-zinc-400 dark:text-[#5a5a6e]"
+          }`}
+        >
+          {subtitleText}
+        </span>
+      )}
+
+      {/* Delete Badge on Selection */}
       <AnimatePresence>
         {isSelected && (
           <m.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            className="absolute -top-3 -right-3"
+            className="absolute -top-2 -right-2 z-30"
           >
             <button
-              onClick={(e) => { e.stopPropagation(); onDelete(node.id); }}
-              className="w-6 h-6 bg-red-500 hover:bg-red-400 rounded-full flex items-center justify-center text-white shadow-lg transition-transform hover:scale-110"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(node.id);
+              }}
+              className="w-5 h-5 bg-rose-500 hover:bg-rose-600 rounded-full flex items-center justify-center text-white shadow-sm transition-transform hover:scale-110"
+              title="Delete Node (Del/Backspace)"
             >
-              <Trash2 size={12} />
+              <Trash2 size={10} />
             </button>
           </m.div>
         )}

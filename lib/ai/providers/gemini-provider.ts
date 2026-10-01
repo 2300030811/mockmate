@@ -22,7 +22,7 @@ export class GeminiProvider implements AIProvider {
         PromptBuilder.getSystemPrompt(),
         "gemini",
         {
-          model: "gemini-2.0-flash",
+          model: "gemini-2.5-flash",
           temperature: 0.7,
           maxTokens: 4096,
           customApiKey,

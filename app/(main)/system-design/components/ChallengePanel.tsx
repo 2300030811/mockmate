@@ -1,191 +1,199 @@
+"use client";
+
 import { memo } from "react";
 import { m, AnimatePresence } from "framer-motion";
-import { Target, Shield, Zap, X, Trophy, ChevronRight } from "lucide-react";
-import { CHALLENGES, Challenge } from "../challenges";
+import { Target, Shield, Zap, X, Trophy, ChevronRight, ArrowLeft } from "lucide-react";
+import { CHALLENGES } from "../challenges";
 
 interface ChallengePanelProps {
-    activeChallengeId: string | null;
-    onSelectChallenge: (id: string | null) => void;
-    theme: "dark" | "light" | "neo";
+  activeChallengeId: string | null;
+  onSelectChallenge: (id: string | null) => void;
+  theme: "dark" | "light" | "neo";
 }
 
-export const ChallengePanel = memo(({ activeChallengeId, onSelectChallenge, theme }: ChallengePanelProps) => {
-    const activeChallenge = CHALLENGES.find(c => c.id === activeChallengeId);
-    const isLight = theme === 'light';
-    const isNeo = theme === 'neo';
+export const ChallengePanel = memo(({
+  activeChallengeId,
+  onSelectChallenge,
+  theme
+}: ChallengePanelProps) => {
+  const activeChallenge = CHALLENGES.find((c) => c.id === activeChallengeId);
+  const isLight = theme === "light";
 
-    return (
-        <div className={`w-80 border-r flex flex-col transition-colors duration-500 ${
-            isLight ? "bg-white border-gray-200 text-gray-900" : 
-            isNeo ? "bg-[#050212]/90 border-fuchsia-500/20 text-cyan-50" : 
-            "bg-[#050505] border-white/5 text-white"
-        }`}>
-            <div className={`p-6 border-b flex items-center justify-between ${
-                isLight ? 'border-gray-200' : 'border-white/5'
-            }`}>
-                <div className="flex items-center gap-2">
-                    <Trophy size={18} className="text-yellow-500" />
-                    <h2 className={`text-sm font-black uppercase tracking-widest ${
-                        isLight ? 'text-gray-800' : 'text-white'
-                    }`}>Challenges</h2>
-                </div>
-                {activeChallenge && (
-                    <button
-                        onClick={() => onSelectChallenge(null)}
-                        className={`p-1.5 rounded-lg transition-colors ${
-                            isLight ? 'hover:bg-gray-100 text-gray-500' : 'hover:bg-white/5 text-gray-400'
-                        }`}
-                    >
-                        <X size={14} />
-                    </button>
-                )}
-            </div>
-
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6">
-                <AnimatePresence mode="wait">
-                    {!activeChallenge ? (
-                        <m.div
-                            key="list"
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 20 }}
-                            className="space-y-3"
-                        >
-                            {CHALLENGES.map((c) => (
-                                <button
-                                    key={c.id}
-                                    onClick={() => onSelectChallenge(c.id)}
-                                    className={`w-full text-left p-4 rounded-2xl border transition-all group ${
-                                        isLight
-                                            ? "bg-gray-50 border-gray-200 hover:border-indigo-500 hover:bg-gray-100/50"
-                                            : isNeo
-                                                ? "bg-fuchsia-500/5 border-fuchsia-500/10 hover:border-fuchsia-500/40 hover:bg-fuchsia-500/10"
-                                                : "bg-white/5 border-white/5 hover:border-indigo-500/30 hover:bg-white/10"
-                                    }`}
-                                >
-                                    <div className="flex justify-between items-start mb-2">
-                                        <span className={`text-[10px] font-black uppercase tracking-tighter px-2 py-0.5 rounded-full ${
-                                            c.difficulty === "Easy" ? "bg-emerald-500/10 text-emerald-500" :
-                                            c.difficulty === "Medium" ? "bg-blue-500/10 text-blue-500" :
-                                            "bg-red-500/10 text-red-500"
-                                        }`}>
-                                            {c.difficulty}
-                                        </span>
-                                        <ChevronRight size={14} className={`transition-colors ${
-                                            isLight ? 'text-gray-400 group-hover:text-indigo-600' : 'text-gray-600 group-hover:text-indigo-400'
-                                        }`} />
-                                    </div>
-                                    <h3 className={`text-xs font-bold mb-1 ${
-                                        isLight ? 'text-gray-800' : 'text-white'
-                                    }`}>{c.title}</h3>
-                                    <p className={`text-[10px] line-clamp-2 leading-relaxed ${
-                                        isLight ? 'text-gray-500' : 'text-gray-400'
-                                    }`}>{c.description}</p>
-                                </button>
-                            ))}
-                        </m.div>
-                    ) : (
-                        <m.div
-                            key="detail"
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            className="space-y-8"
-                        >
-                            <div>
-                                <h3 className={`text-lg font-black mb-2 ${
-                                    isLight ? 'text-gray-800' : isNeo ? 'text-cyan-400' : 'text-white'
-                                }`}>{activeChallenge.title}</h3>
-                                <p className={`text-xs leading-relaxed ${
-                                    isLight ? 'text-gray-600' : 'text-gray-400'
-                                }`}>{activeChallenge.description}</p>
-                            </div>
-
-                            {activeChallenge.metrics && (
-                                <div className="space-y-4">
-                                    <div className={`flex items-center gap-2 ${
-                                        isLight ? 'text-indigo-600' : isNeo ? 'text-cyan-400' : 'text-indigo-400'
-                                    }`}>
-                                        <Zap size={14} />
-                                        <span className="text-[10px] font-black uppercase tracking-widest">Expected Scale</span>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {[
-                                            { label: "Users", val: activeChallenge.metrics.users },
-                                            { label: "Writes/Day", val: activeChallenge.metrics.writesPerDay },
-                                            { label: "Reads/Day", val: activeChallenge.metrics.readsPerDay },
-                                            { label: "Target Latency", val: activeChallenge.metrics.latency },
-                                            { label: "Storage", val: activeChallenge.metrics.storage, colSpan: true }
-                                        ].map((metric, idx) => (
-                                            <div
-                                                key={idx}
-                                                className={`p-2.5 rounded-xl border flex flex-col justify-between ${
-                                                    metric.colSpan ? 'col-span-2' : ''
-                                                } ${
-                                                    isLight ? 'bg-gray-50 border-gray-100' :
-                                                    isNeo ? 'bg-fuchsia-500/5 border-fuchsia-500/10' :
-                                                    'bg-white/5 border-white/5'
-                                                }`}
-                                            >
-                                                <span className="text-[8px] font-black uppercase tracking-wider text-gray-500">{metric.label}</span>
-                                                <span className={`text-[11px] font-black mt-1 ${
-                                                    isLight ? 'text-gray-800' : isNeo ? 'text-cyan-300' : 'text-white'
-                                                }`}>{metric.val}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="space-y-4">
-                                <div className={`flex items-center gap-2 ${
-                                    isLight ? 'text-indigo-600' : isNeo ? 'text-cyan-400' : 'text-indigo-400'
-                                }`}>
-                                    <Target size={14} />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">Objectives</span>
-                                </div>
-                                <div className="space-y-2">
-                                    {activeChallenge.objectives.map((obj, i) => (
-                                        <div key={i} className={`flex gap-3 text-[11px] p-3 rounded-xl border ${
-                                            isLight ? 'text-gray-700 bg-gray-50 border-gray-100' :
-                                            isNeo ? 'text-cyan-100 bg-fuchsia-500/5 border-fuchsia-500/10' :
-                                            'text-gray-300 bg-white/5 border-white/5'
-                                        }`}>
-                                            <span className={`font-bold ${
-                                                isLight ? 'text-indigo-600' : isNeo ? 'text-cyan-400' : 'text-indigo-400'
-                                            }`}>{i + 1}.</span>
-                                            {obj}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="space-y-4">
-                                <div className={`flex items-center gap-2 ${
-                                    isLight ? 'text-emerald-600' : isNeo ? 'text-emerald-400' : 'text-emerald-400'
-                                }`}>
-                                    <Shield size={14} />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">Constraints</span>
-                                </div>
-                                <ul className="space-y-2">
-                                    {activeChallenge.constraints.map((con, i) => (
-                                        <li key={i} className={`flex gap-3 text-[11px] pl-1 ${
-                                            isLight ? 'text-gray-600' : 'text-gray-400'
-                                        }`}>
-                                            <Zap size={10} className={`mt-1 shrink-0 ${
-                                                isLight ? 'text-emerald-600/70' : 'text-emerald-400/50'
-                                            }`} />
-                                            {con}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        </m.div>
-                    )}
-                </AnimatePresence>
-            </div>
+  return (
+    <div
+      className="w-80 border-r border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#0d0d12] text-zinc-900 dark:text-[#ebebef] flex flex-col z-30 select-none transition-colors"
+    >
+      {/* Header */}
+      <div className="h-12 px-4 border-b border-zinc-200 dark:border-[#1e1e2a] flex items-center justify-between shrink-0 bg-zinc-50/50 dark:bg-[#14141e]/50">
+        <div className="flex items-center gap-2">
+          <Trophy size={13} className="text-amber-500" />
+          <h2 className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-500 dark:text-[#8b8b9e]">
+            Architecture Challenges
+          </h2>
         </div>
-    );
+        {activeChallenge && (
+          <button
+            onClick={() => onSelectChallenge(null)}
+            className="flex items-center gap-1 text-[11px] text-zinc-500 hover:text-zinc-900 dark:hover:text-white px-1.5 py-0.5 rounded hover:bg-zinc-100 dark:hover:bg-[#1e1e2a] transition-colors"
+          >
+            <ArrowLeft size={12} />
+            <span>All</span>
+          </button>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4">
+        <AnimatePresence mode="wait">
+          {!activeChallenge ? (
+            <m.div
+              key="list"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
+              className="space-y-2.5"
+            >
+              {CHALLENGES.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => onSelectChallenge(c.id)}
+                  className="w-full text-left p-3 rounded-lg border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50 dark:bg-[#14141e] hover:border-[#5e6ad2]/50 hover:bg-zinc-100/50 dark:hover:bg-[#181824] transition-all group"
+                >
+                  <div className="flex justify-between items-center mb-1.5">
+                    <span
+                      className={`text-[9.5px] font-mono font-semibold px-1.5 py-0.5 rounded ${
+                        c.difficulty === "Easy"
+                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                          : c.difficulty === "Medium"
+                          ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
+                          : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
+                      }`}
+                    >
+                      {c.difficulty}
+                    </span>
+                    <ChevronRight
+                      size={13}
+                      className="text-zinc-400 group-hover:text-[#5e6ad2] transition-colors"
+                    />
+                  </div>
+                  <h3 className="text-xs font-semibold text-zinc-900 dark:text-[#ebebef] mb-1">
+                    {c.title}
+                  </h3>
+                  <p className="text-[11px] text-zinc-500 dark:text-[#8b8b9e] line-clamp-2 leading-relaxed">
+                    {c.description}
+                  </p>
+                </button>
+              ))}
+            </m.div>
+          ) : (
+            <m.div
+              key="detail"
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
+              className="space-y-4"
+            >
+              <div>
+                <span
+                  className={`text-[9.5px] font-mono font-semibold px-1.5 py-0.5 rounded inline-block mb-2 ${
+                    activeChallenge.difficulty === "Easy"
+                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                      : activeChallenge.difficulty === "Medium"
+                      ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
+                      : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
+                  }`}
+                >
+                  {activeChallenge.difficulty}
+                </span>
+                <h3 className="text-sm font-semibold text-zinc-900 dark:text-[#ebebef] mb-1.5">
+                  {activeChallenge.title}
+                </h3>
+                <p className="text-xs text-zinc-500 dark:text-[#8b8b9e] leading-relaxed">
+                  {activeChallenge.description}
+                </p>
+              </div>
+
+              {activeChallenge.metrics && (
+                <div className="space-y-2 pt-2 border-t border-zinc-100 dark:border-[#1e1e2a]">
+                  <div className="flex items-center gap-1.5 text-zinc-500 dark:text-[#8b8b9e]">
+                    <Zap size={12} className="text-[#5e6ad2]" />
+                    <span className="text-[9.5px] font-mono font-bold uppercase tracking-wider">
+                      Expected Scale Telemetry
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {[
+                      { label: "Active Users", val: activeChallenge.metrics.users },
+                      { label: "Daily Writes", val: activeChallenge.metrics.writesPerDay },
+                      { label: "Daily Reads", val: activeChallenge.metrics.readsPerDay },
+                      { label: "Target Latency", val: activeChallenge.metrics.latency },
+                      { label: "Storage Footprint", val: activeChallenge.metrics.storage, colSpan: true }
+                    ].map((metric, idx) => (
+                      <div
+                        key={idx}
+                        className={`p-2 rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50 dark:bg-[#14141e] ${
+                          metric.colSpan ? "col-span-2" : ""
+                        }`}
+                      >
+                        <span className="text-[8.5px] font-mono uppercase text-zinc-400 dark:text-[#5a5a6e] block">
+                          {metric.label}
+                        </span>
+                        <span className="text-xs font-mono font-semibold text-zinc-900 dark:text-[#ebebef]">
+                          {metric.val}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2 pt-2 border-t border-zinc-100 dark:border-[#1e1e2a]">
+                <div className="flex items-center gap-1.5 text-zinc-500 dark:text-[#8b8b9e]">
+                  <Target size={12} className="text-[#5e6ad2]" />
+                  <span className="text-[9.5px] font-mono font-bold uppercase tracking-wider">
+                    Core Objectives
+                  </span>
+                </div>
+                <div className="space-y-1.5">
+                  {activeChallenge.objectives.map((obj, i) => (
+                    <div
+                      key={i}
+                      className="flex gap-2 text-xs p-2 rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50 dark:bg-[#14141e] leading-snug"
+                    >
+                      <span className="font-mono text-[#5e6ad2] font-semibold">
+                        {i + 1}.
+                      </span>
+                      <span className="text-zinc-700 dark:text-zinc-300">{obj}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-2 border-t border-zinc-100 dark:border-[#1e1e2a]">
+                <div className="flex items-center gap-1.5 text-zinc-500 dark:text-[#8b8b9e]">
+                  <Shield size={12} className="text-emerald-500" />
+                  <span className="text-[9.5px] font-mono font-bold uppercase tracking-wider">
+                    Production Constraints
+                  </span>
+                </div>
+                <ul className="space-y-1">
+                  {activeChallenge.constraints.map((con, i) => (
+                    <li
+                      key={i}
+                      className="flex gap-2 text-xs text-zinc-600 dark:text-[#8b8b9e] leading-relaxed"
+                    >
+                      <span className="text-emerald-500 font-bold shrink-0">•</span>
+                      <span>{con}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </m.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
 });
 
 ChallengePanel.displayName = "ChallengePanel";

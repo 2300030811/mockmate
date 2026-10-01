@@ -58,34 +58,39 @@ export const QuizSidebar = memo(({
       )}
 
       <aside className={`fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 lg:translate-x-0 lg:static flex flex-col border-r ${isOpen ? 'translate-x-0' : '-translate-x-full'
-        } bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800`}>
+        } bg-white dark:bg-[#0d0d12] border-zinc-200 dark:border-[#1e1e2a]`}>
 
-        <div className="p-4 border-b flex items-center justify-between border-gray-200 dark:border-gray-800">
-          <h2 className="font-bold text-lg text-gray-900 dark:text-white">
-            Question Navigator
-          </h2>
+        <div className="p-4 border-b flex items-center justify-between border-zinc-200 dark:border-[#1e1e2a]">
+          <div>
+            <h2 className="font-semibold text-sm text-zinc-900 dark:text-[#ebebef]">
+              Question Navigator
+            </h2>
+            <p className="text-[11px] text-zinc-400 dark:text-[#6e6e84] mt-0.5 font-mono">
+              {answeredCount} of {questions.length} answered
+            </p>
+          </div>
           <Button
             onClick={() => setIsOpen(false)}
             variant="ghost"
             size="icon"
-            className="lg:hidden"
+            className="lg:hidden text-zinc-500 hover:text-zinc-900 dark:text-[#8b8b9e] dark:hover:text-[#ebebef]"
           >
-            <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            <X className="w-5 h-5" />
           </Button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          <div className="flex flex-wrap gap-4 text-xs font-medium">
-            <div className="flex items-center gap-1.5 opacity-70">
-              <div className="w-3 h-3 rounded-full bg-blue-500" />
+        <div className="flex-1 overflow-y-auto p-4 space-y-5">
+          <div className="flex items-center justify-between text-[11px] font-mono text-zinc-500 dark:text-[#8b8b9e] pb-1 border-b border-zinc-100 dark:border-[#181824]">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-[3px] bg-[#5e6ad2]" />
               <span>Current</span>
             </div>
-            <div className="flex items-center gap-1.5 opacity-70">
-              <div className="w-3 h-3 rounded-full bg-green-500" />
-              <span>Answered</span>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-[3px] bg-emerald-500/30 border border-emerald-500" />
+              <span>Done</span>
             </div>
-            <div className="flex items-center gap-1.5 opacity-70">
-              <div className="w-3 h-3 rounded-full bg-yellow-500" />
+            <div className="flex items-center gap-1.5">
+              <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
               <span>Marked</span>
             </div>
           </div>
@@ -94,17 +99,18 @@ export const QuizSidebar = memo(({
             {questions.map((q, index) => {
               const { isAnswered, isMarked, isCurrent } = getQuestionStatus(q);
 
-              let bgClass = 'bg-gray-100 dark:bg-gray-800';
-              let borderClass = 'border-transparent';
-              let textClass = 'text-gray-600 dark:text-gray-400';
+              let bgClass = 'bg-zinc-50 dark:bg-[#14141e]';
+              let borderClass = 'border-zinc-200 dark:border-[#1e1e2a]';
+              let textClass = 'text-zinc-600 dark:text-[#8b8b9e]';
 
               if (isCurrent) {
-                borderClass = 'border-blue-500 ring-2 ring-blue-500/20';
-                bgClass = 'bg-blue-50 dark:bg-blue-900/20';
-                textClass = 'text-blue-500 font-bold';
+                borderClass = 'border-[#5e6ad2] ring-2 ring-[#5e6ad2]/20';
+                bgClass = 'bg-[#5e6ad2]';
+                textClass = 'text-white font-bold';
               } else if (isAnswered) {
-                bgClass = 'bg-green-50 dark:bg-green-900/20';
-                textClass = 'text-green-500 font-medium';
+                bgClass = 'bg-emerald-500/10 dark:bg-emerald-500/15';
+                borderClass = 'border-emerald-500/30 dark:border-emerald-500/40';
+                textClass = 'text-emerald-600 dark:text-emerald-400 font-medium';
               }
 
               const statusText = `${isCurrent ? 'current, ' : ''}${isAnswered ? 'answered' : 'unanswered'}${isMarked ? ', marked for review' : ''}`;
@@ -118,12 +124,12 @@ export const QuizSidebar = memo(({
                   }}
                   aria-label={`Question ${index + 1}, ${statusText}`}
                   aria-current={isCurrent ? "true" : undefined}
-                  className={`relative h-10 rounded-lg flex items-center justify-center text-sm transition-all border ${bgClass} ${borderClass} ${textClass} hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500`}
+                  className={`relative h-9 rounded-md flex items-center justify-center text-xs font-mono transition-all border ${bgClass} ${borderClass} ${textClass} hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#5e6ad2] cursor-pointer`}
                 >
                   {index + 1}
                   {isMarked && (
                     <div className="absolute -top-1 -right-1">
-                      <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+                      <Star className="w-2.5 h-2.5 text-amber-500 fill-amber-500" />
                     </div>
                   )}
                 </button>
@@ -132,23 +138,25 @@ export const QuizSidebar = memo(({
           </div>
         </div>
 
-        <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
-          <div className="flex justify-between items-center mb-4 text-sm font-medium">
-            <span className="opacity-50">Progress</span>
-            <span className="font-bold">{answeredCount}/{questions.length}</span>
+        <div className="p-4 border-t border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#0d0d12]">
+          <div className="flex justify-between items-center mb-2 text-xs font-mono text-zinc-500 dark:text-[#8b8b9e]">
+            <span>Completion</span>
+            <span className="font-semibold text-zinc-900 dark:text-[#ebebef] tabular-nums">
+              {Math.round((answeredCount / questions.length) * 100)}%
+            </span>
           </div>
-          <div className="w-full h-2 rounded-full mb-6 bg-gray-200 dark:bg-gray-800">
+          <div className="w-full h-1.5 rounded-full mb-5 bg-zinc-100 dark:bg-[#181824] overflow-hidden">
             <div
-              className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+              className="bg-[#5e6ad2] h-full transition-all duration-300"
               style={{ width: `${(answeredCount / questions.length) * 100}%` }}
             />
           </div>
 
           <Button
             onClick={onOpenSubmitModal}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold h-11"
+            className="w-full bg-[#5e6ad2] hover:bg-[#4f59b8] text-white font-semibold text-xs h-10 shadow-subtle cursor-pointer"
           >
-            Submit {mode === 'exam' ? 'Exam' : 'Test'}
+            Submit {mode === 'exam' ? 'Exam Session' : 'Practice Lab'}
           </Button>
         </div>
       </aside>

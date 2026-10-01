@@ -844,7 +844,7 @@ function InterviewSessionContent() {
   }, [transcript, finalTranscript]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="h-screen md:h-screen bg-gray-950 text-white flex flex-col overflow-hidden font-sans selection:bg-blue-500/30">
+    <div className="h-screen md:h-screen bg-zinc-50 dark:bg-[#0d0d12] text-zinc-900 dark:text-[#ebebef] flex flex-col overflow-hidden font-sans selection:bg-[#5e6ad2]/20 transition-colors">
       <SessionHeader 
         type={type}
         azureConfig={azureConfig}
@@ -898,22 +898,34 @@ function InterviewSessionContent() {
               transcript={finalTranscript}
               aiSummary={interviewSummary}
               durationSeconds={elapsedSeconds}
+              type={type}
+              difficulty={difficulty}
             />
           )}
         </AnimatePresence>
 
-        {/* --- Left: Chat History --- */}
+        {/* --- Left: Chat History & Docked Input --- */}
         <SessionChat 
             messages={messages}
             isProcessing={isProcessing}
             mobileTab={mobileTab}
+            transcript={transcript}
+            setTranscript={setTranscript}
+            finalTranscript={finalTranscript}
+            setFinalTranscript={setFinalTranscript}
+            isListening={isListening}
+            isUserActive={isUserActive}
+            isAISpeaking={isAISpeaking}
+            startListening={startListening}
+            stopListening={stopListening}
+            handleSubmit={handleSubmit}
         />
 
         {/* --- Right: Enhanced Dashboard (Desktop) --- */}
-        <div className={`w-full md:w-[450px] lg:w-[500px] bg-gray-950 flex-col border-l border-gray-800 relative min-h-0 overflow-hidden ${mobileTab === 'chat' ? 'hidden md:flex' : 'flex'}`}>
+        <div className={`w-full md:w-[450px] lg:w-[500px] bg-white dark:bg-[#14141e] flex-col border-l border-zinc-200 dark:border-[#1e1e2a] relative min-h-0 overflow-hidden ${mobileTab === 'chat' ? 'hidden md:flex' : 'flex'}`}>
           
           {/* Tab Header */}
-          <div className="flex bg-gray-900/50 border-b border-gray-800 p-1">
+          <div className="flex bg-zinc-100/80 dark:bg-[#0d0d12] border-b border-zinc-200 dark:border-[#1e1e2a] p-1 gap-1">
             {[
               { id: 'visuals', icon: Video, label: 'Virtual' },
               { id: 'code', icon: Code2, label: 'Editor' },
@@ -923,19 +935,19 @@ function InterviewSessionContent() {
                 key={tab.id}
                 onClick={() => setRightPanelTab(tab.id as any)}
                 className={`
-                  flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all
+                  flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-semibold transition-all
                   ${rightPanelTab === tab.id 
-                    ? 'bg-gray-800 text-white shadow-lg border border-gray-700' 
-                    : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800/50'}
+                    ? 'bg-white dark:bg-[#1e1e2a] text-zinc-900 dark:text-[#ebebef] shadow-subtle border border-zinc-200 dark:border-[#2e2e42]' 
+                    : 'text-zinc-500 dark:text-[#8b8b9e] hover:text-zinc-900 dark:hover:text-[#ebebef] hover:bg-zinc-200/50 dark:hover:bg-[#181824] border border-transparent'}
                 `}
               >
-                <tab.icon size={16} />
+                <tab.icon size={14} />
                 <span>{tab.label}</span>
               </button>
             ))}
           </div>
 
-          <div className="flex-1 overflow-hidden relative min-h-0">
+          <div className="flex-1 overflow-hidden relative min-h-0 bg-white dark:bg-[#14141e]">
             {rightPanelTab === 'visuals' && (
                 <SessionVisuals 
                     isAISpeaking={isAISpeaking}
@@ -973,92 +985,13 @@ function InterviewSessionContent() {
           </div>
         </div>
       </main>
-
-      {/* --- Floating Bottom Bar --- */}
-      <div className={`absolute bottom-6 left-0 right-0 items-center justify-center px-4 z-30 pointer-events-none flex`}>
-        <div className={`
-            bg-gray-900/90 backdrop-blur-xl border shadow-2xl rounded-2xl p-2 flex items-center gap-2 pointer-events-auto max-w-3xl w-full transition-all duration-300
-            ${isUserActive && !isAISpeaking ? "border-green-500/50 ring-1 ring-green-500/20" : "border-gray-700/50"}
-        `}>
-          {/* Input Field (Shows Live Transcript) */}
-          <div className="flex-1 relative">
-            <input
-              type="text"
-              value={transcript || finalTranscript}
-              onChange={(e) => setTranscript(e.target.value)}
-              placeholder={isListening ? (isUserActive ? "Detecting voice..." : "Listening...") : "Type your answer..."}
-              aria-label="Type your answer"
-              className={`
-                        w-full bg-gray-800/50 border border-gray-700 
-                        focus:border-blue-500/50 focus:bg-gray-800 text-white 
-                        rounded-xl px-4 py-3 pr-12 outline-none transition-all placeholder:text-gray-600
-                        ${isListening ? "border-blue-500/30" : ""}
-                        ${isUserActive && !isAISpeaking ? "border-green-500/40" : ""}
-                    `}
-              disabled={isProcessing}
-              onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-            />
-            {(transcript || finalTranscript) && (
-              <button
-                onClick={() => {
-                  setTranscript("");
-                  setFinalTranscript("");
-                }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
-                aria-label="Clear input"
-              >
-                <X size={16} />
-              </button>
-            )}
-          </div>
-
-          {/* Mic Toggle */}
-          <button
-            onClick={isListening ? stopListening : startListening}
-            disabled={isProcessing || isAISpeaking}
-            aria-label={isListening ? "Stop listening" : "Start listening"}
-            className={`
-                    w-12 h-12 flex items-center justify-center rounded-xl transition-all duration-300 shrink-0
-                    ${
-                      isListening
-                        ? (isUserActive ? "bg-green-600 shadow-green-500/40 mic-active-pulse" : "bg-red-500 shadow-red-500/40") + " text-white shadow-lg"
-                        : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
-                    }
-                    ${isProcessing || isAISpeaking ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
-                `}
-          >
-            {isListening ? (
-              <div className={`w-4 h-4 rounded-sm transition-all ${isUserActive ? "bg-white scale-125 animate-pulse" : "bg-white"}`} />
-            ) : (
-              <Mic size={24} />
-            )}
-          </button>
-
-          {/* Send Button */}
-          <button
-            onClick={() => handleSubmit()}
-            disabled={(!transcript && !finalTranscript) || isProcessing}
-            aria-label="Send answer"
-            className={`
-                    w-12 h-12 flex items-center justify-center rounded-xl transition-all duration-300 shrink-0
-                    ${
-                      (transcript || finalTranscript) && !isProcessing
-                        ? "bg-blue-600 text-white shadow-lg shadow-blue-500/40 hover:bg-blue-500"
-                        : "bg-gray-800 text-gray-600 cursor-not-allowed"
-                    }
-                `}
-          >
-            <Send size={20} />
-          </button>
-        </div>
-      </div>
     </div>
   );
 }
 
 export default function InterviewSession() {
   return (
-    <Suspense fallback={<div className="h-screen bg-gray-950 flex items-center justify-center text-white">Initializing Session...</div>}>
+    <Suspense fallback={<div className="h-screen bg-zinc-50 dark:bg-[#0d0d12] flex items-center justify-center text-zinc-500 font-mono text-xs">Initializing Session...</div>}>
       <InterviewSessionContent />
     </Suspense>
   );

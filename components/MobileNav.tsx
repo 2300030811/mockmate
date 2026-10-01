@@ -2,26 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Trophy, Mic, ShieldCheck } from "lucide-react";
+import { Home, Trophy, Mic, ShieldCheck, Building2 } from "lucide-react";
 
 const HIDDEN_ROUTE_PATTERNS = [
   "/session",
   "-quiz",
-  "/interview",
-  "/demo",
-  "/arena",
   "/daily-challenge",
-  "/system-design",
-  "/career-path",
-  "/resume-roaster",
-  "/resume-builder",
-  "/ats-optimizer",
-  "/certification",
-  "/project-mode",
 ];
 
 const NAV_ITEMS = [
   { label: "Home", href: "/", icon: Home },
+  { label: "Placements", href: "/placements", icon: Building2 },
   { label: "Quizzes", href: "/certification", icon: Trophy },
   { label: "Interview", href: "/demo", icon: Mic },
   { label: "Dashboard", href: "/dashboard", icon: ShieldCheck },
@@ -39,7 +30,7 @@ export function MobileNav() {
   return (
     <nav
       aria-label="Mobile Navigation"
-      className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-white/85 dark:bg-gray-950/85 backdrop-blur-xl border-t border-gray-200/60 dark:border-white/10 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] px-4 py-2"
+      className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-white/95 dark:bg-[#0d0d12]/95 backdrop-blur-md border-t border-zinc-200 dark:border-[#1e1e2a] px-3 py-1.5 transition-colors"
     >
       <div className="flex items-center justify-around max-w-md mx-auto">
         {NAV_ITEMS.map(({ label, href, icon: Icon }) => {
@@ -50,20 +41,20 @@ export function MobileNav() {
             <Link
               key={href}
               href={href}
-              className={`flex flex-col items-center justify-center min-w-[56px] min-h-[48px] px-2 rounded-xl transition-all duration-200 ${
+              className={`flex flex-col items-center justify-center min-w-[50px] min-h-[44px] px-1.5 rounded-[5px] transition-colors ${
                 isActive
-                  ? "text-blue-600 dark:text-blue-400 font-bold scale-105"
-                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                  ? "text-[#5e6ad2] font-semibold"
+                  : "text-zinc-500 dark:text-[#8b8b9e] hover:text-zinc-900 dark:hover:text-[#ebebef]"
               }`}
               aria-current={isActive ? "page" : undefined}
             >
               <div className="relative">
-                <Icon className="w-5 h-5 mb-0.5" />
+                <Icon className="w-4 h-4 mb-0.5" />
                 {isActive && (
-                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400" />
+                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[#5e6ad2]" />
                 )}
               </div>
-              <span className="text-[10px] uppercase font-bold tracking-wider opacity-90">
+              <span className="text-[9.5px] uppercase font-medium tracking-wide">
                 {label}
               </span>
             </Link>

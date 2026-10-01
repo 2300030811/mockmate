@@ -3,6 +3,7 @@
 import { Groq } from "groq-sdk";
 import { getNextKey, getNumKeys } from "@/utils/keyManager";
 import { logger } from "@/lib/logger";
+import { AI_MODELS } from "@/lib/ai/gateway";
 
 const COVER_LETTER_SYSTEM_PROMPT = `You are an expert career coach and professional resume writer.
 Write compelling, personalized, and highly professional cover letters based on the user's resume data and the target job description.
@@ -27,13 +28,13 @@ export async function generateCoverLetterAction(resumeDataJson: string, jobDescr
         const apiKey = getNextKey("GROQ_API_KEY") || process.env.GROQ_API_KEY;
         if (!apiKey) throw new Error("Groq API Key missing");
 
-        const groq = new Groq({ apiKey });
+        const groq = new Groq({ apiKey, dangerouslyAllowBrowser: true });
         const chatCompletion = await groq.chat.completions.create({
           messages: [
             { role: "system", content: COVER_LETTER_SYSTEM_PROMPT },
             { role: "user", content: prompt },
           ],
-          model: "llama-3.3-70b-versatile",
+          model: AI_MODELS.DEFAULT,
           temperature: 0.3,
         });
 
@@ -64,13 +65,13 @@ export async function generateOutreachMessageAction(resumeDataJson: string, jobD
         const apiKey = getNextKey("GROQ_API_KEY") || process.env.GROQ_API_KEY;
         if (!apiKey) throw new Error("Groq API Key missing");
 
-        const groq = new Groq({ apiKey });
+        const groq = new Groq({ apiKey, dangerouslyAllowBrowser: true });
         const chatCompletion = await groq.chat.completions.create({
           messages: [
             { role: "system", content: OUTREACH_SYSTEM_PROMPT },
             { role: "user", content: prompt },
           ],
-          model: "llama-3.3-70b-versatile",
+          model: AI_MODELS.DEFAULT,
           temperature: 0.3,
         });
 

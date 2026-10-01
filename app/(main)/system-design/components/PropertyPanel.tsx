@@ -39,9 +39,6 @@ export const PropertyPanel = memo(({
   focusConnectionId,
   clearConnectionFocus
 }: PropertyPanelProps) => {
-  const isLight = theme === 'light';
-  const isNeo = theme === 'neo';
-
   const lastHistoryState = useRef<string>("");
   const connectionInputRef = useRef<HTMLInputElement>(null);
 
@@ -53,7 +50,6 @@ export const PropertyPanel = memo(({
     }
   }, [nodes, connections, groups, addToHistory]);
 
-  // Handle focus to initialize the state if empty
   const handleFocus = useCallback(() => {
     if (!lastHistoryState.current) {
       lastHistoryState.current = JSON.stringify({ nodes, connections, groups });
@@ -74,70 +70,82 @@ export const PropertyPanel = memo(({
       initial={{ x: 300, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: 300, opacity: 0 }}
-      className={`w-72 border-l z-50 flex flex-col overflow-hidden transition-all duration-500 ${isLight ? "bg-white border-gray-200 shadow-[-4px_0_24px_rgba(0,0,0,0.05)] text-gray-900" : isNeo ? "bg-[#050212]/80 border-fuchsia-500/20 shadow-[-4px_0_30px_rgba(217,70,239,0.15)] text-cyan-50" : "bg-black/40 border-white/10 shadow-[-4px_0_24px_rgba(0,0,0,0.5)] text-white"
-        }`}
+      className="w-72 border-l border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#0d0d12] text-zinc-900 dark:text-[#ebebef] z-30 flex flex-col overflow-hidden select-none transition-colors"
     >
-      <div className={`h-14 px-6 border-b flex items-center justify-between shrink-0 ${isLight ? 'bg-gray-50/50 border-gray-200' : isNeo ? 'bg-fuchsia-500/10 border-fuchsia-500/20' : 'bg-gray-900/10 border-white/5'}`}>
+      {/* Drawer Header */}
+      <div className="h-12 px-4 border-b border-zinc-200 dark:border-[#1e1e2a] flex items-center justify-between shrink-0 bg-zinc-50/50 dark:bg-[#14141e]/50">
         <div className="flex items-center gap-2">
-          <Settings size={14} className="text-gray-500" />
-          <h2 className="text-[10px] font-black uppercase text-gray-500 tracking-widest">Properties</h2>
+          <Settings size={13} className="text-zinc-500" />
+          <h2 className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-500 dark:text-[#8b8b9e]">
+            Inspector // Properties
+          </h2>
         </div>
-        <button onClick={() => setSelectedId(null)} className={`p-1.5 rounded-lg transition-colors ${isLight ? 'text-gray-400 hover:text-gray-800 hover:bg-gray-200' : isNeo ? 'text-fuchsia-500/70 hover:text-cyan-400 hover:bg-fuchsia-500/20' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}>
-          <X size={16} />
+        <button
+          onClick={() => setSelectedId(null)}
+          className="p-1 rounded text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-[#1e1e2a] transition-colors"
+          title="Close Inspector"
+        >
+          <X size={14} />
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
+      {/* Drawer Content */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-5">
+        {/* Node Properties */}
         {selectedType === "node" && (() => {
           const node = selectedItem as Node;
           if (!node) return null;
+          const Config = NODE_CONFIG[node.type as keyof typeof NODE_CONFIG];
+          const Icon = Config?.icon;
           return (
-            <div className="space-y-6">
-              <div className={`p-4 rounded-2xl border flex items-center gap-4 ${isLight ? 'bg-gray-50 border-gray-200' : isNeo ? 'bg-fuchsia-500/5 border-fuchsia-500/20' : 'bg-white/5 border-white/5'}`}>
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${NODE_CONFIG[node.type as keyof typeof NODE_CONFIG].bg} ${NODE_CONFIG[node.type as keyof typeof NODE_CONFIG].color} shadow-inner`}>
-                  {(() => { const I = NODE_CONFIG[node.type as keyof typeof NODE_CONFIG].icon; return <I size={24} /> })()}
+            <div className="space-y-4">
+              <div className="p-3 rounded-lg border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50 dark:bg-[#14141e] flex items-center gap-3">
+                <div className="w-9 h-9 rounded-md flex items-center justify-center bg-zinc-100 dark:bg-[#1a1a28] border border-zinc-200 dark:border-[#262638]">
+                  {Icon && <Icon size={18} className={Config?.color} />}
                 </div>
-                <div>
-                  <p className="text-[9px] font-black text-gray-500 uppercase tracking-tighter">{node.type}</p>
-                  <p className={`text-xs font-bold ${isLight ? 'text-gray-800' : 'text-white'}`}>Component Identity</p>
+                <div className="min-w-0">
+                  <p className="text-[9px] font-mono uppercase tracking-wider text-zinc-400 dark:text-[#5a5a6e]">
+                    {node.type}
+                  </p>
+                  <p className="text-xs font-semibold text-zinc-900 dark:text-[#ebebef] truncate">
+                    {node.name}
+                  </p>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Identifier</p>
+              {/* Identifier Input */}
+              <div className="space-y-1">
+                <label className="text-[9.5px] font-mono uppercase tracking-wider text-zinc-500 dark:text-[#8b8b9e] pl-0.5">
+                  Instance Label
+                </label>
                 <input
-                  className={`w-full rounded-xl p-3 text-xs font-bold outline-none transition-all duration-300 placeholder:text-gray-500 ${isLight ? 'bg-gray-100 border border-gray-200 text-gray-900 focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/20' : isNeo ? 'bg-[#050212]/80 border border-fuchsia-500/20 text-cyan-50 focus:border-cyan-500 focus:bg-fuchsia-500/10 focus:ring-2 focus:ring-cyan-500/20' : 'bg-black/40 border border-white/10 text-white focus:border-indigo-500 focus:bg-white/5 focus:ring-2 focus:ring-indigo-500/20'}`}
+                  className="w-full rounded-md px-2.5 py-1.5 text-xs font-medium bg-zinc-50 dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] text-zinc-900 dark:text-[#ebebef] focus:border-[#5e6ad2] focus:outline-none transition-colors"
                   value={node.name}
-                  placeholder="Enter name..."
-                  onChange={(e) => {
-                    onUpdateNodes({ name: e.target.value });
-                  }}
+                  placeholder="Enter component name..."
+                  onChange={(e) => onUpdateNodes({ name: e.target.value })}
                   onFocus={handleFocus}
                   onBlur={handleBlur}
                 />
               </div>
 
-              {/* Component Specifications */}
-              <div className="space-y-3">
-                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Specifications</p>
-                <div className="space-y-3">
+              {/* Specifications */}
+              <div className="space-y-2 pt-1 border-t border-zinc-100 dark:border-[#1e1e2a]">
+                <p className="text-[9.5px] font-mono uppercase tracking-wider text-zinc-500 dark:text-[#8b8b9e] pl-0.5">
+                  Technical Specifications
+                </p>
+                <div className="space-y-2">
                   {[
-                    { key: "tech", label: "Tech Stack", placeholder: "e.g., Redis, Kafka, PostgreSQL" },
-                    { key: "capacity", label: "Capacity / Scale", placeholder: "e.g., 16GB RAM, 10k QPS" },
-                    { key: "region", label: "Region", placeholder: "e.g., us-east-1, global" },
-                    { key: "az", label: "Availability Zone", placeholder: "e.g., us-east-1a, multi-AZ" },
-                    { key: "latency", label: "Latency Target", placeholder: "e.g., <2ms, 50ms" },
+                    { key: "tech", label: "Tech Stack", placeholder: "Redis, Kafka, PostgreSQL..." },
+                    { key: "capacity", label: "Capacity / QPS", placeholder: "10,000 QPS, 64GB RAM..." },
+                    { key: "region", label: "Region / Cloud", placeholder: "us-east-1, multi-cloud..." },
+                    { key: "latency", label: "Target Latency", placeholder: "<5ms p99..." }
                   ].map((field) => (
-                    <div key={field.key} className="space-y-1">
-                      <label className="text-[9px] text-gray-500 pl-1 uppercase font-bold">{field.label}</label>
+                    <div key={field.key} className="space-y-0.5">
+                      <span className="text-[9px] font-mono uppercase text-zinc-400 dark:text-[#5a5a6e] pl-0.5">
+                        {field.label}
+                      </span>
                       <input
-                        className={`w-full rounded-xl px-3 py-2 text-xs font-bold outline-none transition-all duration-300 placeholder:text-gray-600/50 ${
-                          isLight 
-                            ? 'bg-gray-100 border border-gray-200 text-gray-900 focus:bg-white focus:border-indigo-500' 
-                            : isNeo 
-                              ? 'bg-[#050212] border border-fuchsia-500/20 text-cyan-50 focus:bg-fuchsia-500/10 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20' 
-                              : 'bg-white/5 border border-white/5 text-white focus:bg-white/10 focus:border-indigo-500'
-                        }`}
+                        className="w-full rounded-md px-2 py-1 text-xs font-mono bg-zinc-50 dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] text-zinc-900 dark:text-[#ebebef] focus:border-[#5e6ad2] focus:outline-none transition-colors"
                         placeholder={field.placeholder}
                         value={node.metadata?.[field.key] || ""}
                         onChange={(e) => {
@@ -153,38 +161,41 @@ export const PropertyPanel = memo(({
               </div>
 
               {/* Custom Metadata */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between pl-1">
-                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Custom Metadata</p>
+              <div className="space-y-2 pt-1 border-t border-zinc-100 dark:border-[#1e1e2a]">
+                <div className="flex items-center justify-between pl-0.5">
+                  <p className="text-[9.5px] font-mono uppercase tracking-wider text-zinc-500 dark:text-[#8b8b9e]">
+                    Custom Attributes
+                  </p>
                   <button
-                    className={`p-1 transition-colors ${isNeo ? 'text-fuchsia-400 hover:text-cyan-400' : 'text-indigo-400 hover:text-indigo-300'}`}
+                    className="p-1 rounded text-zinc-500 hover:text-[#5e6ad2] transition-colors"
                     onClick={() => {
-                      const k = prompt("Metadata key (e.g. version, replica_count)?");
+                      const k = prompt("Attribute key (e.g. partition_key, max_replicas)?");
                       if (k) {
                         const cleanKey = k.trim().toLowerCase();
-                        if (["tech", "capacity", "region", "az", "latency"].includes(cleanKey)) {
-                          alert(`Please use the dedicated specifications input for ${k}.`);
-                          return;
-                        }
-                        const mx = { ...node.metadata, [k]: "Value" };
+                        const mx = { ...node.metadata, [cleanKey]: "default" };
                         onUpdateNodes({ metadata: mx });
-                        const updatedNodes = nodes.map(n => n.id === node.id ? { ...n, metadata: mx } : n);
+                        const updatedNodes = nodes.map((n) =>
+                          n.id === node.id ? { ...n, metadata: mx } : n
+                        );
                         addToHistory(updatedNodes, connections, groups);
                       }
                     }}
                   >
-                    <Plus size={14} />
+                    <Plus size={13} />
                   </button>
                 </div>
-                <div className={`space-y-2 rounded-xl p-2 ${isLight ? 'bg-gray-100' : isNeo ? 'bg-fuchsia-500/5 border border-fuchsia-500/10' : 'bg-black/20'}`}>
+
+                <div className="space-y-1.5 rounded-md p-2 bg-zinc-50 dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a]">
                   {Object.entries(node.metadata || {})
                     .filter(([k]) => !["tech", "capacity", "region", "az", "latency"].includes(k))
                     .map(([k, v]) => (
-                      <div key={k} className={`flex gap-2 group p-1 transition-colors rounded-lg ${isLight ? 'hover:bg-white' : isNeo ? 'hover:bg-fuchsia-500/20' : 'hover:bg-white/5'}`}>
-                        <span className="text-[9px] text-gray-500 w-16 truncate self-center font-mono">{k}</span>
+                      <div key={k} className="flex items-center gap-2 group text-xs">
+                        <span className="text-[9.5px] font-mono text-zinc-400 dark:text-[#5a5a6e] w-18 truncate">
+                          {k}
+                        </span>
                         <input
                           value={v}
-                          className={`bg-transparent border-b text-[10px] font-bold flex-1 outline-none transition-all py-1 ${isLight ? 'border-gray-300 text-gray-800' : isNeo ? 'border-fuchsia-500/30 text-cyan-100' : 'border-white/5 text-white'}`}
+                          className="flex-1 bg-transparent border-b border-zinc-200 dark:border-zinc-700 py-0.5 text-xs font-mono text-zinc-900 dark:text-[#ebebef] focus:outline-none focus:border-[#5e6ad2]"
                           onChange={(e) => {
                             const mx = { ...node.metadata, [k]: e.target.value };
                             onUpdateNodes({ metadata: mx });
@@ -192,111 +203,137 @@ export const PropertyPanel = memo(({
                           onFocus={handleFocus}
                           onBlur={handleBlur}
                         />
-                        <button onClick={() => {
-                          const mx = { ...node.metadata }; delete mx[k];
-                          onUpdateNodes({ metadata: mx });
-                          const updatedNodes = nodes.map(n => n.id === node.id ? { ...n, metadata: mx } : n);
-                          addToHistory(updatedNodes, connections, groups);
-                        }} className="opacity-0 group-hover:opacity-100 text-red-500/60 hover:text-red-500 transition-all p-1"><X size={12} /></button>
+                        <button
+                          onClick={() => {
+                            const mx = { ...node.metadata };
+                            delete mx[k];
+                            onUpdateNodes({ metadata: mx });
+                            const updatedNodes = nodes.map((n) =>
+                              n.id === node.id ? { ...n, metadata: mx } : n
+                            );
+                            addToHistory(updatedNodes, connections, groups);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 text-rose-500 hover:text-rose-600 transition-opacity"
+                        >
+                          <X size={12} />
+                        </button>
                       </div>
                     ))}
-                  {Object.keys(node.metadata || {}).filter(k => !["tech", "capacity", "region", "az", "latency"].includes(k)).length === 0 && (
-                    <p className={`text-[9px] italic text-center py-2 ${isLight ? 'text-gray-700' : 'text-gray-500'}`}>No custom metadata</p>
+                  {Object.keys(node.metadata || {}).filter(
+                    (k) => !["tech", "capacity", "region", "az", "latency"].includes(k)
+                  ).length === 0 && (
+                    <p className="text-[10px] text-zinc-400 dark:text-[#5a5a6e] text-center py-1">
+                      No custom attributes configured
+                    </p>
                   )}
                 </div>
               </div>
             </div>
-          )
+          );
         })()}
 
+        {/* Connection Properties */}
         {selectedType === "connection" && (() => {
           const conn = selectedItem as Connection;
           if (!conn) return null;
           return (
-            <div className="space-y-6">
-              <div className={`p-4 rounded-2xl border flex items-center gap-4 ${isLight ? 'bg-indigo-50/50 border-indigo-100' : isNeo ? 'bg-cyan-500/5 border-cyan-500/20' : 'bg-white/5 border-white/5'}`}>
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isLight ? 'bg-indigo-100 text-indigo-600' : 'bg-indigo-500/10 text-indigo-400'}`}>
-                  <LinkIcon size={24} />
+            <div className="space-y-4">
+              <div className="p-3 rounded-lg border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50 dark:bg-[#14141e] flex items-center gap-3">
+                <div className="w-9 h-9 rounded-md flex items-center justify-center bg-[#5e6ad2]/10 text-[#5e6ad2] border border-[#5e6ad2]/20">
+                  <LinkIcon size={16} />
                 </div>
                 <div>
-                  <p className="text-[9px] font-black text-gray-500 uppercase tracking-tighter">Data Flow</p>
-                  <p className={`text-xs font-bold ${isLight ? 'text-gray-800' : 'text-white'}`}>Interface Property</p>
+                  <p className="text-[9px] font-mono uppercase tracking-wider text-zinc-400 dark:text-[#5a5a6e]">
+                    Topology Edge
+                  </p>
+                  <p className="text-xs font-semibold text-zinc-900 dark:text-[#ebebef]">
+                    Data Flow Protocol
+                  </p>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Protocol / Label</p>
-                <div className="relative group">
-                  <ArrowRight size={14} className={`absolute left-3 top-1/2 -translate-y-1/2 transition-colors ${isNeo ? 'group-focus-within:text-cyan-400' : 'group-focus-within:text-indigo-500'} ${isLight ? 'text-gray-400' : 'text-gray-500'}`} />
+              <div className="space-y-1">
+                <label className="text-[9.5px] font-mono uppercase tracking-wider text-zinc-500 dark:text-[#8b8b9e] pl-0.5">
+                  Protocol / RPC Type
+                </label>
+                <div className="relative">
+                  <ArrowRight
+                    size={12}
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400"
+                  />
                   <input
                     ref={connectionInputRef}
-                    className={`w-full rounded-xl py-2.5 pl-9 pr-4 text-xs font-bold outline-none border-b-2 transition-all duration-300 placeholder:text-gray-500 ${isLight ? 'bg-gray-100 border border-gray-200 border-b-indigo-400 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-gray-900' : isNeo ? 'bg-[#050212]/80 border border-fuchsia-500/20 border-b-cyan-500/50 focus:bg-fuchsia-500/10 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 text-cyan-50' : 'bg-black/40 border border-white/10 border-b-indigo-500/50 focus:bg-white/5 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-white'}`}
+                    className="w-full rounded-md pl-7 pr-2.5 py-1.5 text-xs font-mono bg-zinc-50 dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] text-zinc-900 dark:text-[#ebebef] focus:border-[#5e6ad2] focus:outline-none transition-colors"
                     value={conn.label || ""}
-                    placeholder="HTTPS, gRPC, TCP..."
-                    onChange={(e) => {
-                      onUpdateConnections({ label: e.target.value });
-                    }}
+                    placeholder="HTTPS, gRPC, WebSocket, TCP..."
+                    onChange={(e) => onUpdateConnections({ label: e.target.value })}
                     onFocus={handleFocus}
                     onBlur={handleBlur}
                   />
                 </div>
               </div>
             </div>
-          )
+          );
         })()}
 
+        {/* Group / VPC Properties */}
         {selectedType === "group" && (() => {
           const g = selectedItem as Group;
           if (!g) return null;
           return (
-            <div className="space-y-6">
-              <div className={`p-4 rounded-2xl border flex items-center gap-4 ${isLight ? 'bg-blue-50/50 border-blue-100' : isNeo ? 'bg-fuchsia-500/5 border-fuchsia-500/20' : 'bg-white/5 border-white/5'}`}>
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isLight ? 'bg-blue-100 text-blue-600' : 'bg-blue-500/10 text-blue-400'}`}>
-                  <Layout size={24} />
+            <div className="space-y-4">
+              <div className="p-3 rounded-lg border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50 dark:bg-[#14141e] flex items-center gap-3">
+                <div className="w-9 h-9 rounded-md flex items-center justify-center bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">
+                  <Layout size={16} />
                 </div>
                 <div>
-                  <p className="text-[9px] font-black text-gray-500 uppercase tracking-tighter">Container</p>
-                  <p className={`text-xs font-bold ${isLight ? 'text-gray-800' : 'text-white'}`}>VPC / Group Info</p>
+                  <p className="text-[9px] font-mono uppercase tracking-wider text-zinc-400 dark:text-[#5a5a6e]">
+                    Boundary Container
+                  </p>
+                  <p className="text-xs font-semibold text-zinc-900 dark:text-[#ebebef]">
+                    VPC / Subnet
+                  </p>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Label</p>
+              <div className="space-y-1">
+                <label className="text-[9.5px] font-mono uppercase tracking-wider text-zinc-500 dark:text-[#8b8b9e] pl-0.5">
+                  Container Name
+                </label>
                 <input
-                  className={`w-full rounded-xl p-3 text-xs font-bold outline-none transition-all duration-300 placeholder:text-gray-500 ${isLight ? 'bg-gray-100 border border-gray-200 text-gray-900 focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/20' : isNeo ? 'bg-[#050212]/80 border border-fuchsia-500/20 text-cyan-50 focus:border-cyan-500 focus:bg-fuchsia-500/10 focus:ring-2 focus:ring-cyan-500/20' : 'bg-black/40 border border-white/10 text-white focus:border-indigo-500 focus:bg-white/5 focus:ring-2 focus:ring-indigo-500/20'}`}
+                  className="w-full rounded-md px-2.5 py-1.5 text-xs font-medium bg-zinc-50 dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] text-zinc-900 dark:text-[#ebebef] focus:border-[#5e6ad2] focus:outline-none transition-colors"
                   value={g.name}
-                  onChange={(e) => {
-                    onUpdateGroups({ name: e.target.value });
-                  }}
+                  onChange={(e) => onUpdateGroups({ name: e.target.value })}
                   onFocus={handleFocus}
                   onBlur={handleBlur}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <p className="text-[9px] text-gray-500 pl-1 uppercase font-bold">Width</p>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-0.5">
+                  <span className="text-[9px] font-mono uppercase text-zinc-400 dark:text-[#5a5a6e] pl-0.5">
+                    Width (px)
+                  </span>
                   <input
                     type="number"
                     step="20"
-                    className={`w-full rounded-xl p-2.5 text-xs outline-none focus:border-indigo-500/50 ${isLight ? 'bg-gray-100 border border-gray-200 text-gray-900' : isNeo ? 'bg-fuchsia-500/5 border border-fuchsia-500/20 text-cyan-50' : 'bg-white/5 border border-white/10 text-white'}`}
+                    className="w-full rounded-md px-2 py-1 text-xs font-mono bg-zinc-50 dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] text-zinc-900 dark:text-[#ebebef] focus:border-[#5e6ad2] focus:outline-none"
                     value={g.w}
-                    onChange={(e) => {
-                      onUpdateGroups({ w: Number(e.target.value) });
-                    }}
+                    onChange={(e) => onUpdateGroups({ w: Number(e.target.value) })}
                     onFocus={handleFocus}
                     onBlur={handleBlur}
                   />
                 </div>
-                <div className="space-y-1">
-                  <p className="text-[9px] text-gray-500 pl-1 uppercase font-bold">Height</p>
+                <div className="space-y-0.5">
+                  <span className="text-[9px] font-mono uppercase text-zinc-400 dark:text-[#5a5a6e] pl-0.5">
+                    Height (px)
+                  </span>
                   <input
                     type="number"
                     step="20"
-                    className={`w-full rounded-xl p-2.5 text-xs outline-none focus:border-indigo-500/50 ${isLight ? 'bg-gray-100 border border-gray-200 text-gray-900' : isNeo ? 'bg-fuchsia-500/5 border border-fuchsia-500/20 text-cyan-50' : 'bg-white/5 border-white/10 text-white'}`}
+                    className="w-full rounded-md px-2 py-1 text-xs font-mono bg-zinc-50 dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] text-zinc-900 dark:text-[#ebebef] focus:border-[#5e6ad2] focus:outline-none"
                     value={g.h}
-                    onChange={(e) => {
-                      onUpdateGroups({ h: Number(e.target.value) });
-                    }}
+                    onChange={(e) => onUpdateGroups({ h: Number(e.target.value) })}
                     onFocus={handleFocus}
                     onBlur={handleBlur}
                   />
@@ -304,35 +341,36 @@ export const PropertyPanel = memo(({
               </div>
 
               <div className="space-y-1">
-                <p className="text-[9px] text-gray-600 pl-1 uppercase font-bold">Background Color</p>
-                <div className="flex gap-2">
+                <span className="text-[9px] font-mono uppercase text-zinc-400 dark:text-[#5a5a6e] pl-0.5">
+                  Boundary Accent
+                </span>
+                <div className="flex items-center gap-2">
                   <input
                     type="color"
-                    className="w-10 h-10 bg-transparent border-0 p-0 cursor-pointer overflow-hidden rounded-lg"
-                    value={g.color.startsWith('rgb') ? '#6366f1' : g.color}
-                    onChange={(e) => {
-                      onUpdateGroups({ color: e.target.value });
-                    }}
+                    className="w-7 h-7 bg-transparent border-0 p-0 cursor-pointer rounded overflow-hidden"
+                    value={g.color?.startsWith("#") ? g.color : "#5e6ad2"}
+                    onChange={(e) => onUpdateGroups({ color: e.target.value })}
                     onFocus={handleFocus}
                     onBlur={handleBlur}
                   />
-                  <div className={`flex-1 text-[10px] rounded-lg flex items-center px-4 font-mono ${isLight ? 'bg-gray-100 text-gray-700' : isNeo ? 'bg-fuchsia-500/10 text-cyan-400' : 'bg-white/5 text-gray-500'}`}>
-                    {g.color}
+                  <div className="flex-1 text-[11px] rounded-md px-2.5 py-1 font-mono bg-zinc-50 dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] text-zinc-600 dark:text-zinc-400">
+                    {g.color || "#5e6ad2"}
                   </div>
                 </div>
               </div>
             </div>
-          )
+          );
         })()}
       </div>
 
-      <div className={`p-6 border-t shrink-0 ${isLight ? 'bg-gray-50 border-gray-200' : isNeo ? 'bg-[#050212]/50 border-fuchsia-500/20' : 'bg-black/20 border-white/5'}`}>
+      {/* Delete Selection CTA */}
+      <div className="p-3 border-t border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50/50 dark:bg-[#14141e]/50">
         <button
           onClick={deleteSelected}
-          className="w-full py-3.5 rounded-2xl border border-red-500/20 text-red-500 text-xs font-black uppercase tracking-widest hover:bg-red-500/10 hover:border-red-500/40 transition-all flex items-center justify-center gap-2 group"
+          className="w-full py-2 rounded-md border border-rose-500/25 bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-semibold hover:bg-rose-500/20 transition-colors flex items-center justify-center gap-1.5"
         >
-          <Trash2 size={14} className="group-hover:rotate-12 transition-transform" />
-          Delete Selection
+          <Trash2 size={13} />
+          <span>Delete Selection</span>
         </button>
       </div>
     </m.aside>

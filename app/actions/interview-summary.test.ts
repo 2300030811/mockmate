@@ -14,9 +14,9 @@ vi.mock("@/lib/logger", () => ({
 vi.mock("@/lib/ai/gateway", () => ({
   generateText: generateTextMock,
   AI_MODELS: {
-    DEFAULT: "llama-3.3-70b-versatile",
+    DEFAULT: "qwen/qwen3.8-27b",
     FAST: "openai/gpt-oss-20b",
-    STRUCTURED: "llama-3.3-70b-versatile",
+    STRUCTURED: "qwen/qwen3.8-27b",
   },
 }));
 
@@ -50,7 +50,7 @@ describe("summarizeInterviewAction", () => {
       expect.any(Array),
       expect.any(String),
       "auto",
-      expect.objectContaining({ model: "llama-3.3-70b-versatile" })
+      expect.objectContaining({ model: "qwen/qwen3.8-27b" })
     );
   });
 

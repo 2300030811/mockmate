@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /settings
+Disallow: /migrate
+Sitemap: https://mockmate-delta.vercel.app/sitemap.xml

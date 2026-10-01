@@ -2,43 +2,46 @@ import React from "react";
 import { m } from "framer-motion";
 import { ArrowRight, XCircle } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
 import { SkillGapCardProps } from "../types";
 
 export const SkillGapCard = React.memo(({ gap, idx, getQuizLink }: SkillGapCardProps) => (
   <m.div
-    initial={{ opacity: 0, x: -20 }}
-    animate={{ opacity: 1, x: 0 }}
-    transition={{ delay: idx * 0.05 }}
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: idx * 0.04 }}
   >
-    <Card className="p-5 bg-red-50 dark:bg-red-500/5 border-red-200 dark:border-red-500/20 hover:bg-red-100 dark:hover:bg-red-500/10 transition-colors">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <div className="mt-1">
-            <XCircle className="text-red-500 dark:text-red-400" size={20} />
-          </div>
-          <div>
-            <h4 className="text-lg font-semibold text-gray-900 dark:text-white">{gap.skill}</h4>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-300 border border-red-200 dark:border-red-500/20 uppercase tracking-wider">
-                Missing
-              </span>
-              <span className="text-xs text-gray-500 dark:text-gray-400 capitalize font-medium">{gap.importance} Priority</span>
-            </div>
+    <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] hover:border-zinc-300 dark:hover:border-[#2a2a3c] shadow-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all">
+      <div className="flex items-start gap-3">
+        <div className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 mt-0.5">
+          <XCircle size={16} />
+        </div>
+        <div className="space-y-1">
+          <h4 className="text-sm sm:text-base font-bold text-zinc-900 dark:text-[#ebebef]">
+            {gap.skill}
+          </h4>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 font-semibold uppercase">
+              Missing Competency
+            </span>
+            <span className="text-[11px] font-mono text-zinc-500 dark:text-[#8b8b9e] capitalize">
+              {gap.importance} Priority
+            </span>
           </div>
         </div>
-
-        {gap.recommendedQuiz && (
-          <Link href={getQuizLink(gap.recommendedQuiz) || "#"} target="_blank" rel="noopener noreferrer">
-            <Button size="sm" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 border-none shadow-lg shadow-purple-900/20 text-white whitespace-nowrap">
-              Take {gap.recommendedQuiz.toUpperCase()} Quiz
-              <ArrowRight size={16} className="ml-2" />
-            </Button>
-          </Link>
-        )}
       </div>
-    </Card>
+
+      {gap.recommendedQuiz && (
+        <Link
+          href={getQuizLink(gap.recommendedQuiz) || "#"}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#5e6ad2] hover:bg-[#4f5ac4] text-white text-xs font-semibold shadow-sm transition-all cursor-pointer whitespace-nowrap self-start sm:self-auto active:scale-95 shadow-[#5e6ad2]/20"
+        >
+          <span>Take {gap.recommendedQuiz.toUpperCase()} Quiz</span>
+          <ArrowRight size={13} />
+        </Link>
+      )}
+    </div>
   </m.div>
 ));
 

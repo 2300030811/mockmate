@@ -17,9 +17,9 @@ const ProjectWorkspace = dynamic(
   { 
     ssr: false,
     loading: () => (
-      <div className="flex-1 flex flex-col items-center justify-center bg-gray-900 border-l border-gray-800">
-        <div className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mb-4" />
-        <p className="text-sm text-gray-400 font-medium">Mounting Workspace...</p>
+      <div className="flex-1 flex flex-col items-center justify-center bg-white dark:bg-[#0d0d12] border-l border-zinc-200 dark:border-[#1e1e2a]">
+        <div className="w-8 h-8 border-2 border-[#5e6ad2]/20 border-t-[#5e6ad2] rounded-full animate-spin mb-3" />
+        <p className="text-xs text-zinc-500 dark:text-[#8b8b9e] font-mono">Mounting Workspace...</p>
       </div>
     )
   },
@@ -37,6 +37,70 @@ const normalizeCode = (code: string) => {
     .replace(/\s+/g, " ") // Collapse multiple spaces
     .replace(/\s*([\{\}\(\)\;\,\=\+\-\*\/])\s*/g, "$1") // Remove spaces around syntax boundaries
     .trim();
+};
+
+const mockmateDarkTheme = {
+  colors: {
+    surface1: "#0d0d12",
+    surface2: "#14141e",
+    surface3: "#1e1e2a",
+    clickable: "#8b8b9e",
+    base: "#ebebef",
+    disabled: "#5a5a6e",
+    hover: "#ffffff",
+    accent: "#5e6ad2",
+    error: "#ef4444",
+    errorSurface: "rgba(239, 68, 68, 0.1)",
+  },
+  syntax: {
+    plain: "#ebebef",
+    comment: { color: "#6e6e84", fontStyle: "italic" as const },
+    keyword: "#5e6ad2",
+    tag: "#f43f5e",
+    punctuation: "#8b8b9e",
+    definition: "#38bdf8",
+    property: "#a78bfa",
+    static: "#34d399",
+    string: "#10b981",
+  },
+  font: {
+    body: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    mono: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+    size: "13px",
+    lineHeight: "20px",
+  },
+};
+
+const mockmateLightTheme = {
+  colors: {
+    surface1: "#ffffff",
+    surface2: "#f8f8fa",
+    surface3: "#ebebef",
+    clickable: "#6e6e84",
+    base: "#18181b",
+    disabled: "#a0a0b0",
+    hover: "#18181b",
+    accent: "#5e6ad2",
+    error: "#ef4444",
+    errorSurface: "rgba(239, 68, 68, 0.1)",
+  },
+  syntax: {
+    plain: "#18181b",
+    comment: { color: "#9ca3af", fontStyle: "italic" as const },
+    keyword: "#5e6ad2",
+    tag: "#e11d48",
+    punctuation: "#71717a",
+    definition: "#0284c7",
+    property: "#7c3aed",
+    static: "#059669",
+    string: "#059669",
+  },
+  font: {
+    body: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    mono: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+    size: "13px",
+    lineHeight: "20px",
+  },
 };
 
 export function ProjectEditor({ project }: ProjectEditorProps) {
@@ -85,12 +149,12 @@ export function ProjectEditor({ project }: ProjectEditorProps) {
 
   if (!mounted) return null;
 
-  const sandpackTheme = theme === "dark" ? "dark" : "light";
+  const sandpackTheme = isDark ? mockmateDarkTheme : mockmateLightTheme;
 
   return (
     <SandpackProvider
       template={project.template || "nextjs"}
-      theme={sandpackTheme}
+      theme={sandpackTheme as any}
       files={sandpackFiles}
       options={sandpackOptions}
       customSetup={customSetup}
@@ -131,9 +195,8 @@ function ProjectEditorContent({
   const [isSolved, setIsSolved] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
 
-  // Define callbacks first (before any hooks that use them)
+  // Capture current code state for undo
   const captureCodeSnapshot = useCallback(() => {
-    // Capture current code state for undo
     const snapshot: Record<string, string> = {};
     Object.entries(sandpack.files).forEach(([name, file]) => {
       snapshot[name] = file.code;
@@ -160,11 +223,10 @@ function ProjectEditorContent({
 
     setIsValidating(true);
 
-    // Artificial delay for "premium" feel
     setTimeout(async () => {
       let passed = true;
 
-      // Step 1: Check regex validation (fast path)
+      // Step 1: Check regex validation
       if (project.validationRegex) {
         Object.entries(project.validationRegex).forEach(([file, regexStr]) => {
           const content = sandpack.files[file]?.code || "";
@@ -178,12 +240,10 @@ function ProjectEditorContent({
         });
       }
 
-      // Step 2: Run programmatic tests (secondary layer)
+      // Step 2: Run programmatic tests
       if (passed && project.validationTests && project.validationTests.length > 0) {
         for (const test of project.validationTests) {
           try {
-            // Create a function that tests the code
-            // The test function receives the files object
             const testFn = new Function('files', test.test);
             const result = testFn(sandpack.files);
             if (!result) {
@@ -192,7 +252,6 @@ function ProjectEditorContent({
             }
           } catch (e) {
             console.error(`Validation test "${test.description}" failed:`, e);
-            // If test throws, consider it failed
             passed = false;
             break;
           }
@@ -204,7 +263,6 @@ function ProjectEditorContent({
       if (passed) {
         setIsSolved(true);
 
-        // Save progress to localStorage (for all users)
         try {
           const completed = JSON.parse(
             localStorage.getItem("completedProjects") || "[]",
@@ -219,7 +277,6 @@ function ProjectEditorContent({
           console.error("Failed to save progress to localStorage", e);
         }
 
-        // Save progress to database (for logged-in users only)
         try {
           await saveProjectProgress({
             projectId: project.id,
@@ -227,7 +284,6 @@ function ProjectEditorContent({
             hintsUsed: hintIndex + 1,
           });
         } catch (e) {
-          // Silently fail — project completion should not be blocked by DB errors
           console.error("Failed to save progress to database", e);
         }
 
@@ -235,14 +291,14 @@ function ProjectEditorContent({
       } else {
         toast.error("Code verification failed. Keep debugging!");
       }
-    }, 1500);
+    }, 1200);
   }, [project, sandpack.files, timeElapsed, hintIndex]);
 
   const handleReviewSolution = useCallback(() => {
     setShowSuccessModal(false);
     setRightPanelTab("insights");
-    setActiveTab("preview"); // Ensure on mobile the right panel is visible
-    setAutoTriggerAnalysis(true); // Auto-trigger analysis when coming from success modal
+    setActiveTab("preview");
+    setAutoTriggerAnalysis(true);
   }, []);
 
   const revealHint = useCallback(() => {
@@ -256,17 +312,14 @@ function ProjectEditorContent({
 
   const closeSuccessModal = useCallback(() => setShowSuccessModal(false), []);
 
-  // Keyboard shortcuts
   useProjectKeyboardShortcuts({
     onVerify: handleVerify,
     onReset: () => {
-      // This will be triggered by keyboard shortcut - ideally show confirmation
-      // For now, just reset directly (users can use button for confirmation UI)
       captureCodeSnapshot();
       sandpack.resetAllFiles();
     },
     onRevealHint: revealHint,
-    enabled: !isSolved && !isValidating, // Disable shortcuts when already solved or validating
+    enabled: !isSolved && !isValidating,
   });
 
   // Timer Effect
@@ -280,14 +333,14 @@ function ProjectEditorContent({
     return () => clearInterval(interval);
   }, [isSolved, isInitializing, showSuccessModal, isPageVisible]);
 
-  // Monitor Sandpack status - unblock UI as soon as it's ready
+  // Monitor Sandpack status
   useEffect(() => {
     if (sandpack.status === "running" || sandpack.status === "idle") {
       setIsInitializing(false);
     }
   }, [sandpack.status]);
 
-  // Listen to page visibility changes (pause timer when user tabs away)
+  // Page visibility changes
   useEffect(() => {
     const handleVisibilityChange = () => {
       setIsPageVisible(!document.hidden);
@@ -298,7 +351,7 @@ function ProjectEditorContent({
   }, []);
 
   return (
-    <div className="h-screen w-full flex flex-col bg-white dark:bg-gray-950">
+    <div className="h-screen w-full flex flex-col bg-white dark:bg-[#0d0d12] text-zinc-900 dark:text-[#ebebef] overflow-hidden">
       <ProjectHeader
         project={project}
         activeTab={activeTab}
@@ -312,7 +365,7 @@ function ProjectEditorContent({
         onUndoReset={restoreCodeSnapshot}
       />
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden min-h-0">
         <ProjectInstructions
           project={project}
           hintIndex={hintIndex}

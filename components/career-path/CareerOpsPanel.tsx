@@ -3,12 +3,13 @@
 import React from "react";
 import {
   AlertTriangle,
-  BellRing,
   BriefcaseBusiness,
   CheckCircle2,
   Loader2,
   RefreshCw,
-  Send,
+  Clock,
+  ExternalLink,
+  ChevronDown
 } from "lucide-react";
 import {
   getCareerOpsTrackerData,
@@ -33,32 +34,8 @@ const STATUS_LABELS: Record<CareerOpsApplicationStatus, string> = {
 
 const EMPTY_SUMMARY: CareerOpsTrackerSummary = emptyCareerOpsTrackerSummary();
 
-const URGENCY_STYLE: Record<CareerOpsTrackerSummary["urgencyLevel"], string> = {
-  calm: "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-300",
-  upcoming: "bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-300",
-  attention: "bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-300",
-  critical: "bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-300",
-};
-
-const URGENCY_LABEL: Record<CareerOpsTrackerSummary["urgencyLevel"], string> = {
-  calm: "Calm",
-  upcoming: "Upcoming",
-  attention: "Needs Action",
-  critical: "Critical",
-};
-
 function formatRate(value: number | null): string {
-  return value == null ? "N/A" : `${value}%`;
-}
-
-function isPastIsoDate(isoDate: string | null): boolean {
-  if (!isoDate) return false;
-  const today = new Date();
-  const yyyy = today.getUTCFullYear();
-  const mm = String(today.getUTCMonth() + 1).padStart(2, "0");
-  const dd = String(today.getUTCDate()).padStart(2, "0");
-  const todayIso = `${yyyy}-${mm}-${dd}`;
-  return isoDate < todayIso;
+  return value == null ? "-" : `${value}%`;
 }
 
 export function CareerOpsPanel({ refreshSignal = 0 }: { refreshSignal?: number }) {
@@ -179,14 +156,7 @@ export function CareerOpsPanel({ refreshSignal = 0 }: { refreshSignal?: number }
       }
 
       const updatedCount = result.data?.updatedCount ?? 0;
-      const skippedCount = result.data?.skippedCount ?? 0;
-      const failedCount = result.data?.failedCount ?? 0;
-
-      setFeedback(
-        `Cadence updated for ${updatedCount} role(s). ${skippedCount} unchanged.${
-          failedCount > 0 ? ` ${failedCount} update(s) failed.` : ""
-        }`
-      );
+      setFeedback(`Cadence synchronized for ${updatedCount} role(s).`);
       await hydrateTracker(true);
     } catch (recomputeError) {
       console.error(recomputeError);
@@ -197,192 +167,174 @@ export function CareerOpsPanel({ refreshSignal = 0 }: { refreshSignal?: number }
   }, [hydrateTracker]);
 
   return (
-    <section className="rounded-3xl border border-gray-200 dark:border-white/10 bg-white/70 dark:bg-white/5 p-6 md:p-8 space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h3 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2 uppercase tracking-tight">
-            <BriefcaseBusiness className="text-blue-500" size={20} />
-            Career Ops Tracker
-          </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Move roles through your pipeline and keep follow-ups on cadence.
+    <div className="w-full bg-white dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] rounded-2xl p-5 sm:p-7 shadow-subtle space-y-6">
+      {/* Header and Actions Strip */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-100 dark:border-[#1e1e2a] pb-4">
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-2">
+            <span className="w-7 h-7 rounded-lg bg-[#5e6ad2]/10 text-[#5e6ad2] flex items-center justify-center">
+              <BriefcaseBusiness size={15} />
+            </span>
+            <h3 className="text-sm sm:text-base font-extrabold tracking-tight text-zinc-900 dark:text-[#ebebef]">
+              Career Application Pipeline
+            </h3>
+          </div>
+          <p className="text-xs text-zinc-500 dark:text-[#8b8b9e]">
+            Track evaluated roles through your application funnel and keep follow-ups on cadence.
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => hydrateTracker(true)}
-          disabled={refreshing || loading || isReplanning}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-white/15 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 disabled:opacity-60 transition-colors"
-        >
-          {refreshing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => hydrateTracker(true)}
+            disabled={refreshing || loading || isReplanning}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-[#1e1e2a] text-xs font-semibold text-zinc-700 dark:text-[#8b8b9e] hover:bg-zinc-100 dark:hover:bg-[#1e1e2a] transition-all cursor-pointer"
+          >
+            {refreshing ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+            <span>Refresh</span>
+          </button>
 
-        <button
-          type="button"
-          onClick={handleAutoPlanCadence}
-          disabled={loading || refreshing || isReplanning}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-500 disabled:opacity-60 transition-colors"
-        >
-          {isReplanning ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-          Auto-Plan Cadence
-        </button>
+          <button
+            type="button"
+            onClick={handleAutoPlanCadence}
+            disabled={loading || refreshing || isReplanning}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#5e6ad2] hover:bg-[#4f5ac4] text-white text-xs font-semibold shadow-sm transition-all cursor-pointer active:scale-95 shadow-[#5e6ad2]/20"
+          >
+            {isReplanning ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+            <span>Auto-Plan Cadence</span>
+          </button>
+        </div>
       </div>
 
+      {/* Notifications */}
       {(feedback || error) && (
         <div
-          className={`rounded-xl px-4 py-3 text-sm font-medium border ${
+          className={`rounded-xl px-4 py-2.5 text-xs font-mono font-medium border ${
             error
-              ? "bg-red-500/10 border-red-500/20 text-red-600 dark:text-red-300"
-              : "bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-300"
+              ? "bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-400"
+              : "bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-400"
           }`}
         >
           {error || feedback}
         </div>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <div className="rounded-xl border border-blue-200 dark:border-blue-500/20 bg-blue-50 dark:bg-blue-500/10 px-3 py-3">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-blue-600 dark:text-blue-300">Total</p>
-          <p className="text-xl font-black text-blue-700 dark:text-blue-200">{summary.totalApplications}</p>
+      {/* KPI Tiles */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="p-3.5 rounded-xl bg-zinc-50 dark:bg-[#0d0d12] border border-zinc-200/80 dark:border-[#1e1e2a] space-y-1">
+          <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">Total Tracked</span>
+          <p className="text-xl sm:text-2xl font-extrabold font-mono text-zinc-900 dark:text-[#ebebef]">
+            {summary.totalApplications}
+          </p>
         </div>
-        <div className="rounded-xl border border-indigo-200 dark:border-indigo-500/20 bg-indigo-50 dark:bg-indigo-500/10 px-3 py-3">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-300">Active</p>
-          <p className="text-xl font-black text-indigo-700 dark:text-indigo-200">{summary.activePipelineCount}</p>
-        </div>
-        <div className="rounded-xl border border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/10 px-3 py-3">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-amber-600 dark:text-amber-300">Due Today</p>
-          <p className="text-xl font-black text-amber-700 dark:text-amber-200">{summary.dueTodayCount}</p>
-        </div>
-        <div className="rounded-xl border border-rose-200 dark:border-rose-500/20 bg-rose-50 dark:bg-rose-500/10 px-3 py-3">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-rose-600 dark:text-rose-300">Overdue</p>
-          <p className="text-xl font-black text-rose-700 dark:text-rose-200">{summary.overdueCount}</p>
-        </div>
-        <div className="rounded-xl border border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-3">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-300">Avg Match</p>
-          <p className="text-xl font-black text-emerald-700 dark:text-emerald-200">{summary.avgMatchScore ?? "-"}</p>
-        </div>
-      </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 px-3 py-3">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">Response Rate</p>
-          <p className="text-lg font-black text-gray-900 dark:text-white">{formatRate(summary.funnel.responseRate)}</p>
+        <div className="p-3.5 rounded-xl bg-zinc-50 dark:bg-[#0d0d12] border border-zinc-200/80 dark:border-[#1e1e2a] space-y-1">
+          <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">Active Pipeline</span>
+          <p className="text-xl sm:text-2xl font-extrabold font-mono text-[#5e6ad2]">
+            {summary.activePipelineCount}
+          </p>
         </div>
-        <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 px-3 py-3">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">Interview Rate</p>
-          <p className="text-lg font-black text-gray-900 dark:text-white">{formatRate(summary.funnel.interviewRate)}</p>
+
+        <div className="p-3.5 rounded-xl bg-zinc-50 dark:bg-[#0d0d12] border border-zinc-200/80 dark:border-[#1e1e2a] space-y-1">
+          <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">Due Today</span>
+          <p className="text-xl sm:text-2xl font-extrabold font-mono text-amber-600 dark:text-amber-400">
+            {summary.dueTodayCount}
+          </p>
         </div>
-        <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 px-3 py-3">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">Offer Rate</p>
-          <p className="text-lg font-black text-gray-900 dark:text-white">{formatRate(summary.funnel.offerRate)}</p>
-        </div>
-        <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 px-3 py-3">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">Pipeline Urgency</p>
-          <p className={`inline-flex mt-1 text-[11px] uppercase tracking-wider font-black px-2 py-1 rounded-md border ${URGENCY_STYLE[summary.urgencyLevel]}`}>
-            {URGENCY_LABEL[summary.urgencyLevel]}
+
+        <div className="p-3.5 rounded-xl bg-zinc-50 dark:bg-[#0d0d12] border border-zinc-200/80 dark:border-[#1e1e2a] space-y-1">
+          <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">Response Rate</span>
+          <p className="text-xl sm:text-2xl font-extrabold font-mono text-emerald-600 dark:text-emerald-400">
+            {formatRate(summary.funnel.responseRate)}
           </p>
         </div>
       </div>
 
+      {/* Applications Feed */}
       {loading ? (
-        <div className="rounded-xl border border-dashed border-gray-200 dark:border-white/10 p-8 text-center text-gray-500 dark:text-gray-400">
-          Loading tracker entries...
+        <div className="p-8 text-center rounded-xl bg-zinc-50 dark:bg-[#0d0d12] border border-zinc-200/80 dark:border-[#1e1e2a]">
+          <p className="text-xs font-mono text-zinc-400 animate-pulse">Loading tracked applications...</p>
         </div>
       ) : applications.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-gray-200 dark:border-white/10 p-8 text-center text-gray-500 dark:text-gray-400 space-y-2">
-          <p className="font-semibold">No tracked roles yet.</p>
-          <p className="text-sm">Use Track this role after each analysis to build your pipeline history.</p>
+        <div className="p-8 text-center rounded-xl bg-zinc-50 dark:bg-[#0d0d12] border border-dashed border-zinc-200 dark:border-[#1e1e2a] space-y-1.5">
+          <p className="text-xs sm:text-sm font-semibold text-zinc-700 dark:text-[#ebebef]">
+            No roles currently in your pipeline tracker.
+          </p>
+          <p className="text-xs text-zinc-500">
+            Click &quot;Track this role&quot; at the top of your analysis report to save it here.
+          </p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {applications.map((application) => {
-            const overdue = isPastIsoDate(application.nextFollowUpDate);
-            const isBusy = busyId === application.id;
-
-            return (
-              <div
-                key={application.id}
-                className="rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 p-4"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                  <div>
-                    <p className="font-bold text-gray-900 dark:text-white">{application.jobRole}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{application.company}</p>
-                  </div>
-
-                  <span className="text-[10px] uppercase tracking-widest font-black px-2 py-1 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-300 border border-blue-500/20">
-                    {STATUS_LABELS[application.status]}
+        <div className="space-y-2.5">
+          {applications.map((app) => (
+            <div
+              key={app.id}
+              className="p-4 rounded-xl bg-zinc-50 dark:bg-[#0d0d12] border border-zinc-200/80 dark:border-[#1e1e2a] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+            >
+              <div className="space-y-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-sm text-zinc-900 dark:text-[#ebebef] truncate">
+                    {app.jobRole}
                   </span>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-3 text-xs mb-3">
-                  <span
-                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-md border ${
-                      overdue
-                        ? "bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-300"
-                        : "bg-gray-100 dark:bg-white/10 border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300"
-                    }`}
-                  >
-                    <BellRing size={12} /> Next: {application.nextFollowUpDate ?? "Not set"}
-                  </span>
-                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md border bg-gray-100 dark:bg-white/10 border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300">
-                    <CheckCircle2 size={12} /> Match: {application.matchScore ?? "N/A"}
-                  </span>
-                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md border bg-gray-100 dark:bg-white/10 border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300">
-                    <BriefcaseBusiness size={12} /> ATS: {application.atsScore ?? "N/A"}
-                  </span>
-                  {overdue && (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md border bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-300">
-                      <AlertTriangle size={12} /> Overdue
+                  {app.company && (
+                    <span className="text-zinc-500 dark:text-zinc-400 font-mono">
+                      @ {app.company}
                     </span>
                   )}
                 </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  <select
-                    value={statusDraft[application.id] ?? application.status}
-                    onChange={(event) =>
-                      setStatusDraft((prev) => ({
-                        ...prev,
-                        [application.id]: event.target.value as CareerOpsApplicationStatus,
-                      }))
-                    }
-                    className="rounded-lg border border-gray-200 dark:border-white/15 bg-white dark:bg-black/20 px-3 py-2 text-sm text-gray-800 dark:text-gray-100"
-                  >
-                    {CAREER_OPS_STATUSES.map((status) => (
-                      <option key={status} value={status}>
-                        {STATUS_LABELS[status]}
-                      </option>
-                    ))}
-                  </select>
-
-                  <button
-                    type="button"
-                    onClick={() => handleStatusSave(application.id)}
-                    disabled={isBusy}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-500 disabled:opacity-60 transition-colors"
-                  >
-                    {isBusy ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-                    Save Status
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleLogFollowUp(application.id)}
-                    disabled={isBusy}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-sm font-semibold hover:bg-emerald-500/20 disabled:opacity-60 transition-colors"
-                  >
-                    {isBusy ? <Loader2 size={14} className="animate-spin" /> : <BellRing size={14} />}
-                    Log Follow-up
-                  </button>
+                <div className="flex items-center gap-3 text-[11px] font-mono text-zinc-400">
+                  <span>Match: {app.matchScore}%</span>
+                  {app.nextFollowUpDate && (
+                    <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                      <Clock size={11} />
+                      Follow-up: {app.nextFollowUpDate}
+                    </span>
+                  )}
                 </div>
               </div>
-            );
-          })}
+
+              <div className="flex items-center gap-2 self-start sm:self-auto">
+                <select
+                  value={statusDraft[app.id] ?? app.status}
+                  onChange={(e) =>
+                    setStatusDraft((prev) => ({
+                      ...prev,
+                      [app.id]: e.target.value as CareerOpsApplicationStatus,
+                    }))
+                  }
+                  className="py-1.5 px-2.5 rounded-lg bg-white dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] text-xs font-mono text-zinc-800 dark:text-[#ebebef] outline-none"
+                >
+                  {CAREER_OPS_STATUSES.map((st) => (
+                    <option key={st} value={st}>
+                      {STATUS_LABELS[st]}
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  type="button"
+                  onClick={() => handleStatusSave(app.id)}
+                  disabled={busyId === app.id || statusDraft[app.id] === app.status}
+                  className="py-1.5 px-3 rounded-lg bg-[#5e6ad2] hover:bg-[#4f5ac4] disabled:opacity-40 text-white text-xs font-semibold transition-all cursor-pointer"
+                >
+                  Save
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleLogFollowUp(app.id)}
+                  disabled={busyId === app.id}
+                  className="py-1.5 px-2.5 rounded-lg border border-zinc-200 dark:border-[#1e1e2a] hover:bg-zinc-100 dark:hover:bg-[#1e1e2a] text-zinc-600 dark:text-[#8b8b9e] text-xs font-semibold transition-all cursor-pointer"
+                  title="Log email follow-up"
+                >
+                  Follow-up
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
-    </section>
+    </div>
   );
 }

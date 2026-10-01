@@ -8,7 +8,7 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "rounded-3xl border bg-white text-gray-950 shadow-sm dark:bg-gray-900/50 dark:border-gray-800 dark:text-gray-50",
+      "rounded-lg border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] text-zinc-950 dark:text-[#ebebef] shadow-subtle dark:shadow-surface transition-colors",
       className
     )}
     {...props}
@@ -22,7 +22,7 @@ const CardHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex flex-col space-y-1.5 p-6", className)}
+    className={cn("flex flex-col space-y-1.5 p-5", className)}
     {...props}
   />
 ))
@@ -35,7 +35,7 @@ const CardTitle = React.forwardRef<
   <h3
     ref={ref}
     className={cn(
-      "text-2xl font-semibold leading-none tracking-tight",
+      "text-base font-semibold leading-none tracking-[-0.015em] text-zinc-900 dark:text-[#ebebef]",
       className
     )}
     {...props}
@@ -49,7 +49,7 @@ const CardDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <p
     ref={ref}
-    className={cn("text-sm text-gray-500 dark:text-gray-400", className)}
+    className={cn("text-xs text-zinc-500 dark:text-[#8b8b9e] leading-relaxed", className)}
     {...props}
   />
 ))
@@ -59,7 +59,7 @@ const CardContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
+  <div ref={ref} className={cn("p-5 pt-0", className)} {...props} />
 ))
 CardContent.displayName = "CardContent"
 
@@ -69,13 +69,13 @@ const CardFooter = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex items-center p-6 pt-0", className)}
+    className={cn("flex items-center p-5 pt-0", className)}
     {...props}
   />
 ))
 CardFooter.displayName = "CardFooter"
 
-// Customized Interactive Card Variant matching project's style
+// Human-crafted Interactive Card: Solid surface, subtle 1px border highlight, 0 blur slop
 const InteractiveCard = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -83,10 +83,9 @@ const InteractiveCard = React.forwardRef<
   <Card
     ref={ref}
     className={cn(
-      "relative overflow-hidden transition-all duration-300",
-      "hover:bg-gray-50/80 hover:border-gray-300 hover:shadow-xl hover:-translate-y-1",
-      "dark:hover:bg-gray-900/70 dark:hover:border-gray-700",
-      "active:translate-y-0 active:shadow-md",
+      "relative overflow-hidden transition-colors duration-150",
+      "hover:bg-zinc-50 dark:hover:bg-[#181824] hover:border-zinc-300 dark:hover:border-[#2a2a3a]",
+      "active:bg-zinc-100 dark:active:bg-[#161622]",
       className
     )}
     {...props}

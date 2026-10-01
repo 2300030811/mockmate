@@ -55,7 +55,7 @@ export function useSystemDesignOperations({
       y: Math.round((-pan.y + (typeof window !== 'undefined' ? window.innerHeight : 800) / 4) / scale / GRID_SIZE) * GRID_SIZE,
       w: 400,
       h: 300,
-      color: "rgba(99, 102, 241, 0.1)"
+      color: "#5e6ad2"
     };
     dispatch({ type: "ADD_GROUP", group: newGroup });
     recordHistory(nodes, connections, [...groups, newGroup]);
@@ -116,7 +116,6 @@ export function useSystemDesignOperations({
   }, [nodes.length, connections.length, groups.length, recordHistory, dispatch]);
 
   const autoAlignNodes = useCallback((type: 'grid' | 'layered' | 'flow' = 'grid') => {
-    console.log("AUTO LAYOUT RUN:", type);
     if (nodes.length === 0) return;
     let nextNodes: Node[] = [];
     if (type === 'layered') {

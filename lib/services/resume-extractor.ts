@@ -47,6 +47,19 @@ export const resumeExtractor = {
       }
       const extractFn = extractor || OCRService.extractText;
       const result = await extractFn(buffer);
+      if (!result.text || result.text.trim().length < 50) {
+        try {
+          const rawText = buffer.toString("utf-8");
+          if (rawText && !rawText.startsWith("%PDF") && rawText.trim().length >= 50) {
+            return {
+              text: rawText,
+              source: "text",
+            };
+          }
+        } catch {
+          // ignore error
+        }
+      }
       return {
         text: result.text,
         source: result.source,

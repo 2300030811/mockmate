@@ -1,17 +1,31 @@
 "use client";
 
-import { m, AnimatePresence } from "framer-motion";
-import { UserAuthSection } from "@/components/UserAuthSection";
-import dynamic from 'next/dynamic';
 import { useState, useEffect, useCallback, useMemo } from "react";
-
-import { Bot, Sparkles } from "lucide-react";
-
-const BobAssistant = dynamic(() => import("@/components/quiz/BobAssistant").then(mod => mod.BobAssistant), {
-  ssr: false,
-});
+import { m, AnimatePresence } from "framer-motion";
+import Link from "next/link";
+import dynamic from "next/dynamic";
+import {
+  Sparkles,
+  Flame,
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle2,
+  XCircle,
+  Lightbulb,
+  Bot,
+  Flag,
+  Check
+} from "lucide-react";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { HomeBackground } from "@/components/home/HomeBackground";
+import { ThemeSwitcher } from "@/components/ui/ThemeSwitcher";
+import { UserAuthSection } from "@/components/UserAuthSection";
+
+const BobAssistant = dynamic(
+  () => import("@/components/quiz/BobAssistant").then((mod) => mod.BobAssistant),
+  { ssr: false }
+);
 
 function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
@@ -55,6 +69,8 @@ interface QuizGameProps {
   setTheme: (theme: string) => void;
 }
 
+const OPTION_LABELS = ["A", "B", "C", "D", "E", "F"];
+
 export function QuizGame({
   quiz,
   current,
@@ -71,33 +87,36 @@ export function QuizGame({
   const q = quiz[current];
   const progress = useMemo(() => ((current + 1) / quiz.length) * 100, [current, quiz.length]);
 
-  const handleAnswer = useCallback((option: string) => {
-    if (answers[q.id]) return; // Prevent changing answer
+  const handleAnswer = useCallback(
+    (option: string) => {
+      if (answers[q.id]) return; // Prevent changing answer once selected
 
-    const normalizeStr = (s: string) => s.replace(/\s+/g, "").toLowerCase();
-    const isCorrect = q.answer === option || normalizeStr(q.answer) === normalizeStr(option);
+      const normalizeStr = (s: string) => s.replace(/\s+/g, "").toLowerCase();
+      const isCorrect = q.answer === option || normalizeStr(q.answer) === normalizeStr(option);
 
-    setAnswers({ ...answers, [q.id]: option });
+      setAnswers({ ...answers, [q.id]: option });
 
-    if (isCorrect) {
-      setStreak(prev => prev + 1);
-    } else {
-      setStreak(0);
-    }
-  }, [answers, q, setAnswers]);
+      if (isCorrect) {
+        setStreak((prev) => prev + 1);
+      } else {
+        setStreak(0);
+      }
+    },
+    [answers, q, setAnswers]
+  );
 
-  // Keyboard Navigation
+  // Keyboard Navigation: keys 1-4 to select, Enter to advance
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (["1", "2", "3", "4"].includes(e.key)) {
-        const index = parseInt(e.key) - 1;
-        if (q.options[index]) {
+        const index = parseInt(e.key, 10) - 1;
+        if (q?.options?.[index]) {
           handleAnswer(q.options[index]);
         }
       }
       if (e.key === "Enter" && answers[q.id]) {
         if (current < quiz.length - 1) {
-          setCurrent(prev => prev + 1);
+          setCurrent((prev) => prev + 1);
         } else {
           setShowResults(true);
         }
@@ -107,278 +126,275 @@ export function QuizGame({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [q, answers, handleAnswer, current, quiz.length, setCurrent, setShowResults]);
 
-  if (!q) return <div className="p-10 text-center">Loading question...</div>;
+  if (!q) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-[#0d0d12] flex items-center justify-center p-8">
+        <p className="font-mono text-sm text-zinc-500">Loading assessment questions...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className={`h-screen overflow-hidden flex flex-col transition-colors duration-500 ${isDark
-        ? 'bg-gradient-to-br from-gray-950 via-gray-900 to-blue-950'
-        : 'bg-gradient-to-br from-gray-50 via-white to-blue-50'
-      }`}>
+    <div className="min-h-screen bg-white dark:bg-[#0d0d12] text-zinc-900 dark:text-[#ebebef] relative selection:bg-[#5e6ad2]/20 flex flex-col transition-colors overflow-x-hidden">
+      {/* Precision 28px Grid & Horizon Glow */}
+      <HomeBackground />
 
-      {/* Navbar */}
-      <nav className={`h-16 flex-none shadow-md z-50 flex items-center justify-between px-4 lg:px-8 ${isDark
-          ? 'bg-gray-900/80 backdrop-blur-sm border-b border-gray-800'
-          : 'bg-white/80 backdrop-blur-sm border-b border-gray-200'
-        }`}>
-        <div className="flex items-center gap-2">
-          <span className="text-2xl">🎯</span>
-          <h1 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'
-            }`}>
-            AI Quiz Generator
-          </h1>
+      {/* Integrated Platform Header */}
+      <header className="fixed top-0 inset-x-0 h-14 border-b border-zinc-200/80 dark:border-[#1e1e2a]/80 bg-white/85 dark:bg-[#0d0d12]/85 backdrop-blur-md z-40 px-4 sm:px-8 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="w-8 h-8 rounded-lg bg-[#5e6ad2] flex items-center justify-center text-white font-black text-sm shadow-sm group-hover:bg-[#4f5ac4] transition-colors">
+              M
+            </div>
+            <span className="font-bold text-sm text-zinc-900 dark:text-[#ebebef] tracking-tight">MockMate</span>
+          </Link>
+          <span className="text-zinc-300 dark:text-zinc-700">/</span>
+          <span className="text-xs font-mono font-medium text-zinc-500 dark:text-[#8b8b9e]">AI Quiz</span>
+          <span className="text-zinc-300 dark:text-zinc-700 hidden sm:inline">/</span>
+          <span className="text-xs font-mono text-zinc-400 dark:text-zinc-500 hidden sm:inline">
+            Q{current + 1} of {quiz.length}
+          </span>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <div className="hidden md:flex items-center">
             <UserAuthSection />
-            <div className="w-px h-6 bg-gray-200 dark:bg-white/10 mx-4"></div>
+            <div className="w-px h-5 bg-zinc-200 dark:bg-[#1e1e2a] mx-3" />
           </div>
 
           <button
+            type="button"
             onClick={() => setShowResults(true)}
-            className={`text-sm font-bold px-3 py-2 rounded-lg transition ${isDark
-                ? 'text-red-400 hover:bg-red-900/20'
-                : 'text-red-500 hover:bg-red-50'
-              }`}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all cursor-pointer"
           >
-            Finish Now
+            <Flag size={12} />
+            <span>Finish Now</span>
           </button>
-          <button
-            onClick={() => setTheme(isDark ? 'light' : 'dark')}
-            className={`p-2 rounded-lg transition ${isDark ? 'hover:bg-gray-800' : 'hover:bg-gray-100'
-              }`}
-          >
-            {isDark ? "☀️" : "🌙"}
-          </button>
+
+          <ThemeSwitcher />
         </div>
-      </nav>
+      </header>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-y-auto py-10 px-4">
-        <div className="max-w-3xl mx-auto">
-
-          {/* Progress Bar */}
-          <div className="mb-8">
-            <div className={`flex justify-between text-sm font-medium mb-2 ${isDark ? 'text-gray-400' : 'text-gray-600'
-              }`}>
-              <span>Question {current + 1} of {quiz.length}</span>
-              <span>{Math.round(progress)}%</span>
+      {/* Main Assessment Container */}
+      <main className="flex-1 w-full max-w-3xl mx-auto px-4 pt-20 pb-20 relative z-10 flex flex-col justify-start">
+        {/* Progress & Telemetry Header */}
+        <div className="mb-6 space-y-2">
+          <div className="flex items-center justify-between text-xs font-mono">
+            <div className="flex items-center gap-2 text-zinc-600 dark:text-[#8b8b9e]">
+              <span className="font-semibold text-zinc-900 dark:text-[#ebebef]">
+                Question {current + 1}
+              </span>
+              <span>of</span>
+              <span>{quiz.length}</span>
             </div>
-            <div className={`h-2.5 w-full rounded-full ${isDark ? 'bg-gray-800' : 'bg-gray-200'
-              }`}>
-              <m.div
-                initial={{ width: 0 }}
-                animate={{ width: `${progress}%` }}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 h-2.5 rounded-full transition-all duration-300"
-              />
+
+            <div className="flex items-center gap-3">
+              <span className="text-[11px] text-zinc-400 dark:text-zinc-500 hidden sm:inline">
+                Press [1-4] to answer • [Enter] next
+              </span>
+              <span className="font-semibold text-[#5e6ad2]">
+                {Math.round(progress)}%
+              </span>
             </div>
           </div>
 
-          <AnimatePresence mode="wait">
+          {/* Precision Linear Progress Bar */}
+          <div className="h-1.5 w-full bg-zinc-100 dark:bg-[#14141e] border border-zinc-200/80 dark:border-[#1e1e2a] rounded-full overflow-hidden">
             <m.div
-              key={current}
-              initial={{ x: 50, opacity: 0, scale: 0.95 }}
-              animate={{ x: 0, opacity: 1, scale: 1 }}
-              exit={{ x: -50, opacity: 0, scale: 0.95 }}
-              transition={{
-                type: "spring",
-                stiffness: 300,
-                damping: 30
-              }}
-              className={`p-8 rounded-3xl shadow-xl border relative overflow-hidden ${isDark
-                  ? 'bg-gray-900/60 border-gray-800 backdrop-blur-md'
-                  : 'bg-white/80 border-gray-200 backdrop-blur-md'
-                }`}
-            >
-              {/* Background Glow */}
-              <div className={`absolute -top-20 -right-20 w-64 h-64 rounded-full blur-3xl opacity-20 pointer-events-none ${isDark ? 'bg-blue-500' : 'bg-blue-300'
-                }`}></div>
-
-              <div className="flex justify-between items-start mb-6 relative z-10">
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full border ${isDark
-                    ? 'bg-blue-500/10 border-blue-500/20 text-blue-400'
-                    : 'bg-blue-50 border-blue-200 text-blue-700'
-                  }`}>
-                  <span>✨</span> AI Generated
-                </span>
-
-                {/* Streak Counter */}
-                <div className="flex items-center gap-4">
-                  {streak > 1 && (
-                    <m.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      key={streak}
-                      className="flex items-center gap-1 px-3 py-1 rounded-full bg-orange-500/10 text-orange-500 font-bold border border-orange-500/20"
-                    >
-                      <span className="text-lg">🔥</span>
-                      <span>{streak} Streak!</span>
-                    </m.div>
-                  )}
-                </div>
-              </div>
-
-              <h2 className={`text-2xl md:text-3xl font-bold mb-8 leading-snug relative z-10 ${isDark ? 'text-white' : 'text-gray-900'
-                }`}>
-                {renderVisualText(q.question)}
-              </h2>
-
-              <div className="space-y-3 relative z-10">
-                {q.options.map((opt: string, i: number) => {
-                  const normalizeStr = (s: string) => s.replace(/\s+/g, "").toLowerCase();
-                  const isSelected = answers[q.id] === opt;
-                  const isCorrect = q.answer === opt || normalizeStr(q.answer) === normalizeStr(opt);
-                  const isWrong = isSelected && !isCorrect;
-                  const showFeedback = !!answers[q.id];
-
-                  let buttonStyle = "";
-
-                  if (showFeedback) {
-                    if (isCorrect) {
-                      buttonStyle = isDark
-                        ? "border-green-500/50 bg-green-500/20 text-green-200 shadow-green-500/10"
-                        : "border-green-500 bg-green-50 text-green-700 shadow-green-200";
-                    } else if (isWrong) {
-                      buttonStyle = isDark
-                        ? "border-red-500/50 bg-red-500/20 text-red-200 shadow-red-500/10"
-                        : "border-red-500 bg-red-50 text-red-700 shadow-red-200";
-                    } else {
-                      buttonStyle = isDark
-                        ? "opacity-50 border-gray-800 text-gray-500 bg-gray-900/20 grayscale"
-                        : "opacity-50 border-gray-200 text-gray-400 bg-gray-50 grayscale";
-                    }
-                  } else if (isSelected) {
-                    buttonStyle = isDark
-                      ? "border-blue-500 bg-blue-500/20 text-blue-300 shadow-blue-500/20"
-                      : "border-blue-500 bg-blue-50 text-blue-700 shadow-blue-200";
-                  } else {
-                    buttonStyle = isDark
-                      ? "border-gray-800 bg-gray-800/40 hover:bg-gray-700/60 hover:border-gray-600 text-gray-300"
-                      : "border-gray-200 bg-white hover:bg-gray-50 hover:border-blue-300 text-gray-700";
-                  }
-
-                  return (
-                    <m.button
-                      key={i}
-                      disabled={showFeedback}
-                      whileHover={!showFeedback ? { scale: 1.02, x: 4 } : {}}
-                      whileTap={!showFeedback ? { scale: 0.98 } : {}}
-                      onClick={() => handleAnswer(opt)}
-                      className={cn(
-                        "w-full text-left p-5 rounded-2xl border-2 transition-all duration-200 font-medium text-lg relative overflow-hidden group shadow-sm hover:shadow-md",
-                        buttonStyle
-                      )}
-                    >
-                      <div className="flex items-center justify-between relative z-10">
-                        <span className="flex-1 pr-4">{renderVisualText(opt)}</span>
-                        {showFeedback && isCorrect && (
-                          <m.div
-                            initial={{ scale: 0, rotate: -45 }}
-                            animate={{ scale: 1, rotate: 0 }}
-                            className="bg-green-500 rounded-full p-1"
-                          >
-                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                            </svg>
-                          </m.div>
-                        )}
-                        {showFeedback && isWrong && (
-                          <m.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            className="text-red-500"
-                          >
-                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </m.div>
-                        )}
-                      </div>
-                    </m.button>
-                  );
-                })}
-              </div>
-
-              {/* Explanation Box */}
-              <AnimatePresence>
-                {answers[q.id] && (
-                  <m.div
-                    initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                    animate={{ opacity: 1, height: "auto", marginTop: 24 }}
-                    exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                    className={`rounded-2xl border overflow-hidden ${isDark
-                        ? "bg-blue-900/10 border-blue-500/20 text-blue-200"
-                        : "bg-blue-50/50 border-blue-200 text-blue-800"
-                      }`}
-                  >
-                    <div className="p-5 flex items-start gap-4">
-                      <div className="p-2 bg-blue-500/10 rounded-xl">
-                        <span className="text-xl">💡</span>
-                      </div>
-                      <div>
-                        <p className="font-bold text-xs uppercase tracking-wider opacity-60 mb-1">Explanation</p>
-                        <p className="leading-relaxed opacity-90">{renderVisualText(q.explanation)}</p>
-                      </div>
-                    </div>
-                  </m.div>
-                )}
-              </AnimatePresence>
-            </m.div>
-          </AnimatePresence>
-
-          {/* Navigation Buttons */}
-          <div className="flex justify-between mt-8">
-            <button
-              disabled={current === 0}
-              onClick={() => setCurrent(prev => prev - 1)}
-              className={`px-8 py-3 rounded-xl font-semibold transition-all ${current === 0
-                  ? 'opacity-0 pointer-events-none'
-                  : isDark
-                    ? 'bg-gray-800 text-white hover:bg-gray-700'
-                    : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                }`}
-            >
-              Previous
-            </button>
-
-            {current < quiz.length - 1 ? (
-              <button
-                onClick={() => setCurrent(prev => prev + 1)}
-                className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-semibold transition shadow-lg shadow-blue-600/20 hover:scale-105"
-              >
-                Next Question
-              </button>
-            ) : (
-              <button
-                onClick={() => setShowResults(true)}
-                className="px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-xl font-semibold transition shadow-lg shadow-green-600/20 hover:scale-105"
-              >
-                Finish Quiz
-              </button>
-            )}
+              className="h-full bg-[#5e6ad2] rounded-full"
+              initial={{ width: 0 }}
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 0.35, ease: "easeOut" }}
+            />
           </div>
-
-          <BobAssistant
-            question={q}
-            isOpen={isBobOpen}
-            onClose={() => setIsBobOpen(false)}
-          />
-
-          <button
-            onClick={() => setIsBobOpen(true)}
-            className="fixed bottom-6 right-6 z-40 bg-orange-500 hover:bg-orange-600 text-white p-4 rounded-full shadow-xl transition-transform hover:scale-110 active:scale-95 group"
-            title="Ask Bob"
-          >
-            <div className="relative">
-              <Bot className="w-6 h-6 text-white" />
-              <Sparkles className="w-3 h-3 text-yellow-200 absolute -top-1 -right-1 animate-pulse" />
-            </div>
-            <span className="absolute right-full mr-2 top-1/2 -translate-y-1/2 bg-black/75 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-              Ask Bob
-            </span>
-          </button>
         </div>
-      </div>
+
+        {/* Question Card */}
+        <AnimatePresence mode="wait">
+          <m.div
+            key={current}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.25 }}
+            className="w-full bg-white dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] rounded-2xl p-6 sm:p-8 shadow-subtle space-y-6"
+          >
+            {/* Card Metadata Strip */}
+            <div className="flex items-center justify-between gap-2 border-b border-zinc-100 dark:border-[#1e1e2a] pb-4">
+              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-[#0d0d12] border border-zinc-200 dark:border-[#1e1e2a] text-zinc-600 dark:text-[#8b8b9e] text-xs font-mono">
+                <Sparkles size={12} className="text-[#5e6ad2]" />
+                <span className="font-semibold text-zinc-900 dark:text-[#ebebef]">Question {current + 1}</span>
+                <span className="text-zinc-400 dark:text-zinc-600">•</span>
+                <span>Synthesized Objective</span>
+              </div>
+
+              {streak > 1 && (
+                <m.div
+                  initial={{ scale: 0.85, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  key={streak}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 text-xs font-mono font-bold"
+                >
+                  <Flame size={12} />
+                  <span>{streak} Streak</span>
+                </m.div>
+              )}
+            </div>
+
+            {/* Question Text */}
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-[#ebebef] leading-snug">
+              {renderVisualText(q.question)}
+            </h2>
+
+            {/* Options Track */}
+            <div className="space-y-2.5">
+              {q.options.map((opt: string, i: number) => {
+                const normalizeStr = (s: string) => s.replace(/\s+/g, "").toLowerCase();
+                const isSelected = answers[q.id] === opt;
+                const isCorrect = q.answer === opt || normalizeStr(q.answer) === normalizeStr(opt);
+                const isWrong = isSelected && !isCorrect;
+                const showFeedback = !!answers[q.id];
+
+                let optionContainerStyle = "border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50/60 dark:bg-[#0d0d12]/50 hover:bg-zinc-100 dark:hover:bg-[#181824] hover:border-zinc-300 dark:hover:border-[#2a2a3c] text-zinc-800 dark:text-[#ebebef]";
+                let pillStyle = "bg-zinc-200/70 dark:bg-[#1e1e2a] text-zinc-600 dark:text-zinc-400";
+
+                if (showFeedback) {
+                  if (isCorrect) {
+                    optionContainerStyle = "border-emerald-500/80 bg-emerald-500/10 text-emerald-900 dark:text-emerald-300 font-semibold";
+                    pillStyle = "bg-emerald-500 text-white";
+                  } else if (isWrong) {
+                    optionContainerStyle = "border-rose-500/80 bg-rose-500/10 text-rose-900 dark:text-rose-300 font-semibold";
+                    pillStyle = "bg-rose-500 text-white";
+                  } else {
+                    optionContainerStyle = "opacity-45 border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50/30 dark:bg-[#0d0d12]/30 text-zinc-400 dark:text-zinc-600";
+                    pillStyle = "bg-zinc-200/40 dark:bg-[#1e1e2a]/40 text-zinc-400 dark:text-zinc-600";
+                  }
+                } else if (isSelected) {
+                  optionContainerStyle = "border-[#5e6ad2] bg-[#5e6ad2]/10 text-zinc-900 dark:text-[#ebebef] font-semibold";
+                  pillStyle = "bg-[#5e6ad2] text-white";
+                }
+
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    disabled={showFeedback}
+                    onClick={() => handleAnswer(opt)}
+                    className={cn(
+                      "w-full text-left p-3.5 sm:p-4 rounded-xl border transition-all flex items-center justify-between gap-3 text-sm cursor-pointer shadow-subtle group",
+                      optionContainerStyle
+                    )}
+                  >
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <span className={cn(
+                        "w-6 h-6 rounded-md text-[11px] font-mono font-bold flex items-center justify-center shrink-0 transition-colors",
+                        pillStyle
+                      )}>
+                        {OPTION_LABELS[i] || i + 1}
+                      </span>
+                      <span className="leading-relaxed truncate sm:whitespace-normal">
+                        {renderVisualText(opt)}
+                      </span>
+                    </div>
+
+                    {showFeedback && isCorrect && (
+                      <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />
+                    )}
+                    {showFeedback && isWrong && (
+                      <XCircle size={18} className="text-rose-500 shrink-0" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Explanation Disclosure */}
+            <AnimatePresence>
+              {answers[q.id] && q.explanation && (
+                <m.div
+                  initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                  animate={{ opacity: 1, height: "auto", marginTop: 20 }}
+                  exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                  className="rounded-xl border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50 dark:bg-[#0d0d12] p-4 sm:p-5 overflow-hidden"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-7 h-7 rounded-lg bg-[#5e6ad2]/15 text-[#5e6ad2] flex items-center justify-center shrink-0 mt-0.5">
+                      <Lightbulb size={15} />
+                    </div>
+                    <div className="space-y-1 text-xs">
+                      <p className="font-mono uppercase tracking-wider font-semibold text-zinc-500 dark:text-[#8b8b9e]">
+                        Verified Explanation
+                      </p>
+                      <p className="leading-relaxed text-zinc-700 dark:text-zinc-300">
+                        {renderVisualText(q.explanation)}
+                      </p>
+                    </div>
+                  </div>
+                </m.div>
+              )}
+            </AnimatePresence>
+          </m.div>
+        </AnimatePresence>
+
+        {/* Navigation Action Bar */}
+        <div className="flex items-center justify-between gap-4 mt-6">
+          <button
+            type="button"
+            disabled={current === 0}
+            onClick={() => setCurrent((prev) => prev - 1)}
+            className={cn(
+              "inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer",
+              current === 0
+                ? "opacity-0 pointer-events-none"
+                : "border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] text-zinc-700 dark:text-[#8b8b9e] hover:text-zinc-900 dark:hover:text-[#ebebef] hover:bg-zinc-50 dark:hover:bg-[#1e1e2a]"
+            )}
+          >
+            <ArrowLeft size={14} />
+            <span>Previous</span>
+          </button>
+
+          {current < quiz.length - 1 ? (
+            <button
+              type="button"
+              onClick={() => setCurrent((prev) => prev + 1)}
+              className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-xl text-xs font-semibold bg-[#5e6ad2] hover:bg-[#4f5ac4] text-white shadow-sm transition-all cursor-pointer active:scale-95 shadow-[#5e6ad2]/20"
+            >
+              <span>Next Question</span>
+              <ArrowRight size={14} />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowResults(true)}
+              className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition-all cursor-pointer active:scale-95 shadow-emerald-500/20"
+            >
+              <Check size={14} />
+              <span>Complete Assessment</span>
+            </button>
+          )}
+        </div>
+      </main>
+
+      {/* Bob Assistant Modal */}
+      <BobAssistant
+        question={q}
+        isOpen={isBobOpen}
+        onClose={() => setIsBobOpen(false)}
+        customContext="You are Bob, an AI tutor helping the user review and understand this quiz question. Explain underlying concepts simply and clarify why certain options are correct or incorrect without simply giving away answers."
+        initialMessage="Need clarification on this question or want to explore the concept deeper? Ask me anything!"
+      />
+
+      {/* Floating Bob AI Trigger Pill (Homepage Aligned) */}
+      <button
+        type="button"
+        onClick={() => setIsBobOpen(true)}
+        className="fixed bottom-6 right-6 z-40 bg-zinc-900 dark:bg-[#14141e] hover:bg-zinc-800 dark:hover:bg-[#1e1e2a] text-zinc-100 border border-zinc-700/60 dark:border-[#2a2a3c] shadow-xl px-4 py-2.5 rounded-full flex items-center gap-2 transition-all hover:scale-105 active:scale-95 text-xs font-semibold cursor-pointer group"
+        title="Ask Bob AI"
+      >
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+        <Bot className="w-4 h-4 text-[#5e6ad2]" />
+        <span>Ask Bob AI</span>
+      </button>
     </div>
   );
 }

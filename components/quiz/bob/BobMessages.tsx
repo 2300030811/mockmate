@@ -19,27 +19,28 @@ export function BobMessages({ messages, isLoading, error, onReload, scrollRef }:
       aria-live="polite"
       aria-atomic="false"
       aria-label="Bob Assistant Chat Log"
-      className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900/50"
+      className="flex-1 overflow-y-auto p-4 space-y-3.5 bg-zinc-50/40 dark:bg-[#0d0d12]"
     >
       {messages.map((msg: Message) => (
         <div
           key={msg.id}
-          className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+          className={`flex gap-2.5 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
         >
           {msg.role === "assistant" && (
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-orange-500 to-amber-500 flex items-center justify-center shrink-0 mt-1 text-white shadow-md">
-              <Bot className="w-4 h-4" />
+            <div className="w-7 h-7 rounded-lg bg-[#5e6ad2]/10 border border-[#5e6ad2]/30 flex items-center justify-center shrink-0 mt-0.5 text-[#5e6ad2] dark:text-[#7f8cf8]">
+              <Bot className="w-3.5 h-3.5" />
             </div>
           )}
-          <div className={`rounded-2xl p-3.5 max-w-[85%] text-sm leading-relaxed shadow-sm ${msg.role === "user"
-              ? "bg-blue-600 text-white rounded-br-none"
-              : "bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 rounded-bl-none border border-gray-200 dark:border-gray-700"
-            }`}>
+          <div className={`rounded-xl p-3 max-w-[85%] text-xs sm:text-[13px] leading-relaxed shadow-subtle ${
+            msg.role === "user"
+              ? "bg-[#5e6ad2] text-white rounded-tr-none font-normal"
+              : "bg-white dark:bg-[#14141e] text-zinc-800 dark:text-[#ebebef] rounded-tl-none border border-zinc-200 dark:border-[#1e1e2a]"
+          }`}>
             <MemoizedMarkdown content={msg.content} />
           </div>
           {msg.role === "user" && (
-            <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
-              <User className="w-4 h-4 opacity-80" />
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 bg-zinc-100 dark:bg-[#1e1e2a] border border-zinc-200 dark:border-[#2a2a3a] text-zinc-600 dark:text-zinc-300">
+              <User className="w-3.5 h-3.5" />
             </div>
           )}
         </div>
@@ -47,14 +48,14 @@ export function BobMessages({ messages, isLoading, error, onReload, scrollRef }:
 
       {/* Typing Indicator */}
       {isLoading && messages[messages.length - 1]?.role === "user" && (
-        <div className="flex gap-3 justify-start items-center">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-orange-500 to-amber-500 flex items-center justify-center shrink-0 text-white shadow-md">
-            <Bot className="w-4 h-4" />
+        <div className="flex gap-2.5 justify-start items-center">
+          <div className="w-7 h-7 rounded-lg bg-[#5e6ad2]/10 border border-[#5e6ad2]/30 flex items-center justify-center shrink-0 text-[#5e6ad2] dark:text-[#7f8cf8]">
+            <Bot className="w-3.5 h-3.5" />
           </div>
-          <div className="rounded-2xl px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-bl-none flex items-center gap-1.5 shadow-sm">
-            <span className="w-2 h-2 rounded-full bg-orange-500 animate-bounce" style={{ animationDelay: "0ms" }} />
-            <span className="w-2 h-2 rounded-full bg-orange-500 animate-bounce" style={{ animationDelay: "150ms" }} />
-            <span className="w-2 h-2 rounded-full bg-orange-500 animate-bounce" style={{ animationDelay: "300ms" }} />
+          <div className="rounded-xl px-3 py-2 bg-white dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] rounded-tl-none flex items-center gap-1.5 shadow-subtle">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#5e6ad2] animate-bounce" style={{ animationDelay: "0ms" }} />
+            <span className="w-1.5 h-1.5 rounded-full bg-[#5e6ad2] animate-bounce" style={{ animationDelay: "150ms" }} />
+            <span className="w-1.5 h-1.5 rounded-full bg-[#5e6ad2] animate-bounce" style={{ animationDelay: "300ms" }} />
           </div>
         </div>
       )}

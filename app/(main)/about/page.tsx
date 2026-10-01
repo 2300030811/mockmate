@@ -45,9 +45,9 @@ export default function AboutPage() {
       {/* Hero Section */}
       <div className="max-w-5xl mx-auto">
         <m.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
           className="text-center mb-20"
         >
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 mb-6">
@@ -78,9 +78,9 @@ export default function AboutPage() {
           {team.map((member, index) => (
             <m.div
               key={member.name}
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: index * 0.15 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3, delay: index * 0.1 }}
               whileHover={{ y: -6, transition: { duration: 0.2 } }}
               className="group relative"
             >
@@ -191,9 +191,9 @@ export default function AboutPage() {
 
         {/* Bottom CTA */}
         <m.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
           className={`text-center p-10 rounded-3xl border ${isDark
               ? "bg-gray-900 border-gray-800"
               : "bg-white border-gray-200 shadow-md"

@@ -48,8 +48,8 @@ const SUPPORTED_LANGUAGES = new Set(['java', 'python', 'json', 'sql', 'javascrip
 
 export const SyntaxBlock = memo(function SyntaxBlock({ code, language }: SyntaxBlockProps) {
     const [copied, setCopied] = useState(false);
-    const { theme } = useTheme();
-    const isDark = theme === 'dark';
+    const { resolvedTheme, theme } = useTheme();
+    const isDark = (resolvedTheme || theme) === 'dark';
 
     const handleCopy = () => {
         navigator.clipboard.writeText(code);
@@ -66,22 +66,22 @@ export const SyntaxBlock = memo(function SyntaxBlock({ code, language }: SyntaxB
     const customStyle = useMemo(() => ({
         margin: 0,
         padding: '1.25rem 1.5rem',
-        fontSize: '14px',
+        fontSize: '13px',
         lineHeight: '1.6',
-        backgroundColor: isDark ? '#1e1e1e' : '#ffffff'
+        backgroundColor: isDark ? '#14141e' : '#ffffff'
     }), [isDark]);
 
     const lineStyle = useMemo(() => ({
         minWidth: "2.5em",
         paddingRight: "1em",
-        opacity: 0.3,
+        opacity: 0.35,
         textAlign: 'right' as const
     }), []);
 
     return (
-        <div className="relative rounded-xl overflow-hidden shadow-xl border border-gray-200 dark:border-white/10">
+        <div className="relative rounded-xl overflow-hidden shadow-subtle border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e]">
             {/* Window Header */}
-            <div className="flex items-center px-4 py-3 bg-gray-100 dark:bg-[#1e1e1e] border-b border-gray-200 dark:border-white/5 gap-2">
+            <div className="flex items-center px-4 py-2.5 bg-zinc-50 dark:bg-[#0e0e15] border-b border-zinc-200 dark:border-[#1e1e2a] gap-2">
                 <div className="flex items-center justify-center gap-1.5">
                     <div className="w-3 h-3 rounded-full bg-red-500 shadow-sm" />
                     <div className="w-3 h-3 rounded-full bg-yellow-500 shadow-sm" />

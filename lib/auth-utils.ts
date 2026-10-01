@@ -3,6 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { logger } from "@/lib/logger";
 import { profileRepository } from "@/lib/db/profile-repository";
+import { ADMIN_EMAIL } from "@/lib/constants";
 
 function shouldSuppressAuthWarning(err: unknown): boolean {
   if (err instanceof Error) {
@@ -38,12 +39,15 @@ export async function requireAuth() {
 /**
  * Checks if the current user is an admin.
  * Returns false if not authenticated or not admin.
+ * Recognizes 2300030811cser@gmail.com and profiles with role === 'admin' as administrators.
  */
 export async function requireAdmin(): Promise<boolean> {
   try {
     const supabase = createClient();
     const { data: { user }, error } = await supabase.auth.getUser();
     if (error || !user) return false;
+
+    if (user.email === ADMIN_EMAIL) return true;
 
     const profile = await profileRepository.getProfileFields(supabase, user.id, "role");
 

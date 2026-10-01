@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useTheme } from "next-themes";
+import { ArrowLeft } from "lucide-react";
 import { convertFileAction, generateQuizAction } from "@/app/actions/generator";
-import { NavigationPill } from "@/components/ui/NavigationPill";
 import { ThemeSwitcher } from "@/components/ui/ThemeSwitcher";
-import { cn } from "@/lib/utils";
+import { HomeBackground } from "@/components/home/HomeBackground";
 
 // Sub-components
 import { QuizUpload } from "./components/QuizUpload";
@@ -34,7 +35,7 @@ export default function UploadPage() {
   const [count, setCount] = useState(15);
   const [difficulty, setDifficulty] = useState("medium");
   const [mode, setMode] = useState<"quiz" | "flashcard">("quiz");
-  const [visionData, setVisionData] = useState<{ text: string, base64: string } | null>(null);
+  const [visionData, setVisionData] = useState<{ text: string; base64: string } | null>(null);
   const [loadingStep, setLoadingStep] = useState("");
 
   // Sync mounted state to prevent hydration flicker
@@ -114,7 +115,7 @@ export default function UploadPage() {
   };
 
   // Prevent flash during hydration
-  if (!mounted) return <div className="min-h-screen bg-white dark:bg-gray-950" />;
+  if (!mounted) return <div className="min-h-screen bg-white dark:bg-[#0d0d12]" />;
 
   const isDark = resolvedTheme === "dark";
 
@@ -136,7 +137,26 @@ export default function UploadPage() {
 
   // 2. Results View (Quiz Only)
   if (quiz && showResults) {
-    return <QuizResults quiz={quiz} answers={answers} isDark={isDark} fileName={file?.name} />;
+    return (
+      <QuizResults
+        quiz={quiz}
+        answers={answers}
+        isDark={isDark}
+        fileName={file?.name}
+        onRetake={() => {
+          setAnswers({});
+          setCurrent(0);
+          setShowResults(false);
+        }}
+        onReset={() => {
+          setQuiz(null);
+          setFile(null);
+          setAnswers({});
+          setCurrent(0);
+          setShowResults(false);
+        }}
+      />
+    );
   }
 
   // 3. Quiz View
@@ -157,19 +177,40 @@ export default function UploadPage() {
 
   // 4. Upload View (Default)
   return (
-    <div className={cn("min-h-screen transition-colors duration-500", isDark ? "bg-gray-950 text-white" : "bg-gray-50 text-gray-900")}>
-      {/* Premium Navigation */}
-      <NavigationPill showHome showBack={false} />
-      
-      {/* Theme Switcher */}
-      <div className="absolute top-6 right-6 z-50">
-        <ThemeSwitcher />
-      </div>
+    <div className="min-h-screen bg-white dark:bg-[#0d0d12] text-zinc-900 dark:text-[#ebebef] relative selection:bg-[#5e6ad2]/20 pt-14 transition-colors overflow-x-hidden">
+      {/* Precision 28px Grid & Horizon Illumination */}
+      <HomeBackground />
+
+      {/* Unified Platform Header */}
+      <header className="fixed top-0 inset-x-0 h-14 border-b border-zinc-200/80 dark:border-[#1e1e2a]/80 bg-white/85 dark:bg-[#0d0d12]/85 backdrop-blur-md z-40 px-4 sm:px-8 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="w-8 h-8 rounded-lg bg-[#5e6ad2] flex items-center justify-center text-white font-black text-sm shadow-sm group-hover:bg-[#4f5ac4] transition-colors">
+              M
+            </div>
+            <span className="font-bold text-sm text-zinc-900 dark:text-[#ebebef] tracking-tight">MockMate</span>
+          </Link>
+          <span className="text-zinc-300 dark:text-zinc-700">/</span>
+          <span className="text-xs font-mono font-medium text-zinc-500 dark:text-[#8b8b9e]">AI Quiz Generator</span>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-600 dark:text-[#8b8b9e] hover:text-zinc-900 dark:hover:text-[#ebebef] hover:bg-zinc-100 dark:hover:bg-[#14141e] border border-transparent hover:border-zinc-200 dark:hover:border-[#1e1e2a] transition-all"
+          >
+            <ArrowLeft size={13} />
+            <span className="hidden sm:inline">Back to Hub</span>
+          </Link>
+          <ThemeSwitcher />
+        </div>
+      </header>
 
       <QuizUpload
         isDark={isDark}
         file={file}
         onFileChange={handleFileChange}
+        onClearFile={() => { setFile(null); setVisionData(null); setError(""); }}
         error={error}
         difficulty={difficulty}
         setDifficulty={setDifficulty}

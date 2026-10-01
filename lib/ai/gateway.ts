@@ -13,10 +13,25 @@ export const ChatMessageSchema = z.object({
 });
 
 export const AI_MODELS = {
-  DEFAULT: "llama-3.3-70b-versatile",
+  DEFAULT: "qwen/qwen3.8-27b",
   FAST: "openai/gpt-oss-20b",
-  STRUCTURED: "llama-3.3-70b-versatile",
+  STRUCTURED: "qwen/qwen3.8-27b",
 } as const;
+
+// ponytail: resolveGroqModel / resolveGeminiModel prevent cross-provider model leakage and normalize deprecated llama names
+function resolveGroqModel(model?: string): string {
+  if (!model || model.includes("llama-3") || model.startsWith("gemini-")) {
+    return AI_MODELS.DEFAULT;
+  }
+  return model;
+}
+
+function resolveGeminiModel(model?: string): string {
+  if (!model || model === "gemini-2.0-flash" || !model.startsWith("gemini-")) {
+    return "gemini-2.5-flash";
+  }
+  return model;
+}
 
 export interface ChatMessage {
     role: 'system' | 'user' | 'assistant';
@@ -52,9 +67,9 @@ async function createGroqStream(
     systemPrompt: string,
     apiKey: string
 ): Promise<AsyncIterable<string>> {
-    const groq = new Groq({ apiKey });
+    const groq = new Groq({ apiKey, dangerouslyAllowBrowser: true });
     const completion = await groq.chat.completions.create({
-        model: 'llama-3.3-70b-versatile',
+        model: AI_MODELS.DEFAULT,
         stream: true,
         messages: [
             { role: 'system', content: systemPrompt },
@@ -74,7 +89,7 @@ async function createGeminiStream(
 ): Promise<AsyncIterable<string>> {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-        model: "gemini-2.0-flash",
+        model: "gemini-2.5-flash",
         systemInstruction: systemPrompt
     });
 
@@ -107,6 +122,11 @@ export async function generateText(
     ? [{ role: "user", content: messages }] 
     : messages;
 
+  // ponytail: qwen/qwen3.8-27b template requires ≥1 user message; inject one when callers pass an empty array (e.g. interview greeting)
+  if (!messageHistory.some(m => m.role === "user")) {
+    messageHistory.push({ role: "user", content: "Begin." });
+  }
+
   const temp = options?.temperature ?? 0.5;
   const maxTokens = options?.maxTokens ?? 1000;
 
@@ -135,29 +155,58 @@ export async function generateText(
 
         try {
           logger.info(`🤖 [Gateway] Attempting Groq completion...`);
-          const groq = new Groq({ apiKey });
-          const completion = await Promise.race([
-            groq.chat.completions.create({
-              model: options?.model || AI_MODELS.DEFAULT,
-              messages: [
-                { role: "system", content: systemPrompt },
-                ...messageHistory
-              ],
-              temperature: temp,
-              max_tokens: maxTokens,
-              response_format: options?.responseFormat,
-            }),
-            new Promise<never>((_, reject) =>
-              setTimeout(() => reject(new DOMException("Groq request timed out", "AbortError")), GENERATE_TEXT_TIMEOUT_MS)
-            ),
-          ]);
-
-          const content = completion.choices[0]?.message?.content || "";
-          if (content) {
-            if (!customKey) reportKeySuccess(apiKey);
-            return { content, provider: "groq" };
+          const groq = new Groq({ apiKey, dangerouslyAllowBrowser: true });
+          const primaryModel = resolveGroqModel(options?.model);
+          const modelsToTry = [primaryModel];
+          if (primaryModel === "qwen/qwen3.8-27b") {
+            modelsToTry.push("openai/gpt-oss-120b");
+          } else if (primaryModel === "openai/gpt-oss-120b") {
+            modelsToTry.push("qwen/qwen3.8-27b");
           }
-          throw new Error("Empty response from Groq");
+
+          let modelContent: string | null = null;
+          let lastGroqError: unknown = null;
+
+          for (const modelToUse of modelsToTry) {
+            try {
+              const effectiveMaxTokens = (modelToUse === "qwen/qwen3.8-27b" && maxTokens > 2000) ? 2000 : maxTokens;
+              const completion = await Promise.race([
+                groq.chat.completions.create({
+                  model: modelToUse,
+                  messages: [
+                    { role: "system", content: systemPrompt },
+                    ...messageHistory
+                  ],
+                  temperature: temp,
+                  max_tokens: effectiveMaxTokens,
+                  response_format: options?.responseFormat,
+                }),
+                new Promise<never>((_, reject) =>
+                  setTimeout(() => reject(new DOMException("Groq request timed out", "AbortError")), GENERATE_TEXT_TIMEOUT_MS)
+                ),
+              ]);
+
+              const content = completion.choices[0]?.message?.content || "";
+              if (content) {
+                modelContent = content;
+                break;
+              }
+            } catch (modelErr: any) {
+              lastGroqError = modelErr;
+              const isRateLimit = modelErr?.status === 429 || modelErr?.message?.includes("rate_limit") || modelErr?.message?.includes("OTPM");
+              if (isRateLimit && modelsToTry.indexOf(modelToUse) < modelsToTry.length - 1) {
+                logger.warn(`⚠️ [Gateway] Model ${modelToUse} rate-limited on Groq. Trying fallback model ${modelsToTry[modelsToTry.indexOf(modelToUse) + 1]}...`);
+                continue;
+              }
+              throw modelErr;
+            }
+          }
+
+          if (modelContent) {
+            if (!customKey) reportKeySuccess(apiKey);
+            return { content: modelContent, provider: "groq" };
+          }
+          throw lastGroqError || new Error("Empty response from Groq");
         } catch (err: unknown) {
           logger.warn(`⚠️ [Gateway] Groq completion attempt failed:`, err);
           if (!customKey) reportKeyFailure(apiKey);
@@ -178,7 +227,7 @@ export async function generateText(
           logger.info(`🤖 [Gateway] Attempting Gemini completion...`);
           const genAI = new GoogleGenerativeAI(apiKey);
           const model = genAI.getGenerativeModel({
-            model: options?.model || "gemini-2.0-flash",
+            model: resolveGeminiModel(options?.model),
             systemInstruction: systemPrompt
           });
 

@@ -31,3 +31,14 @@ GUIDELINES:
 export const QUIZ_ROUTES: Record<string, string> = Object.fromEntries(
   getAllCategories().map((c) => [c.id, c.route])
 );
+
+/**
+ * Primary administrator email with direct write access to placement notices and live radar.
+ */
+export const ADMIN_EMAIL = "2300030811cser@gmail.com";
+
+/**
+ * Notification inbox where user-submitted circulars and drive notices are dispatched for review.
+ */
+export const PLACEMENTS_NOTIFICATION_EMAIL = "2300030811@kluniversity.in";
+

@@ -17,7 +17,11 @@
 
 # misc
 .DS_Store
+Thumbs.db
+ehthumbs.db
+[Dd]esktop.ini
 *.pem
+.idea/
 
 # debug
 npm-debug.log*
@@ -26,6 +30,7 @@ yarn-debug.log*
 yarn-error.log*
 *.log
 *.txt
+!public/robots.txt
 
 # local env files
 .env*.local

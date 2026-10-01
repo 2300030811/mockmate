@@ -1,25 +1,56 @@
 "use client";
 
-const stats = [
-  { icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />, text: "AI-Powered", color: "text-green-500" },
-  { icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />, text: "Real-time Feedback", color: "text-blue-500" },
-  { icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />, text: "Customizable", color: "text-purple-500" }
+import { CheckCircle2, ShieldCheck, Terminal, Cpu } from "lucide-react";
+
+const platformMetrics = [
+  {
+    icon: ShieldCheck,
+    title: "2,400+ Verified Questions",
+    subtitle: "AWS, Azure, Salesforce, MongoDB",
+  },
+  {
+    icon: Terminal,
+    title: "10-Year Placement Data",
+    subtitle: "KLU recruitment schedules & packages",
+  },
+  {
+    icon: Cpu,
+    title: "Sub-200ms Execution",
+    subtitle: "Sandboxed browser test runner",
+  },
+  {
+    icon: CheckCircle2,
+    title: "Rubric Feedback Engine",
+    subtitle: "Objective AI grading criteria",
+  },
 ];
 
 export function StatsRow() {
   return (
-    <div className="mt-16 flex flex-wrap gap-8 justify-center text-sm text-gray-600 dark:text-gray-500 animate-fadeIn">
-      {stats.map((stat, i) => (
-        <div 
-          key={i}
-          className="flex items-center gap-2 transition-all duration-300 hover:scale-110 hover:-translate-y-0.5 cursor-default"
-        >
-          <svg className={`w-5 h-5 ${stat.color}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            {stat.icon}
-          </svg>
-          <span>{stat.text}</span>
-        </div>
-      ))}
+    <div
+      className="rounded-lg border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50/50 dark:bg-[#11111a] px-5 py-4 text-left"
+      aria-label="Platform Specifications"
+    >
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {platformMetrics.map((item, index) => {
+          const Icon = item.icon;
+          return (
+            <div key={index} className="flex items-start gap-2.5">
+              <div className="mt-0.5 w-6 h-6 rounded-[5px] bg-zinc-200/60 dark:bg-[#181824] flex items-center justify-center shrink-0 text-[#5e6ad2]">
+                <Icon className="w-3.5 h-3.5" />
+              </div>
+              <div>
+                <div className="text-[12px] font-semibold text-zinc-900 dark:text-[#ebebef] leading-tight">
+                  {item.title}
+                </div>
+                <div className="text-[10.5px] text-zinc-500 dark:text-[#5a5a6e] mt-0.5 leading-tight">
+                  {item.subtitle}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -112,9 +112,15 @@ function toPostingRow(job: ScannedJob) {
     normalized_company: job.normalizedCompany,
     normalized_title: job.normalizedTitle,
     job_fingerprint: job.fingerprint,
-    posting_status: "uncertain",
+    posting_status: "active",
     last_seen_at: new Date().toISOString(),
-    metadata: {},
+    gate_notes: job.gateReason || null,
+    metadata: {
+      is_senior: job.isSenior ?? false,
+      gate_reason: job.gateReason ?? null,
+      description: job.description || null,
+      posted_at: job.postedAt || null,
+    },
   };
 }
 
@@ -171,6 +177,7 @@ export async function GET(request: Request) {
 
   let adminDb: ReturnType<typeof createAdminClient> | null = null;
   let runId: string | null = null;
+  const scanStartTime = new Date().toISOString();
 
   try {
     adminDb = createAdminClient();
@@ -179,6 +186,7 @@ export async function GET(request: Request) {
 
     const discoveredJobs: ScannedJob[] = [];
     const targetFailures: string[] = [];
+    const successfulCompanies: string[] = [];
     
     // Process targets in chunks of 3 to avoid overwhelming outbound connections
     const CONCURRENCY_LIMIT = 3;
@@ -190,6 +198,9 @@ export async function GET(request: Request) {
         const targetName = chunk[index]?.name ?? `target-${i + index + 1}`;
         if (result.status === "fulfilled") {
           discoveredJobs.push(...result.value);
+          if (chunk[index]?.name && !successfulCompanies.includes(chunk[index].name)) {
+            successfulCompanies.push(chunk[index].name);
+          }
         } else {
           targetFailures.push(`${targetName}: ${summarizeUnknownError(result.reason)}`);
         }
@@ -216,6 +227,19 @@ export async function GET(request: Request) {
         await careerOpsRepository.upsertJobPostings(adminDb, newJobs.map(toPostingRow));
       } catch (error: any) {
         throw new Error(`Could not upsert scanned postings: ${error.message}`);
+      }
+    }
+
+    // Mark missing postings for successfully scanned companies as expired (ported from Job Radar diffing)
+    if (successfulCompanies.length > 0) {
+      try {
+        await careerOpsRepository.markStaleCompanyPostingsExpired(
+          adminDb,
+          successfulCompanies,
+          scanStartTime
+        );
+      } catch (err: any) {
+        logger.warn("[Cron Scan] Failed to mark stale postings as expired:", err.message);
       }
     }
 

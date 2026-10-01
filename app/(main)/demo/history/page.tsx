@@ -65,156 +65,203 @@ export default function InterviewHistoryPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
-          <p className="text-gray-400 font-mono animate-pulse">Loading Interview History...</p>
+      <div className="min-h-screen bg-white dark:bg-[#0d0d12] text-zinc-900 dark:text-[#ebebef] pt-14 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-[#5e6ad2] border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs font-mono text-zinc-500 dark:text-[#8b8b9e] animate-pulse">Loading Interview History...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white pb-20 pt-24 px-4 sm:px-6 relative overflow-hidden selection:bg-purple-500/30">
-      {/* Background */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 left-0 w-full h-96 bg-purple-600/5 blur-[120px]" />
-        <div className="absolute bottom-0 right-0 w-full h-96 bg-blue-600/5 blur-[120px]" />
+    <div className="min-h-screen bg-white dark:bg-[#0d0d12] text-zinc-900 dark:text-[#ebebef] pt-14 pb-20 selection:bg-[#5e6ad2]/20 transition-colors relative overflow-hidden">
+      {/* 28px Precision Grid Background */}
+      <div className="absolute inset-0 pointer-events-none select-none overflow-hidden" aria-hidden="true">
+        <div
+          className="absolute inset-0 opacity-40 dark:opacity-25 text-zinc-400 dark:text-zinc-600"
+          style={{
+            backgroundImage: `radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)`,
+            backgroundSize: "28px 28px",
+            maskImage: "linear-gradient(to bottom, black 25%, transparent 95%)",
+            WebkitMaskImage: "linear-gradient(to bottom, black 25%, transparent 95%)",
+          }}
+        />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-[1px] bg-gradient-to-r from-transparent via-[#5e6ad2]/50 to-transparent dark:via-[#5e6ad2]/40" />
       </div>
 
-      <div className="max-w-5xl mx-auto relative z-10 space-y-8">
-        {/* Header */}
-        <m.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-        >
-          <div className="flex items-center gap-4">
-            <Link
-              href="/demo"
-              className="p-2 bg-gray-800 hover:bg-gray-700 rounded-xl text-gray-400 hover:text-white transition-colors"
-            >
-              <ArrowLeft size={20} />
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10 relative z-10 space-y-6">
+        {/* Breadcrumb & Navigation Bar */}
+        <div className="flex items-center justify-between gap-4 pb-4 border-b border-zinc-200 dark:border-[#1e1e2a]">
+          <div className="flex items-center gap-2 text-xs font-medium text-zinc-500 dark:text-[#8b8b9e]">
+            <Link href="/" className="hover:text-zinc-900 dark:hover:text-white transition-colors">
+              Home
             </Link>
-            <div>
-              <h1 className="text-3xl font-extrabold tracking-tight">
-                Interview <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">History</span>
-              </h1>
-              <p className="text-sm text-gray-500 mt-1">{sessions.length} session{sessions.length !== 1 ? "s" : ""} recorded</p>
-            </div>
+            <span className="opacity-40">/</span>
+            <Link href="/demo" className="hover:text-zinc-900 dark:hover:text-white transition-colors">
+              AI Mock Interview
+            </Link>
+            <span className="opacity-40">/</span>
+            <span className="text-zinc-900 dark:text-[#ebebef]">History</span>
           </div>
+
           <Link
             href="/demo"
-            className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-xl font-semibold text-sm flex items-center gap-2 shadow-lg shadow-purple-500/20 transition-all active:scale-95"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#5e6ad2] hover:bg-[#4f5ac4] text-white rounded-md font-medium text-xs shadow-subtle transition-all active:scale-95"
           >
-            <Mic size={16} />
-            New Interview
+            <Mic size={14} />
+            <span>New Interview</span>
           </Link>
+        </div>
+
+        {/* Header Title */}
+        <m.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center justify-between gap-4"
+        >
+          <div>
+            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full text-[10px] font-mono tracking-wide uppercase bg-[#5e6ad2]/10 text-[#5e6ad2] border border-[#5e6ad2]/20 mb-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#5e6ad2]" />
+              SESSION TELEMETRY ARCHIVE
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-[#ebebef]">
+              Interview Performance History
+            </h1>
+            <p className="text-xs text-zinc-500 dark:text-[#8b8b9e] mt-1">
+              {sessions.length} recorded session{sessions.length !== 1 ? "s" : ""} with real-time feedback and rubric diagnostics
+            </p>
+          </div>
         </m.div>
 
         {/* Empty State */}
         {sessions.length === 0 && (
           <m.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center py-24"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-20 bg-zinc-50 dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] rounded-xl p-8"
           >
-            <div className="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
-              <BrainCircuit size={36} className="text-gray-600" />
+            <div className="w-12 h-12 bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 rounded-xl flex items-center justify-center mx-auto mb-4 text-[#5e6ad2]">
+              <BrainCircuit size={24} />
             </div>
-            <h3 className="text-xl font-bold text-gray-300 mb-2">No Interviews Yet</h3>
-            <p className="text-gray-500 mb-8 max-w-md mx-auto">
-              Complete an AI mock interview and your session will appear here with detailed analytics.
+            <h3 className="text-base font-semibold text-zinc-900 dark:text-[#ebebef] mb-1">
+              No Recorded Interviews
+            </h3>
+            <p className="text-xs text-zinc-500 dark:text-[#8b8b9e] mb-6 max-w-sm mx-auto">
+              Launch an AI mock interview track to record your voice cadence, code compilation, and STAR rubric feedback.
             </p>
             <Link
               href="/demo"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-semibold transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#5e6ad2] hover:bg-[#4f5ac4] text-white rounded-lg text-xs font-semibold shadow-subtle transition-colors"
             >
-              Start Your First Interview
-              <ChevronRight size={16} />
+              <span>Launch Your First Interview</span>
+              <ChevronRight size={14} />
             </Link>
           </m.div>
         )}
 
         {/* Sessions List */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           {sessions.map((session, idx) => {
             const score = session.stats?.confidenceScore ?? 0;
             return (
               <m.div
                 key={session.id}
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.04 }}
-                className="group bg-gray-900/60 hover:bg-gray-900/80 border border-gray-800 hover:border-gray-700 rounded-2xl p-5 sm:p-6 transition-all cursor-default"
+                transition={{ delay: idx * 0.03 }}
+                className="group bg-white dark:bg-[#14141e] hover:border-zinc-300 dark:hover:border-[#2e2e42] border border-zinc-200 dark:border-[#1e1e2a] rounded-xl p-4 sm:p-5 transition-all shadow-subtle"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   {/* Left: Type & Meta */}
-                  <div className="flex items-start gap-4">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                      session.type === "technical"
-                        ? "bg-purple-500/10 border border-purple-500/20"
-                        : "bg-blue-500/10 border border-blue-500/20"
-                    }`}>
-                      {session.type === "technical" ? (
-                        <Code2 size={22} className="text-purple-400" />
-                      ) : (
-                        <Users size={22} className="text-blue-400" />
-                      )}
+                  <div className="flex items-start gap-3.5">
+                    <div
+                      className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border ${
+                        session.type === "technical"
+                          ? "bg-purple-500/10 border-purple-500/20 text-purple-600 dark:text-purple-400"
+                          : "bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400"
+                      }`}
+                    >
+                      {session.type === "technical" ? <Code2 size={20} /> : <Users size={20} />}
                     </div>
+
                     <div className="min-w-0">
-                      <h3 className="text-base font-bold text-white capitalize flex items-center gap-2 flex-wrap">
-                        {session.type} Interview
-                        <span className="px-2 py-0.5 text-[10px] font-semibold uppercase bg-gray-800 text-gray-400 rounded-md border border-gray-700">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="text-sm font-bold text-zinc-900 dark:text-[#ebebef] capitalize">
+                          {session.type} Simulation
+                        </h3>
+                        <span className="px-1.5 py-0.5 text-[9.5px] font-mono font-medium uppercase bg-zinc-100 dark:bg-[#181824] text-zinc-600 dark:text-[#8b8b9e] rounded border border-zinc-200 dark:border-[#1e1e2a]">
                           {session.difficulty}
                         </span>
                         {session.topic && (
-                          <span className="px-2 py-0.5 text-[10px] font-semibold bg-purple-500/10 text-purple-400 rounded-md border border-purple-500/20 truncate max-w-[180px]">
+                          <span className="px-1.5 py-0.5 text-[9.5px] font-mono bg-[#5e6ad2]/10 text-[#5e6ad2] rounded border border-[#5e6ad2]/20 truncate max-w-[200px]">
                             {session.topic}
                           </span>
                         )}
-                      </h3>
-                      <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <Clock size={12} />
+                      </div>
+
+                      <div className="flex items-center gap-3 mt-1 text-[11px] text-zinc-500 dark:text-[#8b8b9e]">
+                        <span className="flex items-center gap-1 font-mono">
+                          <Clock size={11} />
                           {formatDuration(session.duration_seconds)}
                         </span>
-                        <span><ClientDate date={session.created_at} options={DATE_OPTIONS} /></span>
+                        <span>•</span>
+                        <span>
+                          <ClientDate date={session.created_at} options={DATE_OPTIONS} />
+                        </span>
                       </div>
                     </div>
                   </div>
 
                   {/* Right: Score + Stats */}
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-4 shrink-0 justify-between sm:justify-end">
                     {session.stats && (
-                      <>
-                        <div className="hidden md:flex items-center gap-3 text-xs text-gray-500">
-                          <span>{session.stats.wpm} WPM</span>
-                          <span className="w-px h-4 bg-gray-800" />
-                          <span>{session.stats.keyConcepts?.length ?? 0} topics</span>
-                          <span className="w-px h-4 bg-gray-800" />
-                          <span className={session.stats.sentiment === "Positive" ? "text-green-400" : session.stats.sentiment === "Anxious" ? "text-amber-400" : "text-gray-400"}>
-                            {session.stats.sentiment}
-                          </span>
-                        </div>
-                        <div className={`px-4 py-2 rounded-xl border font-bold text-lg tabular-nums ${scoreColor(score)}`}>
-                          {score}%
-                        </div>
-                      </>
+                      <div className="hidden md:flex items-center gap-3 text-xs text-zinc-500 dark:text-[#8b8b9e] font-mono">
+                        <span>{session.stats.wpm} WPM</span>
+                        <span className="w-px h-3 bg-zinc-200 dark:bg-[#1e1e2a]" />
+                        <span>{session.stats.keyConcepts?.length ?? 0} concepts</span>
+                        <span className="w-px h-3 bg-zinc-200 dark:bg-[#1e1e2a]" />
+                        <span
+                          className={
+                            session.stats.sentiment === "Positive"
+                              ? "text-emerald-500"
+                              : session.stats.sentiment === "Anxious"
+                              ? "text-amber-500"
+                              : "text-zinc-500 dark:text-zinc-400"
+                          }
+                        >
+                          {session.stats.sentiment}
+                        </span>
+                      </div>
                     )}
+
+                    <div
+                      className={`px-3 py-1.5 rounded-lg border font-mono font-bold text-sm tabular-nums ${
+                        score > 80
+                          ? "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+                          : score > 60
+                          ? "text-blue-600 dark:text-blue-400 bg-blue-500/10 border-blue-500/20"
+                          : "text-amber-600 dark:text-amber-400 bg-amber-500/10 border-amber-500/20"
+                      }`}
+                    >
+                      {score}% Score
+                    </div>
                   </div>
                 </div>
 
                 {/* Key Concepts */}
                 {session.stats?.keyConcepts && session.stats.keyConcepts.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mt-4 pt-4 border-t border-gray-800/50">
+                  <div className="flex flex-wrap gap-1 mt-3 pt-3 border-t border-zinc-100 dark:border-[#1e1e2a]">
                     {session.stats.keyConcepts.slice(0, 8).map((concept, i) => (
-                      <span key={i} className="px-2 py-0.5 text-[10px] bg-gray-800/50 text-gray-400 rounded-md border border-gray-700/50">
+                      <span
+                        key={i}
+                        className="px-1.5 py-0.5 text-[9.5px] font-mono bg-zinc-100 dark:bg-[#181824] text-zinc-600 dark:text-[#8b8b9e] rounded border border-zinc-200 dark:border-[#1e1e2a]"
+                      >
                         {concept}
                       </span>
                     ))}
                     {session.stats.keyConcepts.length > 8 && (
-                      <span className="px-2 py-0.5 text-[10px] text-gray-600">
+                      <span className="px-1.5 py-0.5 text-[9.5px] font-mono text-zinc-400">
                         +{session.stats.keyConcepts.length - 8} more
                       </span>
                     )}

@@ -2,7 +2,6 @@
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { m } from "framer-motion";
 import {
   Award,
   BookOpenCheck,
@@ -23,11 +22,13 @@ import {
   Wand2,
   X,
   MessageSquareText,
+  Flame,
+  ShieldCheck,
 } from "lucide-react";
 import { parseResumeAction } from "@/app/actions/resume";
 import { generateCoverLetterAction, generateOutreachMessageAction } from "@/app/actions/cover-letter";
 import { processWizardTurnAction } from "@/app/actions/resume-wizard";
-import { NavigationPill } from "@/components/ui/NavigationPill";
+import { HomeBackground } from "@/components/home/HomeBackground";
 import { PaginatedPreview } from "@/components/resume-preview/paginated-preview";
 
 type ExperienceDraft = {
@@ -524,6 +525,7 @@ export default function ResumeBuilderPage() {
   const [isTailoring, setIsTailoring] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [isTailoringModalOpen, setIsTailoringModalOpen] = useState(false);
+  const [tailorError, setTailorError] = useState<string | null>(null);
   const [isCoverLetterModalOpen, setIsCoverLetterModalOpen] = useState(false);
   const [clJobDescription, setClJobDescription] = useState("");
   const [generatedCoverLetter, setGeneratedCoverLetter] = useState("");
@@ -1212,12 +1214,13 @@ export default function ResumeBuilderPage() {
 
   const handleTailor = async () => {
     if (!jobDescription.trim()) {
-      setError("Please paste a Job Description first.");
+      setTailorError("Please paste a Job Description first.");
       return;
     }
 
     try {
       setIsTailoring(true);
+      setTailorError(null);
       setError(null);
       setSuccessMessage(null);
 
@@ -1271,7 +1274,7 @@ export default function ResumeBuilderPage() {
       setIsTailoringModalOpen(false);
     } catch (err) {
       console.error(err);
-      alert("Failed to tailor resume. Please try again.");
+      setTailorError(err instanceof Error ? err.message : "Failed to tailor resume. Please try again.");
     } finally {
       setIsTailoring(false);
     }
@@ -1545,47 +1548,73 @@ export default function ResumeBuilderPage() {
   };
 
   return (
-    <div className="min-h-screen relative transition-colors duration-500 bg-gradient-to-br from-gray-50 via-white to-cyan-50 dark:from-gray-950 dark:via-gray-900 dark:to-cyan-950 pt-24 px-4 sm:px-6 pb-16">
-      <NavigationPill />
+    <div className="min-h-screen bg-white dark:bg-[#0d0d12] text-zinc-900 dark:text-[#ebebef] pt-28 sm:pt-32 pb-20 relative selection:bg-[#5e6ad2]/20 selection:text-[#5e6ad2]">
+      <HomeBackground />
 
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute -top-20 -left-16 h-80 w-80 rounded-full bg-cyan-500/10 blur-3xl" />
-        <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-blue-500/10 blur-3xl" />
-      </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-8">
+        <header className="relative border-b border-zinc-200/80 dark:border-[#1e1e2a]/80 pb-8 sm:pb-10">
+          <div className="flex flex-col items-start gap-4">
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full border border-blue-500/20 bg-blue-500/10 text-[#5e6ad2] text-[11px] font-mono">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#5e6ad2] animate-pulse" />
+              <span>AI RESUME BUILDER</span>
+              <span className="text-zinc-400 dark:text-[#5a5a6e]">•</span>
+              <span className="text-zinc-500 dark:text-[#8b8b9e]">RenderCV & Overleaf Grade</span>
+            </div>
 
-      <div className="max-w-6xl mx-auto relative z-10 space-y-8">
-        <m.header
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center"
-        >
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-600 dark:text-cyan-300 text-[11px] font-black uppercase tracking-widest mb-4">
-            <Sparkles size={13} /> Resume Builder
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-[-0.035em] text-zinc-900 dark:text-[#ebebef] leading-[1.08] max-w-3xl">
+              Build a polished, AI-tailored resume in seconds
+            </h1>
+
+            <p className="text-sm sm:text-base text-zinc-600 dark:text-[#8b8b9e] leading-relaxed max-w-2xl font-normal">
+              Import your existing resume, let the AI automatically tailor it to any job description, and download a beautifully formatted PDF instantly.
+            </p>
+
+            <div className="pt-2 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] text-zinc-500 dark:text-[#5a5a6e] font-mono">
+              <div className="flex items-center gap-1.5">
+                <FileText className="w-3.5 h-3.5 text-[#5e6ad2]" />
+                <span>Overleaf & RenderCV typography</span>
+              </div>
+              <span>•</span>
+              <div className="flex items-center gap-1.5">
+                <Wand2 className="w-3.5 h-3.5 text-purple-500" />
+                <span>One-click JD tailoring</span>
+              </div>
+              <span>•</span>
+              <div className="flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Live synchronized preview</span>
+              </div>
+            </div>
           </div>
-          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-gray-900 dark:text-white mb-3">
-            Build a polished, AI-tailored resume in seconds
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 max-w-3xl mx-auto text-sm md:text-base leading-relaxed">
-            Import your existing resume, let the AI automatically tailor it to any job description, and download a beautifully formatted PDF instantly.
-          </p>
-        </m.header>
+        </header>
 
-        <form onSubmit={handleGenerate} className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
+        <form onSubmit={handleGenerate} className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start text-left">
           <div className="xl:col-span-2 space-y-6">
-            <section className="bg-white/70 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 backdrop-blur-md shadow-lg dark:shadow-none transition-colors duration-300">
-              <h2 className="text-sm font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 flex items-center gap-2 mb-4">
-                <FileText size={15} /> Identity
-              </h2>
+            {/* Identity Card */}
+            <section className="rounded-lg border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-5 sm:p-6 shadow-surface transition-colors">
+              <div className="flex items-center justify-between gap-2 border-b border-zinc-200/80 dark:border-[#1a1a26] pb-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-[4px] bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 flex items-center justify-center text-[#5e6ad2]">
+                    <FileText size={12} />
+                  </div>
+                  <h2 className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-900 dark:text-[#ebebef]">
+                    Identity
+                  </h2>
+                </div>
+                <span className="text-[10px] font-mono text-zinc-400 dark:text-[#5a5a6e]">
+                  Template & Contact Info
+                </span>
+              </div>
 
               <label className="space-y-1.5 block mb-4">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-600 dark:text-[#8b8b9e]">
                   Resume template
                 </span>
                 <select
                   name="templateId"
                   value={templateId}
                   onChange={(event) => setTemplateId(normalizeTemplateId(event.target.value))}
-                  className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70 px-3 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                  className="w-full rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50 dark:bg-[#0f0f16] px-3 py-2 text-xs sm:text-sm text-zinc-900 dark:text-[#ebebef] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors"
                 >
                   {TEMPLATE_OPTIONS.map((option) => (
                     <option key={option.id} value={option.id}>
@@ -1593,16 +1622,16 @@ export default function ResumeBuilderPage() {
                     </option>
                   ))}
                 </select>
-                <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                <p className="text-[11px] text-zinc-500 dark:text-[#6e6e84] font-mono mt-1">
                   {TEMPLATE_OPTIONS.find((option) => option.id === templateId)?.description}
                 </p>
               </label>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <label className="space-y-1.5">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center justify-between gap-3">
+                  <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-600 dark:text-[#8b8b9e] flex items-center justify-between gap-3">
                     <span>Full name</span>
-                    <span className={`text-[10px] font-semibold ${counterTone(name.length, MAX_NAME_LENGTH)}`}>
+                    <span className={`text-[10px] font-mono ${counterTone(name.length, MAX_NAME_LENGTH)}`}>
                       {name.length}/{MAX_NAME_LENGTH}
                     </span>
                   </span>
@@ -1610,15 +1639,15 @@ export default function ResumeBuilderPage() {
                     value={name}
                     onChange={(event) => setName(event.target.value)}
                     maxLength={MAX_NAME_LENGTH}
-                    className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70 px-3 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                    className="w-full rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50 dark:bg-[#0f0f16] px-3 py-2 text-xs sm:text-sm text-zinc-900 dark:text-[#ebebef] placeholder:text-zinc-400 dark:placeholder:text-[#5a5a6e] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors"
                     placeholder="Alex Johnson"
                   />
                 </label>
 
                 <label className="space-y-1.5">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center justify-between gap-3">
+                  <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-600 dark:text-[#8b8b9e] flex items-center justify-between gap-3">
                     <span>Email</span>
-                    <span className={`text-[10px] font-semibold ${counterTone(email.length, MAX_EMAIL_LENGTH)}`}>
+                    <span className={`text-[10px] font-mono ${counterTone(email.length, MAX_EMAIL_LENGTH)}`}>
                       {email.length}/{MAX_EMAIL_LENGTH}
                     </span>
                   </span>
@@ -1627,15 +1656,15 @@ export default function ResumeBuilderPage() {
                     onChange={(event) => setEmail(event.target.value)}
                     type="email"
                     maxLength={MAX_EMAIL_LENGTH}
-                    className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70 px-3 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                    className="w-full rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50 dark:bg-[#0f0f16] px-3 py-2 text-xs sm:text-sm text-zinc-900 dark:text-[#ebebef] placeholder:text-zinc-400 dark:placeholder:text-[#5a5a6e] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors"
                     placeholder="alex@email.com"
                   />
                 </label>
 
                 <label className="space-y-1.5">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center justify-between gap-3">
+                  <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-600 dark:text-[#8b8b9e] flex items-center justify-between gap-3">
                     <span>Phone</span>
-                    <span className={`text-[10px] font-semibold ${counterTone(phone.length, MAX_PHONE_LENGTH)}`}>
+                    <span className={`text-[10px] font-mono ${counterTone(phone.length, MAX_PHONE_LENGTH)}`}>
                       {phone.length}/{MAX_PHONE_LENGTH}
                     </span>
                   </span>
@@ -1643,15 +1672,15 @@ export default function ResumeBuilderPage() {
                     value={phone}
                     onChange={(event) => setPhone(event.target.value)}
                     maxLength={MAX_PHONE_LENGTH}
-                    className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70 px-3 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                    className="w-full rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50 dark:bg-[#0f0f16] px-3 py-2 text-xs sm:text-sm text-zinc-900 dark:text-[#ebebef] placeholder:text-zinc-400 dark:placeholder:text-[#5a5a6e] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors"
                     placeholder="+1 555 123 4567"
                   />
                 </label>
 
                 <label className="space-y-1.5">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center justify-between gap-3">
+                  <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-600 dark:text-[#8b8b9e] flex items-center justify-between gap-3">
                     <span>LinkedIn URL</span>
-                    <span className={`text-[10px] font-semibold ${counterTone(linkedin.length, MAX_LINKEDIN_LENGTH)}`}>
+                    <span className={`text-[10px] font-mono ${counterTone(linkedin.length, MAX_LINKEDIN_LENGTH)}`}>
                       {linkedin.length}/{MAX_LINKEDIN_LENGTH}
                     </span>
                   </span>
@@ -1659,15 +1688,15 @@ export default function ResumeBuilderPage() {
                     value={linkedin}
                     onChange={(event) => setLinkedin(event.target.value)}
                     maxLength={MAX_LINKEDIN_LENGTH}
-                    className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70 px-3 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                    className="w-full rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50 dark:bg-[#0f0f16] px-3 py-2 text-xs sm:text-sm text-zinc-900 dark:text-[#ebebef] placeholder:text-zinc-400 dark:placeholder:text-[#5a5a6e] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors"
                     placeholder="https://linkedin.com/in/your-profile"
                   />
                 </label>
 
                 <label className="space-y-1.5">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center justify-between gap-3">
+                  <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-600 dark:text-[#8b8b9e] flex items-center justify-between gap-3">
                     <span>Portfolio URL</span>
-                    <span className={`text-[10px] font-semibold ${counterTone(portfolio.length, MAX_PORTFOLIO_LENGTH)}`}>
+                    <span className={`text-[10px] font-mono ${counterTone(portfolio.length, MAX_PORTFOLIO_LENGTH)}`}>
                       {portfolio.length}/{MAX_PORTFOLIO_LENGTH}
                     </span>
                   </span>
@@ -1675,15 +1704,15 @@ export default function ResumeBuilderPage() {
                     value={portfolio}
                     onChange={(event) => setPortfolio(event.target.value)}
                     maxLength={MAX_PORTFOLIO_LENGTH}
-                    className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70 px-3 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                    className="w-full rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50 dark:bg-[#0f0f16] px-3 py-2 text-xs sm:text-sm text-zinc-900 dark:text-[#ebebef] placeholder:text-zinc-400 dark:placeholder:text-[#5a5a6e] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors"
                     placeholder="https://your-portfolio.dev"
                   />
                 </label>
 
-                <label className="space-y-1.5 md:col-span-2">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center justify-between gap-3">
+                <label className="space-y-1.5">
+                  <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-600 dark:text-[#8b8b9e] flex items-center justify-between gap-3">
                     <span>Location</span>
-                    <span className={`text-[10px] font-semibold ${counterTone(location.length, MAX_LOCATION_LENGTH)}`}>
+                    <span className={`text-[10px] font-mono ${counterTone(location.length, MAX_LOCATION_LENGTH)}`}>
                       {location.length}/{MAX_LOCATION_LENGTH}
                     </span>
                   </span>
@@ -1691,23 +1720,34 @@ export default function ResumeBuilderPage() {
                     value={location}
                     onChange={(event) => setLocation(event.target.value)}
                     maxLength={MAX_LOCATION_LENGTH}
-                    className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70 px-3 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                    className="w-full rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50 dark:bg-[#0f0f16] px-3 py-2 text-xs sm:text-sm text-zinc-900 dark:text-[#ebebef] placeholder:text-zinc-400 dark:placeholder:text-[#5a5a6e] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors"
                     placeholder="Bengaluru, India"
                   />
                 </label>
               </div>
             </section>
 
-            <section className="bg-white/70 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 backdrop-blur-md shadow-lg dark:shadow-none transition-colors duration-300">
-              <h2 className="text-sm font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 flex items-center gap-2 mb-4">
-                <ListChecks size={15} /> Summary and Skills
-              </h2>
+            {/* Summary and Skills Card */}
+            <section className="rounded-lg border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-5 sm:p-6 shadow-surface transition-colors">
+              <div className="flex items-center justify-between gap-2 border-b border-zinc-200/80 dark:border-[#1a1a26] pb-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-[4px] bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 flex items-center justify-center text-[#5e6ad2]">
+                    <ListChecks size={12} />
+                  </div>
+                  <h2 className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-900 dark:text-[#ebebef]">
+                    Summary & Skills
+                  </h2>
+                </div>
+                <span className="text-[10px] font-mono text-zinc-400 dark:text-[#5a5a6e]">
+                  {parsedSkills.length} skills indexed
+                </span>
+              </div>
 
               <div className="space-y-4">
                 <label className="space-y-1.5 block">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center justify-between gap-3">
+                  <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-600 dark:text-[#8b8b9e] flex items-center justify-between gap-3">
                     <span>Professional summary</span>
-                    <span className={`text-[10px] font-semibold ${counterTone(summary.length, MAX_SUMMARY_LENGTH)}`}>
+                    <span className={`text-[10px] font-mono ${counterTone(summary.length, MAX_SUMMARY_LENGTH)}`}>
                       {summary.length}/{MAX_SUMMARY_LENGTH}
                     </span>
                   </span>
@@ -1715,15 +1755,15 @@ export default function ResumeBuilderPage() {
                     value={summary}
                     onChange={(event) => setSummary(event.target.value)}
                     maxLength={MAX_SUMMARY_LENGTH}
-                    className="w-full min-h-[130px] rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70 px-3 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 resize-y"
+                    className="w-full min-h-[120px] rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50 dark:bg-[#0f0f16] p-3 text-xs sm:text-sm text-zinc-900 dark:text-[#ebebef] placeholder:text-zinc-400 dark:placeholder:text-[#5a5a6e] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors resize-y leading-relaxed"
                     placeholder="Results-driven engineer with 5+ years building scalable web applications..."
                   />
                 </label>
 
                 <label className="space-y-1.5 block">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center justify-between gap-3">
+                  <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-600 dark:text-[#8b8b9e] flex items-center justify-between gap-3">
                     <span>Skills (comma-separated)</span>
-                    <span className={`text-[10px] font-semibold ${counterTone(parsedSkills.length, MAX_SKILLS)}`}>
+                    <span className={`text-[10px] font-mono ${counterTone(parsedSkills.length, MAX_SKILLS)}`}>
                       {parsedSkills.length}/{MAX_SKILLS} skills
                     </span>
                   </span>
@@ -1731,16 +1771,16 @@ export default function ResumeBuilderPage() {
                     value={skillsInput}
                     onChange={(event) => setSkillsInput(event.target.value)}
                     maxLength={MAX_SKILLS * (MAX_SKILL_LENGTH + 2)}
-                    className="w-full min-h-[100px] rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70 px-3 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 resize-y"
+                    className="w-full min-h-[90px] rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50 dark:bg-[#0f0f16] p-3 text-xs sm:text-sm text-zinc-900 dark:text-[#ebebef] placeholder:text-zinc-400 dark:placeholder:text-[#5a5a6e] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors resize-y"
                     placeholder="TypeScript, React, Next.js, Supabase, PostgreSQL, Playwright"
                   />
                 </label>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <label className="space-y-1.5 block">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center justify-between gap-3">
+                    <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-600 dark:text-[#8b8b9e] flex items-center justify-between gap-3">
                       <span>Languages (comma-separated)</span>
-                      <span className={`text-[10px] font-semibold ${counterTone(parsedLanguages.length, MAX_LANGUAGE_ITEMS)}`}>
+                      <span className={`text-[10px] font-mono ${counterTone(parsedLanguages.length, MAX_LANGUAGE_ITEMS)}`}>
                         {parsedLanguages.length}/{MAX_LANGUAGE_ITEMS}
                       </span>
                     </span>
@@ -1748,15 +1788,15 @@ export default function ResumeBuilderPage() {
                       value={languagesInput}
                       onChange={(event) => setLanguagesInput(event.target.value)}
                       maxLength={MAX_LANGUAGE_ITEMS * (MAX_SKILL_LENGTH + 2)}
-                      className="w-full min-h-[90px] rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70 px-3 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 resize-y"
+                      className="w-full min-h-[80px] rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50 dark:bg-[#0f0f16] p-3 text-xs sm:text-sm text-zinc-900 dark:text-[#ebebef] placeholder:text-zinc-400 dark:placeholder:text-[#5a5a6e] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors resize-y"
                       placeholder="TypeScript, JavaScript, SQL, Python"
                     />
                   </label>
 
                   <label className="space-y-1.5 block">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center justify-between gap-3">
+                    <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-600 dark:text-[#8b8b9e] flex items-center justify-between gap-3">
                       <span>Technologies (comma-separated)</span>
-                      <span className={`text-[10px] font-semibold ${counterTone(parsedTechnologies.length, MAX_TECHNOLOGY_ITEMS)}`}>
+                      <span className={`text-[10px] font-mono ${counterTone(parsedTechnologies.length, MAX_TECHNOLOGY_ITEMS)}`}>
                         {parsedTechnologies.length}/{MAX_TECHNOLOGY_ITEMS}
                       </span>
                     </span>
@@ -1764,7 +1804,7 @@ export default function ResumeBuilderPage() {
                       value={technologiesInput}
                       onChange={(event) => setTechnologiesInput(event.target.value)}
                       maxLength={MAX_TECHNOLOGY_ITEMS * (MAX_SKILL_LENGTH + 2)}
-                      className="w-full min-h-[90px] rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70 px-3 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 resize-y"
+                      className="w-full min-h-[80px] rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50 dark:bg-[#0f0f16] p-3 text-xs sm:text-sm text-zinc-900 dark:text-[#ebebef] placeholder:text-zinc-400 dark:placeholder:text-[#5a5a6e] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors resize-y"
                       placeholder="Next.js, React, Node.js, PostgreSQL, Redis"
                     />
                   </label>
@@ -1772,16 +1812,22 @@ export default function ResumeBuilderPage() {
               </div>
             </section>
 
-            <section className="bg-white/70 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 backdrop-blur-md shadow-lg dark:shadow-none transition-colors duration-300">
-              <div className="flex items-center justify-between gap-3 mb-4">
-                <h2 className="text-sm font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                  <BriefcaseBusiness size={15} /> Experience
-                </h2>
+            {/* Experience Card */}
+            <section className="rounded-lg border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-5 sm:p-6 shadow-surface transition-colors">
+              <div className="flex items-center justify-between gap-3 border-b border-zinc-200/80 dark:border-[#1a1a26] pb-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-[4px] bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 flex items-center justify-center text-[#5e6ad2]">
+                    <BriefcaseBusiness size={12} />
+                  </div>
+                  <h2 className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-900 dark:text-[#ebebef]">
+                    Experience
+                  </h2>
+                </div>
                 <button
                   type="button"
                   onClick={addExperience}
                   disabled={experiences.length >= MAX_EXPERIENCE_ITEMS}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-cyan-700 dark:text-cyan-300 hover:bg-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50 dark:bg-[#101017] px-2.5 py-1 text-[11px] font-mono text-[#5e6ad2] hover:bg-zinc-100 dark:hover:bg-[#181824] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <Plus size={12} /> Add role
                 </button>
@@ -1791,10 +1837,10 @@ export default function ResumeBuilderPage() {
                 {experiences.map((item, index) => (
                   <div
                     key={item.id}
-                    className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-950/30 p-4 space-y-3"
+                    className="rounded-md border border-zinc-200/80 dark:border-[#1e1e2a] bg-zinc-50/50 dark:bg-[#101017] p-4 space-y-3"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-xs font-black uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                      <p className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 dark:text-[#8b8b9e]">
                         Role {index + 1}
                       </p>
                       <div className="flex items-center gap-1.5">
@@ -1802,24 +1848,24 @@ export default function ResumeBuilderPage() {
                           type="button"
                           onClick={() => moveExperience(index, -1)}
                           disabled={index === 0}
-                          className="inline-flex items-center justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white/70 dark:bg-black/20 p-1.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                          className="inline-flex items-center justify-center rounded border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-1 text-zinc-500 dark:text-[#8b8b9e] hover:text-zinc-900 dark:hover:text-[#ebebef] hover:border-zinc-300 dark:hover:border-[#3a3a52] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                           aria-label="Move role up"
                         >
-                          <ChevronUp size={13} />
+                          <ChevronUp size={12} />
                         </button>
                         <button
                           type="button"
                           onClick={() => moveExperience(index, 1)}
                           disabled={index === experiences.length - 1}
-                          className="inline-flex items-center justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white/70 dark:bg-black/20 p-1.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                          className="inline-flex items-center justify-center rounded border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-1 text-zinc-500 dark:text-[#8b8b9e] hover:text-zinc-900 dark:hover:text-[#ebebef] hover:border-zinc-300 dark:hover:border-[#3a3a52] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                           aria-label="Move role down"
                         >
-                          <ChevronDown size={13} />
+                          <ChevronDown size={12} />
                         </button>
                         <button
                           type="button"
                           onClick={() => removeExperience(index)}
-                          className="inline-flex items-center gap-1 rounded-md border border-rose-500/30 bg-rose-500/10 px-2 py-1 text-[10px] font-black uppercase tracking-wider text-rose-700 dark:text-rose-300 hover:bg-rose-500/20 transition-colors"
+                          className="inline-flex items-center gap-1 rounded border border-rose-500/20 bg-rose-500/10 px-2 py-1 text-[10px] font-mono text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 transition-colors"
                         >
                           <Trash2 size={11} /> Remove
                         </button>
@@ -1831,21 +1877,21 @@ export default function ResumeBuilderPage() {
                         value={item.company}
                         onChange={(event) => updateExperience(index, { company: event.target.value })}
                         maxLength={MAX_EXPERIENCE_COMPANY_LENGTH}
-                        className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                        className="w-full rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#0f0f16] px-3 py-2 text-xs sm:text-sm text-zinc-900 dark:text-[#ebebef] placeholder:text-zinc-400 dark:placeholder:text-[#5a5a6e] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors"
                         placeholder="Company"
                       />
                       <input
                         value={item.role}
                         onChange={(event) => updateExperience(index, { role: event.target.value })}
                         maxLength={MAX_EXPERIENCE_ROLE_LENGTH}
-                        className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                        className="w-full rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#0f0f16] px-3 py-2 text-xs sm:text-sm text-zinc-900 dark:text-[#ebebef] placeholder:text-zinc-400 dark:placeholder:text-[#5a5a6e] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors"
                         placeholder="Role"
                       />
                       <input
                         value={item.period}
                         onChange={(event) => updateExperience(index, { period: event.target.value })}
                         maxLength={MAX_EXPERIENCE_PERIOD_LENGTH}
-                        className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                        className="w-full rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#0f0f16] px-3 py-2 text-xs sm:text-sm text-zinc-900 dark:text-[#ebebef] placeholder:text-zinc-400 dark:placeholder:text-[#5a5a6e] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors"
                         placeholder="Jan 2022 - Present"
                       />
                     </div>
@@ -1854,7 +1900,7 @@ export default function ResumeBuilderPage() {
                       value={item.highlightsText}
                       onChange={(event) => updateExperience(index, { highlightsText: event.target.value })}
                       maxLength={MAX_EXPERIENCE_HIGHLIGHT_LENGTH * 12}
-                      className="w-full min-h-[110px] rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 resize-y"
+                      className="w-full min-h-[90px] rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#0f0f16] p-3 text-xs sm:text-sm text-zinc-900 dark:text-[#ebebef] placeholder:text-zinc-400 dark:placeholder:text-[#5a5a6e] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors resize-y leading-relaxed"
                       placeholder={"One bullet per line\nImproved API response time by 42%\nLed migration to Next.js app router"}
                     />
                   </div>
@@ -1862,16 +1908,22 @@ export default function ResumeBuilderPage() {
               </div>
             </section>
 
-            <section className="bg-white/70 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 backdrop-blur-md shadow-lg dark:shadow-none transition-colors duration-300">
-              <div className="flex items-center justify-between gap-3 mb-4">
-                <h2 className="text-sm font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                  <BookOpenCheck size={15} /> Projects
-                </h2>
+            {/* Projects Section */}
+            <section className="rounded-lg border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-5 sm:p-6 shadow-surface transition-colors">
+              <div className="flex items-center justify-between gap-3 border-b border-zinc-200/80 dark:border-[#1a1a26] pb-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-[4px] bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 flex items-center justify-center text-[#5e6ad2]">
+                    <BookOpenCheck size={12} />
+                  </div>
+                  <h2 className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-900 dark:text-[#ebebef]">
+                    Projects
+                  </h2>
+                </div>
                 <button
                   type="button"
                   onClick={addProject}
                   disabled={projects.length >= MAX_PROJECT_ITEMS}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-cyan-700 dark:text-cyan-300 hover:bg-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50 dark:bg-[#101017] px-2.5 py-1 text-[11px] font-mono text-[#5e6ad2] hover:bg-zinc-100 dark:hover:bg-[#181824] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <Plus size={12} /> Add project
                 </button>
@@ -1881,10 +1933,10 @@ export default function ResumeBuilderPage() {
                 {projects.map((item, index) => (
                   <div
                     key={item.id}
-                    className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-950/30 p-4 space-y-3"
+                    className="rounded-md border border-zinc-200/80 dark:border-[#1e1e2a] bg-zinc-50/50 dark:bg-[#101017] p-4 space-y-3"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-xs font-black uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                      <p className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 dark:text-[#8b8b9e]">
                         Project {index + 1}
                       </p>
                       <div className="flex items-center gap-1.5">
@@ -1892,24 +1944,24 @@ export default function ResumeBuilderPage() {
                           type="button"
                           onClick={() => moveProject(index, -1)}
                           disabled={index === 0}
-                          className="inline-flex items-center justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white/70 dark:bg-black/20 p-1.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                          className="inline-flex items-center justify-center rounded border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-1 text-zinc-500 dark:text-[#8b8b9e] hover:text-zinc-900 dark:hover:text-[#ebebef] hover:border-zinc-300 dark:hover:border-[#3a3a52] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                           aria-label="Move project up"
                         >
-                          <ChevronUp size={13} />
+                          <ChevronUp size={12} />
                         </button>
                         <button
                           type="button"
                           onClick={() => moveProject(index, 1)}
                           disabled={index === projects.length - 1}
-                          className="inline-flex items-center justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white/70 dark:bg-black/20 p-1.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                          className="inline-flex items-center justify-center rounded border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-1 text-zinc-500 dark:text-[#8b8b9e] hover:text-zinc-900 dark:hover:text-[#ebebef] hover:border-zinc-300 dark:hover:border-[#3a3a52] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                           aria-label="Move project down"
                         >
-                          <ChevronDown size={13} />
+                          <ChevronDown size={12} />
                         </button>
                         <button
                           type="button"
                           onClick={() => removeProject(index)}
-                          className="inline-flex items-center gap-1 rounded-md border border-rose-500/30 bg-rose-500/10 px-2 py-1 text-[10px] font-black uppercase tracking-wider text-rose-700 dark:text-rose-300 hover:bg-rose-500/20 transition-colors"
+                          className="inline-flex items-center gap-1 rounded border border-rose-500/20 bg-rose-500/10 px-2 py-1 text-[10px] font-mono text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 transition-colors"
                         >
                           <Trash2 size={11} /> Remove
                         </button>
@@ -1921,21 +1973,21 @@ export default function ResumeBuilderPage() {
                         value={item.title}
                         onChange={(event) => updateProject(index, { title: event.target.value })}
                         maxLength={MAX_PROJECT_TITLE_LENGTH}
-                        className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                        className="w-full rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#0f0f16] px-3 py-2 text-xs sm:text-sm text-zinc-900 dark:text-[#ebebef] placeholder:text-zinc-400 dark:placeholder:text-[#5a5a6e] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors"
                         placeholder="Project title"
                       />
                       <input
                         value={item.period}
                         onChange={(event) => updateProject(index, { period: event.target.value })}
                         maxLength={MAX_PROJECT_PERIOD_LENGTH}
-                        className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                        className="w-full rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#0f0f16] px-3 py-2 text-xs sm:text-sm text-zinc-900 dark:text-[#ebebef] placeholder:text-zinc-400 dark:placeholder:text-[#5a5a6e] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors"
                         placeholder="2025"
                       />
                       <input
                         value={item.link}
                         onChange={(event) => updateProject(index, { link: event.target.value })}
                         maxLength={MAX_PROJECT_LINK_LENGTH}
-                        className="md:col-span-2 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                        className="md:col-span-2 w-full rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#0f0f16] px-3 py-2 text-xs sm:text-sm text-zinc-900 dark:text-[#ebebef] placeholder:text-zinc-400 dark:placeholder:text-[#5a5a6e] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors"
                         placeholder="Project link (optional)"
                       />
                     </div>
@@ -1944,7 +1996,7 @@ export default function ResumeBuilderPage() {
                       value={item.description}
                       onChange={(event) => updateProject(index, { description: event.target.value })}
                       maxLength={MAX_PROJECT_DESCRIPTION_LENGTH}
-                      className="w-full min-h-[90px] rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 resize-y"
+                      className="w-full min-h-[90px] rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#0f0f16] p-3 text-xs sm:text-sm text-zinc-900 dark:text-[#ebebef] placeholder:text-zinc-400 dark:placeholder:text-[#5a5a6e] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors resize-y leading-relaxed"
                       placeholder="What did you build and what impact did it create?"
                     />
 
@@ -1952,24 +2004,30 @@ export default function ResumeBuilderPage() {
                       value={item.techStackText}
                       onChange={(event) => updateProject(index, { techStackText: event.target.value })}
                       maxLength={MAX_PROJECT_TECHSTACK_ITEMS * (MAX_PROJECT_TECHSTACK_LENGTH + 2)}
-                      className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
-                      placeholder="Tech stack (comma-separated)"
+                      className="w-full rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#0f0f16] px-3 py-2 text-xs sm:text-sm text-zinc-900 dark:text-[#ebebef] placeholder:text-zinc-400 dark:placeholder:text-[#5a5a6e] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors"
+                      placeholder="Tech stack (comma-separated, e.g. React, Node.js, Redis)"
                     />
                   </div>
                 ))}
               </div>
             </section>
 
-            <section className="bg-white/70 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 backdrop-blur-md shadow-lg dark:shadow-none transition-colors duration-300">
-              <div className="flex items-center justify-between gap-3 mb-4">
-                <h2 className="text-sm font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                  <GraduationCap size={15} /> Education
-                </h2>
+            {/* Education Section */}
+            <section className="rounded-lg border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-5 sm:p-6 shadow-surface transition-colors">
+              <div className="flex items-center justify-between gap-3 border-b border-zinc-200/80 dark:border-[#1a1a26] pb-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-[4px] bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 flex items-center justify-center text-[#5e6ad2]">
+                    <GraduationCap size={12} />
+                  </div>
+                  <h2 className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-900 dark:text-[#ebebef]">
+                    Education
+                  </h2>
+                </div>
                 <button
                   type="button"
                   onClick={addEducation}
                   disabled={education.length >= MAX_EDUCATION_ITEMS}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-cyan-700 dark:text-cyan-300 hover:bg-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50 dark:bg-[#101017] px-2.5 py-1 text-[11px] font-mono text-[#5e6ad2] hover:bg-zinc-100 dark:hover:bg-[#181824] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <Plus size={12} /> Add education
                 </button>
@@ -1979,10 +2037,10 @@ export default function ResumeBuilderPage() {
                 {education.map((item, index) => (
                   <div
                     key={item.id}
-                    className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-950/30 p-4 space-y-3"
+                    className="rounded-md border border-zinc-200/80 dark:border-[#1e1e2a] bg-zinc-50/50 dark:bg-[#101017] p-4 space-y-3"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-xs font-black uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                      <p className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 dark:text-[#8b8b9e]">
                         Education {index + 1}
                       </p>
                       <div className="flex items-center gap-1.5">
@@ -1990,24 +2048,24 @@ export default function ResumeBuilderPage() {
                           type="button"
                           onClick={() => moveEducation(index, -1)}
                           disabled={index === 0}
-                          className="inline-flex items-center justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white/70 dark:bg-black/20 p-1.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                          className="inline-flex items-center justify-center rounded border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-1 text-zinc-500 dark:text-[#8b8b9e] hover:text-zinc-900 dark:hover:text-[#ebebef] hover:border-zinc-300 dark:hover:border-[#3a3a52] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                           aria-label="Move education up"
                         >
-                          <ChevronUp size={13} />
+                          <ChevronUp size={12} />
                         </button>
                         <button
                           type="button"
                           onClick={() => moveEducation(index, 1)}
                           disabled={index === education.length - 1}
-                          className="inline-flex items-center justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white/70 dark:bg-black/20 p-1.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                          className="inline-flex items-center justify-center rounded border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-1 text-zinc-500 dark:text-[#8b8b9e] hover:text-zinc-900 dark:hover:text-[#ebebef] hover:border-zinc-300 dark:hover:border-[#3a3a52] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                           aria-label="Move education down"
                         >
-                          <ChevronDown size={13} />
+                          <ChevronDown size={12} />
                         </button>
                         <button
                           type="button"
                           onClick={() => removeEducation(index)}
-                          className="inline-flex items-center gap-1 rounded-md border border-rose-500/30 bg-rose-500/10 px-2 py-1 text-[10px] font-black uppercase tracking-wider text-rose-700 dark:text-rose-300 hover:bg-rose-500/20 transition-colors"
+                          className="inline-flex items-center gap-1 rounded border border-rose-500/20 bg-rose-500/10 px-2 py-1 text-[10px] font-mono text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 transition-colors"
                         >
                           <Trash2 size={11} /> Remove
                         </button>
@@ -2019,22 +2077,22 @@ export default function ResumeBuilderPage() {
                         value={item.program}
                         onChange={(event) => updateEducation(index, { program: event.target.value })}
                         maxLength={MAX_EDUCATION_PROGRAM_LENGTH}
-                        className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
-                        placeholder="Program"
+                        className="w-full rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#0f0f16] px-3 py-2 text-xs sm:text-sm text-zinc-900 dark:text-[#ebebef] placeholder:text-zinc-400 dark:placeholder:text-[#5a5a6e] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors"
+                        placeholder="Program (e.g. B.S. in Computer Science)"
                       />
                       <input
                         value={item.period}
                         onChange={(event) => updateEducation(index, { period: event.target.value })}
                         maxLength={MAX_EDUCATION_PERIOD_LENGTH}
-                        className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                        className="w-full rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#0f0f16] px-3 py-2 text-xs sm:text-sm text-zinc-900 dark:text-[#ebebef] placeholder:text-zinc-400 dark:placeholder:text-[#5a5a6e] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors"
                         placeholder="2019 - 2023"
                       />
                       <input
                         value={item.institution}
                         onChange={(event) => updateEducation(index, { institution: event.target.value })}
                         maxLength={MAX_EDUCATION_INSTITUTION_LENGTH}
-                        className="md:col-span-2 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
-                        placeholder="Institution"
+                        className="md:col-span-2 w-full rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#0f0f16] px-3 py-2 text-xs sm:text-sm text-zinc-900 dark:text-[#ebebef] placeholder:text-zinc-400 dark:placeholder:text-[#5a5a6e] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors"
+                        placeholder="Institution / University name"
                       />
                     </div>
 
@@ -2042,7 +2100,7 @@ export default function ResumeBuilderPage() {
                       value={item.details}
                       onChange={(event) => updateEducation(index, { details: event.target.value })}
                       maxLength={MAX_EDUCATION_DETAILS_LENGTH}
-                      className="w-full min-h-[80px] rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 resize-y"
+                      className="w-full min-h-[80px] rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#0f0f16] p-3 text-xs sm:text-sm text-zinc-900 dark:text-[#ebebef] placeholder:text-zinc-400 dark:placeholder:text-[#5a5a6e] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors resize-y leading-relaxed"
                       placeholder="Notable achievements, GPA, thesis, coursework (optional)"
                     />
                   </div>
@@ -2050,16 +2108,22 @@ export default function ResumeBuilderPage() {
               </div>
             </section>
 
-            <section className="bg-white/70 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 backdrop-blur-md shadow-lg dark:shadow-none transition-colors duration-300">
-              <div className="flex items-center justify-between gap-3 mb-4">
-                <h2 className="text-sm font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                  <Award size={15} /> Certifications
-                </h2>
+            {/* Certifications Section */}
+            <section className="rounded-lg border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-5 sm:p-6 shadow-surface transition-colors">
+              <div className="flex items-center justify-between gap-3 border-b border-zinc-200/80 dark:border-[#1a1a26] pb-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-[4px] bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 flex items-center justify-center text-[#5e6ad2]">
+                    <Award size={12} />
+                  </div>
+                  <h2 className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-900 dark:text-[#ebebef]">
+                    Certifications
+                  </h2>
+                </div>
                 <button
                   type="button"
                   onClick={addCertification}
                   disabled={certifications.length >= MAX_CERTIFICATION_ITEMS}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-cyan-700 dark:text-cyan-300 hover:bg-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50 dark:bg-[#101017] px-2.5 py-1 text-[11px] font-mono text-[#5e6ad2] hover:bg-zinc-100 dark:hover:bg-[#181824] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <Plus size={12} /> Add cert
                 </button>
@@ -2069,20 +2133,20 @@ export default function ResumeBuilderPage() {
                 {certifications.map((item, index) => (
                   <div
                     key={item.id}
-                    className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-950/30 p-4 grid grid-cols-1 md:grid-cols-3 gap-3"
+                    className="rounded-md border border-zinc-200/80 dark:border-[#1e1e2a] bg-zinc-50/50 dark:bg-[#101017] p-4 grid grid-cols-1 md:grid-cols-3 gap-3 items-center"
                   >
                     <input
                       value={item.name}
                       onChange={(event) => updateCertification(index, { name: event.target.value })}
                       maxLength={MAX_CERTIFICATION_NAME_LENGTH}
-                      className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                      className="w-full rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#0f0f16] px-3 py-2 text-xs sm:text-sm text-zinc-900 dark:text-[#ebebef] placeholder:text-zinc-400 dark:placeholder:text-[#5a5a6e] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors"
                       placeholder="Certification name"
                     />
                     <input
                       value={item.issuer}
                       onChange={(event) => updateCertification(index, { issuer: event.target.value })}
                       maxLength={MAX_CERTIFICATION_ISSUER_LENGTH}
-                      className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                      className="w-full rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#0f0f16] px-3 py-2 text-xs sm:text-sm text-zinc-900 dark:text-[#ebebef] placeholder:text-zinc-400 dark:placeholder:text-[#5a5a6e] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors"
                       placeholder="Issuer"
                     />
                     <div className="flex items-center gap-2">
@@ -2090,7 +2154,7 @@ export default function ResumeBuilderPage() {
                         type="button"
                         onClick={() => moveCertification(index, -1)}
                         disabled={index === 0}
-                        className="shrink-0 inline-flex items-center justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white/70 dark:bg-black/20 p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        className="shrink-0 inline-flex items-center justify-center rounded border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-2 text-zinc-500 dark:text-[#8b8b9e] hover:text-zinc-900 dark:hover:text-[#ebebef] hover:border-zinc-300 dark:hover:border-[#3a3a52] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                         aria-label="Move certification up"
                       >
                         <ChevronUp size={11} />
@@ -2099,7 +2163,7 @@ export default function ResumeBuilderPage() {
                         type="button"
                         onClick={() => moveCertification(index, 1)}
                         disabled={index === certifications.length - 1}
-                        className="shrink-0 inline-flex items-center justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white/70 dark:bg-black/20 p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        className="shrink-0 inline-flex items-center justify-center rounded border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-2 text-zinc-500 dark:text-[#8b8b9e] hover:text-zinc-900 dark:hover:text-[#ebebef] hover:border-zinc-300 dark:hover:border-[#3a3a52] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                         aria-label="Move certification down"
                       >
                         <ChevronDown size={11} />
@@ -2108,13 +2172,13 @@ export default function ResumeBuilderPage() {
                         value={item.year}
                         onChange={(event) => updateCertification(index, { year: event.target.value })}
                         maxLength={MAX_CERTIFICATION_YEAR_LENGTH}
-                        className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                        className="w-full rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#0f0f16] px-3 py-2 text-xs sm:text-sm text-zinc-900 dark:text-[#ebebef] placeholder:text-zinc-400 dark:placeholder:text-[#5a5a6e] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors"
                         placeholder="Year"
                       />
                       <button
                         type="button"
                         onClick={() => removeCertification(index)}
-                        className="shrink-0 inline-flex items-center gap-1 rounded-md border border-rose-500/30 bg-rose-500/10 px-2 py-2 text-[10px] font-black uppercase tracking-wider text-rose-700 dark:text-rose-300 hover:bg-rose-500/20 transition-colors"
+                        className="shrink-0 inline-flex items-center gap-1 rounded border border-rose-500/20 bg-rose-500/10 px-2 py-2 text-[10px] font-mono text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 transition-colors"
                       >
                         <Trash2 size={11} />
                       </button>
@@ -2124,16 +2188,22 @@ export default function ResumeBuilderPage() {
               </div>
             </section>
 
-            <section className="bg-white/70 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 backdrop-blur-md shadow-lg dark:shadow-none transition-colors duration-300">
-              <div className="flex items-center justify-between gap-3 mb-4">
-                <h2 className="text-sm font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                  <BookOpenCheck size={15} /> Publications
-                </h2>
+            {/* Publications Section */}
+            <section className="rounded-lg border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-5 sm:p-6 shadow-surface transition-colors">
+              <div className="flex items-center justify-between gap-3 border-b border-zinc-200/80 dark:border-[#1a1a26] pb-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-[4px] bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 flex items-center justify-center text-[#5e6ad2]">
+                    <BookOpenCheck size={12} />
+                  </div>
+                  <h2 className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-900 dark:text-[#ebebef]">
+                    Publications
+                  </h2>
+                </div>
                 <button
                   type="button"
                   onClick={addPublication}
                   disabled={publications.length >= MAX_PUBLICATION_ITEMS}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-cyan-700 dark:text-cyan-300 hover:bg-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50 dark:bg-[#101017] px-2.5 py-1 text-[11px] font-mono text-[#5e6ad2] hover:bg-zinc-100 dark:hover:bg-[#181824] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <Plus size={12} /> Add publication
                 </button>
@@ -2143,10 +2213,10 @@ export default function ResumeBuilderPage() {
                 {publications.map((item, index) => (
                   <div
                     key={item.id}
-                    className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-950/30 p-4 space-y-3"
+                    className="rounded-md border border-zinc-200/80 dark:border-[#1e1e2a] bg-zinc-50/50 dark:bg-[#101017] p-4 space-y-3"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-xs font-black uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                      <p className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 dark:text-[#8b8b9e]">
                         Publication {index + 1}
                       </p>
                       <div className="flex items-center gap-1.5">
@@ -2154,24 +2224,24 @@ export default function ResumeBuilderPage() {
                           type="button"
                           onClick={() => movePublication(index, -1)}
                           disabled={index === 0}
-                          className="inline-flex items-center justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white/70 dark:bg-black/20 p-1.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                          className="inline-flex items-center justify-center rounded border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-1 text-zinc-500 dark:text-[#8b8b9e] hover:text-zinc-900 dark:hover:text-[#ebebef] hover:border-zinc-300 dark:hover:border-[#3a3a52] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                           aria-label="Move publication up"
                         >
-                          <ChevronUp size={13} />
+                          <ChevronUp size={12} />
                         </button>
                         <button
                           type="button"
                           onClick={() => movePublication(index, 1)}
                           disabled={index === publications.length - 1}
-                          className="inline-flex items-center justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white/70 dark:bg-black/20 p-1.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                          className="inline-flex items-center justify-center rounded border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-1 text-zinc-500 dark:text-[#8b8b9e] hover:text-zinc-900 dark:hover:text-[#ebebef] hover:border-zinc-300 dark:hover:border-[#3a3a52] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                           aria-label="Move publication down"
                         >
-                          <ChevronDown size={13} />
+                          <ChevronDown size={12} />
                         </button>
                         <button
                           type="button"
                           onClick={() => removePublication(index)}
-                          className="inline-flex items-center gap-1 rounded-md border border-rose-500/30 bg-rose-500/10 px-2 py-1 text-[10px] font-black uppercase tracking-wider text-rose-700 dark:text-rose-300 hover:bg-rose-500/20 transition-colors"
+                          className="inline-flex items-center gap-1 rounded border border-rose-500/20 bg-rose-500/10 px-2 py-1 text-[10px] font-mono text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 transition-colors"
                         >
                           <Trash2 size={11} /> Remove
                         </button>
@@ -2183,35 +2253,35 @@ export default function ResumeBuilderPage() {
                         value={item.title}
                         onChange={(event) => updatePublication(index, { title: event.target.value })}
                         maxLength={MAX_PUBLICATION_TITLE_LENGTH}
-                        className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                        className="w-full rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#0f0f16] px-3 py-2 text-xs sm:text-sm text-zinc-900 dark:text-[#ebebef] placeholder:text-zinc-400 dark:placeholder:text-[#5a5a6e] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors"
                         placeholder="Publication title"
                       />
                       <input
                         value={item.date}
                         onChange={(event) => updatePublication(index, { date: event.target.value })}
                         maxLength={MAX_PUBLICATION_DATE_LENGTH}
-                        className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                        className="w-full rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#0f0f16] px-3 py-2 text-xs sm:text-sm text-zinc-900 dark:text-[#ebebef] placeholder:text-zinc-400 dark:placeholder:text-[#5a5a6e] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors"
                         placeholder="Sep 2024"
                       />
                       <input
                         value={item.authors}
                         onChange={(event) => updatePublication(index, { authors: event.target.value })}
                         maxLength={MAX_PUBLICATION_AUTHORS_LENGTH}
-                        className="md:col-span-2 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                        className="md:col-span-2 w-full rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#0f0f16] px-3 py-2 text-xs sm:text-sm text-zinc-900 dark:text-[#ebebef] placeholder:text-zinc-400 dark:placeholder:text-[#5a5a6e] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors"
                         placeholder="Author list"
                       />
                       <input
                         value={item.venue}
                         onChange={(event) => updatePublication(index, { venue: event.target.value })}
                         maxLength={MAX_PUBLICATION_VENUE_LENGTH}
-                        className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                        className="w-full rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#0f0f16] px-3 py-2 text-xs sm:text-sm text-zinc-900 dark:text-[#ebebef] placeholder:text-zinc-400 dark:placeholder:text-[#5a5a6e] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors"
                         placeholder="Journal / Conference"
                       />
                       <input
                         value={item.link}
                         onChange={(event) => updatePublication(index, { link: event.target.value })}
                         maxLength={MAX_PUBLICATION_LINK_LENGTH}
-                        className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                        className="w-full rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#0f0f16] px-3 py-2 text-xs sm:text-sm text-zinc-900 dark:text-[#ebebef] placeholder:text-zinc-400 dark:placeholder:text-[#5a5a6e] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors"
                         placeholder="https://doi.org/..."
                       />
                     </div>
@@ -2220,16 +2290,22 @@ export default function ResumeBuilderPage() {
               </div>
             </section>
 
-            <section className="bg-white/70 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 backdrop-blur-md shadow-lg dark:shadow-none transition-colors duration-300">
-              <div className="flex items-center justify-between gap-3 mb-4">
-                <h2 className="text-sm font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                  <ListChecks size={15} /> Custom Sections
-                </h2>
+            {/* Custom Sections */}
+            <section className="rounded-lg border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-5 sm:p-6 shadow-surface transition-colors">
+              <div className="flex items-center justify-between gap-3 border-b border-zinc-200/80 dark:border-[#1a1a26] pb-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-[4px] bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 flex items-center justify-center text-[#5e6ad2]">
+                    <ListChecks size={12} />
+                  </div>
+                  <h2 className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-900 dark:text-[#ebebef]">
+                    Custom Sections
+                  </h2>
+                </div>
                 <button
                   type="button"
                   onClick={addCustomSection}
                   disabled={customSections.length >= MAX_CUSTOM_SECTIONS}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-cyan-700 dark:text-cyan-300 hover:bg-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50 dark:bg-[#101017] px-2.5 py-1 text-[11px] font-mono text-[#5e6ad2] hover:bg-zinc-100 dark:hover:bg-[#181824] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <Plus size={12} /> Add section
                 </button>
@@ -2239,10 +2315,10 @@ export default function ResumeBuilderPage() {
                 {customSections.map((item, index) => (
                   <div
                     key={item.id}
-                    className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-950/30 p-4 space-y-3"
+                    className="rounded-md border border-zinc-200/80 dark:border-[#1e1e2a] bg-zinc-50/50 dark:bg-[#101017] p-4 space-y-3"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-xs font-black uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                      <p className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 dark:text-[#8b8b9e]">
                         Section {index + 1}
                       </p>
                       <div className="flex items-center gap-1.5">
@@ -2250,24 +2326,24 @@ export default function ResumeBuilderPage() {
                           type="button"
                           onClick={() => moveCustomSection(index, -1)}
                           disabled={index === 0}
-                          className="inline-flex items-center justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white/70 dark:bg-black/20 p-1.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                          className="inline-flex items-center justify-center rounded border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-1 text-zinc-500 dark:text-[#8b8b9e] hover:text-zinc-900 dark:hover:text-[#ebebef] hover:border-zinc-300 dark:hover:border-[#3a3a52] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                           aria-label="Move custom section up"
                         >
-                          <ChevronUp size={13} />
+                          <ChevronUp size={12} />
                         </button>
                         <button
                           type="button"
                           onClick={() => moveCustomSection(index, 1)}
                           disabled={index === customSections.length - 1}
-                          className="inline-flex items-center justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white/70 dark:bg-black/20 p-1.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                          className="inline-flex items-center justify-center rounded border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-1 text-zinc-500 dark:text-[#8b8b9e] hover:text-zinc-900 dark:hover:text-[#ebebef] hover:border-zinc-300 dark:hover:border-[#3a3a52] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                           aria-label="Move custom section down"
                         >
-                          <ChevronDown size={13} />
+                          <ChevronDown size={12} />
                         </button>
                         <button
                           type="button"
                           onClick={() => removeCustomSection(index)}
-                          className="inline-flex items-center gap-1 rounded-md border border-rose-500/30 bg-rose-500/10 px-2 py-1 text-[10px] font-black uppercase tracking-wider text-rose-700 dark:text-rose-300 hover:bg-rose-500/20 transition-colors"
+                          className="inline-flex items-center gap-1 rounded border border-rose-500/20 bg-rose-500/10 px-2 py-1 text-[10px] font-mono text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 transition-colors"
                         >
                           <Trash2 size={11} /> Remove
                         </button>
@@ -2279,13 +2355,13 @@ export default function ResumeBuilderPage() {
                         value={item.title}
                         onChange={(event) => updateCustomSection(index, { title: event.target.value })}
                         maxLength={MAX_CUSTOM_SECTION_TITLE_LENGTH}
-                        className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                        className="w-full rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#0f0f16] px-3 py-2 text-xs sm:text-sm text-zinc-900 dark:text-[#ebebef] placeholder:text-zinc-400 dark:placeholder:text-[#5a5a6e] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors"
                         placeholder="Section title"
                       />
                       <select
                         value={item.style}
                         onChange={(event) => updateCustomSection(index, { style: event.target.value === "text" ? "text" : "bullets" })}
-                        className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                        className="w-full rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#0f0f16] px-3 py-2 text-xs sm:text-sm text-zinc-900 dark:text-[#ebebef] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors"
                       >
                         <option value="bullets">Bullet list</option>
                         <option value="text">Text paragraphs</option>
@@ -2296,7 +2372,7 @@ export default function ResumeBuilderPage() {
                       value={item.entriesText}
                       onChange={(event) => updateCustomSection(index, { entriesText: event.target.value })}
                       maxLength={MAX_CUSTOM_SECTION_ENTRY_LENGTH * MAX_CUSTOM_SECTION_ENTRIES}
-                      className="w-full min-h-[110px] rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-900/70 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 resize-y"
+                      className="w-full min-h-[110px] rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#0f0f16] p-3 text-xs sm:text-sm text-zinc-900 dark:text-[#ebebef] placeholder:text-zinc-400 dark:placeholder:text-[#5a5a6e] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors resize-y leading-relaxed"
                       placeholder={"One entry per line\nMentored 8 junior engineers\nCreated internal onboarding guides"}
                     />
                   </div>
@@ -2306,13 +2382,23 @@ export default function ResumeBuilderPage() {
           </div>
 
           <aside className="space-y-6 xl:sticky xl:top-24">
-            <section className="bg-white/70 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-3xl p-4 backdrop-blur-md shadow-lg dark:shadow-none transition-colors duration-300 space-y-2.5">
+            {/* Actions Section */}
+            <section className="rounded-lg border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-5 shadow-surface transition-colors space-y-4">
+              <div className="flex items-center gap-2 border-b border-zinc-200/80 dark:border-[#1a1a26] pb-3">
+                <div className="w-5 h-5 rounded-[4px] bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 flex items-center justify-center text-[#5e6ad2]">
+                  <Sparkles size={12} />
+                </div>
+                <h2 className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-900 dark:text-[#ebebef]">
+                  Actions & AI Tools
+                </h2>
+              </div>
+
               <button
                 type="submit"
                 disabled={isGenerating}
-                className="w-full rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-black text-sm uppercase tracking-wider px-4 py-3 transition-all inline-flex items-center justify-center gap-2"
+                className="w-full rounded-md bg-[#5e6ad2] hover:bg-[#525ec2] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed text-white font-mono text-xs uppercase tracking-wider py-2.5 px-4 transition-all flex items-center justify-center gap-2 shadow-[0_1px_2px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.15)]"
               >
-                <Download size={15} /> {isGenerating ? "Generating..." : "Generate PDF"}
+                <Download size={14} /> {isGenerating ? "Compiling PDF..." : "Generate PDF"}
               </button>
               
               <input 
@@ -2322,157 +2408,201 @@ export default function ResumeBuilderPage() {
                 onChange={handleFileImport} 
                 className="hidden" 
               />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isImporting}
-                className="w-full rounded-xl bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 text-blue-600 dark:text-blue-400 font-bold text-sm px-4 py-3 transition-colors inline-flex items-center justify-center gap-2"
-              >
-                <Upload size={15} /> {isImporting ? "Importing..." : "Import Profile"}
-              </button>
 
-              <button
-                type="button"
-                onClick={() => setIsTailoringModalOpen(true)}
-                className="w-full rounded-xl bg-purple-600/10 hover:bg-purple-600/20 border border-purple-500/30 text-purple-600 dark:text-purple-400 font-bold text-sm px-4 py-3 transition-colors inline-flex items-center justify-center gap-2"
-              >
-                <Wand2 size={15} /> Tailor with AI
-              </button>
+              <div className="space-y-1.5 pt-1">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isImporting}
+                  className="w-full rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50/70 hover:bg-zinc-100 dark:bg-[#101017] dark:hover:bg-[#181824] hover:border-[#5e6ad2]/40 text-zinc-700 dark:text-[#ebebef] text-xs font-medium px-3 py-2 transition-all flex items-center justify-between group disabled:opacity-50"
+                >
+                  <span className="flex items-center gap-2">
+                    <Upload size={13} className="text-[#5e6ad2]" />
+                    <span>{isImporting ? "Importing profile..." : "Import Profile"}</span>
+                  </span>
+                  <span className="text-[10px] font-mono text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300">PDF / TXT</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setIsCoverLetterModalOpen(true)}
-                className="w-full rounded-xl bg-teal-600/10 hover:bg-teal-600/20 border border-teal-500/30 text-teal-600 dark:text-teal-400 font-bold text-sm px-4 py-3 transition-colors inline-flex items-center justify-center gap-2"
-              >
-                <FileText size={15} /> Cover Letter & Outreach
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setIsTailoringModalOpen(true)}
+                  className="w-full rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50/70 hover:bg-zinc-100 dark:bg-[#101017] dark:hover:bg-[#181824] hover:border-[#5e6ad2]/40 text-zinc-700 dark:text-[#ebebef] text-xs font-medium px-3 py-2 transition-all flex items-center justify-between group"
+                >
+                  <span className="flex items-center gap-2">
+                    <Wand2 size={13} className="text-[#5e6ad2]" />
+                    <span>Tailor with AI</span>
+                  </span>
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#5e6ad2]/10 text-[#5e6ad2] border border-[#5e6ad2]/20">AI</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setIsWizardModalOpen(true)}
-                className="w-full rounded-xl bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/30 text-indigo-600 dark:text-indigo-400 font-bold text-sm px-4 py-3 transition-colors inline-flex items-center justify-center gap-2"
-              >
-                <MessageSquareText size={15} /> Chat to Build
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setIsCoverLetterModalOpen(true)}
+                  className="w-full rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50/70 hover:bg-zinc-100 dark:bg-[#101017] dark:hover:bg-[#181824] hover:border-[#5e6ad2]/40 text-zinc-700 dark:text-[#ebebef] text-xs font-medium px-3 py-2 transition-all flex items-center justify-between group"
+                >
+                  <span className="flex items-center gap-2">
+                    <FileText size={13} className="text-[#5e6ad2]" />
+                    <span>Cover Letter & Outreach</span>
+                  </span>
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#5e6ad2]/10 text-[#5e6ad2] border border-[#5e6ad2]/20">AI</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={loadSampleData}
-                className="w-full rounded-xl border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 font-bold text-sm px-4 py-2.5 transition-colors"
-              >
-                Load Sample Profile
-              </button>
-
-              <button
-                type="button"
-                onClick={resetForm}
-                className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/40 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold text-sm px-4 py-2.5 transition-colors"
-              >
-                Reset Form
-              </button>
-
-              <button
-                type="button"
-                onClick={clearSavedDraft}
-                className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/40 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold text-sm px-4 py-2.5 transition-colors"
-              >
-                Clear Saved Draft Only
-              </button>
-
-              <Link
-                href="/resume-roaster"
-                className="block w-full rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold text-sm px-4 py-2.5 transition-colors text-center"
-              >
-                Need ATS critique first?
-              </Link>
-            </section>
-            <section className="bg-white/70 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 backdrop-blur-md shadow-lg dark:shadow-none transition-colors duration-300">
-              <h2 className="text-sm font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-4">
-                Quick Snapshot
-              </h2>
-              <div className="space-y-2.5">
-                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/40 px-3 py-2.5 flex items-center justify-between">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Template
+                <button
+                  type="button"
+                  onClick={() => setIsWizardModalOpen(true)}
+                  className="w-full rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50/70 hover:bg-zinc-100 dark:bg-[#101017] dark:hover:bg-[#181824] hover:border-[#5e6ad2]/40 text-zinc-700 dark:text-[#ebebef] text-xs font-medium px-3 py-2 transition-all flex items-center justify-between group"
+                >
+                  <span className="flex items-center gap-2">
+                    <MessageSquareText size={13} className="text-[#5e6ad2]" />
+                    <span>Chat to Build</span>
                   </span>
-                  <span className="text-sm font-black text-gray-900 dark:text-white">
-                    {templateId === "rendercv" ? "RenderCV" : "Modern"}
-                  </span>
-                </div>
-                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/40 px-3 py-2.5 flex items-center justify-between">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Skills
-                  </span>
-                  <span className="text-sm font-black text-gray-900 dark:text-white">{skillCount}</span>
-                </div>
-                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/40 px-3 py-2.5 flex items-center justify-between">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Languages
-                  </span>
-                  <span className="text-sm font-black text-gray-900 dark:text-white">{languageCount}</span>
-                </div>
-                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/40 px-3 py-2.5 flex items-center justify-between">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Technologies
-                  </span>
-                  <span className="text-sm font-black text-gray-900 dark:text-white">{technologyCount}</span>
-                </div>
-                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/40 px-3 py-2.5 flex items-center justify-between">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Experience Items
-                  </span>
-                  <span className="text-sm font-black text-gray-900 dark:text-white">{experienceCount}</span>
-                </div>
-                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/40 px-3 py-2.5 flex items-center justify-between">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Projects
-                  </span>
-                  <span className="text-sm font-black text-gray-900 dark:text-white">{projectCount}</span>
-                </div>
-                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/40 px-3 py-2.5 flex items-center justify-between">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Education
-                  </span>
-                  <span className="text-sm font-black text-gray-900 dark:text-white">{educationCount}</span>
-                </div>
-                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/40 px-3 py-2.5 flex items-center justify-between">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Certifications
-                  </span>
-                  <span className="text-sm font-black text-gray-900 dark:text-white">{certificationCount}</span>
-                </div>
-                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/40 px-3 py-2.5 flex items-center justify-between">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Publications
-                  </span>
-                  <span className="text-sm font-black text-gray-900 dark:text-white">{publicationCount}</span>
-                </div>
-                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/40 px-3 py-2.5 flex items-center justify-between">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Custom Sections
-                  </span>
-                  <span className="text-sm font-black text-gray-900 dark:text-white">{customSectionCount}</span>
-                </div>
+                  <span className="text-[10px] font-mono text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300">Live</span>
+                </button>
               </div>
 
-              <div className="mt-4 space-y-2 text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed">
-                <p>Use one highlight per line for each role.</p>
-                <p>Draft is stored locally in your browser.</p>
-                <p>{draftTimestampLabel(lastSavedAt)}</p>
+              <div className="pt-3 border-t border-zinc-200/80 dark:border-[#1a1a26] space-y-2">
+                <button
+                  type="button"
+                  onClick={loadSampleData}
+                  className="w-full rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50/50 dark:bg-[#101017] hover:bg-zinc-100 dark:hover:bg-[#181824] text-zinc-700 dark:text-[#ebebef] font-mono text-[11px] py-1.5 px-3 transition-colors text-center"
+                >
+                  Load Sample Profile
+                </button>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="w-full rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] hover:bg-zinc-50 dark:hover:bg-[#181824] text-zinc-500 dark:text-[#8b8b9e] hover:text-zinc-900 dark:hover:text-[#ebebef] font-mono text-[10px] py-1.5 px-2 transition-colors text-center"
+                  >
+                    Reset Form
+                  </button>
+                  <button
+                    type="button"
+                    onClick={clearSavedDraft}
+                    className="w-full rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] hover:bg-zinc-50 dark:hover:bg-[#181824] text-zinc-500 dark:text-[#8b8b9e] hover:text-rose-600 dark:hover:text-rose-400 font-mono text-[10px] py-1.5 px-2 transition-colors text-center"
+                  >
+                    Clear Draft Only
+                  </button>
+                </div>
+
+                <Link
+                  href="/resume-roaster"
+                  className="flex items-center justify-between p-2.5 rounded-md border border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-mono transition-colors group mt-2"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <Flame size={13} className="text-amber-500" />
+                    <span>Need ATS critique first?</span>
+                  </span>
+                  <span className="text-[10px] text-amber-500/70 group-hover:text-amber-500 transition-transform group-hover:translate-x-0.5">→</span>
+                </Link>
               </div>
             </section>
 
-            <section className="bg-white/70 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 backdrop-blur-md shadow-lg dark:shadow-none transition-colors duration-300">
-              <div className="flex items-center justify-between gap-2 mb-4">
-                <h2 className="text-sm font-black uppercase tracking-widest text-gray-500 dark:text-gray-400">
-                  Live Preview
-                </h2>
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-cyan-700 dark:text-cyan-300">
-                  Auto-updates
+            {/* Quick Snapshot Section */}
+            <section className="rounded-lg border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-5 shadow-surface transition-colors">
+              <div className="flex items-center justify-between gap-2 border-b border-zinc-200/80 dark:border-[#1a1a26] pb-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-[4px] bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 flex items-center justify-center text-[#5e6ad2]">
+                    <ShieldCheck size={12} />
+                  </div>
+                  <h2 className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-900 dark:text-[#ebebef]">
+                    Telemetry Snapshot
+                  </h2>
+                </div>
+                <span className="text-[10px] font-mono text-zinc-400 dark:text-[#5a5a6e]">
+                  Live status
                 </span>
               </div>
 
-              <div className="h-[40rem] w-full mt-4">
+              <div className="space-y-1.5">
+                <div className="rounded-md border border-zinc-200/80 dark:border-[#1e1e2a] bg-zinc-50/50 dark:bg-[#101017] px-3 py-2 flex items-center justify-between">
+                  <span className="text-[11px] font-mono text-zinc-500 dark:text-[#8b8b9e]">
+                    Template
+                  </span>
+                  <span className="text-xs font-mono font-medium text-zinc-900 dark:text-[#ebebef]">
+                    {templateId === "rendercv" ? "RenderCV Classic" : "Modern Gradient"}
+                  </span>
+                </div>
+                <div className="rounded-md border border-zinc-200/80 dark:border-[#1e1e2a] bg-zinc-50/50 dark:bg-[#101017] px-3 py-2 flex items-center justify-between">
+                  <span className="text-[11px] font-mono text-zinc-500 dark:text-[#8b8b9e]">
+                    Skills Indexed
+                  </span>
+                  <span className="text-xs font-mono font-medium text-zinc-900 dark:text-[#ebebef]">{skillCount}</span>
+                </div>
+                <div className="rounded-md border border-zinc-200/80 dark:border-[#1e1e2a] bg-zinc-50/50 dark:bg-[#101017] px-3 py-2 flex items-center justify-between">
+                  <span className="text-[11px] font-mono text-zinc-500 dark:text-[#8b8b9e]">
+                    Languages
+                  </span>
+                  <span className="text-xs font-mono font-medium text-zinc-900 dark:text-[#ebebef]">{languageCount}</span>
+                </div>
+                <div className="rounded-md border border-zinc-200/80 dark:border-[#1e1e2a] bg-zinc-50/50 dark:bg-[#101017] px-3 py-2 flex items-center justify-between">
+                  <span className="text-[11px] font-mono text-zinc-500 dark:text-[#8b8b9e]">
+                    Technologies
+                  </span>
+                  <span className="text-xs font-mono font-medium text-zinc-900 dark:text-[#ebebef]">{technologyCount}</span>
+                </div>
+                <div className="rounded-md border border-zinc-200/80 dark:border-[#1e1e2a] bg-zinc-50/50 dark:bg-[#101017] px-3 py-2 flex items-center justify-between">
+                  <span className="text-[11px] font-mono text-zinc-500 dark:text-[#8b8b9e]">
+                    Experience Items
+                  </span>
+                  <span className="text-xs font-mono font-medium text-zinc-900 dark:text-[#ebebef]">{experienceCount}</span>
+                </div>
+                <div className="rounded-md border border-zinc-200/80 dark:border-[#1e1e2a] bg-zinc-50/50 dark:bg-[#101017] px-3 py-2 flex items-center justify-between">
+                  <span className="text-[11px] font-mono text-zinc-500 dark:text-[#8b8b9e]">
+                    Projects
+                  </span>
+                  <span className="text-xs font-mono font-medium text-zinc-900 dark:text-[#ebebef]">{projectCount}</span>
+                </div>
+                <div className="rounded-md border border-zinc-200/80 dark:border-[#1e1e2a] bg-zinc-50/50 dark:bg-[#101017] px-3 py-2 flex items-center justify-between">
+                  <span className="text-[11px] font-mono text-zinc-500 dark:text-[#8b8b9e]">
+                    Education
+                  </span>
+                  <span className="text-xs font-mono font-medium text-zinc-900 dark:text-[#ebebef]">{educationCount}</span>
+                </div>
+                <div className="rounded-md border border-zinc-200/80 dark:border-[#1e1e2a] bg-zinc-50/50 dark:bg-[#101017] px-3 py-2 flex items-center justify-between">
+                  <span className="text-[11px] font-mono text-zinc-500 dark:text-[#8b8b9e]">
+                    Certifications
+                  </span>
+                  <span className="text-xs font-mono font-medium text-zinc-900 dark:text-[#ebebef]">{certificationCount}</span>
+                </div>
+                <div className="rounded-md border border-zinc-200/80 dark:border-[#1e1e2a] bg-zinc-50/50 dark:bg-[#101017] px-3 py-2 flex items-center justify-between">
+                  <span className="text-[11px] font-mono text-zinc-500 dark:text-[#8b8b9e]">
+                    Publications
+                  </span>
+                  <span className="text-xs font-mono font-medium text-zinc-900 dark:text-[#ebebef]">{publicationCount}</span>
+                </div>
+                <div className="rounded-md border border-zinc-200/80 dark:border-[#1e1e2a] bg-zinc-50/50 dark:bg-[#101017] px-3 py-2 flex items-center justify-between">
+                  <span className="text-[11px] font-mono text-zinc-500 dark:text-[#8b8b9e]">
+                    Custom Sections
+                  </span>
+                  <span className="text-xs font-mono font-medium text-zinc-900 dark:text-[#ebebef]">{customSectionCount}</span>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-zinc-200/80 dark:border-[#1a1a26] space-y-1 text-[10px] font-mono text-zinc-400 dark:text-[#5a5a6e]">
+                <p>• One highlight per line recommended</p>
+                <p>• Saved locally in your browser cache</p>
+                <p className="text-[#5e6ad2]">{draftTimestampLabel(lastSavedAt)}</p>
+              </div>
+            </section>
+
+            {/* Live Preview Section */}
+            <section className="rounded-lg border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-5 shadow-surface transition-colors">
+              <div className="flex items-center justify-between gap-2 border-b border-zinc-200/80 dark:border-[#1a1a26] pb-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-[4px] bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 flex items-center justify-center text-[#5e6ad2]">
+                    <FileText size={12} />
+                  </div>
+                  <h2 className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-900 dark:text-[#ebebef]">
+                    Live Preview
+                  </h2>
+                </div>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                  Synchronized
+                </span>
+              </div>
+
+              <div className="h-[40rem] w-full mt-2 rounded-md overflow-hidden border border-zinc-200 dark:border-[#1e1e2a]">
                 <PaginatedPreview
                   name={name}
                   templateId={templateId}
@@ -2496,109 +2626,118 @@ export default function ResumeBuilderPage() {
             </section>
 
             {error && (
-              <section className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-rose-700 dark:text-rose-300 text-sm flex items-start gap-2">
-                <TriangleAlert size={16} className="mt-0.5 shrink-0" />
+              <section className="rounded-md border border-rose-500/30 bg-rose-500/10 p-3.5 text-rose-600 dark:text-rose-400 text-xs font-mono flex items-start gap-2">
+                <TriangleAlert size={14} className="mt-0.5 shrink-0" />
                 <p>{error}</p>
               </section>
             )}
 
             {successMessage && (
-              <section className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-emerald-700 dark:text-emerald-300 text-sm flex items-start gap-2">
-                <CheckCircle2 size={16} className="mt-0.5 shrink-0" />
+              <section className="rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3.5 text-emerald-600 dark:text-emerald-400 text-xs font-mono flex items-start gap-2">
+                <CheckCircle2 size={14} className="mt-0.5 shrink-0" />
                 <p>{successMessage}</p>
               </section>
             )}
-
-
           </aside>
         </form>
       </div>
 
       {isTailoringModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
-          <m.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-800 w-full max-w-2xl overflow-hidden"
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80" onClick={() => !isTailoring && setIsTailoringModalOpen(false)}>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white dark:bg-[#14141e] rounded-lg shadow-2xl border border-zinc-200 dark:border-[#1e1e2a] w-full max-w-2xl overflow-hidden"
           >
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50">
-              <h3 className="text-lg font-black tracking-wide text-gray-900 dark:text-white flex items-center gap-2">
-                <Wand2 size={20} className="text-purple-500" /> Auto-Tailor Resume
+            <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50/70 dark:bg-[#101017]">
+              <h3 className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-900 dark:text-[#ebebef] flex items-center gap-2">
+                <Wand2 size={14} className="text-[#5e6ad2]" /> Auto-Tailor Resume
               </h3>
               <button
+                type="button"
                 onClick={() => setIsTailoringModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                className="p-1 rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-[#ebebef] hover:bg-zinc-200/60 dark:hover:bg-[#1e1e2a] transition-colors"
                 disabled={isTailoring}
               >
-                <X size={24} />
+                <X size={16} />
               </button>
             </div>
             
-            <div className="p-6 space-y-4">
-              <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+            <div className="p-5 space-y-3">
+              <p className="text-xs text-zinc-600 dark:text-[#8b8b9e] leading-relaxed">
                 Paste the Job Description below. Our AI will automatically rewrite your Professional Summary, 
                 reorder your Experience bullets based on relevance, and select the top matching Skills and Projects.
-                <strong className="block mt-2 text-purple-600 dark:text-purple-400">Your form state will be instantly updated. Make sure you load your base profile first!</strong>
+              </p>
+              <p className="text-[11px] font-mono text-[#5e6ad2] bg-[#5e6ad2]/10 p-2.5 rounded border border-[#5e6ad2]/20">
+                Your form state will be instantly updated in memory. Make sure you have your baseline profile entered.
               </p>
               
+              {tailorError && (
+                <div className="rounded-md border border-rose-500/30 bg-rose-500/10 p-2.5 text-rose-600 dark:text-rose-400 text-xs font-mono flex items-start gap-2">
+                  <TriangleAlert size={13} className="mt-0.5 shrink-0" />
+                  <p>{tailorError}</p>
+                </div>
+              )}
+
               <textarea
                 value={jobDescription}
                 onChange={(e) => setJobDescription(e.target.value)}
                 placeholder="Paste the target Job Description here..."
-                className="w-full h-48 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 p-4 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500/40 resize-none font-mono"
+                className="w-full h-44 rounded-md border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50 dark:bg-[#0f0f16] p-3 text-xs text-zinc-900 dark:text-[#ebebef] placeholder:text-zinc-400 dark:placeholder:text-[#5a5a6e] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] resize-none font-mono"
                 disabled={isTailoring}
               />
             </div>
             
-            <div className="p-6 border-t border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 flex justify-end gap-3">
+            <div className="px-5 py-3 border-t border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50/70 dark:bg-[#101017] flex justify-end gap-2">
               <button
+                type="button"
                 onClick={() => setIsTailoringModalOpen(false)}
                 disabled={isTailoring}
-                className="px-5 py-2.5 rounded-xl font-bold text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                className="px-3.5 py-1.5 rounded-md font-mono text-xs text-zinc-600 dark:text-[#8b8b9e] hover:bg-zinc-100 dark:hover:bg-[#181824] transition-colors"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleTailor}
                 disabled={isTailoring || !jobDescription.trim()}
-                className="px-5 py-2.5 rounded-xl font-black text-sm text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                className="px-4 py-1.5 rounded-md font-mono text-xs uppercase tracking-wider text-white bg-[#5e6ad2] hover:bg-[#525ec2] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5 shadow-sm"
               >
                 {isTailoring ? "Tailoring..." : "Tailor Resume"}
               </button>
             </div>
-          </m.div>
+          </div>
         </div>
       )}
 
       {isCoverLetterModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
-          <m.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-800 w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80" onClick={() => !isGeneratingCL && setIsCoverLetterModalOpen(false)}>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white dark:bg-[#14141e] rounded-lg shadow-2xl border border-zinc-200 dark:border-[#1e1e2a] w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
           >
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50">
-              <h3 className="text-lg font-black tracking-wide text-gray-900 dark:text-white flex items-center gap-2">
-                <FileText size={20} className="text-teal-500" /> Cover Letter & Outreach Generator
+            <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50/70 dark:bg-[#101017]">
+              <h3 className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-900 dark:text-[#ebebef] flex items-center gap-2">
+                <FileText size={14} className="text-[#5e6ad2]" /> Cover Letter & Outreach Generator
               </h3>
               <button
+                type="button"
                 onClick={() => setIsCoverLetterModalOpen(false)}
-                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+                className="p-1 rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-[#ebebef] hover:bg-zinc-200/60 dark:hover:bg-[#1e1e2a] transition-colors"
               >
-                <X size={20} />
+                <X size={16} />
               </button>
             </div>
             
-            <div className="p-6 overflow-y-auto space-y-6">
+            <div className="p-5 overflow-y-auto space-y-4">
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-xs font-mono uppercase tracking-wider text-zinc-600 dark:text-[#8b8b9e] mb-1.5">
                   Target Job Description
                 </label>
                 <textarea
                   value={clJobDescription}
                   onChange={(e) => setClJobDescription(e.target.value)}
-                  placeholder="Paste the job description here..."
-                  className="w-full h-32 px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all resize-none text-sm"
+                  placeholder="Paste the target job description here..."
+                  className="w-full h-28 px-3 py-2 bg-zinc-50 dark:bg-[#0f0f16] border border-zinc-200 dark:border-[#1e1e2a] rounded-md focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] outline-none transition-colors resize-none text-xs font-mono"
                 />
               </div>
 
@@ -2607,27 +2746,27 @@ export default function ResumeBuilderPage() {
                   type="button"
                   onClick={handleGenerateCoverLetter}
                   disabled={isGeneratingCL || !clJobDescription.trim()}
-                  className="rounded-xl bg-teal-600 hover:bg-teal-500 disabled:opacity-50 text-white font-bold px-6 py-3 transition-colors flex items-center gap-2"
+                  className="rounded-md bg-[#5e6ad2] hover:bg-[#525ec2] disabled:opacity-50 text-white font-mono text-xs uppercase tracking-wider px-4 py-2 transition-colors flex items-center gap-1.5"
                 >
-                  <Wand2 size={16} /> {isGeneratingCL ? "Generating..." : "Generate Materials"}
+                  <Wand2 size={13} /> {isGeneratingCL ? "Generating..." : "Generate Materials"}
                 </button>
               </div>
 
               {generatedCoverLetter && (
-                <div className="space-y-4">
-                  <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 p-5 rounded-2xl">
-                    <h4 className="font-bold text-gray-900 dark:text-white mb-3">Tailored Cover Letter</h4>
+                <div className="space-y-4 pt-2">
+                  <div className="bg-zinc-50/80 dark:bg-[#101017] border border-zinc-200 dark:border-[#1e1e2a] p-4 rounded-md space-y-2">
+                    <h4 className="text-xs font-mono uppercase tracking-wider text-zinc-900 dark:text-[#ebebef]">Tailored Cover Letter</h4>
                     <textarea 
-                      className="w-full h-64 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 text-sm"
+                      className="w-full h-56 bg-white dark:bg-[#0f0f16] border border-zinc-200 dark:border-[#1e1e2a] rounded-md p-3 text-xs font-mono leading-relaxed"
                       value={generatedCoverLetter}
                       onChange={(e) => setGeneratedCoverLetter(e.target.value)}
                     />
                   </div>
                   
-                  <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 p-5 rounded-2xl">
-                    <h4 className="font-bold text-gray-900 dark:text-white mb-3">LinkedIn Cold Outreach Message</h4>
+                  <div className="bg-zinc-50/80 dark:bg-[#101017] border border-zinc-200 dark:border-[#1e1e2a] p-4 rounded-md space-y-2">
+                    <h4 className="text-xs font-mono uppercase tracking-wider text-zinc-900 dark:text-[#ebebef]">LinkedIn Cold Outreach Message</h4>
                     <textarea 
-                      className="w-full h-32 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 text-sm"
+                      className="w-full h-28 bg-white dark:bg-[#0f0f16] border border-zinc-200 dark:border-[#1e1e2a] rounded-md p-3 text-xs font-mono leading-relaxed"
                       value={generatedOutreach}
                       onChange={(e) => setGeneratedOutreach(e.target.value)}
                     />
@@ -2635,43 +2774,43 @@ export default function ResumeBuilderPage() {
                 </div>
               )}
             </div>
-          </m.div>
+          </div>
         </div>
       )}
 
       {isWizardModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
-          <m.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-800 w-full max-w-2xl h-[80vh] flex flex-col overflow-hidden"
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80" onClick={() => !isWizardLoading && setIsWizardModalOpen(false)}>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white dark:bg-[#14141e] rounded-lg shadow-2xl border border-zinc-200 dark:border-[#1e1e2a] w-full max-w-2xl h-[80vh] flex flex-col overflow-hidden"
           >
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 flex-shrink-0">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50/70 dark:bg-[#101017] flex-shrink-0">
               <div>
-                <h3 className="text-lg font-black tracking-wide text-gray-900 dark:text-white flex items-center gap-2">
-                  <MessageSquareText size={20} className="text-indigo-500" /> Resume Wizard
+                <h3 className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-900 dark:text-[#ebebef] flex items-center gap-2">
+                  <MessageSquareText size={14} className="text-[#5e6ad2]" /> Resume Wizard
                 </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Chat with AI to build your master resume progressively.</p>
+                <p className="text-[11px] font-mono text-zinc-500 dark:text-[#8b8b9e] mt-0.5">Chat with AI to build your master resume progressively.</p>
               </div>
               <button
+                type="button"
                 onClick={() => setIsWizardModalOpen(false)}
-                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+                className="p-1 rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-[#ebebef] hover:bg-zinc-200/60 dark:hover:bg-[#1e1e2a] transition-colors"
               >
-                <X size={20} />
+                <X size={16} />
               </button>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            <div className="flex-1 overflow-y-auto p-5 space-y-3">
               {wizardMessages.map((msg, i) => (
                 <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[80%] rounded-2xl p-4 text-sm ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-bl-none'}`}>
+                  <div className={`max-w-[85%] rounded-md p-3 text-xs leading-relaxed ${msg.role === 'user' ? 'bg-[#5e6ad2] text-white rounded-br-none font-sans' : 'bg-zinc-100 dark:bg-[#181824] text-zinc-900 dark:text-[#ebebef] border border-zinc-200/70 dark:border-[#262638] rounded-bl-none font-sans'}`}>
                     {msg.content}
                   </div>
                 </div>
               ))}
               {isWizardLoading && (
                 <div className="flex justify-start">
-                  <div className="max-w-[80%] rounded-2xl p-4 bg-gray-100 dark:bg-gray-800 text-gray-500 text-sm rounded-bl-none flex items-center gap-2">
+                  <div className="max-w-[80%] rounded-md p-3 bg-zinc-100 dark:bg-[#181824] text-zinc-400 text-xs rounded-bl-none flex items-center gap-1.5 font-mono">
                     <span className="animate-pulse">●</span>
                     <span className="animate-pulse animation-delay-200">●</span>
                     <span className="animate-pulse animation-delay-400">●</span>
@@ -2681,29 +2820,29 @@ export default function ResumeBuilderPage() {
               <div ref={messagesEndRef} />
             </div>
 
-            <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 flex-shrink-0">
+            <div className="p-3 border-t border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50/70 dark:bg-[#101017] flex-shrink-0">
               <form onSubmit={handleWizardSubmit} className="flex gap-2">
                 <input
                   type="text"
                   value={wizardInput}
                   onChange={(e) => setWizardInput(e.target.value)}
                   placeholder="Type your answer here..."
-                  className="flex-1 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all text-sm"
+                  className="flex-1 px-3 py-2 bg-white dark:bg-[#0f0f16] border border-zinc-200 dark:border-[#1e1e2a] rounded-md focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] outline-none transition-colors text-xs font-mono"
                   disabled={isWizardLoading}
                 />
                 <button
                   type="submit"
                   disabled={isWizardLoading || !wizardInput.trim()}
-                  className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold rounded-xl transition-colors"
+                  className="px-4 py-2 bg-[#5e6ad2] hover:bg-[#525ec2] disabled:opacity-50 text-white font-mono text-xs uppercase tracking-wider rounded-md transition-colors"
                 >
                   Send
                 </button>
               </form>
-              <div className="mt-2 text-xs text-center text-gray-500">
-                You can close this chat at any time. Your resume updates in real-time in the background!
+              <div className="mt-1.5 text-[10px] font-mono text-center text-zinc-400 dark:text-[#5a5a6e]">
+                Resume auto-updates in real-time in the background
               </div>
             </div>
-          </m.div>
+          </div>
         </div>
       )}
     </div>

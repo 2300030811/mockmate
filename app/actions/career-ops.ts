@@ -323,3 +323,154 @@ export async function getRecentCareerOpsFollowUps(
     return [];
   }
 }
+
+export async function runTacticalJobEvaluation(input: {
+  jobTitle: string;
+  company: string;
+  jobDescription?: string;
+  candidateResumeText?: string;
+  yearsOfExperience?: number;
+}): Promise<CareerOpsMutationResult<any>> {
+  try {
+    const { evaluateJobTactically } = await import("@/lib/career-ops/evaluator");
+    const result = await evaluateJobTactically(input);
+    return { success: true, data: result };
+  } catch (error: any) {
+    logger.error("[CareerOps] Failed to run tactical job evaluation", error.message);
+    return { success: false, error: error.message || "Failed to evaluate job" };
+  }
+}
+
+export async function getDiscoveredJobRadarPostings(limit: number = 20) {
+  const supabase = createClient();
+  try {
+    const { data, error } = await supabase
+      .from("career_ops_job_postings")
+      .select("id, company, title, location, source, external_url, posting_status, metadata, last_seen_at")
+      .eq("posting_status", "active")
+      .order("last_seen_at", { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      if (!isMissingCareerOpsTableError(error)) {
+        logger.warn("[CareerOps] Failed to load job radar postings", error.message);
+      }
+      return [];
+    }
+
+    return (data || []).map((row: any) => ({
+      id: row.id,
+      company: row.company,
+      title: row.title,
+      location: row.location || "Remote / Unspecified",
+      source: row.source,
+      url: row.external_url,
+      postingStatus: row.posting_status,
+      gateNotes: row.gate_notes ?? row.metadata?.gate_reason ?? null,
+      isSenior: row.metadata?.is_senior ?? false,
+      description: row.metadata?.description || "",
+      lastSeenAt: row.last_seen_at,
+    }));
+  } catch (error: any) {
+    logger.warn("[CareerOps] Unexpected error loading radar postings", error.message);
+    return [];
+  }
+}
+
+export async function triggerManualRadarScan(): Promise<CareerOpsMutationResult<{ found: number; newJobs: number }>> {
+  try {
+    const { createAdminClient } = await import("@/utils/supabase/admin");
+    const { scanCompany, dedupeScannedJobs } = await import("@/lib/services/scanner");
+    const adminDb = createAdminClient();
+
+    const targets = (await careerOpsRepository.loadScanTargets(adminDb)) as Array<{
+      name: string;
+      api_type: any;
+      api_url: string;
+    }>;
+
+    if (!targets || targets.length === 0) {
+      return { success: true, data: { found: 0, newJobs: 0 } };
+    }
+
+    const scanStartTime = new Date().toISOString();
+    const discoveredJobs: any[] = [];
+    const successfulCompanies: string[] = [];
+
+    const scanChunk = targets.slice(0, 5);
+    const results = await Promise.allSettled(
+      scanChunk.map((t) =>
+        scanCompany({
+          name: t.name,
+          apiType: t.api_type,
+          apiUrl: t.api_url,
+        })
+      )
+    );
+
+    results.forEach((res, idx) => {
+      if (res.status === "fulfilled") {
+        discoveredJobs.push(...res.value);
+        if (scanChunk[idx]?.name) {
+          successfulCompanies.push(scanChunk[idx].name);
+        }
+      }
+    });
+
+    const deduped = dedupeScannedJobs(discoveredJobs);
+    const urls = [...new Set(deduped.map((j) => j.url))];
+    const fingerprints = [...new Set(deduped.map((j) => j.fingerprint))];
+
+    const { urls: existingUrls, fingerprints: existingFingerprints } =
+      await careerOpsRepository.fetchExistingPostings(adminDb, urls, fingerprints);
+
+    const existingUrlSet = new Set(existingUrls.map((u) => u.external_url));
+    const existingFingerprintSet = new Set(existingFingerprints.map((f) => f.job_fingerprint));
+
+    const freshJobs = deduped.filter(
+      (job) => !existingUrlSet.has(job.url) && !existingFingerprintSet.has(job.fingerprint)
+    );
+
+    if (freshJobs.length > 0) {
+      const rows = freshJobs.map((job) => ({
+        external_url: job.url,
+        source: job.source,
+        source_job_id: job.sourceJobId,
+        company: job.company,
+        title: job.title,
+        location: job.location || null,
+        normalized_company: job.normalizedCompany,
+        normalized_title: job.normalizedTitle,
+        job_fingerprint: job.fingerprint,
+        posting_status: "active",
+        last_seen_at: new Date().toISOString(),
+        metadata: {
+          is_senior: job.isSenior ?? false,
+          gate_reason: job.gateReason ?? null,
+          description: job.description || null,
+          posted_at: job.postedAt || null,
+        },
+      }));
+      await careerOpsRepository.upsertJobPostings(adminDb, rows);
+    }
+
+    if (successfulCompanies.length > 0) {
+      try {
+        await careerOpsRepository.markStaleCompanyPostingsExpired(
+          adminDb,
+          successfulCompanies,
+          scanStartTime
+        );
+      } catch (err: any) {
+        logger.warn("[CareerOps] Failed to mark stale company postings expired", err.message);
+      }
+    }
+
+    revalidatePath("/dashboard");
+    return { success: true, data: { found: discoveredJobs.length, newJobs: freshJobs.length } };
+  } catch (error: any) {
+    logger.error("[CareerOps] Failed to run manual radar scan", error.message);
+    return { success: false, error: error.message || "Manual scan failed" };
+  }
+}
+

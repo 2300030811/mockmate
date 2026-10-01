@@ -375,6 +375,9 @@ export const SessionEditor = memo(function SessionEditor({
       overviewRulerBorder: false,
       hideCursorInOverviewRuler: true,
       contextmenu: false,
+      ariaLabel: "Monaco Code Editor. Press Escape or Ctrl+M to toggle tab focus mode for keyboard navigation.",
+      tabFocusMode: false,
+      accessibilitySupport: "on" as const,
    }), [editorLanguage]);
 
    const handleCopy = useCallback(() => {

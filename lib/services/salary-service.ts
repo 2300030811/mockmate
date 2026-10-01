@@ -117,7 +117,7 @@ function lookupLocalSalary(
       ...entry,
       currency,
       period: 'YEAR',
-      source: 'Industry Aggregated Data',
+      source: 'Aggregated Industry Benchmark Estimates (Non-Binding Guidance)',
       publishers: sources,
     },
     confidence,

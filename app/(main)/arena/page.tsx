@@ -109,16 +109,27 @@ export default function ArenaPage() {
 
 
   return (
-    <div className="h-screen bg-[#050505] text-white flex flex-col overflow-hidden selection:bg-red-500/30 font-sans">
+    <div className="min-h-screen bg-zinc-50 dark:bg-[#0d0d12] text-zinc-900 dark:text-[#ebebef] flex flex-col font-sans relative selection:bg-[#5e6ad2]/20 pt-14 transition-colors overflow-x-hidden">
 
-      {/* Background Effect */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(220,38,38,0.08)_0%,rgba(0,0,0,1)_80%)] opacity-60" />
-        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-5" />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent h-24 animate-[scan_4s_linear_infinite]" />
+      {/* 28px Precision Grid Background & Horizon Illumination */}
+      <div className="fixed inset-0 pointer-events-none select-none overflow-hidden" aria-hidden="true">
+        <div
+          className="absolute inset-0 opacity-40 dark:opacity-20 text-zinc-400 dark:text-zinc-600"
+          style={{
+            backgroundImage: `radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)`,
+            backgroundSize: "28px 28px",
+            maskImage: "linear-gradient(to bottom, black 25%, transparent 95%)",
+            WebkitMaskImage: "linear-gradient(to bottom, black 25%, transparent 95%)",
+          }}
+        />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-6xl h-[1px] bg-gradient-to-r from-transparent via-[#5e6ad2]/50 to-transparent" />
+        <div
+          className="absolute -top-24 left-1/2 -translate-x-1/2 w-[700px] h-[180px] opacity-25 dark:opacity-20 blur-3xl pointer-events-none"
+          style={{
+            background: "radial-gradient(ellipse at 50% 0%, #5e6ad2 0%, transparent 70%)",
+          }}
+        />
       </div>
-
-      <NavigationPill className="absolute top-7 left-6 z-[100] text-white scale-75 sm:scale-90 origin-top-left" />
 
       <AnimatePresence mode="wait">
         {gameState === 'lobby' && (
@@ -163,6 +174,7 @@ export default function ArenaPage() {
             userScore={userScore}
             opponentScore={opponentScore}
             battleResults={battleResults}
+            allQuestions={questions}
             category={category}
             battleId={battleId}
             onLobby={() => setGameState('lobby')}

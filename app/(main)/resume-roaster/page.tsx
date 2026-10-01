@@ -4,8 +4,7 @@ import { useState, useEffect } from "react";
 import { m } from "framer-motion";
 import { roastResumeAction } from "@/app/actions/resume";
 import { addCareerPathToTracker } from "@/app/actions/career-ops";
-import { NavigationPill } from "@/components/ui/NavigationPill";
-import { Flame } from "lucide-react";
+import { Flame, ShieldCheck, Sparkles, Terminal, Volume2, VolumeX } from "lucide-react";
 
 import { ResumeUpload } from "./components/ResumeUpload";
 import { RoastResults } from "./components/RoastResults";
@@ -13,28 +12,23 @@ import { RoastData } from "./types";
 import { hydrateRoastData } from "./utils/hydrateRoastData";
 import { useSpeech } from "./hooks/useSpeech";
 import { useMemeAudio } from "./hooks/useMemeAudio";
-import { useTheme } from "next-themes";
-import { cn } from "@/lib/utils";
+import { useAudio } from "@/components/providers/AudioProvider";
+import { HomeBackground } from "@/components/home/HomeBackground";
 
 const LOADING_MESSAGES = [
-  "Judging your font choice...",
-  "Laughing at your 'Fluent in Microsoft Word' skill...",
-  "Calculating the probability of you staying at a job for more than 6 months...",
-  "Identifying exactly which buzzwords are doing nothing for you...",
-  "Consulting with the ghosts of rejected candidates...",
-  "Preparing a strictly filtered, organic, non-GMO roast...",
-  "Finding out why your GPA is hidden behind that tiny font...",
-  "Scanning for signs of actual competence...",
-  "Analyzing your 'hobbies' section for personality red flags...",
-  "Wondering why you used Comic Sans in 2026...",
-  "Cross-referencing your skills with actual job requirements...",
-  "Checking if your resume passes the 6-second recruiter test...",
+  "Auditing ATS keyword density against recruiter filters...",
+  "Evaluating action verbs and quantifiable impact metrics...",
+  "Detecting formatting red flags and multi-column parsing traps...",
+  "Calculating the probability of surviving the 6-second initial scan...",
+  "Consulting industry rubrics for software engineering benchmarks...",
+  "Identifying buzzwords that add zero signal to your profile...",
+  "Checking education, project scope, and tenure consistency...",
+  "Synthesizing uncompromising, constructive feedback...",
 ];
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export default function ResumeRoasterPage() {
-  const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [jobDescription, setJobDescription] = useState("");
@@ -51,13 +45,14 @@ export default function ResumeRoasterPage() {
 
   const { isSpeaking, speak, stop } = useSpeech();
   const { playBeforeUpload, playWhileLoading, playAfterLoading, stopAudio } = useMemeAudio();
+  const { isAudioEnabled, toggleAudio } = useAudio();
 
   // Sync mounted state to prevent hydration flicker
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Load from localStorage on mount (validate shape to handle schema changes)
+  // Load from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem("last-resume-roast");
     if (saved) {
@@ -87,7 +82,7 @@ export default function ResumeRoasterPage() {
     if (isRoasting) {
       interval = setInterval(() => {
         setLoadingMessageIndex((prev: number) => (prev + 1) % LOADING_MESSAGES.length);
-      }, 3000);
+      }, 2500);
     }
     return () => {
       if (interval) clearInterval(interval);
@@ -133,7 +128,7 @@ export default function ResumeRoasterPage() {
     setRoastData(null);
     setLoadingMessageIndex(0);
     setCompletedSuggestions([]);
-    stop(); // Cancel any ongoing speech
+    stop();
     playWhileLoading();
 
     const formData = new FormData();
@@ -225,40 +220,74 @@ ${roastData.suggestions.map((s) => `\u2022 ${s}`).join("\n")}
     stop();
   };
 
-  // Prevent flash during hydration
-  if (!mounted) return <div className="min-h-screen bg-white dark:bg-gray-950" />;
-
-  const isDark = resolvedTheme === "dark";
+  if (!mounted) return <div className="min-h-screen bg-white dark:bg-[#0d0d12]" />;
 
   return (
-    <div className={cn("min-h-screen transition-colors duration-500 selection:bg-orange-500/30", isDark ? "bg-gray-950 text-white" : "bg-gray-50 text-gray-900")}>
-      <NavigationPill showHome showBack={false} />
+    <div className="min-h-screen bg-white dark:bg-[#0d0d12] text-zinc-900 dark:text-[#ebebef] selection:bg-[#5e6ad2]/20 transition-colors">
+      {/* ── 1. ASYMMETRIC PRECISION HERO SECTION ── */}
+      <section className="relative border-b border-zinc-200 dark:border-[#1e1e2a] overflow-hidden">
+        <HomeBackground />
 
-      {/* Background Decorations */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className={cn("absolute top-[-10%] left-[-10%] w-[40%] h-[40%] blur-[120px] rounded-full animate-pulse", isDark ? "bg-orange-600/10" : "bg-orange-500/5")} />
-        <div className={cn("absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] blur-[120px] rounded-full animate-pulse delay-1000", isDark ? "bg-red-600/10" : "bg-red-500/5")} />
-      </div>
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+          <div className="space-y-4 text-left">
+            {/* Precision Status Pill */}
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-[5px] bg-zinc-100 dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] text-zinc-600 dark:text-[#8b8b9e] text-[11px] font-medium tracking-wide">
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+              <span className="font-semibold text-zinc-800 dark:text-[#ebebef]">
+                AI Diagnostic Roaster
+              </span>
+              <span className="text-zinc-400 dark:text-[#5a5a6e]">•</span>
+              <span>Brutally Honest Resume & ATS Heuristics</span>
+            </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-16 md:py-20">
-        {/* Header */}
-        <m.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12 md:mb-14"
-        >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 mb-6 font-medium text-sm tracking-wider uppercase">
-            <Flame size={16} className="animate-bounce" />
-            Brutally Honest Analysis
+            {/* Main Display Headline (Solid high-contrast text, no rainbow clip) */}
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-[-0.035em] text-zinc-900 dark:text-[#ebebef] leading-[1.08] max-w-3xl">
+              Resume Roaster
+            </h1>
+
+            {/* Disciplined Subheading */}
+            <p className="text-sm sm:text-base text-zinc-600 dark:text-[#8b8b9e] leading-relaxed max-w-2xl font-normal">
+              Upload your resume for an uncompromising audit. Uncover ATS parsing traps, weak action verbs, formatting red flags, and tailored fixes to double your interview callback rate.
+            </p>
+
+            {/* Telemetry Proof Strip */}
+            <div className="pt-2 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] text-zinc-500 dark:text-[#5a5a6e]">
+              <div className="flex items-center gap-1.5">
+                <Flame className="w-3.5 h-3.5 text-orange-500" />
+                <span>Multi-tone roast: Brutal • Constructive • Sarcastic</span>
+              </div>
+              <span>•</span>
+              <div className="flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                <span>ATS keyword & formatting audit</span>
+              </div>
+              <span>•</span>
+              <button
+                type="button"
+                onClick={toggleAudio}
+                className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-zinc-200 dark:border-[#1e1e2a] bg-zinc-100/70 hover:bg-zinc-200/70 dark:bg-[#101017] dark:hover:bg-[#181824] text-zinc-700 dark:text-[#a0a0b8] transition-all cursor-pointer group"
+                title={isAudioEnabled ? "Click to mute meme audio effects" : "Click to enable meme audio effects"}
+              >
+                {isAudioEnabled ? (
+                  <>
+                    <Volume2 className="w-3.5 h-3.5 text-emerald-500 group-hover:scale-110 transition-transform" />
+                    <span>Meme Audio: <strong className="text-emerald-600 dark:text-emerald-400 font-semibold font-mono">ON</strong></span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse ml-0.5" />
+                  </>
+                ) : (
+                  <>
+                    <VolumeX className="w-3.5 h-3.5 text-zinc-400 group-hover:scale-110 transition-transform" />
+                    <span>Meme Audio: <span className="text-zinc-400 font-mono">MUTED</span></span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
-          <h1 className={cn("text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black mb-5 md:mb-6 bg-clip-text text-transparent bg-gradient-to-r", isDark ? "from-white via-orange-100 to-red-200" : "from-gray-900 via-orange-600 to-red-600")}>
-            Resume Roaster
-          </h1>
-          <p className={cn("text-lg md:text-xl max-w-2xl mx-auto leading-relaxed", isDark ? "text-gray-400" : "text-gray-600")}>
-            Upload your resume and get roasted by our AI. We&apos;ll tell you exactly why you aren&apos;t getting those interviews.
-          </p>
-        </m.div>
+        </div>
+      </section>
 
+      {/* ── 2. MAIN PLATFORM CONTENT ── */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         {!roastData ? (
           <ResumeUpload
             file={file}
@@ -277,7 +306,7 @@ ${roastData.suggestions.map((s) => `\u2022 ${s}`).join("\n")}
             roastData={roastData}
             selectedTone={selectedTone}
             isSpeaking={isSpeaking}
-            onSpeak={() => isSpeaking ? stop() : speak(roastData.brutalRoast)}
+            onSpeak={() => (isSpeaking ? stop() : speak(roastData.brutalRoast))}
             completedSuggestions={completedSuggestions}
             onToggleSuggestion={toggleSuggestion}
             onCopy={copyToClipboard}
@@ -289,7 +318,7 @@ ${roastData.suggestions.map((s) => `\u2022 ${s}`).join("\n")}
             trackerFeedback={trackerFeedback}
           />
         )}
-      </div>
+      </main>
     </div>
   );
 }

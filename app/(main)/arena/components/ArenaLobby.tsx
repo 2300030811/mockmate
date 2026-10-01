@@ -2,7 +2,7 @@
 
 import React from "react";
 import { m } from "framer-motion";
-import { ChevronRight, History, Swords, Globe, Database, Cloud, Terminal, Shield } from "lucide-react";
+import { ChevronRight, History, Swords, Globe, Database, Cloud, Terminal, Shield, Trophy, Flame, Activity, Sparkles, ArrowRight } from "lucide-react";
 import { StatItem, RecentMatch } from "../types";
 import { getAvatarIcon } from "@/lib/icons";
 import { Button } from "@/components/ui/Button";
@@ -53,131 +53,182 @@ export const ArenaLobby = React.memo(function ArenaLobby({
   isAuthenticated = false,
 }: ArenaLobbyProps) {
   const UserIcon = getAvatarIcon(userAvatar);
+
   return (
     <m.div 
       key="lobby"
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 1.1 }}
-      className="flex-1 flex flex-col items-center justify-start py-12 md:py-20 p-6 relative z-10 overflow-y-auto custom-scrollbar"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.98 }}
+      transition={{ duration: 0.35 }}
+      className="flex-1 flex flex-col items-center justify-start py-8 md:py-14 px-4 sm:px-6 relative z-10 overflow-y-auto custom-scrollbar max-w-5xl mx-auto w-full"
     >
-      <div className="relative group mb-8">
-         <div className="absolute inset-0 bg-red-600 rounded-[2.5rem] blur-2xl opacity-20 group-hover:opacity-40 transition-opacity" />
-         <div className="relative w-24 h-24 md:w-28 md:h-28 bg-gray-900 border-2 border-red-500/30 rounded-[2.5rem] flex items-center justify-center shadow-2xl overflow-hidden">
-            <UserIcon className="w-10 h-10 md:w-12 md:h-12 text-red-500 animate-[wiggle_3s_ease-in-out_infinite]" />
-            <div className="absolute inset-0 bg-gradient-to-tr from-red-600/10 to-transparent" />
-         </div>
-      </div>
-      
-      <h1 className="text-5xl md:text-7xl font-black mb-4 tracking-tighter italic text-center">
-         THE <span className="bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">ARENA</span>
-      </h1>
-      <p className="text-gray-400 mb-6 md:mb-10 text-center max-w-sm font-bold uppercase tracking-widest text-xs md:text-sm px-4">
-         Technical Combat • Ranked Battles • Global Leaderboard
-      </p>
-
-      <div className="flex flex-wrap justify-center gap-2 md:gap-3 mb-10 max-w-2xl px-4" role="group" aria-label="Quiz categories">
-         {CATEGORIES.map((cat) => (
-           <button
-             key={cat.id}
-             onClick={() => onCategoryChange(cat.id)}
-             aria-pressed={selectedCategory === cat.id}
-             aria-label={`Select ${cat.name} category`}
-             className={`flex items-center gap-2 px-4 py-2 md:px-5 md:py-2.5 rounded-full text-[10px] md:text-xs font-black uppercase tracking-wider transition-all border
-               ${selectedCategory === cat.id 
-                 ? 'bg-red-600 border-red-600 text-white shadow-[0_0_15px_rgba(220,38,38,0.4)]' 
-                 : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:border-white/20'}`}
-           >
-             <cat.icon size={14} aria-hidden="true" />
-             {cat.name}
-           </button>
-         ))}
+      {/* ── Top Category Tag & Avatar ── */}
+      <div className="flex items-center justify-center gap-2 mb-4">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-mono tracking-wide uppercase bg-[#5e6ad2]/10 text-[#5e6ad2] border border-[#5e6ad2]/20">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#5e6ad2] animate-pulse" />
+          MULTIPLAYER ENGINE // 1V1 RANKED COMBAT
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6 w-full max-w-4xl mb-10 md:mb-16 px-4">
-         {stats.map((stat, i) => (
-           <div key={i} className={`bg-gray-900/40 border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-6 text-center hover:border-white/20 transition-all hover:-translate-y-1 ${stat.hideOnMobile ? 'hidden md:block' : ''}`} aria-label={`${stat.label}: ${stat.val}`}>
-              <div className={`w-10 h-10 md:w-12 md:h-12 ${stat.bg} rounded-xl md:rounded-2xl flex items-center justify-center mx-auto mb-3 md:mb-4`}>
-                 <stat.icon className={stat.color} size={20} aria-hidden="true" />
-              </div>
-              <h3 className="text-xs md:text-sm font-black uppercase text-gray-400 mb-1 tracking-widest">{stat.label}</h3>
-              <p className="text-xl md:text-2xl font-black text-white">{stat.val}</p>
-           </div>
-         ))}
+      {/* ── Header Title & Subtitle ── */}
+      <div className="text-center max-w-2xl mb-8">
+        <div className="relative inline-flex items-center justify-center mb-4">
+          <div className="w-16 h-16 rounded-2xl bg-white dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] shadow-subtle flex items-center justify-center text-[#5e6ad2]">
+            <UserIcon className="w-8 h-8" />
+          </div>
+        </div>
+
+        <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-zinc-900 dark:text-[#ebebef] mb-3">
+          Engineering Combat <span className="text-[#5e6ad2]">Arena</span>
+        </h1>
+        <p className="text-sm sm:text-base text-zinc-600 dark:text-[#8b8b9e] leading-relaxed">
+          Challenge engineers worldwide in real-time 1v1 technical quiz duels. Test algorithm precision, cloud architecture, and speed to climb the global leaderboard.
+        </p>
       </div>
 
+      {/* ── Category Chips ── */}
+      <div className="w-full max-w-3xl mb-8">
+        <div className="text-center mb-2.5">
+          <span className="text-[10.5px] font-mono uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+            CHOOSE COMBAT SECTOR
+          </span>
+        </div>
+        <div className="flex flex-wrap justify-center gap-2" role="group" aria-label="Quiz categories">
+          {CATEGORIES.map((cat) => {
+            const isSelected = selectedCategory === cat.id;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => onCategoryChange(cat.id)}
+                aria-pressed={isSelected}
+                aria-label={`Select ${cat.name} category`}
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all border cursor-pointer
+                  ${isSelected 
+                    ? 'bg-[#5e6ad2] border-[#5e6ad2] text-white shadow-subtle' 
+                    : 'bg-white dark:bg-[#14141e] border-zinc-200 dark:border-[#1e1e2a] text-zinc-600 dark:text-[#8b8b9e] hover:text-zinc-900 dark:hover:text-[#ebebef] hover:bg-zinc-100 dark:hover:bg-[#181824]'}`}
+              >
+                <cat.icon size={13} aria-hidden="true" />
+                {cat.name}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── KPI Telemetry Stats Row ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 w-full max-w-3xl mb-8">
+        {stats.map((stat, i) => (
+          <div 
+            key={i} 
+            className={`bg-white dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] rounded-xl p-4 sm:p-5 text-center shadow-subtle transition-all hover:border-zinc-300 dark:hover:border-[#2e2e42] ${stat.hideOnMobile ? 'hidden sm:block' : ''}`}
+            aria-label={`${stat.label}: ${stat.val}`}
+          >
+            <div className="flex items-center justify-center gap-2 text-zinc-400 dark:text-zinc-500 text-[10.5px] font-mono uppercase tracking-wider mb-2">
+              <stat.icon className={stat.color} size={14} aria-hidden="true" />
+              <span>{stat.label}</span>
+            </div>
+            <p className="text-2xl sm:text-3xl font-extrabold text-zinc-900 dark:text-[#ebebef] tracking-tight">
+              {stat.val}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Unauthenticated Notice ── */}
       {!isAuthenticated && !statsLoading && (
         <m.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-2xl px-4 mb-10 p-6 bg-blue-600/10 border border-blue-500/20 rounded-3xl text-center backdrop-blur-sm"
+          className="w-full max-w-xl mb-8 p-5 bg-white dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] rounded-xl text-center shadow-subtle"
         >
-           <h3 className="text-lg font-black mb-2 flex items-center justify-center gap-2">
-             <Shield className="text-blue-500" size={20} />
-             Ranked Access Restricted
-           </h3>
-           <p className="text-sm text-gray-400 mb-6 font-medium">Sign in to track your Elo rating, climb the leaderboard, and unlock ranked Sector battles.</p>
-           <Button 
-             onClick={() => window.location.href = '/login?next=/arena'} 
-             variant="primary" 
-             className="rounded-full px-8"
-           >
-             Sign In to Compete
-           </Button>
+          <div className="flex items-center justify-center gap-2 mb-1.5 text-zinc-900 dark:text-[#ebebef] font-bold text-sm">
+            <Shield className="text-[#5e6ad2]" size={16} />
+            <span>Ranked Matchmaking Access</span>
+          </div>
+          <p className="text-xs text-zinc-500 dark:text-[#8b8b9e] mb-4">
+            Sign in to record your Elo rating, climb the seasonal leaderboard, and save match history.
+          </p>
+          <Button 
+            onClick={() => window.location.href = '/login?redirect=/arena'} 
+            variant="primary" 
+            className="rounded-lg px-6 py-2 text-xs font-semibold bg-[#5e6ad2] hover:bg-[#4f5ac4] text-white"
+          >
+            Sign In to Compete
+          </Button>
         </m.div>
       )}
 
       {statsError && (
-        <div className="w-full max-w-4xl px-4 mb-6 p-3 bg-yellow-900/20 border border-yellow-500/30 rounded-lg">
-          <p className="text-xs md:text-sm text-yellow-400 font-semibold">{statsError}</p>
+        <div className="w-full max-w-3xl mb-6 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-center">
+          <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">{statsError}</p>
         </div>
       )}
 
+      {/* ── Enter Combat Action Button ── */}
       <button 
-         onClick={onStart}
-         aria-label={`Enter combat with ${selectedCategory} category`}
-         className="group relative px-10 py-5 md:px-16 md:py-6 bg-white text-black rounded-[2rem] md:rounded-[2.5rem] font-black text-lg md:text-2xl hover:scale-105 active:scale-95 transition-all shadow-xl flex items-center gap-4 overflow-hidden mb-12 sm:mb-16 shrink-0"
+        onClick={onStart}
+        aria-label={`Enter combat with ${selectedCategory} category`}
+        className="group relative px-8 py-3.5 bg-[#5e6ad2] hover:bg-[#4f5ac4] text-white rounded-xl font-bold text-sm sm:text-base transition-all shadow-subtle hover:shadow-md flex items-center gap-3 active:scale-95 mb-10 shrink-0 cursor-pointer"
       >
-         <span className="relative z-10 flex items-center gap-3">
-           <Swords size={28} className="hidden md:block" aria-hidden="true" />
-           ENTER COMBAT
-         </span>
-         <ChevronRight size={24} className="relative z-10 group-hover:translate-x-2 transition-transform" aria-hidden="true" />
-         <div className="absolute inset-0 bg-gradient-to-r from-red-600/0 via-red-600/10 to-red-600/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+        <Swords size={18} aria-hidden="true" />
+        <span>ENTER COMBAT</span>
+        <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" aria-hidden="true" />
       </button>
 
+      {/* ── Recent Engagements Feed ── */}
       {recentMatches?.length > 0 && (
-        <div className="w-full max-w-2xl px-4 animate-in fade-in slide-in-from-bottom-5 duration-700">
-           <div className="flex items-center gap-2 mb-4 px-2">
-              <History size={14} className="text-gray-400" aria-hidden="true" />
-              <h4 className="text-sm font-black uppercase text-gray-400 tracking-[0.2em]">Recent Engagements</h4>
-           </div>
-           <div className="space-y-2" role="list">
-              {recentMatches.map((match, i) => {
-                const category = match.category.replace('arena_', '').toUpperCase();
-                const isWin = match.winStatus === 'win' || (!match.winStatus && match.score >= match.total_questions / 2);
-                const isTie = match.winStatus === 'tie';
-                return (
-                  <div key={i} className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 flex items-center justify-between group hover:bg-white/[0.04] transition-colors" role="listitem" aria-label={`${match.winStatus || (isWin ? 'Victory' : 'Defeat')} in ${category} with ${match.score}/${match.total_questions} correct`}>
-                     <div className="flex items-center gap-4">
-                        <div className={`w-2 h-2 rounded-full ${isWin ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : isTie ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]'}`} aria-hidden="true" />
-                        <div>
-                           <div className="text-[10px] font-black text-white italic">{category} SECTOR</div>
-                           <div className="text-[8px] font-bold text-gray-500 uppercase tracking-tighter">
-                             <ClientDate date={match.completed_at} />
-                           </div>
-                        </div>
-                     </div>
-                     <div className="text-right">
-                        <div className={`text-sm font-black ${isWin ? 'text-emerald-400' : isTie ? 'text-amber-400' : 'text-red-400'}`}>
-                           {match.score}/{match.total_questions}
-                        </div>
-                        <div className="text-[8px] font-bold text-gray-600 uppercase">Correct</div>
-                     </div>
+        <div className="w-full max-w-2xl px-2">
+          <div className="flex items-center justify-between mb-3 px-1">
+            <div className="flex items-center gap-1.5 text-zinc-500 dark:text-[#8b8b9e] text-xs font-mono uppercase tracking-wider">
+              <History size={13} aria-hidden="true" />
+              <span>Recent Engagements</span>
+            </div>
+            <span className="text-[10px] font-mono text-zinc-400">PAST DUELS</span>
+          </div>
+
+          <div className="space-y-2" role="list">
+            {recentMatches.map((match, i) => {
+              const categoryName = match.category.replace('arena_', '').toUpperCase();
+              const isWin = match.winStatus === 'win' || (!match.winStatus && match.score >= match.total_questions / 2);
+              const isTie = match.winStatus === 'tie';
+              return (
+                <div 
+                  key={i} 
+                  className="bg-white dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] rounded-xl p-3 sm:p-4 flex items-center justify-between shadow-subtle hover:border-zinc-300 dark:hover:border-[#2e2e42] transition-colors"
+                  role="listitem"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className={`w-2 h-2 rounded-full ${isWin ? 'bg-emerald-500' : isTie ? 'bg-amber-500' : 'bg-rose-500'}`} />
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-zinc-900 dark:text-[#ebebef]">
+                          {categoryName} SECTOR
+                        </span>
+                        <span className={`text-[9.5px] font-mono uppercase px-1.5 py-0.2 rounded font-semibold ${
+                          isWin ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 
+                          isTie ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 
+                          'bg-rose-500/10 text-rose-500 border border-rose-500/20'
+                        }`}>
+                          {isWin ? "Victory" : isTie ? "Draw" : "Defeat"}
+                        </span>
+                      </div>
+                      <div className="text-[10px] font-mono text-zinc-400 mt-0.5">
+                        <ClientDate date={match.completed_at} />
+                      </div>
+                    </div>
                   </div>
-                );
-              })}
-           </div>
+
+                  <div className="text-right">
+                    <div className={`text-sm font-extrabold ${isWin ? 'text-emerald-500' : isTie ? 'text-amber-500' : 'text-rose-500'}`}>
+                      {match.score}/{match.total_questions}
+                    </div>
+                    <div className="text-[9.5px] font-mono text-zinc-400 uppercase">Correct</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </m.div>

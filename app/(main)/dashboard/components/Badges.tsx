@@ -23,20 +23,23 @@ export const Badges = memo(function Badges({ stats }: { stats: DashboardStats })
 
   return (
     <m.div 
-      initial={prefersReduced ? false : { opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={prefersReduced ? { duration: 0 } : { delay: 0.3 }}
-      className="bg-white/70 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 backdrop-blur-md shadow-lg dark:shadow-none transition-colors duration-300"
+      initial={prefersReduced ? false : { opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={prefersReduced ? { duration: 0 } : { delay: 0.15 }}
+      className="rounded-xl border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-5 sm:p-6 shadow-subtle transition-colors"
     >
-       <div className="flex items-center justify-between mb-6">
-         <h2 className="text-sm font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 flex items-center gap-2">
-            <Award size={16} /> Badges
-         </h2>
-         <span className="text-xs font-bold text-gray-400 dark:text-gray-500">
+       <div className="flex items-center justify-between border-b border-zinc-200 dark:border-[#1e1e2a] pb-2 mb-4">
+         <div className="flex items-center gap-2">
+           <span className="w-1.5 h-1.5 rounded-full bg-[#5e6ad2]" />
+           <h2 className="text-xs font-mono font-semibold uppercase tracking-[0.08em] text-zinc-500 dark:text-[#8b8b9e]">
+             Achievements
+           </h2>
+         </div>
+         <span className="text-[11px] font-mono text-zinc-400 dark:text-[#5a5a6e]">
            {unlockedCount}/{badges.length} unlocked
          </span>
        </div>
-       <div className="grid grid-cols-4 sm:grid-cols-5 gap-2" role="list" aria-label="Achievement badges">
+       <div className="grid grid-cols-4 sm:grid-cols-5 gap-2.5" role="list" aria-label="Achievement badges">
           {badges.map((badge) => {
              const IconComp = ICON_MAP[badge.icon] || Star;
              return (
@@ -46,20 +49,20 @@ export const Badges = memo(function Badges({ stats }: { stats: DashboardStats })
                  className="group relative flex flex-col items-center"
                  aria-label={`${badge.name} badge - ${badge.unlocked ? 'Unlocked' : 'Locked'}: ${badge.desc}`}
                >
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg transition-all ${
+                  <div className={`w-11 h-11 rounded-lg flex items-center justify-center text-base transition-all ${
                      badge.unlocked 
-                       ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white shadow-lg shadow-black/5 dark:shadow-white/5 border border-gray-200 dark:border-gray-700' 
-                       : 'bg-gray-50 dark:bg-gray-900 text-gray-300 dark:text-gray-700 border border-gray-200 dark:border-gray-800 grayscale opacity-50'
+                       ? 'bg-zinc-50 dark:bg-[#181824] text-zinc-900 dark:text-[#ebebef] border border-zinc-200 dark:border-[#2a2a3a] shadow-subtle hover:border-[#5e6ad2]' 
+                       : 'bg-zinc-100/50 dark:bg-[#101018] text-zinc-300 dark:text-[#3a3a4c] border border-zinc-200/50 dark:border-[#181822] opacity-40'
                   }`}>
-                     <IconComp className={`w-5 h-5 ${badge.unlocked ? badge.color : ''}`} />
+                     <IconComp className={`w-4 h-4 ${badge.unlocked ? badge.color : ''}`} />
                   </div>
                   {/* Tooltip */}
                   <div
                     role="tooltip"
-                    className="absolute top-full mt-2 w-32 p-2 bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-lg text-center hidden group-hover:block z-20 shadow-lg"
+                    className="absolute top-full mt-2 w-36 p-2 bg-white dark:bg-[#181824] border border-zinc-200 dark:border-[#2a2a3a] rounded-lg text-center hidden group-hover:block z-30 shadow-subtle"
                   >
-                     <p className="text-xs font-bold text-gray-900 dark:text-white mb-1">{badge.name}</p>
-                     <p className="text-[10px] text-gray-500">{badge.desc}</p>
+                     <p className="text-xs font-semibold text-zinc-900 dark:text-[#ebebef] mb-0.5">{badge.name}</p>
+                     <p className="text-[10px] font-mono text-zinc-400 dark:text-[#8b8b9e] leading-tight">{badge.desc}</p>
                   </div>
                </div>
              );
