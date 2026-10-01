@@ -411,6 +411,7 @@ export default function SystemDesignCanvas() {
 
         <main
           id="sd-canvas"
+          data-testid="system-design-ready"
           ref={canvasRef}
           onMouseDown={(e) => handleMouseDown(e, state.activeTool, canvasRef)}
           onMouseMove={handleMouseMoveWrapper}

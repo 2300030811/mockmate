@@ -291,27 +291,36 @@ export const ProjectWorkspace = React.memo(function ProjectWorkspace({
       </SandpackLayout>
 
       {/* Mobile Bottom Toolbar */}
-      <div className="md:hidden h-11 border-t border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#0d0d12] flex items-center justify-between px-3 gap-2 overflow-x-auto">
-        <div className="relative z-50">
+      <div className="md:hidden h-11 border-t border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#0d0d12] flex items-center justify-between px-3 gap-2 shrink-0">
+        <div className="relative z-30">
           <button
+            type="button"
             onClick={() => setShowFilePicker((prev) => !prev)}
             className="h-7 px-2.5 bg-zinc-100 dark:bg-[#14141e] hover:bg-zinc-200 dark:hover:bg-[#1e1e2a] text-zinc-700 dark:text-[#ebebef] border border-zinc-200 dark:border-[#1e1e2a] rounded text-[11px] font-medium flex items-center gap-1.5 transition-colors whitespace-nowrap"
             aria-expanded={showFilePicker}
             aria-haspopup="listbox"
+            aria-controls="project-file-picker"
             aria-label="Open file picker"
           >
             📁 Files
           </button>
           {showFilePicker && (
             <>
-              <div className="fixed inset-0 z-30" onClick={() => setShowFilePicker(false)} />
               <div
-                className="absolute bottom-full left-0 mb-1.5 flex flex-col bg-white dark:bg-[#14141e] rounded-md shadow-lg border border-zinc-200 dark:border-[#1e1e2a] z-[60] max-h-48 overflow-y-auto min-w-[180px]"
+                className="fixed inset-0 z-30 bg-transparent"
+                aria-hidden="true"
+                onClick={() => setShowFilePicker(false)}
+              />
+              <div
+                id="project-file-picker"
+                className="absolute bottom-full left-0 mb-1.5 flex flex-col bg-white dark:bg-[#14141e] rounded-md shadow-lg border border-zinc-200 dark:border-[#1e1e2a] z-40 max-h-48 overflow-y-auto min-w-[180px]"
                 role="listbox"
+                aria-label="Project files"
               >
                 {Object.keys(sandpack.files).map((fileName) => (
                   <button
                     key={fileName}
+                    type="button"
                     role="option"
                     aria-selected={sandpack.activeFile === fileName}
                     className={`px-3 py-1.5 text-xs text-left hover:bg-zinc-100 dark:hover:bg-[#1e1e2a] text-zinc-700 dark:text-[#ebebef] border-b border-zinc-100 dark:border-[#1a1a26] last:border-0 whitespace-nowrap font-mono ${

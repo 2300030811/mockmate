@@ -235,6 +235,7 @@ export function FeatureCards() {
         {showInterview && (
           <Link
             href="/demo"
+            aria-label="Mock Interviews"
             className="group block focus:outline-none focus:ring-1 focus:ring-[#5e6ad2] rounded-lg"
           >
             <SpotlightCard>
@@ -580,6 +581,7 @@ export function FeatureCards() {
         {showPractice && (
           <Link
             href="/upload"
+            aria-label="AI Quiz Generator"
             className="group block focus:outline-none focus:ring-1 focus:ring-[#5e6ad2] rounded-lg"
           >
             <SpotlightCard>

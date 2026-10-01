@@ -199,8 +199,10 @@ export const Toolbar = memo(({
             return (
               <button
                 key={t}
+                type="button"
                 onClick={() => addNode(t)}
-                title={`${t} (${Config.role}): ${Config.desc}`}
+                title={t}
+                aria-label={t}
                 className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-[#161622] border border-zinc-200/60 dark:border-[#1a1a26] hover:border-[#5e6ad2]/40 transition-all text-left group"
               >
                 <div className="w-6 h-6 rounded-md flex items-center justify-center bg-zinc-100 dark:bg-[#1a1a28] border border-zinc-200/80 dark:border-[#222234] text-zinc-700 dark:text-zinc-300 group-hover:border-[#5e6ad2]/50 transition-colors shrink-0">
