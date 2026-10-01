@@ -1,227 +1,456 @@
-"use client";
-
-import { m } from "framer-motion";
-import { Github, Linkedin, Code2, Sparkles, Users } from "lucide-react";
-import Image from "next/image";
+import { Metadata } from "next";
 import Link from "next/link";
-import { useTheme } from "@/components/providers/providers";
+import Image from "next/image";
+import {
+  Github,
+  Linkedin,
+  Sparkles,
+  Code2,
+  Users,
+  Cpu,
+  Layers,
+  ShieldCheck,
+  ArrowRight,
+  ArrowLeft,
+  Terminal,
+  Activity,
+  CheckCircle2,
+  Building2,
+  Lock,
+  Compass,
+} from "lucide-react";
+import { HomeBackground } from "@/components/home/HomeBackground";
 
-const team = [
+export const metadata: Metadata = {
+  title: "About - MockMate | Story, Architecture & Team",
+  description:
+    "Learn about MockMate's mission, autonomous AI interview architecture, and the engineers who built the platform.",
+};
+
+interface TeamMember {
+  name: string;
+  role: string;
+  domainTag: string;
+  avatar: string;
+  headline: string;
+  bio: string;
+  areasOfWork: {
+    title: string;
+    description: string;
+  }[];
+  technologies: string[];
+  github: string;
+  linkedin: string;
+}
+
+const teamMembers: TeamMember[] = [
   {
     name: "Bhima Mahesh Sai",
-    role: "Full Stack Developer",
-    description:
-      "Passionate about building intelligent web applications and crafting seamless user experiences. Specializes in AI integrations and scalable backend systems.",
-    image: "/mahesh_avatar.png",
+    role: "Full Stack & AI Systems Developer",
+    domainTag: "Core Platform & AI Systems",
+    avatar: "/mahesh_avatar.png",
+    headline: "Platform architecture, AI pipeline orchestration & core engineering",
+    bio: "Full-stack and AI developer who engineered MockMate's core systems from initial architecture to production. Designed the multi-model reasoning gateway that routes between Groq Llama 3.3 and Google Gemini 2.0 Flash, implemented the acoustic speech evaluation engine with Azure Cognitive Services, and built the Placement Hub campus intelligence radar. Also developed the automated ATS resume parser, CareerOps telemetry gates, in-browser code execution sandboxes, and platform security infrastructure.",
+    areasOfWork: [
+      {
+        title: "Multi-Model AI Gateway",
+        description:
+          "Engineered the low-latency streaming evaluation engine that dynamically orchestrates Groq Llama 3.3 and Gemini 2.0 Flash for comprehensive diagnostic feedback.",
+      },
+      {
+        title: "Acoustic Speech Analysis",
+        description:
+          "Implemented the Azure Cognitive Speech SDK pipeline to calculate candidate speaking pace, clarity confidence, and filler-word patterns in real-time.",
+      },
+      {
+        title: "Placement Hub & CareerOps",
+        description:
+          "Architected the campus recruitment radar, automated circular parsing workflow, and predictive scoring state machines to track real-time hiring benchmarks.",
+      },
+      {
+        title: "Full-Stack Architecture & Security",
+        description:
+          "Designed the Next.js App Router structure, Supabase database schemas with row-level security, Monaco technical code sandboxes, and test coverage across 85+ modules.",
+      },
+    ],
+    technologies: [
+      "Next.js 14",
+      "TypeScript",
+      "Groq Llama 3.3",
+      "Gemini 2.0 Flash",
+      "Azure Speech SDK",
+      "Supabase & RLS",
+      "Monaco Sandbox",
+      "Placement Radar",
+      "Tailwind CSS",
+      "CareerOps Engine",
+    ],
     github: "https://github.com/2300030811",
     linkedin: "https://www.linkedin.com/in/mahesh-sai-bhima-038243286",
-    gradient: "from-blue-500 to-cyan-500",
-    glowColor: "rgba(59,130,246,0.3)",
-    skills: ["React", "Next.js", "Node.js", "AI/ML"],
   },
   {
     name: "Kondaveti Tejaswanth",
-    role: "Full Stack Developer",
-    description:
-      "Dedicated to creating innovative solutions with cutting-edge technologies. Passionate about AI-driven products, cloud architecture, and delivering high-quality software.",
-    image: "/tejaswanth_avatar.png",
+    role: "Full Stack & Cloud Infrastructure Developer",
+    domainTag: "Cloud & Backend Integration",
+    avatar: "/tejaswanth_avatar.png",
+    headline: "Cloud workflows, backend service integration & system testing",
+    bio: "Full-stack developer focused on cloud infrastructure, backend service integrations, and system reliability. Contributed to microservice workflows, cloud deployment pipelines, and API reliability benchmarking. Partnered on integration testing, developer tooling, and cross-platform verification routines to support a stable candidate experience across the platform.",
+    areasOfWork: [
+      {
+        title: "Cloud & Service Integration",
+        description:
+          "Assisted with cloud infrastructure setup, hosting configurations, and backend service integration workflows across application environments.",
+      },
+      {
+        title: "API Reliability & Testing",
+        description:
+          "Supported endpoint verification routines, performance benchmarking, and error-handling flows to maintain consistent server communication.",
+      },
+      {
+        title: "DevOps & Developer Tooling",
+        description:
+          "Contributed to continuous integration pipelines, environment configurations, and verification scripts for platform maintenance.",
+      },
+    ],
+    technologies: [
+      "TypeScript",
+      "Spring Boot",
+      "Cloud Architecture",
+      "REST APIs",
+      "DevOps & CI/CD",
+      "PostgreSQL",
+      "System Testing",
+      "Git Workflows",
+    ],
     github: "https://github.com/ktejaswanth",
     linkedin: "https://www.linkedin.com/in/ktejaswanth/",
-    gradient: "from-purple-500 to-pink-500",
-    glowColor: "rgba(168,85,247,0.3)",
-    skills: ["TypeScript", "Spring Boot", "Cloud", "DevOps"],
+  },
+];
+
+const platformPillars = [
+  {
+    icon: Cpu,
+    title: "Multi-Model Intelligence",
+    description:
+      "Dynamically pairs high-throughput Groq inference with Gemini 2.0 reasoning to deliver deep feedback on algorithmic solutions and architectural trade-offs.",
+    badge: "Sub-300ms Evaluation",
+  },
+  {
+    icon: Activity,
+    title: "Acoustic Telemetry",
+    description:
+      "Measures speaking pace, clarity confidence, and verbal articulation live through Azure Speech SDK, coaching candidates to communicate like seasoned engineers.",
+    badge: "Speech SDK Telemetry",
+  },
+  {
+    icon: Building2,
+    title: "Live Campus Intelligence",
+    description:
+      "Aggregates active campus drives, eligibility thresholds (CGPA, branches), and round-by-round selection intelligence into a unified radar.",
+    badge: "Placement Radar",
+  },
+  {
+    icon: Terminal,
+    title: "In-Browser Sandboxes",
+    description:
+      "Monaco and Sandpack sandboxes allow candidates to write, compile, and debug code live while answering architectural follow-ups from the AI.",
+    badge: "Isolated Runtimes",
   },
 ];
 
 export default function AboutPage() {
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
-
   return (
-    <div
-      className={`min-h-screen pt-32 pb-20 px-4 transition-colors duration-500 ${isDark ? "bg-gray-950 text-gray-300" : "bg-gray-50 text-gray-700"
-        }`}
-    >
-      {/* Hero Section */}
-      <div className="max-w-5xl mx-auto">
-        <m.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3 }}
-          className="text-center mb-20"
-        >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 mb-6">
-            <Users size={18} className="text-blue-500" />
-            <span className="text-sm font-bold tracking-wider uppercase bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-500">
-              Meet the Team
-            </span>
-          </div>
+    <div className="min-h-screen bg-zinc-50 dark:bg-[#0d0d12] text-zinc-900 dark:text-[#ebebef] pt-24 pb-20 px-4 sm:px-6 relative overflow-hidden transition-colors selection:bg-[#5e6ad2]/20 font-sans">
+      <HomeBackground />
 
-          <h1
-            className={`text-5xl md:text-6xl font-black mb-6 leading-tight ${isDark ? "text-white" : "text-gray-900"
-              }`}
-          >
-            The Minds Behind{" "}
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500">
-              MockMate
-            </span>
-          </h1>
-
-          <p className="text-lg md:text-xl opacity-70 max-w-2xl mx-auto leading-relaxed">
-            Two developers united by a passion for AI and a mission to help
-            everyone land their dream job.
-          </p>
-        </m.div>
-
-        {/* Team Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-20">
-          {team.map((member, index) => (
-            <m.div
-              key={member.name}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3, delay: index * 0.1 }}
-              whileHover={{ y: -6, transition: { duration: 0.2 } }}
-              className="group relative"
-            >
-              {/* Glow effect */}
-              <div
-                className="absolute -inset-0.5 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl"
-                style={{ background: member.glowColor }}
-              />
-
-              <div
-                className={`relative rounded-3xl overflow-hidden border transition-all duration-300 ${isDark
-                    ? "bg-gray-900 border-gray-800 group-hover:border-gray-600"
-                    : "bg-white border-gray-200 group-hover:border-gray-300 shadow-lg"
-                  }`}
-              >
-                {/* Top gradient bar */}
-                <div
-                  className={`h-1.5 w-full bg-gradient-to-r ${member.gradient}`}
-                />
-
-                {/* Card Content */}
-                <div className="p-8">
-                  {/* Avatar */}
-                  <div className="flex justify-center mb-6">
-                    <div className="relative">
-                      <div
-                        className={`absolute -inset-1 rounded-full bg-gradient-to-r ${member.gradient} opacity-70 blur-sm group-hover:opacity-100 transition-opacity duration-300`}
-                      />
-                      <div className="relative w-28 h-28 rounded-full overflow-hidden border-4 border-white dark:border-gray-900">
-                        <Image
-                          src={member.image}
-                          alt={member.name}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Name & Role */}
-                  <div className="text-center mb-4">
-                    <h2
-                      className={`text-2xl font-black mb-1 ${isDark ? "text-white" : "text-gray-900"
-                        }`}
-                    >
-                      {member.name}
-                    </h2>
-                    <div
-                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold bg-gradient-to-r ${member.gradient} text-white`}
-                    >
-                      <Code2 size={13} />
-                      {member.role}
-                    </div>
-                  </div>
-
-                  {/* Description */}
-                  <p className="text-center text-sm leading-relaxed opacity-70 mb-6">
-                    {member.description}
-                  </p>
-
-                  {/* Skills */}
-                  <div className="flex flex-wrap justify-center gap-2 mb-7">
-                    {member.skills.map((skill) => (
-                      <span
-                        key={skill}
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${isDark
-                            ? "bg-gray-800 text-gray-300"
-                            : "bg-gray-100 text-gray-600"
-                          }`}
-                      >
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* Social Links */}
-                  <div className="flex justify-center gap-4">
-                    <Link
-                      href={member.github}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={`${member.name} GitHub`}
-                      className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 ${isDark
-                          ? "bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 hover:text-gray-900"
-                        }`}
-                    >
-                      <Github size={16} />
-                      GitHub
-                    </Link>
-
-                    <Link
-                      href={member.linkedin}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={`${member.name} LinkedIn`}
-                      className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 bg-gradient-to-r ${member.gradient} text-white hover:opacity-90 hover:scale-105`}
-                    >
-                      <Linkedin size={16} />
-                      LinkedIn
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </m.div>
-          ))}
-        </div>
-
-        {/* Bottom CTA */}
-        <m.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3, delay: 0.2 }}
-          className={`text-center p-10 rounded-3xl border ${isDark
-              ? "bg-gray-900 border-gray-800"
-              : "bg-white border-gray-200 shadow-md"
-            }`}
-        >
-          <div className="flex justify-center mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-              <Sparkles className="text-white w-6 h-6" />
-            </div>
-          </div>
-          <h3
-            className={`text-2xl font-black mb-3 ${isDark ? "text-white" : "text-gray-900"
-              }`}
-          >
-            Built with ❤️ and AI
-          </h3>
-          <p className="opacity-60 max-w-md mx-auto mb-6 text-sm leading-relaxed">
-            MockMate is crafted with passion, powered by cutting-edge AI, and
-            designed to give every job seeker an unfair advantage.
-          </p>
+      <div className="max-w-5xl mx-auto relative z-10 space-y-16">
+        {/* Navigation Breadcrumb */}
+        <div className="flex items-center gap-2 text-xs font-mono text-zinc-500 dark:text-[#8b8b9e]">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold transition-all hover:opacity-90 hover:scale-105"
+            className="hover:text-zinc-900 dark:hover:text-white transition-colors flex items-center gap-1"
           >
-            <Sparkles size={16} />
-            Explore MockMate
+            <ArrowLeft className="w-3.5 h-3.5" /> MockMate
           </Link>
-        </m.div>
+          <span>/</span>
+          <span className="text-[#5e6ad2] dark:text-[#828df8] font-semibold">About</span>
+        </div>
+
+        {/* Hero Section */}
+        <div className="space-y-4 text-center max-w-3xl mx-auto">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 text-[#5e6ad2] dark:text-[#828df8] text-xs font-mono font-semibold">
+            <Compass className="w-3.5 h-3.5" />
+            <span>ORIGIN & ENGINEERING</span>
+          </div>
+
+          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-zinc-900 dark:text-[#ebebef] leading-tight">
+            The Story & Architecture Behind{" "}
+            <span className="text-[#5e6ad2] dark:text-[#828df8]">MockMate</span>
+          </h1>
+
+          <p className="text-sm sm:text-base text-zinc-600 dark:text-[#8b8b9e] leading-relaxed">
+            Technical interviews shouldn&apos;t rely on guesswork or generic advice.
+            We built MockMate to provide real-time, low-latency interview simulation,
+            acoustic sensory evaluation, and actionable campus recruitment intelligence.
+          </p>
+        </div>
+
+        {/* The Why: Purpose & Philosophy */}
+        <div className="rounded-2xl border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-6 sm:p-8 space-y-4 shadow-xs">
+          <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-zinc-500 dark:text-[#8b8b9e]">
+            <Sparkles className="w-4 h-4 text-[#5e6ad2]" />
+            <span>Why We Built MockMate</span>
+          </div>
+
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-[#ebebef]">
+            Bridging the gap between academic study and elite industry benchmarks.
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 text-xs sm:text-sm text-zinc-600 dark:text-[#8b8b9e] leading-relaxed">
+            <p>
+              Campus hiring has transformed into a multifaceted process. Top technology companies
+              no longer evaluate candidates purely on written code; they test real-time architectural
+              reasoning, verbal articulation, and technical composure under pressure. Most students
+              never get the chance to practice answering technical questions out loud before their
+              most important interviews.
+            </p>
+            <p>
+              MockMate was conceived to solve this disparity. By combining high-throughput LLM reasoning
+              with real-time acoustic speech analysis and live campus placement intelligence, we created
+              a platform that listens, evaluates, and coaches students with the precision of an
+              experienced engineering lead.
+            </p>
+          </div>
+        </div>
+
+        {/* The Team: Symmetric, Respectful, Natural Depth */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between border-b border-zinc-200 dark:border-[#1e1e2a] pb-3">
+            <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-zinc-500 dark:text-[#8b8b9e]">
+              <Users className="w-3.5 h-3.5 text-[#5e6ad2]" />
+              <span>Engineering Team</span>
+            </div>
+            <span className="text-[11px] font-mono text-zinc-400 dark:text-[#5a5a6e]">
+              Platform Builders
+            </span>
+          </div>
+
+          {/* Symmetrical 2-Column Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+            {teamMembers.map((member) => (
+              <div
+                key={member.name}
+                className="flex flex-col justify-between rounded-2xl border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-6 sm:p-7 shadow-xs hover:border-zinc-300 dark:hover:border-[#2a2a3e] transition-all duration-200"
+              >
+                <div className="space-y-6">
+                  {/* Top Profile Header */}
+                  <div className="flex items-start gap-4">
+                    <div className="relative w-18 h-18 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border border-zinc-200/80 dark:border-[#222232] shrink-0 bg-zinc-100 dark:bg-[#101018]">
+                      <Image
+                        src={member.avatar}
+                        alt={member.name}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 640px) 72px, 80px"
+                      />
+                    </div>
+
+                    <div className="space-y-1 min-w-0">
+                      <span className="inline-block text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-zinc-100 dark:bg-white/[0.04] text-zinc-600 dark:text-[#8b8b9e] border border-zinc-200/80 dark:border-[#1e1e2a]">
+                        {member.domainTag}
+                      </span>
+
+                      <h3 className="text-lg sm:text-xl font-bold tracking-tight text-zinc-900 dark:text-[#ebebef]">
+                        {member.name}
+                      </h3>
+
+                      <p className="text-xs font-semibold text-[#5e6ad2] dark:text-[#828df8]">
+                        {member.role}
+                      </p>
+
+                      <p className="text-[11px] text-zinc-500 dark:text-[#7a7a8e] italic leading-tight">
+                        &quot;{member.headline}&quot;
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Bio Description */}
+                  <p className="text-xs text-zinc-600 dark:text-[#8b8b9e] leading-relaxed">
+                    {member.bio}
+                  </p>
+
+                  {/* Focus & Technical Development Areas */}
+                  <div className="space-y-3 pt-2 border-t border-zinc-100 dark:border-[#1e1e2a]">
+                    <div className="text-[10px] font-mono font-semibold uppercase tracking-wider text-zinc-400 dark:text-[#6a6a7e]">
+                      Technical Implementation & Scope
+                    </div>
+
+                    <div className="space-y-2.5">
+                      {member.areasOfWork.map((area, idx) => (
+                        <div key={idx} className="space-y-0.5">
+                          <div className="text-xs font-semibold text-zinc-800 dark:text-[#d0d0e0] flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#5e6ad2] dark:bg-[#828df8] shrink-0" />
+                            <span>{area.title}</span>
+                          </div>
+                          <p className="text-[11px] text-zinc-500 dark:text-[#8b8b9e] pl-3 leading-relaxed">
+                            {area.description}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Technologies Tags */}
+                  <div className="space-y-2 pt-2 border-t border-zinc-100 dark:border-[#1e1e2a]">
+                    <div className="text-[10px] font-mono font-semibold uppercase tracking-wider text-zinc-400 dark:text-[#6a6a7e]">
+                      Technologies
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {member.technologies.map((tech) => (
+                        <span
+                          key={tech}
+                          className="px-2 py-0.5 rounded text-[10px] font-mono bg-zinc-100 dark:bg-[#181824] text-zinc-700 dark:text-[#c0c0d4] border border-zinc-200/60 dark:border-[#222232]"
+                        >
+                          {tech}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Social & Profile Links */}
+                <div className="flex items-center gap-3 pt-5 mt-6 border-t border-zinc-100 dark:border-[#1e1e2a]">
+                  <Link
+                    href={member.github}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-zinc-100 dark:bg-white/[0.04] hover:bg-zinc-200 dark:hover:bg-white/10 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-[#1e1e2a] transition-colors"
+                  >
+                    <Github className="w-3.5 h-3.5" />
+                    <span>GitHub</span>
+                  </Link>
+
+                  <Link
+                    href={member.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-zinc-100 dark:bg-white/[0.04] hover:bg-zinc-200 dark:hover:bg-white/10 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-[#1e1e2a] transition-colors"
+                  >
+                    <Linkedin className="w-3.5 h-3.5" />
+                    <span>LinkedIn</span>
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Platform Architectural Systems */}
+        <div className="space-y-6 pt-4">
+          <div className="border-b border-zinc-200 dark:border-[#1e1e2a] pb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-zinc-500 dark:text-[#8b8b9e]">
+              <Layers className="w-3.5 h-3.5 text-[#5e6ad2]" />
+              <span>Platform Systems</span>
+            </div>
+            <span className="text-[11px] font-mono text-zinc-400 dark:text-[#5a5a6e]">
+              Architecture Overview
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {platformPillars.map((pillar) => {
+              const Icon = pillar.icon;
+              return (
+                <div
+                  key={pillar.title}
+                  className="rounded-xl border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-5 sm:p-6 space-y-2.5 transition-colors hover:border-[#5e6ad2]/30 shadow-xs"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="w-8 h-8 rounded-lg bg-[#5e6ad2]/10 text-[#5e6ad2] dark:text-[#828df8] flex items-center justify-center border border-[#5e6ad2]/20">
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-zinc-100 dark:bg-white/[0.04] text-zinc-600 dark:text-[#8b8b9e] border border-zinc-200 dark:border-[#1e1e2a]">
+                      {pillar.badge}
+                    </span>
+                  </div>
+
+                  <h3 className="text-sm font-bold text-zinc-900 dark:text-[#ebebef]">
+                    {pillar.title}
+                  </h3>
+
+                  <p className="text-xs text-zinc-500 dark:text-[#8b8b9e] leading-relaxed">
+                    {pillar.description}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Engineering Standards Callout */}
+        <div className="p-6 sm:p-7 rounded-2xl bg-white dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] space-y-4 shadow-xs">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-[#5e6ad2] dark:text-[#828df8]" />
+            <h3 className="text-sm font-bold text-zinc-900 dark:text-[#ebebef]">
+              Built with Strict Engineering Standards
+            </h3>
+          </div>
+
+          <p className="text-xs text-zinc-600 dark:text-[#8b8b9e] leading-relaxed">
+            MockMate is engineered with production-grade reliability: comprehensive test suites
+            covering API routes, scoring rubrics, and calendar synchronization; strict zero data-retention
+            policies with external model providers under the India DPDP Act (2023); and sub-300ms
+            end-to-end evaluation latency.
+          </p>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1 font-mono text-center text-xs">
+            <div className="p-3 rounded-lg bg-zinc-50 dark:bg-[#181824] border border-zinc-200/80 dark:border-[#222232]">
+              <div className="text-base font-bold text-zinc-900 dark:text-[#ebebef]">85+</div>
+              <div className="text-[10px] text-zinc-400 uppercase mt-0.5">Test Modules</div>
+            </div>
+            <div className="p-3 rounded-lg bg-zinc-50 dark:bg-[#181824] border border-zinc-200/80 dark:border-[#222232]">
+              <div className="text-base font-bold text-[#5e6ad2] dark:text-[#828df8]">114+</div>
+              <div className="text-[10px] text-zinc-400 uppercase mt-0.5">Hiring Benchmarks</div>
+            </div>
+            <div className="p-3 rounded-lg bg-zinc-50 dark:bg-[#181824] border border-zinc-200/80 dark:border-[#222232]">
+              <div className="text-base font-bold text-emerald-600 dark:text-emerald-400">&lt;300ms</div>
+              <div className="text-[10px] text-zinc-400 uppercase mt-0.5">Model Latency</div>
+            </div>
+            <div className="p-3 rounded-lg bg-zinc-50 dark:bg-[#181824] border border-zinc-200/80 dark:border-[#222232]">
+              <div className="text-base font-bold text-zinc-900 dark:text-[#ebebef]">DPDP</div>
+              <div className="text-[10px] text-zinc-400 uppercase mt-0.5">Privacy First</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom CTA Card */}
+        <div className="p-7 sm:p-9 rounded-2xl bg-white dark:bg-[#14141e] border border-zinc-200 dark:border-[#1e1e2a] text-center space-y-3.5 shadow-xs">
+          <h3 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-[#ebebef]">
+            Ready to test your readiness?
+          </h3>
+
+          <p className="text-xs sm:text-sm text-zinc-500 dark:text-[#8b8b9e] max-w-md mx-auto leading-relaxed">
+            Run an autonomous AI mock interview session or explore current campus placement benchmarks.
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            <Link
+              href="/demo"
+              className="w-full sm:w-auto px-5 py-2.5 rounded-lg font-semibold text-xs bg-[#5e6ad2] hover:bg-[#828df8] text-white shadow-xs flex items-center justify-center gap-2 transition-all"
+            >
+              Start Interview Simulation
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+
+            <Link
+              href="/placements"
+              className="w-full sm:w-auto px-5 py-2.5 rounded-lg font-semibold text-xs bg-zinc-100 dark:bg-white/[0.05] hover:bg-zinc-200 dark:hover:bg-white/10 text-zinc-800 dark:text-zinc-200 flex items-center justify-center gap-2 transition-colors border border-zinc-200 dark:border-[#1e1e2a]"
+            >
+              <Building2 className="w-3.5 h-3.5" />
+              Explore Placement Hub
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );
