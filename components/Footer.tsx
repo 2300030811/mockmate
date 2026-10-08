@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 
 export function Footer() {
@@ -18,9 +19,13 @@ export function Footer() {
           {/* Brand Info */}
           <div className="col-span-2 space-y-3">
             <Link href="/" className="flex items-center gap-2 group inline-flex">
-              <div className="w-[22px] h-[22px] rounded-[5px] bg-[#5e6ad2] flex items-center justify-center text-[10px] font-bold text-white leading-none">
-                M
-              </div>
+              <Image
+                src="/logo.png"
+                alt="MockMate"
+                width={22}
+                height={22}
+                className="w-[22px] h-[22px] rounded-[5px] object-cover"
+              />
               <span className="text-[13px] font-semibold text-zinc-900 dark:text-[#ebebef] tracking-[-0.01em]">
                 MockMate
               </span>

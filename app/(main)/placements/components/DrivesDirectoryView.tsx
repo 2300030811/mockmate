@@ -4,6 +4,12 @@ import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { PlacementDriveWithCompany, AcademicYear } from "@/types/placements";
 import {
+  drivePackage,
+  tierOf,
+  tierLabel,
+  tierBadgeClasses,
+} from "@/lib/utils/placement-tier";
+import {
   Search,
   Filter,
   Building2,
@@ -46,18 +52,18 @@ export function DrivesDirectoryView({
     }
   }, [initialTier]);
 
-  // Compute live tier counts for filter pills
+  // Compute live tier counts for filter pills (single source of truth: placement-tier.ts)
   const tierCounts = useMemo(() => {
     let superDream = 0;
     let dream = 0;
     let core = 0;
     let mass = 0;
     drives.forEach((d) => {
-      const p = d.package_max_lpa ?? d.package_min_lpa ?? 0;
-      if (p >= 20) superDream++;
-      else if (p >= 10) dream++;
-      else if (p >= 5) core++;
-      else mass++;
+      const tier = tierOf(drivePackage(d));
+      if (tier === "super_dream") superDream++;
+      else if (tier === "dream") dream++;
+      else if (tier === "core") core++;
+      else if (tier === "mass") mass++;
     });
     return { all: drives.length, superDream, dream, core, mass };
   }, [drives]);
@@ -85,23 +91,20 @@ export function DrivesDirectoryView({
         }
 
         // Package Tier filter
-        const maxPkg = d.package_max_lpa ?? d.package_min_lpa ?? 0;
-        if (selectedTier === "super_dream" && maxPkg < 20) return false;
-        if (selectedTier === "dream" && (maxPkg < 10 || maxPkg >= 20))
-          return false;
-        if (selectedTier === "standard" && (maxPkg < 5 || maxPkg >= 10))
-          return false;
-        if (selectedTier === "mass" && (maxPkg <= 0 || maxPkg >= 5))
-          return false;
+        if (selectedTier !== "all") {
+          const tier = tierOf(drivePackage(d));
+          const targetTier = selectedTier === "standard" ? "core" : selectedTier;
+          if (tier !== targetTier) return false;
+        }
 
         return true;
       })
       .sort((a, b) => {
         if (sortBy === "package_desc") {
-          return (b.package_max_lpa ?? 0) - (a.package_max_lpa ?? 0);
+          return (b.package_max_lpa ?? b.package_min_lpa ?? 0) - (a.package_max_lpa ?? a.package_min_lpa ?? 0);
         }
         if (sortBy === "package_asc") {
-          return (a.package_min_lpa ?? 0) - (b.package_min_lpa ?? 0);
+          return (a.package_min_lpa ?? a.package_max_lpa ?? 0) - (b.package_min_lpa ?? b.package_max_lpa ?? 0);
         }
         if (sortBy === "name_asc") {
           const nameA = a.placement_companies?.name || a.drive_name;
@@ -207,7 +210,7 @@ export function DrivesDirectoryView({
               badgeColor: "text-purple-600 dark:text-purple-400",
             },
             {
-              id: "standard",
+              id: "core",
               label: `⚡ Core 5–10 LPA (${tierCounts.core})`,
               badgeColor: "text-[#5e6ad2] dark:text-[#828df8]",
             },
@@ -216,19 +219,24 @@ export function DrivesDirectoryView({
               label: `🏢 Foundation <5 LPA (${tierCounts.mass})`,
               badgeColor: "text-zinc-600 dark:text-[#8b8b9e]",
             },
-          ].map((tier) => (
-            <button
-              key={tier.id}
-              onClick={() => setSelectedTier(tier.id)}
-              className={`text-xs px-2.5 py-1 rounded-md font-mono transition-all ${
-                selectedTier === tier.id
-                  ? "bg-[#5e6ad2] text-white font-bold shadow-sm shadow-[#5e6ad2]/20"
-                  : "bg-zinc-100 dark:bg-white/[0.04] text-zinc-600 dark:text-[#8b8b9e] hover:bg-zinc-200 dark:hover:bg-white/10"
-              }`}
-            >
-              {tier.label}
-            </button>
-          ))}
+          ].map((tier) => {
+            const isSelected =
+              selectedTier === tier.id ||
+              (tier.id === "core" && selectedTier === "standard");
+            return (
+              <button
+                key={tier.id}
+                onClick={() => setSelectedTier(tier.id)}
+                className={`text-xs px-2.5 py-1 rounded-md font-mono transition-all ${
+                  isSelected
+                    ? "bg-[#5e6ad2] text-white font-bold shadow-sm shadow-[#5e6ad2]/20"
+                    : "bg-zinc-100 dark:bg-white/[0.04] text-zinc-600 dark:text-[#8b8b9e] hover:bg-zinc-200 dark:hover:bg-white/10"
+                }`}
+              >
+                {tier.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -268,11 +276,10 @@ export function DrivesDirectoryView({
                   {filteredDrives.map((drive) => {
                     const companyName =
                       drive.placement_companies?.name || drive.drive_name;
-                    const maxPkg =
-                      drive.package_max_lpa ?? drive.package_min_lpa ?? 0;
-                    const isSuperDream = maxPkg >= 20;
-                    const isDream = maxPkg >= 10 && !isSuperDream;
-                    const isCore = maxPkg >= 5 && maxPkg < 10;
+                    const tier = tierOf(drivePackage(drive));
+                    const isSuperDream = tier === "super_dream";
+                    const isDream = tier === "dream";
+                    const isCore = tier === "core";
 
                     return (
                       <tr
@@ -390,9 +397,9 @@ export function DrivesDirectoryView({
             {filteredDrives.map((drive) => {
               const companyName =
                 drive.placement_companies?.name || drive.drive_name;
-              const maxPkg = drive.package_max_lpa ?? drive.package_min_lpa ?? 0;
-              const isSuperDream = maxPkg >= 20;
-              const isDream = maxPkg >= 10 && !isSuperDream;
+              const tier = tierOf(drivePackage(drive));
+              const isSuperDream = tier === "super_dream";
+              const isDream = tier === "dream";
 
               return (
                 <div

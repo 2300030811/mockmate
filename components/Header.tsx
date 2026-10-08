@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/Button";
@@ -47,15 +48,17 @@ export function Header() {
         {/* Left: Brand Identity & Primary Navigation */}
         <div className="flex items-center gap-3 sm:gap-6">
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-[22px] h-[22px] rounded-[5px] bg-[#5e6ad2] flex items-center justify-center text-[10px] font-bold text-white leading-none shadow-subtle group-hover:bg-[#4f5ac4] transition-colors">
-              M
-            </div>
+            <Image
+              src="/logo.png"
+              alt="MockMate"
+              width={22}
+              height={22}
+              className="w-[22px] h-[22px] rounded-[5px] object-cover shadow-subtle group-hover:scale-105 transition-transform"
+              priority
+            />
             <div className="flex items-center gap-1.5">
               <span className="text-[13px] font-semibold text-zinc-900 dark:text-[#ebebef] tracking-[-0.01em]">
                 MockMate
-              </span>
-              <span className="hidden sm:inline-block px-1.5 py-[1px] rounded text-[9.5px] font-medium tracking-wide uppercase bg-zinc-100 dark:bg-[#181824] text-zinc-500 dark:text-[#8b8b9e] border border-zinc-200 dark:border-[#1e1e2a]">
-                v2.6
               </span>
             </div>
           </Link>

@@ -14,6 +14,7 @@ import {
     Award
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -52,9 +53,13 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
           href="/" 
           className="inline-flex items-center gap-2 text-xs font-semibold text-zinc-600 dark:text-[#8b8b9e] hover:text-zinc-900 dark:hover:text-white transition-colors group"
         >
-          <div className="w-7 h-7 rounded-lg bg-[#5e6ad2] flex items-center justify-center text-xs font-bold text-white shadow-subtle transition-transform group-hover:scale-105">
-            M
-          </div>
+          <Image
+            src="/logo.png"
+            alt="MockMate"
+            width={28}
+            height={28}
+            className="w-7 h-7 rounded-lg object-cover shadow-subtle transition-transform group-hover:scale-105"
+          />
           <span className="font-bold tracking-tight text-zinc-900 dark:text-[#ebebef]">MockMate</span>
           <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-mono text-zinc-400 ml-1">
             <ArrowLeft className="w-3 h-3 transition-transform group-hover:-translate-x-0.5" />

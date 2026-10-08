@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { LayoutDashboard, Trophy, LogOut, Menu, X, ArrowUpRight, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, Trophy, LogOut, Menu, X, ArrowUpRight, ShieldCheck, Building2 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import { ThemeSwitcher } from "@/components/ui/ThemeSwitcher";
 
@@ -69,6 +69,20 @@ export function AdminMobileNav({ email, nickname }: AdminMobileNavProps) {
                 >
                   <Trophy className="w-4 h-4 text-amber-500" />
                   <span>Leaderboard Moderation</span>
+                </Link>
+
+                <Link
+                  href="/placements"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center justify-between px-3 py-2.5 text-xs font-medium text-zinc-800 dark:text-[#ebebef] hover:bg-zinc-100 dark:hover:bg-[#1c1c28] rounded-lg transition-colors"
+                >
+                  <span className="flex items-center gap-3">
+                    <Building2 className="w-4 h-4 text-purple-400" />
+                    <span>Placement Hub & Notice Desk</span>
+                  </span>
+                  <span className="text-[9px] font-mono bg-[#5e6ad2]/10 text-[#5e6ad2] dark:text-[#828df8] px-1.5 py-0.5 rounded border border-[#5e6ad2]/20 font-bold">
+                    RADAR
+                  </span>
                 </Link>
               </div>
             </div>

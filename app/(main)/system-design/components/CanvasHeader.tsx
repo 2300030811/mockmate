@@ -2,6 +2,7 @@
 
 import { memo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { m, AnimatePresence } from "framer-motion";
 import {
   Undo2,
@@ -104,17 +105,16 @@ export const CanvasHeader = memo(({
       <div className="flex items-center gap-3">
         {/* Main Logo */}
         <Link href="/" className="flex items-center gap-2 group shrink-0">
-          <div className="w-[22px] h-[22px] rounded-[5px] bg-[#5e6ad2] flex items-center justify-center text-[10px] font-bold text-white leading-none shadow-subtle group-hover:bg-[#4f5ac4] transition-colors">
-            M
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-[13px] font-semibold text-zinc-900 dark:text-[#ebebef] tracking-[-0.01em]">
-              MockMate
-            </span>
-            <span className="hidden sm:inline-block px-1.5 py-[1px] rounded text-[9px] font-mono text-zinc-500 dark:text-[#8b8b9e] bg-zinc-100 dark:bg-[#181824] border border-zinc-200 dark:border-[#1e1e2a]">
-              v2.6
-            </span>
-          </div>
+          <Image
+            src="/logo.png"
+            alt="MockMate"
+            width={22}
+            height={22}
+            className="w-[22px] h-[22px] rounded-[5px] object-cover shadow-subtle group-hover:scale-105 transition-transform"
+          />
+          <span className="text-[13px] font-semibold text-zinc-900 dark:text-[#ebebef] tracking-[-0.01em]">
+            MockMate
+          </span>
         </Link>
 
         <div className="w-px h-4 bg-zinc-200 dark:bg-[#1e1e2a] hidden sm:block" />

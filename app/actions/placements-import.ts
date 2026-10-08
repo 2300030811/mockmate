@@ -44,8 +44,8 @@ export interface SubmitReviewResult {
 
 export interface AdminStatusResult {
   isAdmin: boolean;
-  adminEmail: string;
-  notificationEmail: string;
+  adminEmail?: string;
+  notificationEmail?: string;
 }
 
 function escapeHtml(text: string): string {
@@ -145,8 +145,6 @@ export async function getPlacementAdminStatusAction(): Promise<AdminStatusResult
   const isAdmin = await requireAdmin();
   return {
     isAdmin,
-    adminEmail: ADMIN_EMAIL,
-    notificationEmail: PLACEMENTS_NOTIFICATION_EMAIL,
   };
 }
 
@@ -165,8 +163,12 @@ export async function analyzePlacementTextAction(
       data: { user },
     } = await supabase.auth.getUser();
 
-    // Fallback to guest / session placeholder user if not signed in during development
-    const effectiveUserId = user?.id || "00000000-0000-0000-0000-000000000000";
+    if (!user) {
+      return {
+        success: false,
+        error: "Please sign in to analyze placement notices.",
+      };
+    }
 
     if (!rawText || typeof rawText !== "string" || rawText.trim().length < 10) {
       return {
@@ -182,9 +184,7 @@ export async function analyzePlacementTextAction(
       };
     }
 
-    // Use admin client for DB checks/insert to avoid RLS block on empty session profiles
-    const adminDb = createAdminClient();
-    const draft = await analyzeImportDraft(adminDb, effectiveUserId, rawText);
+    const draft = await analyzeImportDraft(supabase, user.id, rawText);
 
     return {
       success: true,
@@ -213,8 +213,15 @@ export async function submitNoticeForAdminReviewAction(
       data: { user },
     } = await supabase.auth.getUser();
 
-    const senderEmail = user?.email || "Student / Campus Contributor";
-    const effectiveUserId = user?.id || "00000000-0000-0000-0000-000000000000";
+    if (!user) {
+      return {
+        success: false,
+        error: "Please sign in to submit circulars for administrator review.",
+      };
+    }
+
+    const senderEmail = user.email || "Student / Campus Contributor";
+    const effectiveUserId = user.id;
 
     if (!rawText || rawText.trim().length < 10) {
       return {
@@ -223,25 +230,31 @@ export async function submitNoticeForAdminReviewAction(
       };
     }
 
-    const adminDb = createAdminClient();
+    if (rawText.length > 30000) {
+      return {
+        success: false,
+        error: "Pasted notice exceeds the 30,000 character limit.",
+      };
+    }
+
     const submissionId = crypto.randomUUID();
     const contentHash = computeContentHash(rawText);
 
-    // Save as pending review record
+    // Save as pending review record with user's client (enforces own-row RLS policy)
     try {
-      await adminDb.from("placement_import_submissions").insert({
+      await supabase.from("placement_import_submissions").insert({
         id: submissionId,
         user_id: effectiveUserId,
         raw_text: rawText,
         content_hash: contentHash,
         status: "pending_admin_review",
-        notes: `Submitted by ${senderEmail} for review. Notified: ${PLACEMENTS_NOTIFICATION_EMAIL}. Admin: ${ADMIN_EMAIL}`,
+        notes: `Submitted by ${senderEmail} for review.`,
       });
     } catch (insertErr) {
       logger.warn("Could not insert submission row (continuing with dispatch):", insertErr);
     }
 
-    // Direct email dispatch via Resend to 2300030811@kluniversity.in
+    // Direct email dispatch via Resend to administrative review inbox
     const emailResult = await sendNoticeEmailToReviewer({
       submissionId,
       senderEmail,
@@ -250,22 +263,13 @@ export async function submitNoticeForAdminReviewAction(
       extractedSummary,
     });
 
-    const subject = encodeURIComponent(`[Placement Notice Review] Submission from ${senderEmail}`);
-    const bodyContent = `Placement Notice Submission for Verification\n\nSubmitted by: ${senderEmail}\nSubmission ID: ${submissionId}\nDate: ${new Date().toISOString()}\nTarget Desk: ${PLACEMENTS_NOTIFICATION_EMAIL}\nAdmin Reviewer: ${ADMIN_EMAIL}\n\n--- Extracted Summary ---\n${extractedSummary || "Pending Review"}\n\n--- Raw Notice Text ---\n${rawText.slice(0, 3000)}`;
-    const mailtoUrl = `mailto:${PLACEMENTS_NOTIFICATION_EMAIL}?subject=${subject}&body=${encodeURIComponent(bodyContent)}`;
-
-    logger.info(`Placement notice ${submissionId} submitted for review; dispatched to ${PLACEMENTS_NOTIFICATION_EMAIL} (Resend status: ${emailResult.dispatched ? "delivered" : "fallback_ready"})`);
-
-    const dispatchNote = emailResult.dispatched
-      ? `Notice automatically dispatched to ${PLACEMENTS_NOTIFICATION_EMAIL} via email.`
-      : `Notice recorded for ${PLACEMENTS_NOTIFICATION_EMAIL}.`;
+    logger.info(`Placement notice ${submissionId} submitted for review (Resend status: ${emailResult.dispatched ? "delivered" : "fallback_ready"})`);
 
     return {
       success: true,
       submissionId,
       emailDispatched: emailResult.dispatched,
-      message: "Notice submitted for verification! Your circular has been dispatched to the placement desk for administrative review. Only authorized administrators have direct permission to publish live recruitment drives.",
-      mailtoUrl,
+      message: "Notice submitted for verification! Your circular has been recorded and dispatched to the placement desk for administrative review. Only authorized administrators have direct permission to publish live recruitment drives.",
     };
   } catch (err: any) {
     logger.error("Error in submitNoticeForAdminReviewAction:", err);
@@ -341,6 +345,102 @@ export async function confirmPlacementImportAction(
     return {
       success: false,
       error: err.message || "Failed to confirm and import placement records.",
+    };
+  }
+}
+
+/**
+ * Server action to directly create and publish a manual placement record.
+ * Strictly requires admin permission.
+ * Bypasses AI extraction completely while maintaining audit logging and idempotent persistence.
+ */
+export async function publishManualPlacementAction(
+  item: ConfirmedImportItem
+): Promise<ConfirmActionResult> {
+  try {
+    const isAdmin = await requireAdmin();
+    if (!isAdmin) {
+      return {
+        success: false,
+        error:
+          "Unauthorized: Only authorized administrators have direct permission to publish placement records.",
+      };
+    }
+
+    if (!item || !item.companyName || !item.companyName.trim()) {
+      return {
+        success: false,
+        error: "Company name is required.",
+      };
+    }
+
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    const effectiveUserId = user?.id || "00000000-0000-0000-0000-000000000000";
+    const adminDb = createAdminClient();
+
+    // 1. Create a user-scoped audit record in placement_import_submissions
+    const insertSub = await adminDb
+      .from("placement_import_submissions")
+      .insert({
+        user_id: effectiveUserId,
+        raw_text: item.sanitizedAnnouncementText || `Manual entry: ${item.companyName} (${item.noticeType})`,
+        content_hash: `manual_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
+        draft_snapshot: [item],
+        status: "analyzed",
+      })
+      .select("id")
+      .single();
+
+    if (insertSub.error || !insertSub.data?.id) {
+      logger.error("Failed to insert manual audit submission record:", insertSub.error);
+      return {
+        success: false,
+        error: "Failed to initialize placement import audit record.",
+      };
+    }
+
+    const submissionId = insertSub.data.id as string;
+
+    // 2. Sanitize any URLs to prevent javascript: or malformed links
+    const sanitizedItem: ConfirmedImportItem = {
+      ...item,
+      tempId: item.tempId || `manual_${Date.now()}`,
+      companyName: item.companyName.trim(),
+      roleTitle: item.roleTitle?.trim() || null,
+      packageText: item.packageText?.trim() || null,
+      registrationUrl:
+        item.registrationUrl && item.registrationUrl.startsWith("http")
+          ? item.registrationUrl
+          : null,
+    };
+
+    // 3. Confirm and persist deterministically to production tables
+    const summary = await confirmAndPersistImport(
+      adminDb,
+      effectiveUserId,
+      submissionId,
+      [sanitizedItem]
+    );
+
+    try {
+      revalidatePath("/placements");
+    } catch {
+      // revalidatePath is unavailable in unit test runner
+    }
+
+    return {
+      success: true,
+      summary,
+    };
+  } catch (err: any) {
+    logger.error("Error in publishManualPlacementAction:", err);
+    return {
+      success: false,
+      error: err.message || "Failed to publish placement record.",
     };
   }
 }

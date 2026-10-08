@@ -4,6 +4,7 @@ import {
   confirmPlacementImportAction,
   submitNoticeForAdminReviewAction,
   getPlacementAdminStatusAction,
+  publishManualPlacementAction,
 } from "./placements-import";
 
 // Mock Supabase server client
@@ -22,7 +23,11 @@ vi.mock("@/utils/supabase/server", () => ({
 vi.mock("@/utils/supabase/admin", () => ({
   createAdminClient: vi.fn().mockReturnValue({
     from: vi.fn().mockReturnValue({
-      insert: vi.fn().mockResolvedValue({ error: null }),
+      insert: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({ data: { id: "sub-manual-123" }, error: null }),
+        }),
+      }),
     }),
   }),
 }));
@@ -84,12 +89,12 @@ describe("Placements Import Server Actions", () => {
   });
 
   describe("getPlacementAdminStatusAction", () => {
-    it("returns correct admin status, admin email, and notification inbox", async () => {
+    it("returns correct admin status without exposing administrative emails", async () => {
       vi.mocked(requireAdmin).mockResolvedValue(true);
       const res = await getPlacementAdminStatusAction();
       expect(res.isAdmin).toBe(true);
-      expect(res.adminEmail).toBe("2300030811cser@gmail.com");
-      expect(res.notificationEmail).toBe("2300030811@kluniversity.in");
+      expect(res.adminEmail).toBeUndefined();
+      expect(res.notificationEmail).toBeUndefined();
     });
   });
 
@@ -131,14 +136,14 @@ describe("Placements Import Server Actions", () => {
   });
 
   describe("submitNoticeForAdminReviewAction", () => {
-    it("dispatches notice via Resend to 2300030811@kluniversity.in", async () => {
+    it("dispatches notice via Resend and records submission", async () => {
       const notice = "Amazon WOW Assessment scheduled on 30 Sep 2026 for CSE/ECE.";
       const res = await submitNoticeForAdminReviewAction(notice, "Amazon: SDE Intern");
 
       expect(res.success).toBe(true);
       expect(res.emailDispatched).toBe(true);
-      expect(res.mailtoUrl).toContain("2300030811@kluniversity.in");
-      expect(res.message).toContain("Only authorized administrators have direct permission");
+      expect(res.submissionId).toBeDefined();
+      expect(res.message).toContain("administrators");
     });
   });
 
@@ -216,6 +221,75 @@ describe("Placements Import Server Actions", () => {
           expect.objectContaining({
             companyName: "Google",
             registrationUrl: null, // Sanitized to null!
+          }),
+        ])
+      );
+      expect(revalidatePath).toHaveBeenCalledWith("/placements");
+    });
+  });
+
+  describe("publishManualPlacementAction", () => {
+    it("rejects non-admin callers", async () => {
+      vi.mocked(requireAdmin).mockResolvedValue(false);
+      const res = await publishManualPlacementAction({
+        tempId: "m1",
+        noticeType: "ASSESSMENT",
+        companyName: "LTIMindtree",
+      });
+
+      expect(res.success).toBe(false);
+      expect(res.error).toContain("Only authorized administrators have direct permission");
+      expect(confirmAndPersistImport).not.toHaveBeenCalled();
+    });
+
+    it("rejects missing company name", async () => {
+      vi.mocked(requireAdmin).mockResolvedValue(true);
+      const res = await publishManualPlacementAction({
+        tempId: "m1",
+        noticeType: "ASSESSMENT",
+        companyName: "",
+      });
+
+      expect(res.success).toBe(false);
+      expect(res.error).toContain("Company name is required");
+    });
+
+    it("successfully creates manual placement and confirms import for admin", async () => {
+      vi.mocked(requireAdmin).mockResolvedValue(true);
+      vi.mocked(confirmAndPersistImport).mockResolvedValue({
+        success: true,
+        submissionId: "sub-manual-123",
+        createdDrivesCount: 1,
+        updatedDrivesCount: 0,
+        createdEventsCount: 1,
+        publishedAnnouncementsCount: 0,
+        warnings: [],
+      });
+
+      const res = await publishManualPlacementAction({
+        tempId: "m1",
+        noticeType: "ASSESSMENT",
+        companyName: "LTIMindtree",
+        roleTitle: "Software Development Engineer",
+        packageText: "₹4.05 LPA",
+        minLpa: 4.05,
+        maxLpa: 4.05,
+        eventDateIso: "2026-10-04",
+        eventLocation: "Online via SHL (Lockdown Browser required)",
+        registrationUrl: "https://talentcentral.shl.com",
+      });
+
+      expect(res.success).toBe(true);
+      expect(res.summary?.createdEventsCount).toBe(1);
+      expect(confirmAndPersistImport).toHaveBeenCalledWith(
+        expect.any(Object),
+        "user-session-123",
+        "sub-manual-123",
+        expect.arrayContaining([
+          expect.objectContaining({
+            companyName: "LTIMindtree",
+            noticeType: "ASSESSMENT",
+            eventDateIso: "2026-10-04",
           }),
         ])
       );

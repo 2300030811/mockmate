@@ -180,6 +180,19 @@ export interface PlacementEvent {
   icalUid?: string | null;
   sourceVerified?: boolean;
   dataVerified?: boolean;
+  placement_drives?: {
+    id: string;
+    drive_name?: string;
+    role_title?: string | null;
+    package_min_lpa?: number | null;
+    package_max_lpa?: number | null;
+    drive_status?: string;
+    placement_companies?: {
+      id: string;
+      name: string;
+      logo_url?: string | null;
+    };
+  } | null;
 }
 
 /** Enriched timeline item with event, drive, and company */
@@ -344,18 +357,18 @@ export interface ConfirmedImportItem {
   tempId: string;
   noticeType: ImportNoticeType;
   companyName: string;
-  roleTitle: string | null;
-  packageText: string | null;
-  minLpa: number | null;
-  maxLpa: number | null;
-  eligibleBranches: string[];
-  minCgpa: number | null;
-  deadlineIso: string | null;
+  roleTitle?: string | null;
+  packageText?: string | null;
+  minLpa?: number | null;
+  maxLpa?: number | null;
+  eligibleBranches?: string[];
+  minCgpa?: number | null;
+  deadlineIso?: string | null;
   deadlinePrecision?: "day" | "minute";
   deadlineInferred?: boolean;
-  eventDateIso: string | null;
-  eventLocation: string | null;
-  registrationUrl: string | null;
+  eventDateIso?: string | null;
+  eventLocation?: string | null;
+  registrationUrl?: string | null;
   selectedDriveId?: string | null;
   linkToExistingOfficial?: boolean;
   sanitizedAnnouncementText?: string | null;

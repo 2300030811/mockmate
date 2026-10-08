@@ -4,9 +4,10 @@ import Link from "next/link";
 import { LayoutDashboard, Trophy, LogOut, ArrowUpRight, ShieldCheck, Activity } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import { AdminMobileNav } from "./AdminMobileNav";
+import { AdminSidebarNav } from "./AdminSidebarNav";
+import { AdminProfileFooter } from "./AdminProfileFooter";
 import { profileRepository } from "@/lib/db/profile-repository";
 import { HomeBackground } from "@/components/home/HomeBackground";
-import { ThemeSwitcher } from "@/components/ui/ThemeSwitcher";
 
 export const dynamic = "force-dynamic";
 
@@ -62,96 +63,10 @@ export default async function AdminLayout({
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-3.5 space-y-5 overflow-y-auto">
-          {/* Main Group */}
-          <div className="space-y-1">
-            <div className="px-3 pb-1 text-[10px] font-mono uppercase tracking-wider text-zinc-400 dark:text-[#5a5a6e]">
-              Platform Overview
-            </div>
-            <Link
-              href="/admin"
-              className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium rounded-lg text-zinc-700 dark:text-[#ebebef] hover:bg-zinc-100 dark:hover:bg-[#1c1c28] hover:text-[#5e6ad2] dark:hover:text-[#5e6ad2] transition-colors"
-            >
-              <LayoutDashboard className="w-4 h-4 text-[#5e6ad2]" />
-              <span>Executive Dashboard</span>
-            </Link>
-            <Link
-              href="/admin/leaderboard"
-              className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium rounded-lg text-zinc-700 dark:text-[#ebebef] hover:bg-zinc-100 dark:hover:bg-[#1c1c28] hover:text-[#5e6ad2] dark:hover:text-[#5e6ad2] transition-colors"
-            >
-              <Trophy className="w-4 h-4 text-amber-500" />
-              <span>Leaderboard Moderation</span>
-            </Link>
-          </div>
-
-          {/* Quick Links */}
-          <div className="space-y-1">
-            <div className="px-3 pb-1 text-[10px] font-mono uppercase tracking-wider text-zinc-400 dark:text-[#5a5a6e]">
-              Shortcuts
-            </div>
-            <Link
-              href="/dashboard"
-              className="flex items-center justify-between px-3 py-2 text-xs font-medium rounded-lg text-zinc-600 dark:text-[#8b8b9e] hover:bg-zinc-100 dark:hover:bg-[#1c1c28] hover:text-zinc-900 dark:hover:text-white transition-colors"
-            >
-              <span className="flex items-center gap-2">
-                <ShieldCheck className="w-3.5 h-3.5 text-zinc-400" />
-                <span>User Dashboard</span>
-              </span>
-              <ArrowUpRight className="w-3 h-3 text-zinc-400" />
-            </Link>
-            <Link
-              href="/career-path"
-              className="flex items-center justify-between px-3 py-2 text-xs font-medium rounded-lg text-zinc-600 dark:text-[#8b8b9e] hover:bg-zinc-100 dark:hover:bg-[#1c1c28] hover:text-zinc-900 dark:hover:text-white transition-colors"
-            >
-              <span className="flex items-center gap-2">
-                <Activity className="w-3.5 h-3.5 text-zinc-400" />
-                <span>Career Ops & Hub</span>
-              </span>
-              <ArrowUpRight className="w-3 h-3 text-zinc-400" />
-            </Link>
-          </div>
-
-          {/* System Telemetry Status Box */}
-          <div className="p-3 bg-zinc-100/80 dark:bg-[#161622] border border-zinc-200 dark:border-[#222232] rounded-xl space-y-1.5">
-            <div className="flex items-center justify-between text-[11px]">
-              <span className="text-zinc-500 dark:text-[#8b8b9e] font-mono">System Health</span>
-              <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold text-[10px]">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Nominal
-              </span>
-            </div>
-            <div className="text-[10px] text-zinc-400 dark:text-[#5a5a6e] font-mono">
-              RLS Active • Multi-tier AI
-            </div>
-          </div>
-        </nav>
+        <AdminSidebarNav />
 
         {/* Footer / User Profile & Logout */}
-        <div className="p-3.5 border-t border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50/50 dark:bg-[#0f0f16]/60 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="w-7 h-7 rounded-full bg-[#5e6ad2]/20 border border-[#5e6ad2]/30 flex items-center justify-center text-[#5e6ad2] font-semibold text-xs shrink-0">
-                {userNickname.charAt(0).toUpperCase()}
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-zinc-900 dark:text-white truncate">
-                  {userNickname}
-                </p>
-                <p className="text-[10px] text-zinc-400 dark:text-[#5a5a6e] truncate font-mono">
-                  {user.email}
-                </p>
-              </div>
-            </div>
-            <ThemeSwitcher />
-          </div>
-
-          <form action={logout}>
-            <button className="w-full flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors border border-transparent hover:border-red-500/20">
-              <LogOut className="w-3.5 h-3.5" />
-              <span>Sign Out</span>
-            </button>
-          </form>
-        </div>
+        <AdminProfileFooter email={user.email} nickname={userNickname} />
       </aside>
 
       {/* Main Content Area */}

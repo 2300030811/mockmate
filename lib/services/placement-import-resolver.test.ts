@@ -145,26 +145,25 @@ describe("Placement Import Resolver", () => {
             };
           }
           if (table === "placement_drives") {
+            const driveQueryBuilder: any = {};
+            driveQueryBuilder.eq = vi.fn().mockReturnValue(driveQueryBuilder);
+            driveQueryBuilder.order = vi.fn().mockResolvedValue({
+              data: [
+                {
+                  id: "drive-deloitte-official",
+                  drive_name: "Deloitte Campus Drive",
+                  role_title: "Analyst",
+                  package_min_lpa: 7.6,
+                  package_max_lpa: 7.6,
+                  source_type: "pdf_report",
+                  source_verified: true,
+                  min_cgpa: 7.0,
+                  eligible_branches: ["CSE", "IT"],
+                },
+              ],
+            });
             return {
-              select: vi.fn().mockReturnValue({
-                eq: vi.fn().mockReturnValue({
-                  order: vi.fn().mockResolvedValue({
-                    data: [
-                      {
-                        id: "drive-deloitte-official",
-                        drive_name: "Deloitte Campus Drive",
-                        role_title: "Analyst",
-                        package_min_lpa: 7.6,
-                        package_max_lpa: 7.6,
-                        source_type: "pdf_report",
-                        source_verified: true,
-                        min_cgpa: 7.0,
-                        eligible_branches: ["CSE", "IT"],
-                      },
-                    ],
-                  }),
-                }),
-              }),
+              select: vi.fn().mockReturnValue(driveQueryBuilder),
               insert: writeMockDrives,
               update: writeMockDrives,
             };
@@ -383,7 +382,7 @@ describe("Placement Import Resolver", () => {
           source: "student_submission",
           subject: "Infosys - Selection Results",
           raw_body: "Infosys announced final selects for Specialist Programmer.",
-          verified: false,
+          verified: true,
         })
       );
     });
