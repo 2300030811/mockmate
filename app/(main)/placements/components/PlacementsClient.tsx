@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { PlacementHubData } from "@/app/actions/placements";
+import { useState, useEffect, useTransition, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { PlacementHubData, getPlacementHubData } from "@/app/actions/placements";
 import { PlacementDriveWithCompany } from "@/types/placements";
 import { CommandCenterView } from "./CommandCenterView";
 import { DrivesDirectoryView } from "./DrivesDirectoryView";
@@ -26,14 +27,53 @@ import {
 
 interface PlacementsClientProps {
   initialData: PlacementHubData;
+  initialTab?: "command_center" | "directory" | "import";
 }
 
-export function PlacementsClient({ initialData }: PlacementsClientProps) {
+export function PlacementsClient({
+  initialData,
+  initialTab = "command_center",
+}: PlacementsClientProps) {
+  const router = useRouter();
+  const [hubData, setHubData] = useState<PlacementHubData>(initialData);
+  const [, startTransition] = useTransition();
   const [activeTab, setActiveTab] = useState<
     "command_center" | "directory" | "import"
-  >("command_center");
+  >(initialTab);
   const [selectedDrive, setSelectedDrive] = useState<PlacementDriveWithCompany | null>(null);
   const [directoryTierFilter, setDirectoryTierFilter] = useState<string>("all");
+
+  useEffect(() => {
+    setHubData(initialData);
+  }, [initialData]);
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
+
+  const handleTabSwitch = (tab: "command_center" | "directory" | "import") => {
+    setActiveTab(tab);
+    if (typeof window !== "undefined") {
+      const url = tab === "command_center" ? "/placements" : `/placements?tab=${tab}`;
+      window.history.replaceState(null, "", url);
+    }
+  };
+
+  const refreshData = async () => {
+    try {
+      const fresh = await getPlacementHubData();
+      if (fresh) {
+        setHubData(fresh);
+      }
+      startTransition(() => {
+        router.refresh();
+      });
+    } catch (err) {
+      console.error("Failed to refresh placement data:", err);
+    }
+  };
 
   const {
     todayEvents,
@@ -45,7 +85,35 @@ export function PlacementsClient({ initialData }: PlacementsClientProps) {
     drives,
     stats,
     todayDateIST,
-  } = initialData;
+  } = hubData;
+
+  const activeYear = useMemo(() => {
+    return (
+      academicYears.find((y) => y.is_current) ||
+      academicYears[0] ||
+      null
+    );
+  }, [academicYears]);
+
+  const topRecruiterDrive = useMemo(() => {
+    if (!drives || drives.length === 0) return null;
+    return [...drives].sort((a, b) => {
+      const pkgA = a.package_max_lpa ?? a.package_min_lpa ?? 0;
+      const pkgB = b.package_max_lpa ?? b.package_min_lpa ?? 0;
+      return pkgB - pkgA;
+    })[0];
+  }, [drives]);
+
+  const medianPackageLpa = useMemo(() => {
+    if (!drives || drives.length === 0) return null;
+    const pkgs = drives
+      .map((d) => d.package_max_lpa ?? d.package_min_lpa)
+      .filter((p): p is number => typeof p === "number" && p > 0)
+      .sort((a, b) => a - b);
+    if (pkgs.length === 0) return null;
+    const mid = Math.floor(pkgs.length / 2);
+    return pkgs.length % 2 !== 0 ? pkgs[mid] : (pkgs[mid - 1] + pkgs[mid]) / 2;
+  }, [drives]);
 
   const handleSelectTierFromCommandCenter = (tier: string) => {
     setDirectoryTierFilter(tier);
@@ -66,10 +134,10 @@ export function PlacementsClient({ initialData }: PlacementsClientProps) {
               KLU Placement Radar
             </span>
             <span className="text-zinc-400 dark:text-[#5a5a6e]">•</span>
-            <span>Academic Year 2025–26</span>
+            <span>{activeYear ? `Academic Year ${activeYear.year_label}` : "Academic Radar"}</span>
             <span className="text-zinc-400 dark:text-[#5a5a6e]">•</span>
             <span className="text-[#5e6ad2] dark:text-[#828df8] font-mono font-bold">
-              114 Campus Drives
+              {stats.totalDrives} Campus Drives
             </span>
           </div>
 
@@ -79,7 +147,7 @@ export function PlacementsClient({ initialData }: PlacementsClientProps) {
               Placement Intelligence Hub
             </h1>
             <p className="text-sm sm:text-base text-zinc-600 dark:text-[#8b8b9e] leading-relaxed max-w-2xl font-normal">
-              Real-time campus drive radar, compensation tier distributions, structured recruiter selection rounds, and historical hiring telemetry across 109 partner companies.
+              Real-time campus drive radar, compensation tier distributions, structured recruiter selection rounds, and historical hiring telemetry across {stats.totalCompanies} partner companies.
             </p>
           </div>
 
@@ -99,7 +167,7 @@ export function PlacementsClient({ initialData }: PlacementsClientProps) {
           <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center p-1 rounded-lg bg-zinc-100 dark:bg-white/[0.04] border border-zinc-200 dark:border-[#1e1e2a] self-start shrink-0">
               <button
-                onClick={() => setActiveTab("command_center")}
+                onClick={() => handleTabSwitch("command_center")}
                 className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md font-semibold text-xs transition-all ${
                   activeTab === "command_center"
                     ? "bg-white dark:bg-[#181824] text-zinc-900 dark:text-[#ebebef] shadow-sm border border-zinc-200/80 dark:border-[#2a2a3c]"
@@ -112,7 +180,7 @@ export function PlacementsClient({ initialData }: PlacementsClientProps) {
               </button>
 
               <button
-                onClick={() => setActiveTab("directory")}
+                onClick={() => handleTabSwitch("directory")}
                 className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md font-semibold text-xs transition-all ${
                   activeTab === "directory"
                     ? "bg-white dark:bg-[#181824] text-zinc-900 dark:text-[#ebebef] shadow-sm border border-zinc-200/80 dark:border-[#2a2a3c]"
@@ -127,7 +195,7 @@ export function PlacementsClient({ initialData }: PlacementsClientProps) {
               </button>
 
               <button
-                onClick={() => setActiveTab("import")}
+                onClick={() => handleTabSwitch("import")}
                 className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md font-semibold text-xs transition-all ${
                   activeTab === "import"
                     ? "bg-white dark:bg-[#181824] text-zinc-900 dark:text-[#ebebef] shadow-sm border border-zinc-200/80 dark:border-[#2a2a3c]"
@@ -135,9 +203,9 @@ export function PlacementsClient({ initialData }: PlacementsClientProps) {
                 }`}
               >
                 <UploadCloud className="w-3.5 h-3.5 text-amber-400" />
-                <span>Notice Parser</span>
+                <span>Add Placement / OA</span>
                 <span className="text-[9px] uppercase font-mono px-1 py-0.2 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                  Sync
+                  Manual
                 </span>
               </button>
             </div>
@@ -180,7 +248,7 @@ export function PlacementsClient({ initialData }: PlacementsClientProps) {
             </div>
             <div className="mt-2 text-[11px] text-zinc-500 dark:text-[#8b8b9e] flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
-              <span>2025–26 recruitment cycle</span>
+              <span>{activeYear ? `${activeYear.year_label} recruitment cycle` : "Active recruitment cycle"}</span>
             </div>
           </div>
 
@@ -191,12 +259,22 @@ export function PlacementsClient({ initialData }: PlacementsClientProps) {
               <Award className="w-4 h-4 text-amber-500" />
             </div>
             <div className="text-2xl sm:text-3xl font-black text-amber-600 dark:text-amber-400 font-mono tracking-tight">
-              ₹{stats.highestPackageLpa > 0 ? stats.highestPackageLpa.toFixed(2) : "30.00"}{" "}
-              <span className="text-xs font-semibold">LPA</span>
+              {stats.highestPackageLpa > 0 ? (
+                <>
+                  ₹{stats.highestPackageLpa.toFixed(2)}{" "}
+                  <span className="text-xs font-semibold">LPA</span>
+                </>
+              ) : (
+                <span>—</span>
+              )}
             </div>
-            <div className="mt-2 text-[11px] text-amber-700/80 dark:text-amber-400/80 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-              <span>Trilogy Innovations</span>
+            <div className="mt-2 text-[11px] text-amber-700/80 dark:text-amber-400/80 flex items-center gap-1.5 truncate">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+              <span className="truncate">
+                {topRecruiterDrive
+                  ? topRecruiterDrive.placement_companies?.name || topRecruiterDrive.drive_name
+                  : "Super Dream category"}
+              </span>
             </div>
           </div>
 
@@ -207,12 +285,22 @@ export function PlacementsClient({ initialData }: PlacementsClientProps) {
               <TrendingUp className="w-4 h-4 text-emerald-500" />
             </div>
             <div className="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400 font-mono tracking-tight">
-              ₹{stats.averagePackageLpa > 0 ? stats.averagePackageLpa.toFixed(2) : "6.20"}{" "}
-              <span className="text-xs font-semibold">LPA</span>
+              {stats.averagePackageLpa > 0 ? (
+                <>
+                  ₹{stats.averagePackageLpa.toFixed(2)}{" "}
+                  <span className="text-xs font-semibold">LPA</span>
+                </>
+              ) : (
+                <span>—</span>
+              )}
             </div>
-            <div className="mt-2 text-[11px] text-emerald-700/80 dark:text-emerald-400/80 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              <span>Median package: ₹5.50 LPA</span>
+            <div className="mt-2 text-[11px] text-emerald-700/80 dark:text-emerald-400/80 flex items-center gap-1.5 truncate">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+              <span className="truncate">
+                {medianPackageLpa
+                  ? `Median package: ₹${medianPackageLpa.toFixed(2)} LPA`
+                  : "Verified campus recruitment"}
+              </span>
             </div>
           </div>
         </div>
@@ -227,10 +315,10 @@ export function PlacementsClient({ initialData }: PlacementsClientProps) {
             announcements={announcements}
             todayDateIST={todayDateIST}
             drives={drives}
-            onExploreDirectory={() => setActiveTab("directory")}
+            onExploreDirectory={() => handleTabSwitch("directory")}
             onSelectTier={handleSelectTierFromCommandCenter}
             onSelectDrive={(drive) => setSelectedDrive(drive)}
-            onSwitchTab={setActiveTab}
+            onSwitchTab={handleTabSwitch}
           />
         ) : activeTab === "directory" ? (
           <DrivesDirectoryView
@@ -241,7 +329,10 @@ export function PlacementsClient({ initialData }: PlacementsClientProps) {
           />
         ) : (
           <PlacementImportView
-            onSuccessNavigateToRadar={() => setActiveTab("command_center")}
+            onSuccessNavigateToRadar={async () => {
+              await refreshData();
+              handleTabSwitch("command_center");
+            }}
           />
         )}
       </main>

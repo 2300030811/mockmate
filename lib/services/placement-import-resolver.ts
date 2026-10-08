@@ -168,14 +168,19 @@ export async function analyzeImportDraft(
     let ambiguousCandidates: AnalyzedImportItem["ambiguousCandidates"];
 
     if (companyId) {
-      // Find drives for this company
-      const drivesRes = await db
+      // Find drives for this company (scoped to active academic year to prevent cross-season false conflicts)
+      let drivesQuery = db
         .from("placement_drives")
         .select(
           "id, drive_name, role_title, package_min_lpa, package_max_lpa, package_values, raw_package_text, min_cgpa, eligible_branches, source_type, source_verified, date_of_visit"
         )
-        .eq("company_id", companyId)
-        .order("created_at", { ascending: false });
+        .eq("company_id", companyId);
+
+      if (academicYearId) {
+        drivesQuery = drivesQuery.eq("academic_year_id", academicYearId);
+      }
+
+      const drivesRes = await drivesQuery.order("created_at", { ascending: false });
 
       const drives = drivesRes.data || [];
 
@@ -367,7 +372,7 @@ export async function confirmAndPersistImport(
             summary.updatedDrivesCount++;
           } else {
             // Student drive: update package/branches
-            await db
+            const updateRes = await db
               .from("placement_drives")
               .update({
                 package_min_lpa: item.minLpa ?? existingDrive.package_min_lpa,
@@ -377,10 +382,20 @@ export async function confirmAndPersistImport(
                 updated_at: new Date().toISOString(),
               })
               .eq("id", targetDriveId);
-            summary.updatedDrivesCount++;
+
+            if (updateRes.error) {
+              summary.warnings.push(`Failed to update drive ${targetDriveId}: ${updateRes.error.message}`);
+            } else {
+              summary.updatedDrivesCount++;
+            }
           }
         }
-      } else if (item.noticeType === "NEW_DRIVE" || item.noticeType === "REGISTRATION_DEADLINE") {
+      } else if (
+        item.noticeType === "NEW_DRIVE" ||
+        item.noticeType === "REGISTRATION_DEADLINE" ||
+        item.noticeType === "ASSESSMENT" ||
+        item.noticeType === "INTERVIEW"
+      ) {
         // Create new student-submitted drive
         const packageValues: number[] = [];
         if (item.minLpa) packageValues.push(item.minLpa);
@@ -394,12 +409,13 @@ export async function confirmAndPersistImport(
             drive_name: `${item.companyName} Campus Drive`,
             role_title: item.roleTitle,
             drive_status: "announced",
+            date_of_visit: item.eventDateIso || item.deadlineIso || null,
             package_min_lpa: item.minLpa,
             package_max_lpa: item.maxLpa,
             package_values: packageValues,
             raw_package_text: item.packageText,
             eligible_branches: item.eligibleBranches,
-            min_cgpa: item.minCgpa ?? 6.0,
+            min_cgpa: item.minCgpa ?? null, // ponytail: never fabricate fallback CGPA
             source_type: "student_submission",
             source_verified: false,
             data_verified: true, // reviewed and confirmed by student
@@ -408,7 +424,9 @@ export async function confirmAndPersistImport(
           .select("id")
           .single();
 
-        if (newDrive.data?.id) {
+        if (newDrive.error) {
+          summary.warnings.push(`Failed to create drive for ${item.companyName}: ${newDrive.error.message}`);
+        } else if (newDrive.data?.id) {
           targetDriveId = newDrive.data.id as string;
           summary.createdDrivesCount++;
         }
@@ -416,25 +434,8 @@ export async function confirmAndPersistImport(
 
       // Handle Events according to notice type
       if (targetDriveId) {
-        if (item.noticeType === "REGISTRATION_DEADLINE" || item.deadlineIso) {
-          const dateStr = item.deadlineIso || new Date().toISOString().split("T")[0];
-          await resolvePlacementEvent(db, {
-            driveId: targetDriveId,
-            candidate: {
-              eventType: "REGISTRATION_DEADLINE",
-              title: `${item.companyName} Registration Deadline`,
-              startTime: `${dateStr}T18:29:59.000Z`, // 23:59:59 IST in UTC
-              endTime: null,
-              venue: item.eventLocation || "Online Portal",
-              meetingUrl: item.registrationUrl,
-              confidence: 0.95,
-              sourceVerified: false,
-              dataVerified: true,
-            },
-          });
-          summary.createdEventsCount++;
-        } else if (item.noticeType === "ASSESSMENT") {
-          const dateStr = item.eventDateIso || new Date().toISOString().split("T")[0];
+        if (item.noticeType === "ASSESSMENT") {
+          const dateStr = item.eventDateIso || item.deadlineIso || new Date().toISOString().split("T")[0];
           await resolvePlacementEvent(db, {
             driveId: targetDriveId,
             candidate: {
@@ -443,15 +444,34 @@ export async function confirmAndPersistImport(
               startTime: `${dateStr}T04:30:00.000Z`, // 10:00 AM IST
               endTime: `${dateStr}T06:30:00.000Z`,
               venue: item.eventLocation || "Lab / Online",
-              meetingUrl: item.registrationUrl,
-              confidence: 0.9,
+              meetingUrl: item.registrationUrl ?? null,
+              confidence: 0.95,
               sourceVerified: false,
               dataVerified: true,
             },
           });
           summary.createdEventsCount++;
+
+          // If there is also an explicit deadline distinct from the assessment date, record deadline event too
+          if (item.deadlineIso && item.deadlineIso !== item.eventDateIso) {
+            await resolvePlacementEvent(db, {
+              driveId: targetDriveId,
+              candidate: {
+                eventType: "REGISTRATION_DEADLINE",
+                title: `${item.companyName} Registration Deadline`,
+                startTime: `${item.deadlineIso}T18:29:59.000Z`,
+                endTime: null,
+                venue: item.eventLocation || "Online Portal",
+                meetingUrl: item.registrationUrl ?? null,
+                confidence: 0.95,
+                sourceVerified: false,
+                dataVerified: true,
+              },
+            });
+            summary.createdEventsCount++;
+          }
         } else if (item.noticeType === "INTERVIEW") {
-          const dateStr = item.eventDateIso || new Date().toISOString().split("T")[0];
+          const dateStr = item.eventDateIso || item.deadlineIso || new Date().toISOString().split("T")[0];
           await resolvePlacementEvent(db, {
             driveId: targetDriveId,
             candidate: {
@@ -460,24 +480,84 @@ export async function confirmAndPersistImport(
               startTime: `${dateStr}T04:00:00.000Z`,
               endTime: `${dateStr}T11:30:00.000Z`,
               venue: item.eventLocation || "Campus / Virtual",
-              meetingUrl: item.registrationUrl,
+              meetingUrl: item.registrationUrl ?? null,
               confidence: 0.9,
               sourceVerified: false,
               dataVerified: true,
             },
           });
           summary.createdEventsCount++;
+        } else if (item.noticeType === "REGISTRATION_DEADLINE") {
+          const dateStr = item.deadlineIso || item.eventDateIso || new Date().toISOString().split("T")[0];
+          await resolvePlacementEvent(db, {
+            driveId: targetDriveId,
+            candidate: {
+              eventType: "REGISTRATION_DEADLINE",
+              title: `${item.companyName} Registration Deadline`,
+              startTime: `${dateStr}T18:29:59.000Z`, // 23:59:59 IST in UTC
+              endTime: null,
+              venue: item.eventLocation || "Online Portal",
+              meetingUrl: item.registrationUrl ?? null,
+              confidence: 0.95,
+              sourceVerified: false,
+              dataVerified: true,
+            },
+          });
+          summary.createdEventsCount++;
+        } else {
+          // General Campus Drive Event or other stage
+          if (item.eventDateIso) {
+            await resolvePlacementEvent(db, {
+              driveId: targetDriveId,
+              candidate: {
+                eventType: "OTHER",
+                title: `${item.companyName} Campus Drive Event`,
+                startTime: `${item.eventDateIso}T04:30:00.000Z`,
+                endTime: `${item.eventDateIso}T11:30:00.000Z`,
+                venue: item.eventLocation || "Campus Venue",
+                meetingUrl: item.registrationUrl ?? null,
+                confidence: 0.85,
+                sourceVerified: false,
+                dataVerified: true,
+              },
+            });
+            summary.createdEventsCount++;
+          }
+          if (item.deadlineIso && item.deadlineIso !== item.eventDateIso) {
+            await resolvePlacementEvent(db, {
+              driveId: targetDriveId,
+              candidate: {
+                eventType: "REGISTRATION_DEADLINE",
+                title: `${item.companyName} Registration Deadline`,
+                startTime: `${item.deadlineIso}T18:29:59.000Z`,
+                endTime: null,
+                venue: item.eventLocation || "Online Portal",
+                meetingUrl: item.registrationUrl ?? null,
+                confidence: 0.95,
+                sourceVerified: false,
+                dataVerified: true,
+              },
+            });
+            summary.createdEventsCount++;
+          }
         }
       }
 
       // Handle Announcements & Results (Sanitized: zero raw PII)
-      if (item.noticeType === "RESULT" || item.noticeType === "GENERAL_ANNOUNCEMENT" || item.noticeType === "TRAINING") {
-        const sanitizedSubject = `${item.companyName} - ${item.noticeType === "RESULT" ? "Selection Results" : "Placement Notice"}`;
+      if (
+        item.noticeType === "RESULT" ||
+        item.noticeType === "GENERAL_ANNOUNCEMENT" ||
+        item.noticeType === "TRAINING" ||
+        (item.noticeType as string) === "SHORTLIST" ||
+        (item.noticeType as string) === "OTHER"
+      ) {
+        const isResult = item.noticeType === "RESULT" || (item.noticeType as string) === "SHORTLIST";
+        const sanitizedSubject = `${item.companyName} - ${isResult ? "Selection Results" : "Placement Notice"}`;
         const sanitizedBody =
           item.sanitizedAnnouncementText ||
           `${item.companyName} has published a notice regarding ${item.roleTitle || "campus placement"}. (Verified by student submission)`;
 
-        await db.from("placement_announcements").insert({
+        const annRes = await db.from("placement_announcements").insert({
           drive_id: targetDriveId,
           source: "student_submission",
           subject: sanitizedSubject,
@@ -485,10 +565,14 @@ export async function confirmAndPersistImport(
           content_hash: computeContentHash(`${submissionId}:${item.tempId}`),
           importance: "normal",
           received_at: new Date().toISOString(),
-          verified: false,
+          verified: true, // admin-confirmed announcements must be verified to appear in public view
         });
 
-        summary.publishedAnnouncementsCount++;
+        if (annRes.error) {
+          summary.warnings.push(`Failed to publish announcement for ${item.companyName}: ${annRes.error.message}`);
+        } else {
+          summary.publishedAnnouncementsCount++;
+        }
       }
     } catch (itemErr: any) {
       summary.warnings.push(`Error processing ${item.companyName}: ${itemErr.message}`);
@@ -496,13 +580,17 @@ export async function confirmAndPersistImport(
   }
 
   // 3. Update private submission record to confirmed
-  await db
+  const confirmUpdateRes = await db
     .from("placement_import_submissions")
     .update({
       status: "confirmed",
       confirmed_at: new Date().toISOString(),
     })
     .eq("id", submissionId);
+
+  if (confirmUpdateRes.error) {
+    summary.warnings.push(`Failed to update submission status: ${confirmUpdateRes.error.message}`);
+  }
 
   return summary;
 }

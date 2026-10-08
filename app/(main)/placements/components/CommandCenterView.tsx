@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
+import { drivePackage, tierOf } from "@/lib/utils/placement-tier";
 import {
   PlacementEvent,
   PlacementAnnouncement,
@@ -35,7 +36,66 @@ import {
   Radio,
   UploadCloud,
   Check,
+  Code2,
+  Users,
+  Search,
+  Filter,
+  X,
 } from "lucide-react";
+
+function getEventTypeDetails(type: string) {
+  switch (type) {
+    case "CODING_ASSESSMENT":
+      return {
+        label: "Online Assessment (OA)",
+        color: "bg-[#5e6ad2]/15 text-[#5e6ad2] dark:text-[#828df8] border-[#5e6ad2]/30",
+        icon: Code2,
+      };
+    case "TECHNICAL_INTERVIEW":
+      return {
+        label: "Technical Interview",
+        color: "bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30",
+        icon: Briefcase,
+      };
+    case "HR_INTERVIEW":
+      return {
+        label: "Techno-Managerial / HR",
+        color: "bg-teal-500/15 text-teal-600 dark:text-teal-400 border-teal-500/30",
+        icon: Users,
+      };
+    case "REGISTRATION_DEADLINE":
+      return {
+        label: "Registration Deadline",
+        color: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30",
+        icon: Clock,
+      };
+    case "PPT":
+      return {
+        label: "Pre-Placement Talk (PPT)",
+        color: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30",
+        icon: Megaphone,
+      };
+    default:
+      return {
+        label: "Campus Drive Event",
+        color: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
+        icon: Building2,
+      };
+  }
+}
+
+function getRelativeDayString(startTime: string) {
+  const now = new Date();
+  const eventDate = new Date(startTime);
+  const diffMs = eventDate.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays <= 0) return "Today";
+  if (diffDays === 1) return "Tomorrow";
+  if (diffDays < 7) return `In ${diffDays} days`;
+  const weeks = Math.floor(diffDays / 7);
+  return `In ${weeks} week${weeks > 1 ? "s" : ""}`;
+}
 
 interface CommandCenterViewProps {
   todayEvents: PlacementEvent[];
@@ -77,7 +137,7 @@ export function CommandCenterView({
       ? todayGroupedDrives.reduce((acc, d) => acc + d.stages.length, 0)
       : todayEvents.length;
 
-  // Compute tier metrics dynamically from drives
+  // Compute tier metrics dynamically from drives (ponytail: zero fabricated fallback counts)
   const tierDistribution = useMemo(() => {
     let superDreamCount = 0;
     let dreamCount = 0;
@@ -90,43 +150,46 @@ export function CommandCenterView({
     let massSum = 0;
 
     drives.forEach((d) => {
-      const p = d.package_max_lpa ?? d.package_min_lpa ?? 0;
-      if (p >= 20) {
-        superDreamCount++;
-        superDreamSum += p;
-      } else if (p >= 10) {
-        dreamCount++;
-        dreamSum += p;
-      } else if (p >= 5) {
-        coreCount++;
-        coreSum += p;
-      } else {
-        massCount++;
-        massSum += p;
+      const p = drivePackage(d);
+      if (p !== null && p > 0) {
+        const tier = tierOf(p);
+        if (tier === "super_dream") {
+          superDreamCount++;
+          superDreamSum += p;
+        } else if (tier === "dream") {
+          dreamCount++;
+          dreamSum += p;
+        } else if (tier === "core") {
+          coreCount++;
+          coreSum += p;
+        } else if (tier === "mass") {
+          massCount++;
+          massSum += p;
+        }
       }
     });
 
-    const total = drives.length || 114;
+    const total = drives.length;
     return {
       superDream: {
-        count: superDreamCount || 4,
-        pct: Math.round(((superDreamCount || 4) / total) * 100),
-        avg: (superDreamSum / (superDreamCount || 1)).toFixed(1) || "22.8",
+        count: superDreamCount,
+        pct: total > 0 ? Math.round((superDreamCount / total) * 100) : 0,
+        avg: superDreamCount > 0 ? (superDreamSum / superDreamCount).toFixed(1) : "—",
       },
       dream: {
-        count: dreamCount || 7,
-        pct: Math.round(((dreamCount || 7) / total) * 100),
-        avg: (dreamSum / (dreamCount || 1)).toFixed(1) || "13.5",
+        count: dreamCount,
+        pct: total > 0 ? Math.round((dreamCount / total) * 100) : 0,
+        avg: dreamCount > 0 ? (dreamSum / dreamCount).toFixed(1) : "—",
       },
       core: {
-        count: coreCount || 54,
-        pct: Math.round(((coreCount || 54) / total) * 100),
-        avg: (coreSum / (coreCount || 1)).toFixed(1) || "7.2",
+        count: coreCount,
+        pct: total > 0 ? Math.round((coreCount / total) * 100) : 0,
+        avg: coreCount > 0 ? (coreSum / coreCount).toFixed(1) : "—",
       },
       mass: {
-        count: massCount || 49,
-        pct: Math.round(((massCount || 49) / total) * 100),
-        avg: (massSum / (massCount || 1)).toFixed(1) || "3.8",
+        count: massCount,
+        pct: total > 0 ? Math.round((massCount / total) * 100) : 0,
+        avg: massCount > 0 ? (massSum / massCount).toFixed(1) : "—",
       },
     };
   }, [drives]);
@@ -134,14 +197,56 @@ export function CommandCenterView({
   // Top recruiter benchmark drives for the historical highlights section
   const marqueeDrives = useMemo(() => {
     const sorted = [...drives]
-      .filter((d) => (d.package_max_lpa ?? d.package_min_lpa ?? 0) >= 11)
-      .sort(
-        (a, b) =>
-          (b.package_max_lpa ?? b.package_min_lpa ?? 0) -
-          (a.package_max_lpa ?? a.package_min_lpa ?? 0)
-      );
+      .filter((d) => {
+        const p = drivePackage(d);
+        return p !== null && p >= 11;
+      })
+      .sort((a, b) => (drivePackage(b) ?? 0) - (drivePackage(a) ?? 0));
     return sorted.slice(0, 6);
   }, [drives]);
+
+  const [radarFilter, setRadarFilter] = useState<"all" | "assessments" | "interviews">("all");
+  const [radarSearch, setRadarSearch] = useState("");
+
+  const assessmentCount = useMemo(
+    () => upcomingEvents.filter((e) => e.event_type === "CODING_ASSESSMENT").length,
+    [upcomingEvents]
+  );
+
+  const interviewCount = useMemo(
+    () =>
+      upcomingEvents.filter(
+        (e) => e.event_type === "TECHNICAL_INTERVIEW" || e.event_type === "HR_INTERVIEW"
+      ).length,
+    [upcomingEvents]
+  );
+
+  const filteredUpcomingEvents = useMemo(() => {
+    return upcomingEvents.filter((evt) => {
+      if (radarFilter === "assessments" && evt.event_type !== "CODING_ASSESSMENT") {
+        return false;
+      }
+      if (
+        radarFilter === "interviews" &&
+        evt.event_type !== "TECHNICAL_INTERVIEW" &&
+        evt.event_type !== "HR_INTERVIEW"
+      ) {
+        return false;
+      }
+      if (radarSearch.trim()) {
+        const q = radarSearch.toLowerCase();
+        const compName = (
+          evt.placement_drives?.placement_companies?.name ||
+          evt.placement_drives?.drive_name ||
+          evt.title
+        ).toLowerCase();
+        const role = (evt.placement_drives?.role_title || "").toLowerCase();
+        const venue = (evt.venue || "").toLowerCase();
+        return compName.includes(q) || role.includes(q) || venue.includes(q);
+      }
+      return true;
+    });
+  }, [upcomingEvents, radarFilter, radarSearch]);
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
@@ -324,13 +429,62 @@ export function CommandCenterView({
                 There are no active company visits, online assessments (OA), or interview rounds scheduled on campus for today. The live radar updates automatically as new placement desk notices or calendar invites are synced.
               </p>
 
+              {/* Next on Live Radar Preview banner if upcoming events exist */}
+              {upcomingEvents.length > 0 && (
+                <div className="mt-4 w-full max-w-lg p-3 rounded-xl bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 flex items-center justify-between gap-3 text-xs text-left">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-[#5e6ad2]/20 text-[#5e6ad2] dark:text-[#828df8] flex items-center justify-center font-bold text-xs shrink-0">
+                      {(
+                        upcomingEvents[0].placement_drives?.placement_companies?.name ||
+                        upcomingEvents[0].title
+                      ).charAt(0)}
+                    </div>
+                    <div className="min-w-0">
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-[#5e6ad2] dark:text-[#828df8] font-bold block">
+                        {upcomingEvents[0].placement_drives?.drive_status === "cancelled"
+                          ? "Cancelled Session"
+                          : "Next on Live Radar"}
+                      </span>
+                      <p className="font-semibold text-zinc-900 dark:text-[#ebebef] truncate">
+                        {upcomingEvents[0].placement_drives?.placement_companies?.name ||
+                          upcomingEvents[0].title}
+                        {upcomingEvents[0].placement_drives?.role_title && (
+                          <span className="text-zinc-500 font-normal">
+                            {" "}
+                            • {upcomingEvents[0].placement_drives.role_title}
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0 font-mono text-[11px]">
+                    <span className="text-zinc-500 dark:text-[#8b8b9e] block">
+                      {new Date(upcomingEvents[0].start_time).toLocaleDateString("en-IN", {
+                        month: "short",
+                        day: "numeric",
+                        timeZone: "Asia/Kolkata",
+                      })}
+                    </span>
+                    {upcomingEvents[0].placement_drives?.drive_status === "cancelled" ? (
+                      <span className="text-rose-600 dark:text-rose-400 font-semibold">
+                        Cancelled
+                      </span>
+                    ) : (
+                      <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                        {getRelativeDayString(upcomingEvents[0].start_time)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
                 <button
                   onClick={onExploreDirectory}
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold bg-[#5e6ad2] hover:bg-[#828df8] text-white shadow-sm transition-all"
                 >
                   <Building2 className="w-3.5 h-3.5" />
-                  Explore All 114 Drives
+                  Explore All {drives.length} Drives
                 </button>
                 {onSwitchTab && (
                   <button
@@ -341,6 +495,309 @@ export function CommandCenterView({
                     Import Notice / Circular
                   </button>
                 )}
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ── 2. UPCOMING DRIVES & ASSESSMENT RADAR (NEXT 30 DAYS) ── */}
+      <section className="rounded-xl border border-zinc-200 dark:border-[#1e1e2a] bg-white dark:bg-[#14141e] p-5 sm:p-7 shadow-sm transition-colors">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-zinc-100 dark:border-[#1e1e2a]">
+          <div>
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="relative flex h-2 w-2">
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#5e6ad2]" />
+              </span>
+              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#5e6ad2] dark:text-[#828df8]">
+                Schedule Telemetry • Next 30 Days
+              </span>
+              <span className="text-zinc-300 dark:text-[#2a2a3c]">/</span>
+              <span className="text-[11px] font-mono text-zinc-500 dark:text-[#8b8b9e]">
+                Asia/Kolkata
+              </span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-[#ebebef] tracking-tight">
+              Upcoming Drives & Assessment Radar
+            </h2>
+            <p className="text-xs text-zinc-500 dark:text-[#8b8b9e] mt-0.5">
+              Verified online assessments (OA), technical interviews, and registration deadlines across campus recruitment partners.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-mono font-bold bg-[#5e6ad2]/10 text-[#5e6ad2] dark:text-[#828df8] border border-[#5e6ad2]/20">
+              <Calendar className="w-3.5 h-3.5 text-[#5e6ad2]" />
+              {upcomingEvents.length} Upcoming Session{upcomingEvents.length !== 1 ? "s" : ""}
+            </span>
+            {deadlines.length > 0 && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-mono font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                <Clock className="w-3.5 h-3.5 text-amber-500" />
+                {deadlines.length} Open Deadline{deadlines.length !== 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Interactive Filter Toolbar */}
+        {upcomingEvents.length > 0 && (
+          <div className="pt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-zinc-100 dark:border-[#1e1e2a] pb-4">
+            <div className="flex items-center gap-1.5 p-1 rounded-lg bg-zinc-100 dark:bg-white/[0.04] border border-zinc-200 dark:border-[#1e1e2a] self-start overflow-x-auto max-w-full">
+              <button
+                onClick={() => setRadarFilter("all")}
+                className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${
+                  radarFilter === "all"
+                    ? "bg-white dark:bg-[#181824] text-zinc-900 dark:text-[#ebebef] shadow-xs border border-zinc-200/80 dark:border-[#2a2a3c]"
+                    : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+                }`}
+              >
+                All Events ({upcomingEvents.length})
+              </button>
+              <button
+                onClick={() => setRadarFilter("assessments")}
+                className={`px-3 py-1 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                  radarFilter === "assessments"
+                    ? "bg-white dark:bg-[#181824] text-[#5e6ad2] dark:text-[#828df8] shadow-xs border border-zinc-200/80 dark:border-[#2a2a3c]"
+                    : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+                }`}
+              >
+                <span>Assessments</span>
+                <span className="text-[10px] font-mono px-1 rounded bg-[#5e6ad2]/10 font-bold">{assessmentCount}</span>
+              </button>
+              <button
+                onClick={() => setRadarFilter("interviews")}
+                className={`px-3 py-1 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                  radarFilter === "interviews"
+                    ? "bg-white dark:bg-[#181824] text-purple-600 dark:text-purple-400 shadow-xs border border-zinc-200/80 dark:border-[#2a2a3c]"
+                    : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+                }`}
+              >
+                <span>Interviews</span>
+                <span className="text-[10px] font-mono px-1 rounded bg-purple-500/10 font-bold">{interviewCount}</span>
+              </button>
+            </div>
+
+            <div className="relative w-full sm:w-64">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+              <input
+                type="text"
+                placeholder="Filter by company or role..."
+                value={radarSearch}
+                onChange={(e) => setRadarSearch(e.target.value)}
+                className="w-full text-xs rounded-lg border border-zinc-200 dark:border-[#2a2a3c] bg-zinc-50 dark:bg-[#181824] pl-8 pr-7 py-1.5 text-zinc-900 dark:text-[#ebebef] placeholder-zinc-400 dark:placeholder-[#5a5a6e] focus:outline-none focus:ring-1 focus:ring-[#5e6ad2]"
+              />
+              {radarSearch && (
+                <button
+                  onClick={() => setRadarSearch("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Upcoming Content */}
+        <div className="mt-5 space-y-6">
+          {upcomingEvents.length > 0 ? (
+            filteredUpcomingEvents.length > 0 ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {filteredUpcomingEvents.map((evt) => {
+                const typeDetails = getEventTypeDetails(evt.event_type);
+                const TypeIcon = typeDetails.icon;
+                const companyName =
+                  evt.placement_drives?.placement_companies?.name ||
+                  evt.placement_drives?.drive_name ||
+                  evt.title;
+                const role = evt.placement_drives?.role_title;
+                const pkg =
+                  evt.placement_drives?.package_max_lpa ??
+                  evt.placement_drives?.package_min_lpa;
+                const isCancelled = evt.placement_drives?.drive_status === "cancelled";
+                const countdown = getRelativeDayString(evt.start_time);
+                const eventDateFormatted = new Date(evt.start_time).toLocaleDateString("en-IN", {
+                  weekday: "short",
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                  timeZone: "Asia/Kolkata",
+                });
+                const eventTimeFormatted = new Date(evt.start_time).toLocaleTimeString("en-IN", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  timeZone: "Asia/Kolkata",
+                });
+
+                return (
+                  <div
+                    key={evt.id}
+                    className={`p-4 sm:p-5 rounded-xl border transition-all flex flex-col justify-between group ${
+                      isCancelled
+                        ? "border-rose-500/25 dark:border-rose-500/20 bg-rose-500/[0.02] dark:bg-rose-500/[0.04]"
+                        : "border-zinc-200 dark:border-[#1e1e2a] bg-zinc-50/50 dark:bg-[#181824]/60 hover:border-[#5e6ad2]/50 hover:bg-white dark:hover:bg-[#1c1c2b]"
+                    }`}
+                  >
+                    <div>
+                      {/* Top Row: Company & Badge */}
+                      <div className="flex items-start justify-between gap-3 pb-3 border-b border-zinc-200/50 dark:border-white/5">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-9 h-9 rounded-lg flex items-center justify-center font-bold text-sm bg-gradient-to-br from-[#5e6ad2]/15 to-indigo-500/25 text-[#5e6ad2] dark:text-[#828df8] border border-[#5e6ad2]/30 shrink-0">
+                            {companyName.charAt(0)}
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="font-bold text-sm sm:text-base text-zinc-900 dark:text-[#ebebef] truncate group-hover:text-[#5e6ad2] dark:group-hover:text-[#828df8] transition-colors">
+                              {companyName}
+                            </h3>
+                            {role && (
+                              <p className="text-xs text-zinc-500 dark:text-[#8b8b9e] truncate mt-0.5">
+                                {role}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col items-end gap-1.5 shrink-0">
+                          {isCancelled ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30">
+                              <XCircle className="w-3 h-3" />
+                              Cancelled
+                            </span>
+                          ) : (
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${typeDetails.color}`}>
+                              <TypeIcon className="w-3 h-3" />
+                              {typeDetails.label}
+                            </span>
+                          )}
+                          {pkg && pkg > 0 && (
+                            <span className="text-xs font-mono font-bold text-amber-600 dark:text-amber-400">
+                              ₹{pkg.toFixed(2)} LPA
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Middle Details: Date, Time & Venue */}
+                      <div className="mt-3.5 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                        <div className="flex items-center gap-2 text-zinc-700 dark:text-zinc-300 font-mono">
+                          <Calendar className="w-3.5 h-3.5 text-[#5e6ad2] shrink-0" />
+                          <span>{eventDateFormatted}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-zinc-600 dark:text-[#8b8b9e] font-mono">
+                          <Clock className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                          <span>{eventTimeFormatted}</span>
+                          {isCancelled ? (
+                            <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 bg-rose-500/10 px-1.5 py-0.2 rounded border border-rose-500/20">
+                              Cancelled
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20">
+                              {countdown}
+                            </span>
+                          )}
+                        </div>
+                        {evt.venue && (
+                          <div className="sm:col-span-2 flex items-center gap-2 text-[11px] text-zinc-500 dark:text-[#8b8b9e]">
+                            <MapPin className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                            <span className="truncate">{evt.venue}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Bottom Actions */}
+                    <div className="mt-4 pt-3 border-t border-zinc-200/60 dark:border-white/5 flex items-center justify-between text-xs">
+                      <Link
+                        href="/demo"
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#5e6ad2] dark:text-[#828df8] hover:underline"
+                      >
+                        <PlayCircle className="w-3.5 h-3.5" />
+                        <span>Simulate Interview on MockMate</span>
+                      </Link>
+                      <button
+                        onClick={onExploreDirectory}
+                        className="text-[11px] font-mono text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 flex items-center gap-0.5"
+                      >
+                        <span>Recruiter Intel</span>
+                        <ChevronRight className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-zinc-200 dark:border-[#2a2a3c] bg-zinc-50/40 dark:bg-[#101018]/50 p-6 text-center">
+              <Filter className="w-5 h-5 text-zinc-400 mx-auto mb-2" />
+              <h4 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+                No matching events found
+              </h4>
+              <p className="text-xs text-zinc-500 dark:text-[#8b8b9e] mt-1">
+                No upcoming drives match &ldquo;{radarSearch || radarFilter}&rdquo;.
+              </p>
+              <button
+                onClick={() => {
+                  setRadarFilter("all");
+                  setRadarSearch("");
+                }}
+                className="mt-3 text-xs font-semibold px-3 py-1.5 rounded-lg bg-zinc-100 dark:bg-[#1e1e2a] hover:bg-zinc-200 dark:hover:bg-[#252535] text-zinc-700 dark:text-zinc-300 transition-colors"
+              >
+                Reset Filter
+              </button>
+            </div>
+          )
+        ) : (
+          <div className="rounded-xl border border-dashed border-zinc-200 dark:border-[#2a2a3c] bg-zinc-50/40 dark:bg-[#101018]/50 p-6 text-center">
+            <Calendar className="w-6 h-6 text-zinc-400 dark:text-[#8b8b9e] mx-auto mb-2" />
+            <h4 className="text-sm font-bold text-zinc-800 dark:text-zinc-200">
+              No Upcoming Drives or Assessments in the next 30 days
+            </h4>
+            <p className="text-xs text-zinc-500 dark:text-[#8b8b9e] mt-1 max-w-md mx-auto">
+              Notices imported via the Placement Notice Desk will appear here automatically once confirmed.
+            </p>
+          </div>
+        )}
+
+          {/* Active Deadlines Tracker if any exist */}
+          {deadlines.length > 0 && (
+            <div className="mt-6 pt-5 border-t border-zinc-100 dark:border-[#1e1e2a]">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-amber-500" />
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-[#ebebef]">
+                    Upcoming Registration Deadlines
+                  </h4>
+                </div>
+                <span className="text-[11px] font-mono text-amber-600 dark:text-amber-400">
+                  Act fast before portals close
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {deadlines.map((dl) => (
+                  <div
+                    key={dl.id}
+                    className="p-3 rounded-lg border border-amber-500/20 bg-amber-500/[0.02] dark:bg-amber-500/[0.04] flex items-start justify-between gap-2"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-xs text-zinc-900 dark:text-[#ebebef] truncate">
+                          {dl.placement_drives?.placement_companies?.name || dl.title}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-zinc-500 dark:text-[#8b8b9e] truncate mt-0.5">
+                        {dl.title}
+                      </p>
+                      <div className="mt-2 flex items-center gap-1.5 text-[10px] font-mono text-amber-700 dark:text-amber-400">
+                        <Clock className="w-3.5 h-3.5 text-amber-500" />
+                        <span>Closes {new Date(dl.start_time).toLocaleDateString("en-IN", { month: "short", day: "numeric", timeZone: "Asia/Kolkata" })}</span>
+                      </div>
+                    </div>
+                    <span className="px-2 py-0.5 text-[10px] font-mono font-bold rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0">
+                      {dl.urgency?.label || "Upcoming"}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -361,7 +818,7 @@ export function CommandCenterView({
               Top Recruiter CTC Benchmarks & Marquee Highlights
             </h3>
             <p className="text-xs text-zinc-500 dark:text-[#8b8b9e] mt-0.5">
-              Compensation benchmarks and interview tracks from KLU&apos;s 114 partner companies. Click any recruiter to inspect round-by-round selection intelligence.
+              Compensation benchmarks and interview tracks from KLU&apos;s {drives.length} partner recruiters. Click any recruiter to inspect round-by-round selection intelligence.
             </p>
           </div>
 
@@ -369,7 +826,7 @@ export function CommandCenterView({
             onClick={onExploreDirectory}
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#5e6ad2] dark:text-[#828df8] hover:underline self-start sm:self-auto shrink-0"
           >
-            <span>Browse all 114 drives</span>
+            <span>Browse all {drives.length} drives</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -457,11 +914,11 @@ export function CommandCenterView({
               Compensation Tier Distribution Matrix
             </h3>
             <p className="text-xs text-zinc-500 dark:text-[#8b8b9e]">
-              Breakdown of all 114 campus drives by CTC classification. Click any tier to filter the directory.
+              Breakdown of all {drives.length} campus drives by CTC classification. Click any tier to filter the directory.
             </p>
           </div>
           <span className="text-xs font-mono font-semibold px-2.5 py-1 rounded bg-zinc-100 dark:bg-white/[0.04] text-zinc-600 dark:text-[#8b8b9e] border border-zinc-200/60 dark:border-[#1e1e2a] self-start sm:self-auto">
-            114 Total Drives
+            {drives.length} Total Drives
           </span>
         </div>
 
@@ -497,7 +954,9 @@ export function CommandCenterView({
               </div>
             </div>
             <div className="mt-4 pt-2 border-t border-amber-500/10 flex items-center justify-between text-[11px] text-zinc-500 dark:text-[#8b8b9e]">
-              <span className="font-mono">Avg: ₹{tierDistribution.superDream.avg} LPA</span>
+              <span className="font-mono">
+                Avg: {tierDistribution.superDream.avg !== "—" ? `₹${tierDistribution.superDream.avg} LPA` : "—"}
+              </span>
               <span className="font-semibold text-amber-600 dark:text-amber-400 group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5">
                 Filter <ChevronRight className="w-3 h-3" />
               </span>
@@ -535,7 +994,9 @@ export function CommandCenterView({
               </div>
             </div>
             <div className="mt-4 pt-2 border-t border-purple-500/10 flex items-center justify-between text-[11px] text-zinc-500 dark:text-[#8b8b9e]">
-              <span className="font-mono">Avg: ₹{tierDistribution.dream.avg} LPA</span>
+              <span className="font-mono">
+                Avg: {tierDistribution.dream.avg !== "—" ? `₹${tierDistribution.dream.avg} LPA` : "—"}
+              </span>
               <span className="font-semibold text-purple-600 dark:text-purple-400 group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5">
                 Filter <ChevronRight className="w-3 h-3" />
               </span>
@@ -573,7 +1034,9 @@ export function CommandCenterView({
               </div>
             </div>
             <div className="mt-4 pt-2 border-t border-[#5e6ad2]/10 flex items-center justify-between text-[11px] text-zinc-500 dark:text-[#8b8b9e]">
-              <span className="font-mono">Avg: ₹{tierDistribution.core.avg} LPA</span>
+              <span className="font-mono">
+                Avg: {tierDistribution.core.avg !== "—" ? `₹${tierDistribution.core.avg} LPA` : "—"}
+              </span>
               <span className="font-semibold text-[#5e6ad2] dark:text-[#828df8] group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5">
                 Filter <ChevronRight className="w-3 h-3" />
               </span>
@@ -611,7 +1074,9 @@ export function CommandCenterView({
               </div>
             </div>
             <div className="mt-4 pt-2 border-t border-zinc-200 dark:border-[#1e1e2a] flex items-center justify-between text-[11px] text-zinc-500 dark:text-[#8b8b9e]">
-              <span className="font-mono">Avg: ₹{tierDistribution.mass.avg} LPA</span>
+              <span className="font-mono">
+                Avg: {tierDistribution.mass.avg !== "—" ? `₹${tierDistribution.mass.avg} LPA` : "—"}
+              </span>
               <span className="font-semibold text-zinc-700 dark:text-zinc-300 group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5">
                 Filter <ChevronRight className="w-3 h-3" />
               </span>
@@ -818,7 +1283,7 @@ export function CommandCenterView({
               onClick={onExploreDirectory}
               className="text-xs font-semibold text-[#5e6ad2] dark:text-[#828df8] hover:underline flex items-center gap-1"
             >
-              Explore 114 Recruiters <ArrowRight className="w-3 h-3" />
+              Explore {drives.length} Recruiters <ArrowRight className="w-3 h-3" />
             </button>
           </div>
         </section>

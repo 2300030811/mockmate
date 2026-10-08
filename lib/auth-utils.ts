@@ -1,5 +1,3 @@
-"use server";
-
 import { createClient } from "@/utils/supabase/server";
 import { logger } from "@/lib/logger";
 import { profileRepository } from "@/lib/db/profile-repository";
@@ -39,7 +37,7 @@ export async function requireAuth() {
 /**
  * Checks if the current user is an admin.
  * Returns false if not authenticated or not admin.
- * Recognizes 2300030811cser@gmail.com and profiles with role === 'admin' as administrators.
+ * Recognizes ADMIN_EMAIL and profiles / app_metadata with role === 'admin'.
  */
 export async function requireAdmin(): Promise<boolean> {
   try {
@@ -47,7 +45,15 @@ export async function requireAdmin(): Promise<boolean> {
     const { data: { user }, error } = await supabase.auth.getUser();
     if (error || !user) return false;
 
+    // Ensure email is confirmed in production
+    if (!user.email_confirmed_at && process.env.NODE_ENV === "production") {
+      return false;
+    }
+
     if (user.email === ADMIN_EMAIL) return true;
+
+    // Check app_metadata first (server-only controlled in Supabase auth)
+    if (user.app_metadata?.role === "admin") return true;
 
     const profile = await profileRepository.getProfileFields(supabase, user.id, "role");
 

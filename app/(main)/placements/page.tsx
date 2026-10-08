@@ -10,8 +10,22 @@ export const metadata: Metadata = {
     "Real-time campus placement intelligence, live drive tracker, today radar, and historical recruitment compensation data.",
 };
 
-export default async function PlacementsPage() {
-  const data = await getPlacementHubData();
+interface PlacementsPageProps {
+  searchParams?: Promise<{ tab?: string }> | { tab?: string };
+}
 
-  return <PlacementsClient initialData={data} />;
+export default async function PlacementsPage({ searchParams }: PlacementsPageProps) {
+  const [data, resolvedParams] = await Promise.all([
+    getPlacementHubData(),
+    searchParams ? Promise.resolve(searchParams) : undefined,
+  ]);
+
+  const initialTab =
+    resolvedParams?.tab === "import"
+      ? "import"
+      : resolvedParams?.tab === "directory"
+      ? "directory"
+      : "command_center";
+
+  return <PlacementsClient initialData={data} initialTab={initialTab} />;
 }
